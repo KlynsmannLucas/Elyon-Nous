@@ -1,0 +1,504 @@
+// app/dashboard/page.tsx — Dashboard principal
+'use client'
+
+import { useState, useCallback, useEffect } from 'react'
+import { useAppStore } from '@/lib/store'
+import type { SavedClient } from '@/lib/store'
+import { SetupWizard }    from '@/components/dashboard/SetupWizard'
+import { TabOverview }     from '@/components/dashboard/TabOverview'
+import { TabAudiences }    from '@/components/dashboard/TabAudiences'
+import { TabStrategy }     from '@/components/dashboard/TabStrategy'
+import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
+import { TabGrowth }       from '@/components/dashboard/TabGrowth'
+import { TabPerformance }  from '@/components/dashboard/TabPerformance'
+import { TabDiagnostic }   from '@/components/dashboard/TabDiagnostic'
+import { TabMetrics }      from '@/components/dashboard/TabMetrics'
+import { TabHistory }     from '@/components/dashboard/TabHistory'
+import { TabConnections } from '@/components/dashboard/TabConnections'
+import { NousChat }       from '@/components/dashboard/NousChat'
+
+type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'metrics' | 'history' | 'connections'
+
+const TABS: { key: TabKey; label: string; icon: string }[] = [
+  { key: 'overview',     label: 'Overview',     icon: '🏠' },
+  { key: 'strategy',     label: 'Estratégia',   icon: '⚡' },
+  { key: 'diagnostic',   label: 'Diagnóstico',  icon: '🎯' },
+  { key: 'intelligence', label: 'Inteligência', icon: '🧠' },
+  { key: 'audiences',    label: 'Audiências',   icon: '👥' },
+  { key: 'growth',       label: 'Crescimento',  icon: '📈' },
+  { key: 'performance',  label: 'Performance',  icon: '📊' },
+  { key: 'metrics',      label: 'Métricas',     icon: '📉' },
+  { key: 'history',      label: 'Histórico',    icon: '🗂️' },
+  { key: 'connections',  label: 'Conexões',     icon: '🔗' },
+]
+
+// ── Header fixo ────────────────────────────────────────────────────────────────
+function Header({
+  niche, clientName, onExport, onReset, onSave, isSaved, pdfLoading,
+}: {
+  niche: string; clientName: string
+  onExport: () => void; onReset: () => void
+  onSave: () => void; isSaved: boolean; pdfLoading: boolean
+}) {
+  const [savedFlash, setSavedFlash] = useState(false)
+
+  const handleSave = () => {
+    onSave()
+    setSavedFlash(true)
+    setTimeout(() => setSavedFlash(false), 2000)
+  }
+
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-10 py-3.5 border-b border-[#2A2A30] bg-[#0A0A0B]/80 backdrop-blur-xl">
+      <div className="flex items-center gap-6">
+        <span className="font-display font-bold text-xl" style={{
+          background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        }}>
+          ELYON
+        </span>
+        <span className="hidden md:flex items-center gap-1.5 text-xs text-[#22C55E]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
+          ONLINE
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {clientName && (
+          <span className="text-xs text-slate-500 hidden md:block">{clientName}</span>
+        )}
+        {niche && (
+          <span className="text-xs font-semibold px-3 py-1.5 rounded-full"
+            style={{ background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.25)', color: '#F0B429' }}>
+            {niche}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleSave}
+          className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border transition-all"
+          style={savedFlash
+            ? { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.4)', color: '#22C55E' }
+            : { background: 'transparent', border: '1px solid #2A2A30', color: '#64748B' }
+          }
+        >
+          {savedFlash ? '✓ Salvo' : '💾 Salvar cliente'}
+        </button>
+        <button
+          onClick={onReset}
+          className="hidden md:block text-xs text-slate-600 hover:text-slate-400 transition-colors px-3 py-2"
+        >
+          Trocar cliente
+        </button>
+        <button
+          onClick={onExport}
+          disabled={pdfLoading}
+          className="hidden md:flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-50"
+          style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
+        >
+          {pdfLoading ? '⏳ Gerando...' : '↓ Exportar PDF'}
+        </button>
+      </div>
+    </header>
+  )
+}
+
+// ── Tab navigation ─────────────────────────────────────────────────────────────
+function TabNav({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => void }) {
+  return (
+    <div className="sticky top-[61px] z-40 bg-[#0A0A0B]/90 backdrop-blur-xl border-b border-[#2A2A30]">
+      <div className="max-w-7xl mx-auto px-4 md:px-10">
+        <div className="flex overflow-x-auto gap-1 py-2 scrollbar-hide">
+          {TABS.map((tab) => {
+            const isActive = tab.key === active
+            return (
+              <button
+                key={tab.key}
+                onClick={() => onChange(tab.key)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all"
+                style={{
+                  background: isActive ? 'rgba(240,180,41,0.1)' : 'transparent',
+                  border: isActive ? '1px solid rgba(240,180,41,0.25)' : '1px solid transparent',
+                  color: isActive ? '#F0B429' : '#64748B',
+                }}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Tela de geração ────────────────────────────────────────────────────────────
+function GeneratingScreen({ clientName, niche }: { clientName: string; niche: string }) {
+  const steps = [
+    'Diagnosticando gargalos e desperdícios no funil...',
+    'Calculando CPL e ROAS esperados por canal...',
+    'Estruturando TOFU / MOFU / BOFU personalizado...',
+    'Definindo o que escalar, testar e cortar...',
+    'Montando plano de 90 dias orientado a crescimento...',
+  ]
+  const [currentStep, setCurrentStep] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentStep((s) => Math.min(s + 1, steps.length - 1))
+    }, 1400)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center">
+      <div className="text-center max-w-md">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+          style={{ background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.25)' }}>
+          <span className="text-3xl animate-pulse">⚡</span>
+        </div>
+        <h3 className="font-display text-2xl font-bold text-white mb-2">
+          Gerando estratégia para {clientName}
+        </h3>
+        <p className="text-slate-500 text-sm mb-8">{niche}</p>
+        <div className="space-y-3">
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-center gap-3 text-sm text-left">
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold transition-all ${
+                i < currentStep ? 'bg-[#22C55E] text-black' :
+                i === currentStep ? 'bg-[#F0B429] text-black' :
+                'bg-[#2A2A30] text-slate-600'
+              }`}>
+                {i < currentStep ? '✓' : i + 1}
+              </span>
+              <span className={i <= currentStep ? 'text-slate-200' : 'text-slate-600'}>
+                {s}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Seletor de cliente salvo ───────────────────────────────────────────────────
+function ClientSelector({
+  savedClients,
+  onSelect,
+  onNew,
+  onDelete,
+}: {
+  savedClients: SavedClient[]
+  onSelect: (id: string) => void
+  onNew: () => void
+  onDelete: (id: string) => void
+}) {
+  const getNicheIcon = (niche: string) => {
+    const n = niche.toLowerCase()
+    if (n.includes('odonto') || n.includes('saúde') || n.includes('clínica')) return '🦷'
+    if (n.includes('financeiro') || n.includes('crédito')) return '💰'
+    if (n.includes('imobili')) return '🏠'
+    if (n.includes('fitness') || n.includes('academia')) return '💪'
+    if (n.includes('beleza') || n.includes('estética')) return '💅'
+    if (n.includes('educaç') || n.includes('curso')) return '📚'
+    if (n.includes('jurídico') || n.includes('advoc')) return '⚖️'
+    if (n.includes('tech') || n.includes('saas')) return '💻'
+    if (n.includes('ecommerce') || n.includes('varejo')) return '🛒'
+    if (n.includes('marketing') || n.includes('agência')) return '📣'
+    if (n.includes('restaurante') || n.includes('food')) return '🍽️'
+    if (n.includes('pet')) return '🐾'
+    return '📊'
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0A0A0B] animate-fade-in">
+      <div className="max-w-2xl mx-auto px-6 pt-20 pb-8">
+        {/* Logo */}
+        <div className="text-center mb-12">
+          <span className="font-display font-bold text-3xl" style={{
+            background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>
+            ELYON
+          </span>
+          <p className="text-slate-600 text-sm mt-1">Selecione um cliente ou crie novo</p>
+        </div>
+
+        {/* Clientes salvos */}
+        {savedClients.length > 0 && (
+          <div className="mb-6">
+            <div className="text-xs text-slate-500 uppercase tracking-wider mb-3 px-1">
+              Clientes salvos
+            </div>
+            <div className="space-y-2">
+              {savedClients.map((sc) => (
+                <div
+                  key={sc.id}
+                  className="flex items-center gap-4 bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 hover:border-[rgba(240,180,41,0.3)] transition-all group"
+                >
+                  {/* Ícone + info */}
+                  <button
+                    className="flex items-center gap-4 flex-1 text-left"
+                    onClick={() => onSelect(sc.id)}
+                  >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
+                      style={{ background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.2)' }}>
+                      {getNicheIcon(sc.clientData.niche)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-white text-sm truncate">
+                        {sc.clientData.clientName}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {sc.clientData.niche} · R${sc.clientData.budget.toLocaleString('pt-BR')}/mês
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {sc.strategyData && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                          style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)' }}>
+                          Estratégia pronta
+                        </span>
+                      )}
+                      <span className="text-[#F0B429] text-sm opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    </div>
+                  </button>
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => onDelete(sc.id)}
+                    className="text-slate-700 hover:text-[#FF4D4D] transition-colors text-lg flex-shrink-0 ml-1"
+                    title="Remover cliente"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Criar novo cliente */}
+        <button
+          onClick={onNew}
+          className="w-full flex items-center justify-center gap-3 border border-dashed border-[#2A2A30] rounded-2xl p-5 text-slate-500 hover:border-[rgba(240,180,41,0.4)] hover:text-[#F0B429] transition-all"
+        >
+          <span className="text-xl">+</span>
+          <span className="text-sm font-semibold">Novo cliente</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Página principal ───────────────────────────────────────────────────────────
+export default function DashboardPage() {
+  const {
+    clientData, strategyData, isGenerating,
+    setStrategyData, setIsGenerating, clearAll, wizardStep, setWizardStep,
+    savedClients, saveCurrentClient, loadSavedClient, deleteSavedClient,
+    campaignHistory,
+  } = useAppStore()
+
+  const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
+  const [genError, setGenError] = useState('')
+
+  // Se há clientData e strategyData no store ao montar, vai direto pro dashboard
+  useEffect(() => {
+    if (clientData && strategyData) {
+      setView('dashboard')
+    } else if (savedClients.length === 0) {
+      // Sem clientes salvos → wizard direto
+      setView('wizard')
+    }
+    // else fica no selector
+  }, []) // só na montagem
+
+  const handleWizardComplete = useCallback(async () => {
+    if (!clientData) return
+
+    setIsGenerating(true)
+    setGenError('')
+    setView('dashboard') // vai pro dashboard durante geração
+
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 30000) // 30s timeout
+      const res = await fetch('/api/strategy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...clientData, campaignHistory }),
+        signal: controller.signal,
+      })
+      clearTimeout(timeout)
+      const json = await res.json()
+
+      if (!json.success) throw new Error(json.error)
+
+      setStrategyData({
+        analysis: json.strategy,
+        strategy: json.strategy,
+        adCopy: {},
+        audienceSuggestions: {},
+        creativeBrief: {},
+        generatedAt: new Date().toISOString(),
+      })
+    } catch (e: any) {
+      setGenError(e.message)
+    } finally {
+      setIsGenerating(false)
+    }
+  }, [clientData, setIsGenerating, setStrategyData])
+
+  const handleSelectSaved = (id: string) => {
+    const found = loadSavedClient(id)
+    if (found) {
+      setView('dashboard')
+      setActiveTab('overview')
+    }
+  }
+
+  const handleSaveClient = () => {
+    saveCurrentClient()
+  }
+
+  const [pdfLoading, setPdfLoading] = useState(false)
+
+  const handleExportPDF = useCallback(async () => {
+    setPdfLoading(true)
+    try {
+      const { generatePDF } = await import('@/components/pdf/RelatorioPDF')
+      await generatePDF()
+    } catch (e) {
+      console.error('Erro PDF:', e)
+      alert('Não foi possível gerar o PDF. Tente novamente.')
+    } finally {
+      setPdfLoading(false)
+    }
+  }, [])
+
+  const handleReset = () => {
+    clearAll()
+    setView('selector')
+    setActiveTab('overview')
+    setWizardStep(0)
+    setGenError('')
+  }
+
+  function renderTab() {
+    const strategy = strategyData?.strategy || {}
+    const analysis = strategyData?.analysis || {}
+
+    switch (activeTab) {
+      case 'overview':     return <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} />
+      case 'strategy':     return <TabStrategy strategy={strategy} analysis={analysis} />
+      case 'diagnostic':   return <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />
+      case 'intelligence': return <TabIntelligence clientData={clientData} />
+      case 'audiences':    return <TabAudiences niche={clientData?.niche} />
+      case 'growth':       return <TabGrowth analysis={analysis} clientData={clientData} />
+      case 'performance':  return <TabPerformance clientData={clientData} />
+      case 'metrics':      return <TabMetrics clientData={clientData} />
+      case 'history':      return <TabHistory />
+      case 'connections':  return <TabConnections />
+    }
+  }
+
+  // ── Seletor de clientes ──
+  if (view === 'selector') {
+    return (
+      <ClientSelector
+        savedClients={savedClients}
+        onSelect={handleSelectSaved}
+        onNew={() => { setView('wizard'); setWizardStep(0) }}
+        onDelete={deleteSavedClient}
+      />
+    )
+  }
+
+  // ── Wizard ──
+  if (view === 'wizard') {
+    return (
+      <div className="min-h-screen bg-[#0A0A0B] animate-fade-in">
+        <div className="max-w-7xl mx-auto px-6 pt-20 pb-8">
+          <div className="text-center mb-12">
+            <span className="font-display font-bold text-3xl" style={{
+              background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>
+              ELYON
+            </span>
+            <p className="text-slate-600 text-sm mt-1">Configure seu cliente para começar</p>
+          </div>
+          {savedClients.length > 0 && (
+            <div className="text-center mb-6">
+              <button
+                onClick={() => setView('selector')}
+                className="text-xs text-slate-500 hover:text-[#F0B429] transition-colors"
+              >
+                ← Voltar para clientes salvos
+              </button>
+            </div>
+          )}
+          <SetupWizard onComplete={handleWizardComplete} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Gerando estratégia ──
+  if (isGenerating && clientData) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0B] animate-fade-in pt-16">
+        <GeneratingScreen clientName={clientData.clientName} niche={clientData.niche} />
+      </div>
+    )
+  }
+
+  // ── Erro ──
+  if (genError) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="font-display text-xl font-bold text-white mb-2">Erro ao gerar estratégia</h3>
+          <p className="text-slate-500 text-sm mb-6">{genError}</p>
+          <button onClick={handleReset} className="px-6 py-3 rounded-xl text-sm font-semibold"
+            style={{ background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429' }}>
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Dashboard completo ──
+  return (
+    <div className="min-h-screen bg-[#0A0A0B] animate-fade-in pt-[61px]">
+      <Header
+        niche={clientData?.niche || ''}
+        clientName={clientData?.clientName || ''}
+        onExport={handleExportPDF}
+        onReset={handleReset}
+        onSave={handleSaveClient}
+        isSaved={savedClients.some((s) => s.clientData.clientName === clientData?.clientName)}
+        pdfLoading={pdfLoading}
+      />
+      <TabNav active={activeTab} onChange={setActiveTab} />
+      <main className="max-w-7xl mx-auto px-4 md:px-10 py-8">
+        <div key={activeTab} className="animate-fade-up">
+          {renderTab()}
+        </div>
+      </main>
+      <NousChat
+        clientData={clientData}
+        strategy={strategyData?.strategy || {}}
+        campaignHistory={campaignHistory}
+      />
+    </div>
+  )
+}
