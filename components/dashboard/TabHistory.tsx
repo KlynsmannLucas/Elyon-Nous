@@ -311,8 +311,8 @@ export function TabHistory() {
 
       {/* ── Formulário de nova campanha ────────────────────────────────── */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[72px] pb-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-xl bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden flex flex-col my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-xl bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden flex flex-col" style={{ maxHeight: '90vh' }}>
             {/* Header modal */}
             <div className="px-6 py-4 border-b border-[#2A2A30] flex items-center justify-between flex-shrink-0">
               <div className="font-display font-bold text-white">Nova Campanha</div>
@@ -320,7 +320,7 @@ export function TabHistory() {
             </div>
 
             {/* Body modal (scrollável) */}
-            <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+            <div className="overflow-y-auto px-6 py-5 space-y-4" style={{ flex: '1 1 0', minHeight: 0 }}>
 
               {/* Canal + Período */}
               <div className="grid grid-cols-2 gap-3">

@@ -308,38 +308,6 @@ export function TabConnections() {
         </div>
       </div>
 
-      {/* Guia de configuração */}
-      {(!metaAccount || !googleAccount) && (
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-          <div className="font-display font-bold text-white mb-4">⚙️ Como configurar (1 vez só)</div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {!metaAccount && (
-              <div>
-                <div className="text-xs font-bold text-[#1877F2] uppercase tracking-wider mb-2">Meta Ads</div>
-                <ol className="space-y-2 text-xs text-slate-400">
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">1.</span>Acesse developers.facebook.com → criar app tipo "Business"</li>
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">2.</span>Adicione o produto "Facebook Login" e "Marketing API"</li>
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">3.</span>Em Configurações → Básico: copie o App ID e App Secret</li>
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">4.</span>Coloque no .env.local: META_APP_ID e META_APP_SECRET e NEXT_PUBLIC_META_APP_ID</li>
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">5.</span>Em OAuth → Redirect URIs: adicione sua URL + /api/oauth/callback</li>
-                </ol>
-              </div>
-            )}
-            {!googleAccount && (
-              <div>
-                <div className="text-xs font-bold text-[#EA4335] uppercase tracking-wider mb-2">Google Ads</div>
-                <ol className="space-y-2 text-xs text-slate-400">
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">1.</span>Acesse console.cloud.google.com → novo projeto</li>
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">2.</span>Ative a Google Ads API nas APIs e Serviços</li>
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">3.</span>Credenciais → OAuth 2.0 → copie Client ID e Client Secret</li>
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">4.</span>Coloque no .env.local: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXT_PUBLIC_GOOGLE_CLIENT_ID e GOOGLE_ADS_DEVELOPER_TOKEN</li>
-                  <li className="flex gap-2"><span className="text-[#F0B429] flex-shrink-0">5.</span>Em Redirect URIs autorizados: adicione sua URL + /api/oauth/callback</li>
-                </ol>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Campanhas Meta */}
       {metaCampaigns.length > 0 && (
