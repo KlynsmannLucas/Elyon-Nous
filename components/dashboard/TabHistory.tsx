@@ -311,16 +311,17 @@ export function TabHistory() {
 
       {/* ── Formulário de nova campanha ────────────────────────────────── */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-xl bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden flex flex-col" style={{ maxHeight: '90vh' }}>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 py-8">
+          <div className="w-full max-w-xl bg-[#111114] border border-[#2A2A30] rounded-2xl">
             {/* Header modal */}
-            <div className="px-6 py-4 border-b border-[#2A2A30] flex items-center justify-between flex-shrink-0">
+            <div className="px-6 py-4 border-b border-[#2A2A30] flex items-center justify-between">
               <div className="font-display font-bold text-white">Nova Campanha</div>
               <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-white transition-colors text-xl">×</button>
             </div>
 
-            {/* Body modal (scrollável) */}
-            <div className="overflow-y-auto px-6 py-5 space-y-4" style={{ flex: '1 1 0', minHeight: 0 }}>
+            {/* Body modal */}
+            <div className="px-6 py-5 space-y-4">
 
               {/* Canal + Período */}
               <div className="grid grid-cols-2 gap-3">
@@ -471,6 +472,7 @@ export function TabHistory() {
                 Salvar Campanha
               </button>
             </div>
+          </div>
           </div>
         </div>
       )}
