@@ -702,6 +702,7 @@ export default function LandingPage() {
                 features: ['Estratégia atualizada mensalmente', 'Benchmarks por nicho', 'NOUS IA contextual', 'Histórico de campanhas', 'Conexão Meta Ads'],
                 highlight: false,
                 cta: 'Começar agora →',
+                planKey: 'individual',
               },
               {
                 icon: '🚀', tag: 'MAIS POPULAR', color: '#F0B429', border: 'rgba(240,180,41,0.5)',
@@ -712,6 +713,7 @@ export default function LandingPage() {
                 features: ['Tudo do Individual', 'Estratégias avançadas e múltiplos cenários', 'Diagnóstico como oferta para clientes', 'Conexão Meta + Google Ads', 'Suporte prioritário'],
                 highlight: true,
                 cta: 'Começar agora →',
+                planKey: 'profissional',
               },
               {
                 icon: '💣', tag: 'EMPRESAS E AGÊNCIAS', color: '#22C55E', border: 'rgba(34,197,94,0.3)',
@@ -721,7 +723,8 @@ export default function LandingPage() {
                 price: 'R$697', priceEnd: 'até R$1.497/mês',
                 features: ['Tudo do Profissional', 'Múltiplas contas e negócios', 'Comparação de mercado e performance', 'Leitura avançada de dados', 'Geração contínua de estratégias'],
                 highlight: false,
-                cta: 'Falar com equipe →',
+                cta: 'Começar agora →',
+                planKey: 'avancada',
               },
             ].map((plan) => (
               <div key={plan.title} className="relative rounded-2xl p-7 flex flex-col"
@@ -751,7 +754,7 @@ export default function LandingPage() {
                 <div className="border-t pt-5" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                   <div className="font-display text-3xl font-bold mb-0.5" style={{ color: plan.color }}>{plan.price}</div>
                   <div className="text-xs text-slate-500 mb-4">{plan.priceEnd}</div>
-                  <Link href="/sign-up"
+                  <Link href={`/checkout?plan=${plan.planKey}`}
                     className="w-full flex items-center justify-center gap-2 text-sm font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity"
                     style={plan.highlight
                       ? { background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }

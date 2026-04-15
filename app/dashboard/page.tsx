@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
 import { SetupWizard }    from '@/components/dashboard/SetupWizard'
@@ -32,21 +33,39 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'connections',  label: 'Conexões',     icon: '🔗' },
 ]
 
+const PLAN_LABELS: Record<string, { label: string; color: string }> = {
+  individual:    { label: 'Individual',    color: '#38BDF8' },
+  profissional:  { label: 'Profissional',  color: '#F0B429' },
+  avancada:      { label: 'Avançada',      color: '#22C55E' },
+}
+
 // ── Header fixo ────────────────────────────────────────────────────────────────
 function Header({
-  niche, clientName, onExport, onReset, onSave, isSaved, pdfLoading,
+  niche, clientName, onExport, onReset, onSave, isSaved, pdfLoading, userPlan,
 }: {
   niche: string; clientName: string
   onExport: () => void; onReset: () => void
   onSave: () => void; isSaved: boolean; pdfLoading: boolean
+  userPlan?: string
 }) {
   const [savedFlash, setSavedFlash] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
 
   const handleSave = () => {
     onSave()
     setSavedFlash(true)
     setTimeout(() => setSavedFlash(false), 2000)
   }
+
+  const handlePortal = async () => {
+    setPortalLoading(true)
+    const res  = await fetch('/api/stripe/portal', { method: 'POST' })
+    const data = await res.json()
+    if (data.url) window.location.href = data.url
+    setPortalLoading(false)
+  }
+
+  const plan = userPlan ? PLAN_LABELS[userPlan] : null
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-10 py-3.5 border-b border-[#2A2A30] bg-[#0A0A0B]/80 backdrop-blur-xl">
@@ -61,6 +80,12 @@ function Header({
           <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
           ONLINE
         </span>
+        {plan && (
+          <span className="hidden md:block text-[10px] font-bold px-2 py-0.5 rounded-full"
+            style={{ color: plan.color, background: `${plan.color}18`, border: `1px solid ${plan.color}30` }}>
+            {plan.label}
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -76,6 +101,21 @@ function Header({
       </div>
 
       <div className="flex items-center gap-2">
+        {plan && (
+          <button
+            onClick={handlePortal}
+            disabled={portalLoading}
+            className="hidden md:block text-xs text-slate-500 hover:text-slate-300 transition-colors px-3 py-2"
+          >
+            {portalLoading ? '...' : 'Minha assinatura'}
+          </button>
+        )}
+        {!plan && (
+          <a href="/#pricing"
+            className="hidden md:block text-xs text-[#F0B429] hover:opacity-80 transition-opacity px-3 py-2 font-semibold">
+            ⚡ Ver planos
+          </a>
+        )}
         <button
           onClick={handleSave}
           className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border transition-all"
@@ -297,6 +337,9 @@ function ClientSelector({
 
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const { user } = useUser()
+  const userPlan = user?.publicMetadata?.plan as string | undefined
+
   const {
     clientData, strategyData, isGenerating,
     setStrategyData, setIsGenerating, clearAll, wizardStep, setWizardStep,
@@ -487,6 +530,7 @@ export default function DashboardPage() {
         onSave={handleSaveClient}
         isSaved={savedClients.some((s) => s.clientData.clientName === clientData?.clientName)}
         pdfLoading={pdfLoading}
+        userPlan={userPlan}
       />
       <TabNav active={activeTab} onChange={setActiveTab} />
       <main className="max-w-7xl mx-auto px-4 md:px-10 py-8">
