@@ -1,4 +1,4 @@
-// components/dashboard/TabIntelligence.tsx — Insights acionáveis por nicho
+// components/dashboard/TabIntelligence.tsx — Insights personalizados por IA
 'use client'
 
 import { useState } from 'react'
@@ -6,6 +6,7 @@ import { StatCard } from './StatCard'
 import { getNicheContent } from '@/lib/niche_content'
 import type { NicheInsight } from '@/lib/niche_content'
 import type { ClientData } from '@/lib/store'
+import { useAppStore } from '@/lib/store'
 
 interface Props {
   clientData: ClientData | null
@@ -17,7 +18,6 @@ function InsightCard({ insight, index }: { insight: NicheInsight; index: number 
 
   const handleApply = () => {
     if (!insight.steps) {
-      // Sem steps → copia o insight para clipboard como checklist
       const text = `📌 ${insight.title}\n${insight.description}`
       navigator.clipboard?.writeText(text).catch(() => {})
       setCopied(true)
@@ -43,7 +43,6 @@ function InsightCard({ insight, index }: { insight: NicheInsight; index: number 
         animationDelay: `${index * 0.08}s`,
       }}
     >
-      {/* Linha principal */}
       <div className="p-5 flex items-start gap-4">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
@@ -79,7 +78,6 @@ function InsightCard({ insight, index }: { insight: NicheInsight; index: number 
         </div>
       </div>
 
-      {/* Accordion de passos */}
       {expanded && insight.steps && (
         <div
           className="px-5 pb-5 pt-0"
@@ -104,7 +102,6 @@ function InsightCard({ insight, index }: { insight: NicheInsight; index: number 
               ))}
             </div>
 
-            {/* Botão copiar checklist */}
             <button
               onClick={handleCopyChecklist}
               className="mt-4 flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg transition-all hover:opacity-80"
@@ -124,18 +121,74 @@ function InsightCard({ insight, index }: { insight: NicheInsight; index: number 
 }
 
 export function TabIntelligence({ clientData }: Props) {
-  const content  = getNicheContent(clientData?.niche || '')
-  const insights = content.insights
-  const withSteps = insights.filter((i) => i.steps).length
+  const { strategyData, campaignHistory } = useAppStore()
+  const [aiInsights, setAiInsights] = useState<NicheInsight[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [source, setSource] = useState<'static' | 'ai'>('static')
+
+  const staticContent = getNicheContent(clientData?.niche || '')
+  const displayInsights = source === 'ai' && aiInsights ? aiInsights : staticContent.insights
+  const withSteps = displayInsights.filter((i) => i.steps).length
+
+  const handleGenerate = async () => {
+    if (!clientData) return
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/intelligence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName: clientData.clientName,
+          niche: clientData.niche,
+          budget: clientData.budget,
+          objective: clientData.objective,
+          currentCPL: clientData.currentCPL,
+          mainChallenge: clientData.mainChallenge,
+          strategy: strategyData?.strategy,
+          campaignHistory,
+        }),
+      })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      setAiInsights(json.insights)
+      setSource('ai')
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const stats = [
-    { label: 'Insights do nicho',    value: String(insights.length), color: '#F0B429' },
-    { label: 'Com passo a passo',    value: String(withSteps),        color: '#22C55E' },
-    { label: 'Impacto potencial',    value: '+32%',                   color: '#A78BFA' },
+    { label: 'Insights disponíveis', value: String(displayInsights.length), color: '#F0B429' },
+    { label: 'Com passo a passo',   value: String(withSteps),               color: '#22C55E' },
+    { label: 'Fonte',               value: source === 'ai' ? 'IA' : 'Nicho', color: '#A78BFA' },
   ]
 
   return (
     <div className="space-y-6">
+      {/* Header + botão */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="font-display text-2xl font-bold text-white mb-1">Inteligência de Mercado</h2>
+          <p className="text-slate-500 text-sm">
+            {source === 'ai'
+              ? 'Insights gerados pela IA com base nos dados específicos deste cliente.'
+              : 'Insights do nicho. Clique em "Gerar com IA" para personalizar ao máximo.'}
+          </p>
+        </div>
+        <button
+          onClick={handleGenerate}
+          disabled={loading || !clientData}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
+          style={{ background: 'linear-gradient(135deg, #A78BFA, #7C3AED)', color: '#fff' }}
+        >
+          {loading ? '🧠 Gerando...' : source === 'ai' ? '🔄 Regerar com IA' : '🧠 Gerar com IA'}
+        </button>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4">
         {stats.map((s, i) => (
@@ -143,28 +196,58 @@ export function TabIntelligence({ clientData }: Props) {
         ))}
       </div>
 
-      {/* Badge do nicho */}
+      {/* Badge do nicho + fonte */}
       {clientData?.niche && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-500">Insights para o nicho:</span>
+        <div className="flex items-center gap-2 text-xs flex-wrap">
+          <span className="text-slate-500">Insights para:</span>
           <span className="px-3 py-1 rounded-full font-semibold"
             style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.25)' }}>
             {clientData.niche}
           </span>
+          {source === 'ai' && (
+            <span className="px-3 py-1 rounded-full font-semibold"
+              style={{ background: 'rgba(167,139,250,0.1)', color: '#A78BFA', border: '1px solid rgba(167,139,250,0.25)' }}>
+              ✨ Personalizado por IA
+            </span>
+          )}
           {withSteps > 0 && (
             <span className="text-slate-600 text-[11px]">
-              · {withSteps} com passo a passo — clique em "Como aplicar →"
+              · {withSteps} com passo a passo
             </span>
           )}
         </div>
       )}
 
+      {error && (
+        <div className="bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">{error}</div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="space-y-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 animate-pulse">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[#1E1E24]" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-[#1E1E24] rounded w-3/4" />
+                  <div className="h-3 bg-[#1E1E24] rounded w-full" />
+                  <div className="h-3 bg-[#1E1E24] rounded w-1/3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Lista de insights */}
-      <div className="space-y-3">
-        {insights.map((insight, i) => (
-          <InsightCard key={insight.title} insight={insight} index={i} />
-        ))}
-      </div>
+      {!loading && (
+        <div className="space-y-3">
+          {displayInsights.map((insight, i) => (
+            <InsightCard key={`${source}-${insight.title}`} insight={insight} index={i} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

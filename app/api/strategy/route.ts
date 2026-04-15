@@ -45,10 +45,20 @@ function buildFallbackStrategy(data: {
     }
   })
 
+  // Score dinâmico baseado em budget vs benchmark e CPL atual
+  const budgetScore = Math.min(40, Math.round((budgetRatio * 40)))
+  const cplScore = data.currentCPL
+    ? data.currentCPL <= bench.cpl_min ? 30 : data.currentCPL <= bench.cpl_max ? 20 : 10
+    : 20
+  const historyScore = 10 // sem histórico ainda
+  const objectiveScore = data.objective?.toLowerCase().includes('escal') ? 10 : 8
+  const dynamicScore = Math.min(98, Math.max(40, budgetScore + cplScore + historyScore + objectiveScore))
+  const scoreLabel = dynamicScore >= 85 ? 'Excelente' : dynamicScore >= 70 ? 'Boa' : dynamicScore >= 55 ? 'Regular' : 'Básica'
+
   return {
     // ── Score ──
-    intelligence_score: 74,
-    score_label: 'Boa',
+    intelligence_score: dynamicScore,
+    score_label: scoreLabel,
     recommendation: `Com R$${data.budget.toLocaleString('pt-BR')}/mês no nicho ${data.niche}, a projeção é de ${leads} leads/mês a CPL médio de R$${cplAvg}. Canal principal recomendado: ${channels[0]}. ROAS estimado: ${roas}×.`,
     estimated_monthly_revenue_range: `R$${Math.round(revenue * 0.8 / 1000)}k–${Math.round(revenue * 1.2 / 1000)}k`,
     regulatory_alerts: [],
@@ -405,7 +415,7 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
 }`
 
         const message = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          model: 'claude-sonnet-4-6',
           max_tokens: 4000,
           messages: [{ role: 'user', content: prompt }],
         })

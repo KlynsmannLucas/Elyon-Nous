@@ -120,8 +120,8 @@ Responda APENAS com JSON válido:
 }`
 
         const message = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1800,
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
           messages: [{ role: 'user', content: prompt }],
         })
 
