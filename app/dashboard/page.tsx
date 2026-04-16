@@ -439,14 +439,17 @@ export default function DashboardPage() {
     setPdfLoading(true)
     try {
       const { generatePDF } = await import('@/components/pdf/RelatorioPDF')
-      await generatePDF()
+      await generatePDF({
+        clientData: clientData ?? null,
+        strategy: strategyData?.strategy || {},
+      })
     } catch (e) {
       console.error('Erro PDF:', e)
       alert('Não foi possível gerar o PDF. Tente novamente.')
     } finally {
       setPdfLoading(false)
     }
-  }, [])
+  }, [clientData, strategyData])
 
   const handleReset = () => {
     clearAll()

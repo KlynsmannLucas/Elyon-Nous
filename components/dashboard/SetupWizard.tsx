@@ -495,7 +495,7 @@ export function SetupWizard({ onComplete }: Props) {
               <label className="text-xs text-slate-400 uppercase tracking-wider mb-2 block">
                 Faturamento atual (opcional — melhora a análise)
               </label>
-              <div className="relative">
+              <div className="relative mb-2">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">R$</span>
                 <input
                   type="number"
@@ -505,6 +505,33 @@ export function SetupWizard({ onComplete }: Props) {
                   value={form.monthlyRevenue}
                   onChange={(e) => update('monthlyRevenue', e.target.value)}
                 />
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: '10k',  value: '10000' },
+                  { label: '30k',  value: '30000' },
+                  { label: '50k',  value: '50000' },
+                  { label: '100k', value: '100000' },
+                  { label: '250k', value: '250000' },
+                  { label: '500k', value: '500000' },
+                  { label: '1M',   value: '1000000' },
+                  { label: '3M',   value: '3000000' },
+                  { label: '5M+',  value: '5000000' },
+                ].map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => update('monthlyRevenue', p.value)}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                    style={{
+                      background: form.monthlyRevenue === p.value ? 'rgba(240,180,41,0.15)' : '#111114',
+                      border: form.monthlyRevenue === p.value ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
+                      color: form.monthlyRevenue === p.value ? '#F0B429' : '#64748B',
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
               </div>
             </div>
 

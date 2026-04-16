@@ -7,6 +7,30 @@ import { fetchRealtimeBenchmarks } from '@/lib/tavily'
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
+// CPL relativo por canal — multiplicadores sobre a média do nicho
+const CHANNEL_CPL_MULT: Record<string, number> = {
+  'Meta Ads':       1.00,
+  'Facebook Ads':   1.00,
+  'Instagram Ads':  1.10,
+  'Google Ads':     1.35,
+  'Google Search':  1.40,
+  'Google PMAX':    1.20,
+  'YouTube Ads':    0.85,
+  'TikTok Ads':     0.90,
+  'Pinterest Ads':  0.80,
+  'LinkedIn Ads':   2.20,
+  'WhatsApp':       0.55,
+}
+
+function channelCPL(channel: string, cplAvg: number) {
+  const mult = CHANNEL_CPL_MULT[channel] ?? 1.0
+  return {
+    cpl_min: Math.round(cplAvg * mult * 0.80),
+    cpl_max: Math.round(cplAvg * mult * 1.20),
+    cpl_avg: Math.round(cplAvg * mult),
+  }
+}
+
 // ── Fallback completo gerado a partir dos benchmarks ────────────────────────────
 function buildFallbackStrategy(data: {
   clientName: string; niche: string; products: string[]
@@ -29,21 +53,22 @@ function buildFallbackStrategy(data: {
   const priority_ranking = channels.map((ch, i) => {
     const pct      = pcts[i] ?? 10
     const chBudget = Math.round(data.budget * pct / 100)
-    const chLeads  = Math.round(chBudget / cplAvg)
+    const chCPL    = channelCPL(ch, cplAvg)
+    const chLeads  = Math.round(chBudget / chCPL.cpl_avg)
     return {
       channel: ch,
       priority: i + 1,
       budget_pct: pct,
       budget_brl: chBudget,
-      cpl_min:    bench.cpl_min,
-      cpl_max:    bench.cpl_max,
-      cpl_avg:    cplAvg,
+      cpl_min:    chCPL.cpl_min,
+      cpl_max:    chCPL.cpl_max,
+      cpl_avg:    chCPL.cpl_avg,
       leads_min:  Math.round(chLeads * 0.8),
       leads_max:  Math.round(chLeads * 1.2),
-      roi_range:  `${Math.round((roas - 1) * 100 * 0.8)}%–${Math.round((roas - 1) * 100 * 1.2)}%`,
+      roi_range:  `${Math.round((chBudget > 0 ? (chLeads * bench.cvr_lead_to_sale * bench.avg_ticket / chBudget - 1) * 100 * 0.8 : 0))}%–${Math.round((chBudget > 0 ? (chLeads * bench.cvr_lead_to_sale * bench.avg_ticket / chBudget - 1) * 100 * 1.2 : 0))}%`,
       revenue_min: Math.round(chLeads * 0.8 * bench.cvr_lead_to_sale * bench.avg_ticket),
       revenue_max: Math.round(chLeads * 1.2 * bench.cvr_lead_to_sale * bench.avg_ticket),
-      rationale: `Canal prioritário para ${data.niche} com CPL histórico de R$${bench.cpl_min}–${bench.cpl_max}`,
+      rationale: `Canal prioritário para ${data.niche} com CPL estimado de R$${chCPL.cpl_min}–${chCPL.cpl_max}`,
     }
   })
 
@@ -359,14 +384,14 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
   "key_actions": ["<ação prioritária 1>", "<ação 2>", "<ação 3>", "<ação 4>", "<ação 5>"]
 }`
 
-      // Race: IA vs timeout de 7s (garante resposta antes do limite do Vercel)
+      // Race: IA com até 20s — SSE keepalive mantém conexão aberta, fallback só se AI realmente falhar
       const aiResult = await Promise.race([
         anthropic.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 3000,
+          max_tokens: 3500,
           messages: [{ role: 'user', content: prompt }],
         }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 7000)),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20000)),
       ])
 
       if (!aiResult) throw new Error('AI timeout — usando benchmark')

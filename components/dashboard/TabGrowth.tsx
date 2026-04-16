@@ -38,43 +38,63 @@ export function TabGrowth({ analysis, clientData }: Props) {
   const content = getNicheContent(niche)
   const hasAIData = analysis && analysis.priority_ranking?.length > 0
 
-  // Cenários baseados em dados reais do nicho
+  // Cenários baseados no budget do cliente (não nos limites do benchmark)
   const scenarios = (() => {
     if (proj && bench) {
-      const conserv = {
-        name: 'Conservador',
-        budget: `R$${bench.budget_floor.toLocaleString('pt-BR')}/mês`,
-        budgetNum: bench.budget_floor,
-        leads: String(Math.round(bench.budget_floor / ((bench.cpl_min + bench.cpl_max) / 2))),
-        revenue: `R$${Math.round(Math.round(bench.budget_floor / ((bench.cpl_min + bench.cpl_max) / 2)) * bench.cvr_lead_to_sale * bench.avg_ticket / 1000)}k`,
-        roas: +((Math.round(bench.budget_floor / ((bench.cpl_min + bench.cpl_max) / 2)) * bench.cvr_lead_to_sale * bench.avg_ticket) / bench.budget_floor).toFixed(1),
-        recommended: false,
-        color: '#94A3B8',
-        description: 'Budget mínimo para o nicho',
-      }
-      const base = {
-        name: 'Recomendado',
-        budget: `R$${bench.budget_ideal.toLocaleString('pt-BR')}/mês`,
-        budgetNum: bench.budget_ideal,
-        leads: String(Math.round(bench.budget_ideal / ((bench.cpl_min + bench.cpl_max) / 2))),
-        revenue: `R$${Math.round(Math.round(bench.budget_ideal / ((bench.cpl_min + bench.cpl_max) / 2)) * bench.cvr_lead_to_sale * bench.avg_ticket / 1000)}k`,
-        roas: +((Math.round(bench.budget_ideal / ((bench.cpl_min + bench.cpl_max) / 2)) * bench.cvr_lead_to_sale * bench.avg_ticket) / bench.budget_ideal).toFixed(1),
-        recommended: true,
-        color: '#F0B429',
-        description: 'Resultado consistente e previsível',
-      }
-      const agressivo = {
-        name: 'Agressivo',
-        budget: `R$${(bench.budget_ideal * 2.2).toLocaleString('pt-BR')}/mês`,
-        budgetNum: Math.round(bench.budget_ideal * 2.2),
-        leads: String(Math.round(bench.budget_ideal * 2.2 / ((bench.cpl_min + bench.cpl_max) / 2))),
-        revenue: `R$${Math.round(Math.round(bench.budget_ideal * 2.2 / ((bench.cpl_min + bench.cpl_max) / 2)) * bench.cvr_lead_to_sale * bench.avg_ticket / 1000)}k`,
-        roas: +((Math.round(bench.budget_ideal * 2.2 / ((bench.cpl_min + bench.cpl_max) / 2)) * bench.cvr_lead_to_sale * bench.avg_ticket) / (bench.budget_ideal * 2.2)).toFixed(1),
-        recommended: false,
-        color: '#22C55E',
-        description: 'Escala máxima e dominância',
-      }
-      return [conserv, base, agressivo]
+      const cplAvg = (bench.cpl_min + bench.cpl_max) / 2
+      // Base = budget real do cliente; conservador = 50%; agressivo = 2x
+      const baseNum   = budget > 0 ? budget : bench.budget_ideal
+      const conservNum = Math.max(bench.budget_floor, Math.round(baseNum * 0.5))
+      const agresNum   = Math.round(baseNum * 2)
+
+      const makeScenario = (b: number) => ({
+        leads: Math.round(b / cplAvg),
+        revenue: Math.round((Math.round(b / cplAvg)) * bench.cvr_lead_to_sale * bench.avg_ticket),
+        roas: +((Math.round(b / cplAvg) * bench.cvr_lead_to_sale * bench.avg_ticket) / b).toFixed(1),
+      })
+
+      const c = makeScenario(conservNum)
+      const r = makeScenario(baseNum)
+      const a = makeScenario(agresNum)
+
+      const fmt = (n: number) =>
+        n >= 1_000_000 ? `R$${(n / 1_000_000).toFixed(1)}M` : `R$${Math.round(n / 1000)}k`
+
+      return [
+        {
+          name: 'Conservador',
+          budget: `R$${conservNum.toLocaleString('pt-BR')}/mês`,
+          budgetNum: conservNum,
+          leads: String(c.leads),
+          revenue: fmt(c.revenue),
+          roas: c.roas,
+          recommended: false,
+          color: '#94A3B8',
+          description: budget > 0 ? '50% do budget atual' : 'Budget mínimo para o nicho',
+        },
+        {
+          name: 'Recomendado',
+          budget: `R$${baseNum.toLocaleString('pt-BR')}/mês`,
+          budgetNum: baseNum,
+          leads: String(r.leads),
+          revenue: fmt(r.revenue),
+          roas: r.roas,
+          recommended: true,
+          color: '#F0B429',
+          description: budget > 0 ? 'Budget atual do cliente' : 'Resultado consistente e previsível',
+        },
+        {
+          name: 'Agressivo',
+          budget: `R$${agresNum.toLocaleString('pt-BR')}/mês`,
+          budgetNum: agresNum,
+          leads: String(a.leads),
+          revenue: fmt(a.revenue),
+          roas: a.roas,
+          recommended: false,
+          color: '#22C55E',
+          description: budget > 0 ? '2× o budget atual — escala máxima' : 'Escala máxima e dominância',
+        },
+      ]
     }
     return growthData.scenarios.map((s) => ({ ...s, budgetNum: 0, description: '' }))
   })()
