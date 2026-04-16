@@ -16,15 +16,17 @@ import { TabDiagnostic }   from '@/components/dashboard/TabDiagnostic'
 import { TabMetrics }      from '@/components/dashboard/TabMetrics'
 import { TabHistory }     from '@/components/dashboard/TabHistory'
 import { TabConnections } from '@/components/dashboard/TabConnections'
+import { TabAuditoria }  from '@/components/dashboard/TabAuditoria'
 import { NousChat }       from '@/components/dashboard/NousChat'
 
-type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'metrics' | 'history' | 'connections'
+type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'metrics' | 'history' | 'connections' | 'auditoria'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'overview',     label: 'Overview',     icon: '🏠' },
   { key: 'strategy',     label: 'Estratégia',   icon: '⚡' },
   { key: 'diagnostic',   label: 'Diagnóstico',  icon: '🎯' },
   { key: 'intelligence', label: 'Inteligência', icon: '🧠' },
+  { key: 'auditoria',    label: 'Auditoria',    icon: '🔍' },
   { key: 'audiences',    label: 'Audiências',   icon: '👥' },
   { key: 'growth',       label: 'Crescimento',  icon: '📈' },
   { key: 'performance',  label: 'Performance',  icon: '📊' },
@@ -448,6 +450,7 @@ export default function DashboardPage() {
       case 'metrics':      return <TabMetrics clientData={clientData} />
       case 'history':      return <TabHistory />
       case 'connections':  return <TabConnections />
+      case 'auditoria':    return <TabAuditoria clientData={clientData} />
     }
   }
 

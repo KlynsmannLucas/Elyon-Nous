@@ -743,6 +743,7 @@ const CONTENT_KEY_MAP: Record<string, string> = {
   consultoria: 'consultoria', coach: 'consultoria',
   restaurante: 'restaurante', food: 'restaurante', pizzaria: 'restaurante', lanchonete: 'restaurante',
   'construç': 'construcao', construcao: 'construcao', reforma: 'construcao', engenharia: 'construcao',
+  fisioterapia: 'saude', fisioterapeuta: 'saude',
   psicolog: 'psicologia', terapia: 'psicologia',
   'nutriç': 'nutricao', nutric: 'nutricao', nutricionista: 'nutricao',
   pet: 'pet', veterinário: 'pet', veterinario: 'pet',

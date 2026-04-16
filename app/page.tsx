@@ -362,7 +362,7 @@ export default function LandingPage() {
               </div>
               <div>
                 <div className="text-xs text-[#F0B429] font-semibold uppercase tracking-wider">HEAD OF GROWTH</div>
-                <h3 className="font-display font-bold text-white">Diagnóstico TOFU / MOFU / BOFU</h3>
+                <h3 className="font-display font-bold text-white">Diagnóstico Estratégico</h3>
               </div>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed mb-4">

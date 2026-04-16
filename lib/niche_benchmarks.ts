@@ -634,6 +634,7 @@ const KEY_MAP: Record<string, string> = {
   'construção': 'construcao', construcao: 'construcao', reforma: 'construcao',
   engenharia: 'construcao', arquitetura: 'construcao',
   moda: 'moda', 'vestuário': 'moda', vestuario: 'moda', roupas: 'moda', roupa: 'moda',
+  fisioterapia: 'saude', fisioterapeuta: 'saude',
   'psicolog': 'psicologia', terapia: 'psicologia', terapeuta: 'psicologia',
   'nutriç': 'nutricao', nutric: 'nutricao', nutricionista: 'nutricao', dieta: 'nutricao',
   eventos: 'eventos', evento: 'eventos', festa: 'eventos', casamento: 'eventos',
