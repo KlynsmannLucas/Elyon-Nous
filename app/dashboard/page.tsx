@@ -18,6 +18,7 @@ import { TabHistory }     from '@/components/dashboard/TabHistory'
 import { TabConnections } from '@/components/dashboard/TabConnections'
 import { TabAuditoria }  from '@/components/dashboard/TabAuditoria'
 import { NousChat }       from '@/components/dashboard/NousChat'
+import { getPlanLimits, hasActivePlan, UPGRADE_MESSAGES } from '@/lib/planUtils'
 
 type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'metrics' | 'history' | 'connections' | 'auditoria'
 
@@ -233,11 +234,15 @@ function ClientSelector({
   onSelect,
   onNew,
   onDelete,
+  clientLimitReached,
+  maxClients,
 }: {
   savedClients: SavedClient[]
   onSelect: (id: string) => void
   onNew: () => void
   onDelete: (id: string) => void
+  clientLimitReached?: boolean
+  maxClients?: number
 }) {
   const getNicheIcon = (niche: string) => {
     const n = niche.toLowerCase()
@@ -327,10 +332,21 @@ function ClientSelector({
         {/* Criar novo cliente */}
         <button
           onClick={onNew}
-          className="w-full flex items-center justify-center gap-3 border border-dashed border-[#2A2A30] rounded-2xl p-5 text-slate-500 hover:border-[rgba(240,180,41,0.4)] hover:text-[#F0B429] transition-all"
+          className="w-full flex items-center justify-center gap-3 border border-dashed rounded-2xl p-5 transition-all"
+          style={clientLimitReached
+            ? { borderColor: 'rgba(255,77,77,0.3)', color: '#FF4D4D', cursor: 'not-allowed', opacity: 0.7 }
+            : { borderColor: '#2A2A30', color: '#64748B' }
+          }
         >
-          <span className="text-xl">+</span>
-          <span className="text-sm font-semibold">Novo cliente</span>
+          <span className="text-xl">{clientLimitReached ? '🔒' : '+'}</span>
+          <div className="text-left">
+            <span className="text-sm font-semibold block">
+              {clientLimitReached ? `Limite atingido (${maxClients} cliente${maxClients !== 1 ? 's' : ''})` : 'Novo cliente'}
+            </span>
+            {clientLimitReached && (
+              <span className="text-xs opacity-70">Faça upgrade para adicionar mais →</span>
+            )}
+          </div>
         </button>
       </div>
     </div>
@@ -339,8 +355,9 @@ function ClientSelector({
 
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { user } = useUser()
-  const userPlan = user?.publicMetadata?.plan as string | undefined
+  const { user, isLoaded } = useUser()
+  const userPlan  = user?.publicMetadata?.plan as string | undefined
+  const planLimits = getPlanLimits(userPlan)
 
   const {
     clientData, strategyData, isGenerating,
@@ -459,6 +476,27 @@ export default function DashboardPage() {
     setGenError('')
   }
 
+  function UpgradeGate({ feature }: { feature: keyof typeof UPGRADE_MESSAGES }) {
+    const msg = UPGRADE_MESSAGES[feature]
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="max-w-sm text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h3 className="font-display text-xl font-bold text-white mb-2">{msg.title}</h3>
+          <p className="text-slate-400 text-sm mb-6">{msg.description}</p>
+          <div className="text-xs text-[#F0B429] mb-4 font-semibold">
+            Disponível no plano {msg.requiredPlan}+
+          </div>
+          <a href="/#pricing"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-black text-sm hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
+            ⚡ Fazer upgrade
+          </a>
+        </div>
+      </div>
+    )
+  }
+
   function renderTab() {
     const strategy = strategyData?.strategy || {}
     const analysis = strategyData?.analysis || {}
@@ -473,19 +511,69 @@ export default function DashboardPage() {
       case 'performance':  return <TabPerformance clientData={clientData} />
       case 'metrics':      return <TabMetrics clientData={clientData} />
       case 'history':      return <TabHistory />
-      case 'connections':  return <TabConnections />
-      case 'auditoria':    return <TabAuditoria clientData={clientData} />
+      case 'connections':  return planLimits.hasConnections
+        ? <TabConnections />
+        : <UpgradeGate feature="connections" />
+      case 'auditoria':    return planLimits.hasAudit
+        ? <TabAuditoria clientData={clientData} />
+        : <UpgradeGate feature="audit" />
     }
+  }
+
+  // ── Sem plano ativo: mostra paywall ──
+  if (isLoaded && !hasActivePlan(userPlan)) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center">
+          <span className="font-display font-bold text-3xl mb-6 block" style={{
+            background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>
+            ELYON
+          </span>
+          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-8 mb-6">
+            <div className="text-4xl mb-4">🔒</div>
+            <h2 className="font-display text-2xl font-bold text-white mb-3">
+              Assine para continuar
+            </h2>
+            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+              O ELYON é uma plataforma por assinatura. Escolha o plano que melhor se encaixa no seu negócio para acessar estratégias com IA, diagnósticos e muito mais.
+            </p>
+            <a
+              href="/#pricing"
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-black text-base hover:opacity-90 transition-opacity"
+              style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
+            >
+              ⚡ Ver planos e preços
+            </a>
+          </div>
+          <p className="text-xs text-slate-600">
+            Já assinou?{' '}
+            <a href="/sign-in" className="text-[#F0B429] hover:underline">Faça login novamente</a>{' '}
+            para sincronizar sua assinatura.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   // ── Seletor de clientes ──
   if (view === 'selector') {
+    const atClientLimit = savedClients.length >= planLimits.maxClients
     return (
       <ClientSelector
         savedClients={savedClients}
         onSelect={handleSelectSaved}
-        onNew={() => { setView('wizard'); setWizardStep(0) }}
+        onNew={() => {
+          if (atClientLimit) {
+            alert(`Seu plano permite até ${planLimits.maxClients} cliente${planLimits.maxClients > 1 ? 's' : ''}. Faça upgrade para adicionar mais.`)
+            return
+          }
+          setView('wizard'); setWizardStep(0)
+        }}
         onDelete={deleteSavedClient}
+        clientLimitReached={atClientLimit}
+        maxClients={planLimits.maxClients}
       />
     )
   }

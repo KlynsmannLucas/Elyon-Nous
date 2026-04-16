@@ -1,5 +1,6 @@
 // app/api/nous/route.ts — IA NOUS: assistente estratégica por nicho com fallback
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
 
 // Resposta inteligente usando os dados reais do cliente extraídos do context
@@ -75,6 +76,13 @@ function buildLocalReply(message: string, context: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const { userId, sessionClaims } = await auth()
+  if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
+  const plan = (sessionClaims?.publicMetadata as any)?.plan as string | undefined
+  if (!plan || plan === 'free') {
+    return NextResponse.json({ success: false, error: 'Assinatura necessária.' }, { status: 402 })
+  }
+
   try {
     const { message, context, history, niche, city } = await req.json()
 

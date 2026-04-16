@@ -1,5 +1,6 @@
 // app/api/strategy/route.ts — Head de Growth: diagnóstico completo + funil + 360°
 import { NextRequest } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { buildNichePromptContext } from '@/lib/niche_prompts'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
@@ -419,6 +420,19 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
 
 // ── POST com streaming (keepalive a cada 3s → Vercel Hobby suporta até 60s) ─────
 export async function POST(req: NextRequest) {
+  // Verificação de plano ativo
+  const { userId, sessionClaims } = await auth()
+  if (!userId) {
+    return new Response('Não autenticado', { status: 401 })
+  }
+  const plan = (sessionClaims?.publicMetadata as any)?.plan as string | undefined
+  if (!plan || plan === 'free') {
+    return new Response(
+      `data: ${JSON.stringify({ success: false, error: 'Assinatura necessária para gerar estratégias.' })}\n\n`,
+      { status: 402, headers: { 'Content-Type': 'text/event-stream' } }
+    )
+  }
+
   const body = await req.json()
   const encoder = new TextEncoder()
   let pingTimer: ReturnType<typeof setInterval> | null = null
