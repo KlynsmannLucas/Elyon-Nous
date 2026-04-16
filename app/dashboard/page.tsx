@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useUser, useClerk } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
 import { SetupWizard }    from '@/components/dashboard/SetupWizard'
@@ -356,8 +356,17 @@ function ClientSelector({
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
-  const userPlan  = user?.publicMetadata?.plan as string | undefined
+  const { signOut }        = useClerk()
+  const userPlan   = user?.publicMetadata?.plan as string | undefined
   const planLimits = getPlanLimits(userPlan)
+
+  // Trial de 7 dias — baseado no createdAt do Clerk
+  const TRIAL_DAYS = 7
+  const createdAt      = typeof user?.createdAt === 'number' ? user.createdAt : Date.now()
+  const trialMsLeft    = (createdAt + TRIAL_DAYS * 24 * 60 * 60 * 1000) - Date.now()
+  const inTrial        = trialMsLeft > 0
+  const trialDaysLeft  = Math.ceil(trialMsLeft / (24 * 60 * 60 * 1000))
+  const hasAccess      = hasActivePlan(userPlan) || inTrial
 
   const {
     clientData, strategyData, isGenerating,
@@ -520,8 +529,8 @@ export default function DashboardPage() {
     }
   }
 
-  // ── Sem plano ativo: mostra paywall ──
-  if (isLoaded && !hasActivePlan(userPlan)) {
+  // ── Sem acesso (trial expirado + sem plano): mostra paywall ──
+  if (isLoaded && !hasAccess) {
     return (
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
@@ -531,31 +540,61 @@ export default function DashboardPage() {
           }}>
             ELYON
           </span>
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-8 mb-6">
+          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-8 mb-4">
             <div className="text-4xl mb-4">🔒</div>
             <h2 className="font-display text-2xl font-bold text-white mb-3">
-              Assine para continuar
+              Seu período gratuito encerrou
             </h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-6">
-              O ELYON é uma plataforma por assinatura. Escolha o plano que melhor se encaixa no seu negócio para acessar estratégias com IA, diagnósticos e muito mais.
+              Você teve {TRIAL_DAYS} dias para explorar o ELYON. Assine agora para continuar gerando estratégias com IA, diagnósticos e relatórios para os seus clientes.
             </p>
             <a
               href="/#pricing"
-              className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-black text-base hover:opacity-90 transition-opacity"
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-black text-base hover:opacity-90 transition-opacity mb-3"
               style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
             >
-              ⚡ Ver planos e preços
+              ⚡ Ver planos e assinar
             </a>
+            <button
+              onClick={() => signOut({ redirectUrl: '/sign-in' })}
+              className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 border border-[#2A2A30] transition-colors"
+            >
+              Entrar com outra conta
+            </button>
           </div>
           <p className="text-xs text-slate-600">
             Já assinou?{' '}
-            <a href="/sign-in" className="text-[#F0B429] hover:underline">Faça login novamente</a>{' '}
+            <button
+              onClick={() => signOut({ redirectUrl: '/sign-in' })}
+              className="text-[#F0B429] hover:underline"
+            >
+              Saia e entre novamente
+            </button>{' '}
             para sincronizar sua assinatura.
           </p>
         </div>
       </div>
     )
   }
+
+  // ── Banner de trial ativo ──
+  const TrialBanner = inTrial && !hasActivePlan(userPlan) ? (
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 border-t border-[#2A2A30] bg-[#0A0A0B]/95 backdrop-blur-xl">
+      <div className="flex items-center gap-2 text-sm">
+        <span className="w-2 h-2 rounded-full bg-[#F0B429] animate-pulse" />
+        <span className="text-slate-400">
+          Avaliação gratuita · <strong className="text-[#F0B429]">{trialDaysLeft} dia{trialDaysLeft !== 1 ? 's' : ''} restante{trialDaysLeft !== 1 ? 's' : ''}</strong>
+        </span>
+      </div>
+      <a
+        href="/#pricing"
+        className="text-xs font-bold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+        style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
+      >
+        Assinar agora
+      </a>
+    </div>
+  ) : null
 
   // ── Seletor de clientes ──
   if (view === 'selector') {
@@ -636,7 +675,7 @@ export default function DashboardPage() {
 
   // ── Dashboard completo ──
   return (
-    <div className="min-h-screen bg-[#0A0A0B] animate-fade-in pt-[61px]">
+    <div className="min-h-screen bg-[#0A0A0B] animate-fade-in pt-[61px]" style={inTrial && !hasActivePlan(userPlan) ? { paddingBottom: '56px' } : {}}>
       <Header
         niche={clientData?.niche || ''}
         clientName={clientData?.clientName || ''}
@@ -658,6 +697,7 @@ export default function DashboardPage() {
         strategy={strategyData?.strategy || {}}
         campaignHistory={campaignHistory}
       />
+      {TrialBanner}
     </div>
   )
 }

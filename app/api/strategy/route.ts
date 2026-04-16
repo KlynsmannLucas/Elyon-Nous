@@ -269,18 +269,29 @@ async function runStrategy(body: any) {
 
   const bench         = getBenchmark(niche)
   const nicheContext  = buildNichePromptContext(niche, nicheDetails || {})
+
+  // Tavily roda em paralelo — não bloqueia a IA (apenas enriquece se chegar a tempo)
   const realtimeDataPromise = fetchRealtimeBenchmarks(niche, city)
+    .catch(() => '')
+    .then((v) => v || '')
 
   const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    console.warn('ANTHROPIC_API_KEY não configurado — usando fallback de benchmark')
+  }
+
   if (apiKey && bench) {
     try {
       const { default: Anthropic } = await import('@anthropic-ai/sdk')
       const anthropic        = new Anthropic({ apiKey })
       const benchmarkSection = getBenchmarkSummary(niche)
-      // Tavily com timeout curto para não estourar o limite da função
-      const realtimeData = await Promise.race([
-        realtimeDataPromise,
-        new Promise<string>((resolve) => setTimeout(() => resolve(''), 3000)),
+
+      // Tavily e IA em paralelo: IA tem até 23s; Tavily só é incluída se chegar em até 2s
+      const [realtimeData] = await Promise.all([
+        Promise.race([
+          realtimeDataPromise,
+          new Promise<string>((resolve) => setTimeout(() => resolve(''), 2000)),
+        ]),
       ])
 
       const prompt = `Você é um Head de Growth altamente experiente, especializado em marketing digital, aquisição de clientes e tomada de decisão orientada por dados no mercado brasileiro.
@@ -385,14 +396,14 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
   "key_actions": ["<ação prioritária 1>", "<ação 2>", "<ação 3>", "<ação 4>", "<ação 5>"]
 }`
 
-      // Race: IA com até 20s — SSE keepalive mantém conexão aberta, fallback só se AI realmente falhar
+      // IA com 23s — Tavily já rodou em paralelo (2s max), SSE keepalive mantém conexão
       const aiResult = await Promise.race([
         anthropic.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 3500,
+          max_tokens: 4000,
           messages: [{ role: 'user', content: prompt }],
         }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20000)),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 23000)),
       ])
 
       if (!aiResult) throw new Error('AI timeout — usando benchmark')
