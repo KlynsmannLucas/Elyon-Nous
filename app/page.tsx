@@ -680,8 +680,8 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex-shrink-0 text-right">
-              <div className="font-display text-3xl font-bold text-[#F0B429]">R$1.500</div>
-              <div className="text-xs text-slate-500">até R$3.000 · por projeto</div>
+              <div className="font-display text-3xl font-bold text-[#F0B429]">R$3.000</div>
+              <div className="text-xs text-slate-500">por projeto</div>
               <Link href="/sign-up"
                 className="mt-3 inline-flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
                 style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}>
@@ -698,7 +698,7 @@ export default function LandingPage() {
                 bg: 'linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(56,189,248,0.03) 100%)',
                 title: 'Individual',
                 desc: 'Para donos de negócio e profissionais que querem direção contínua baseada em dados reais do mercado.',
-                price: 'R$97', priceEnd: 'até R$197/mês',
+                price: 'R$197', priceEnd: '/mês',
                 features: ['Estratégia atualizada mensalmente', 'Benchmarks por nicho', 'NOUS IA contextual', 'Histórico de campanhas', 'Conexão Meta Ads'],
                 highlight: false,
                 cta: 'Começar agora →',
@@ -709,7 +709,7 @@ export default function LandingPage() {
                 bg: 'linear-gradient(135deg, rgba(240,180,41,0.12) 0%, rgba(240,180,41,0.05) 100%)',
                 title: 'Profissional',
                 desc: 'Para gestores de tráfego e consultores que querem capacidade estratégica elevada e atender clientes com o sistema.',
-                price: 'R$297', priceEnd: 'até R$497/mês',
+                price: 'R$497', priceEnd: '/mês',
                 features: ['Tudo do Individual', 'Estratégias avançadas e múltiplos cenários', 'Diagnóstico como oferta para clientes', 'Conexão Meta + Google Ads', 'Suporte prioritário'],
                 highlight: true,
                 cta: 'Começar agora →',
@@ -720,7 +720,7 @@ export default function LandingPage() {
                 bg: 'linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.03) 100%)',
                 title: 'Avançada',
                 desc: 'Para agências e empresas que querem escalar atendimento com inteligência estratégica de alto nível.',
-                price: 'R$697', priceEnd: 'até R$1.497/mês',
+                price: 'R$1.497', priceEnd: '/mês',
                 features: ['Tudo do Profissional', 'Múltiplas contas e negócios', 'Comparação de mercado e performance', 'Leitura avançada de dados', 'Geração contínua de estratégias'],
                 highlight: false,
                 cta: 'Começar agora →',
@@ -797,7 +797,7 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex-shrink-0 text-right">
-              <div className="font-display text-3xl font-bold text-[#FF4D4D]">R$3.000</div>
+              <div className="font-display text-3xl font-bold text-[#FF4D4D]">R$5.000</div>
               <div className="text-xs text-slate-500">até R$15.000 · por projeto</div>
               <Link href="/sign-up"
                 className="mt-3 inline-flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
