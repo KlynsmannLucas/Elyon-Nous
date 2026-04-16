@@ -1,11 +1,25 @@
 // lib/stripe.ts — Stripe client e definições de planos
 import Stripe from 'stripe'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia',
-})
-
 export type PlanKey = 'individual' | 'profissional' | 'avancada'
+
+// Inicialização lazy — evita erro de build no Vercel quando env var não está disponível
+let _stripe: Stripe | null = null
+
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY não configurado')
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' })
+  }
+  return _stripe
+}
+
+// Mantém compatibilidade com código existente
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop) {
+    return (getStripe() as any)[prop]
+  },
+})
 
 export const PLANS: Record<PlanKey, {
   name: string
