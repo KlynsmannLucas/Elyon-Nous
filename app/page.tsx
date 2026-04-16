@@ -799,7 +799,6 @@ export default function LandingPage() {
             <div className="flex-shrink-0 text-right">
               <div className="text-xs text-slate-500 mb-1">a partir de</div>
               <div className="font-display text-3xl font-bold text-[#FF4D4D]">R$5.000</div>
-              <div className="text-xs text-slate-500">até R$15.000 · por projeto</div>
               <Link href="/sign-up"
                 className="mt-3 inline-flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
                 style={{ background: 'rgba(255,77,77,0.15)', border: '1px solid rgba(255,77,77,0.4)', color: '#FF4D4D' }}>
