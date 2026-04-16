@@ -797,6 +797,7 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex-shrink-0 text-right">
+              <div className="text-xs text-slate-500 mb-1">a partir de</div>
               <div className="font-display text-3xl font-bold text-[#FF4D4D]">R$5.000</div>
               <div className="text-xs text-slate-500">até R$15.000 · por projeto</div>
               <Link href="/sign-up"
