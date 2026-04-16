@@ -373,7 +373,7 @@ export default function DashboardPage() {
 
     try {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 55000) // 55s timeout
+      const timeout = setTimeout(() => controller.abort(), 58000)
       const res = await fetch('/api/strategy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -381,8 +381,29 @@ export default function DashboardPage() {
         signal: controller.signal,
       })
       clearTimeout(timeout)
-      const json = await res.json()
 
+      // Lê stream SSE (keepalive + resultado final)
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let json: any = null
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        for (let i = 0; i < lines.length - 1; i++) {
+          const line = lines[i].trim()
+          if (line.startsWith('data: ')) {
+            json = JSON.parse(line.slice(6))
+          }
+        }
+        buffer = lines[lines.length - 1]
+        if (json) break
+      }
+
+      if (!json) throw new Error('Resposta vazia do servidor.')
       if (!json.success) throw new Error(json.error)
 
       setStrategyData({

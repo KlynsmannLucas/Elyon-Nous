@@ -1,10 +1,11 @@
 // app/api/strategy/route.ts — Head de Growth: diagnóstico completo + funil + 360°
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { buildNichePromptContext } from '@/lib/niche_prompts'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
 
-export const maxDuration = 60 // Vercel: até 60s para esta rota
+export const maxDuration = 60
+export const dynamic = 'force-dynamic'
 
 // ── Fallback completo gerado a partir dos benchmarks ────────────────────────────
 function buildFallbackStrategy(data: {
@@ -20,7 +21,6 @@ function buildFallbackStrategy(data: {
   const channels = bench.best_channels.slice(0, 4)
   const pcts     = [40, 30, 20, 10]
 
-  // Saúde do funil baseada em budget vs benchmark
   const budgetRatio = data.budget / bench.budget_ideal
   const tofuStatus  = budgetRatio >= 0.8 ? 'ok' : budgetRatio >= 0.5 ? 'atenção' : 'crítico'
   const mofuStatus  = bench.cvr_lead_to_sale >= 0.1 ? 'ok' : bench.cvr_lead_to_sale >= 0.05 ? 'atenção' : 'crítico'
@@ -47,25 +47,21 @@ function buildFallbackStrategy(data: {
     }
   })
 
-  // Score dinâmico baseado em budget vs benchmark e CPL atual
-  const budgetScore = Math.min(40, Math.round((budgetRatio * 40)))
-  const cplScore = data.currentCPL
+  const budgetScore    = Math.min(40, Math.round((budgetRatio * 40)))
+  const cplScore       = data.currentCPL
     ? data.currentCPL <= bench.cpl_min ? 30 : data.currentCPL <= bench.cpl_max ? 20 : 10
     : 20
-  const historyScore = 10 // sem histórico ainda
+  const historyScore   = 10
   const objectiveScore = data.objective?.toLowerCase().includes('escal') ? 10 : 8
-  const dynamicScore = Math.min(98, Math.max(40, budgetScore + cplScore + historyScore + objectiveScore))
-  const scoreLabel = dynamicScore >= 85 ? 'Excelente' : dynamicScore >= 70 ? 'Boa' : dynamicScore >= 55 ? 'Regular' : 'Básica'
+  const dynamicScore   = Math.min(98, Math.max(40, budgetScore + cplScore + historyScore + objectiveScore))
+  const scoreLabel     = dynamicScore >= 85 ? 'Excelente' : dynamicScore >= 70 ? 'Boa' : dynamicScore >= 55 ? 'Regular' : 'Básica'
 
   return {
-    // ── Score ──
     intelligence_score: dynamicScore,
     score_label: scoreLabel,
     recommendation: `Com R$${data.budget.toLocaleString('pt-BR')}/mês no nicho ${data.niche}, a projeção é de ${leads} leads/mês a CPL médio de R$${cplAvg}. Canal principal recomendado: ${channels[0]}. ROAS estimado: ${roas}×.`,
     estimated_monthly_revenue_range: `R$${Math.round(revenue * 0.8 / 1000)}k–${Math.round(revenue * 1.2 / 1000)}k`,
     regulatory_alerts: [],
-
-    // ── Diagnóstico de Crescimento ──
     growth_diagnosis: {
       main_problem: budgetRatio < 0.5
         ? `Budget de R$${data.budget.toLocaleString('pt-BR')} está abaixo do mínimo recomendado (R$${bench.budget_floor.toLocaleString('pt-BR')}) para o nicho ${data.niche} — impossível ter volume de leads consistente.`
@@ -83,13 +79,10 @@ function buildFallbackStrategy(data: {
       funnel_health: {
         tofu: {
           status: tofuStatus,
-          issue: tofuStatus === 'ok'
-            ? 'Volume de atração adequado para o budget'
-            : tofuStatus === 'atenção'
-            ? `Budget ${Math.round((1 - budgetRatio) * 100)}% abaixo do ideal — alcance limitado`
+          issue: tofuStatus === 'ok' ? 'Volume de atração adequado para o budget'
+            : tofuStatus === 'atenção' ? `Budget ${Math.round((1 - budgetRatio) * 100)}% abaixo do ideal — alcance limitado`
             : `Budget crítico — volume de leads insuficiente para testar e otimizar`,
-          action: tofuStatus === 'ok'
-            ? 'Manter e testar novos públicos lookalike'
+          action: tofuStatus === 'ok' ? 'Manter e testar novos públicos lookalike'
             : `Aumentar budget para R$${bench.budget_ideal.toLocaleString('pt-BR')} ou concentrar em 1 canal`,
         },
         mofu: {
@@ -101,15 +94,12 @@ function buildFallbackStrategy(data: {
         },
         bofu: {
           status: bofuStatus,
-          issue: bofuStatus === 'ok'
-            ? 'Conversão final alinhada com benchmark do nicho'
+          issue: bofuStatus === 'ok' ? 'Conversão final alinhada com benchmark do nicho'
             : 'Gap entre lead qualificado e fechamento — processo comercial precisa de otimização',
           action: 'Implementar CRM, script de objeções e contato em até 5 min após conversão',
         },
       },
     },
-
-    // ── Estratégia de Funil TOFU/MOFU/BOFU ──
     funnel_strategy: {
       tofu: {
         goal: `Gerar ${Math.round(leads * 1.2)}–${Math.round(leads * 1.5)} leads/mês qualificados a CPL abaixo de R$${bench.cpl_max}`,
@@ -140,8 +130,6 @@ function buildFallbackStrategy(data: {
         ],
       },
     },
-
-    // ── Otimização e Escala ──
     optimization_scale: {
       cpl_target: Math.round(bench.cpl_min * 1.1),
       scale_actions: [
@@ -152,7 +140,6 @@ function buildFallbackStrategy(data: {
       cut_immediately: [
         `Pausar qualquer grupo de anúncio com CPL acima de R$${bench.cpl_max} após 3+ dias de dados`,
         `Desativar criativos com CTR abaixo de 0.8% após 2.000 impressões`,
-        `Eliminar públicos de interesse sem histórico de conversão — focar em comportamento e lookalike`,
       ],
       ab_tests: [
         `Teste A/B de headline: pergunta vs. afirmação vs. prova social`,
@@ -161,8 +148,6 @@ function buildFallbackStrategy(data: {
         `Teste de landing page: longa (storytelling) vs. curta (oferta direta)`,
       ],
     },
-
-    // ── Posicionamento de Marca ──
     brand_positioning: {
       authority_strategies: [
         `Criar série de conteúdo educativo semanal posicionando como referência em ${data.niche} na região`,
@@ -172,7 +157,6 @@ function buildFallbackStrategy(data: {
       communication_adjustments: [
         `Linguagem de especialista, não de vendedor — educar antes de vender`,
         `Comunicação focada na transformação do cliente, não nas características do serviço`,
-        `Depoimentos em vídeo (30–60 segundos) são 3× mais persuasivos que texto`,
       ],
       value_perception: [
         `Posicionar o processo como diferencial — mostrar o "como" aumenta percepção de valor`,
@@ -180,8 +164,6 @@ function buildFallbackStrategy(data: {
         `Garantia ou política de resultado deixa claro o comprometimento e reduz objeção de preço`,
       ],
     },
-
-    // ── Visão 360° ──
     vision_360: {
       website_improvements: [
         `CTA principal acima da dobra — o visitante deve saber em 5 segundos o que fazer`,
@@ -199,15 +181,10 @@ function buildFallbackStrategy(data: {
         `Programa de indicação: cliente indica e ganha benefício — CPL próximo de zero`,
         `Parceria com influenciadores locais micro (5k–50k seguidores) para alcance orgânico`,
         `Google Meu Negócio otimizado: fotos, posts semanais, resposta a reviews — canal gratuito com alta intenção`,
-        `WhatsApp broadcast para base de leads não convertidos: reativação a custo zero`,
       ],
     },
-
-    // ── Canais ──
     priority_ranking,
     recommended_channels_names: channels,
-
-    // ── Plano 90 dias ──
     plan_90_days: [
       {
         month: 1,
@@ -232,45 +209,20 @@ function buildFallbackStrategy(data: {
       {
         month: 2,
         goal: 'Otimização de CPL e escala dos canais validados',
-        week_1: [
-          'Aumentar budget 20% nos canais com menor CPL',
-          'Lançar 3 novos criativos baseados nas objeções mapeadas no mês 1',
-        ],
-        week_2: [
-          'Expandir públicos lookalike (1%→2%→3%) nos canais vencedores',
-          'Ativar remarketing dinâmico para visitantes e leads não convertidos',
-        ],
-        week_3: [
-          'Teste A/B de landing page: versão atual vs nova versão com prova social',
-          'Ajustar lances por dispositivo (mobile tende a ter CPL menor em saúde/serviços)',
-        ],
-        week_4: [
-          'Relatório de performance mês 2: CPL, CVR, ROAS — comparar com benchmark do nicho',
-          'Planejamento detalhado mês 3 com foco em escala',
-        ],
+        week_1: ['Aumentar budget 20% nos canais com menor CPL', 'Lançar 3 novos criativos baseados nas objeções mapeadas no mês 1'],
+        week_2: ['Expandir públicos lookalike (1%→2%→3%) nos canais vencedores', 'Ativar remarketing dinâmico para visitantes e leads não convertidos'],
+        week_3: ['Teste A/B de landing page: versão atual vs nova versão com prova social', 'Ajustar lances por dispositivo (mobile tende a ter CPL menor em saúde/serviços)'],
+        week_4: ['Relatório de performance mês 2: CPL, CVR, ROAS — comparar com benchmark do nicho', 'Planejamento detalhado mês 3 com foco em escala'],
       },
       {
         month: 3,
         goal: 'Previsibilidade, escala e sistema de crescimento',
-        week_1: [
-          `Atingir CPL sustentável abaixo de R$${Math.round(cplAvg * 0.85)} (15% abaixo da média do nicho)`,
-          'Estruturar funil de reativação para leads de 30–60 dias sem conversão',
-        ],
-        week_2: [
-          'Escalar budget 20% nos canais validados — duplicar campanhas vencedoras',
-          'Lançar campanha de autoridade: conteúdo de prova social e resultados',
-        ],
-        week_3: [
-          'Automatizar relatório semanal: CPL, leads, conversões, ROAS',
-          'Implementar programa de indicação para clientes atuais',
-        ],
-        week_4: [
-          'Consolidar os 90 dias: benchmark antes vs depois, ROI do investimento em marketing',
-          'Definir estratégia do próximo trimestre com metas de escala',
-        ],
+        week_1: [`Atingir CPL sustentável abaixo de R$${Math.round(cplAvg * 0.85)} (15% abaixo da média do nicho)`, 'Estruturar funil de reativação para leads de 30–60 dias sem conversão'],
+        week_2: ['Escalar budget 20% nos canais validados — duplicar campanhas vencedoras', 'Lançar campanha de autoridade: conteúdo de prova social e resultados'],
+        week_3: ['Automatizar relatório semanal: CPL, leads, conversões, ROAS', 'Implementar programa de indicação para clientes atuais'],
+        week_4: ['Consolidar os 90 dias: benchmark antes vs depois, ROI do investimento em marketing', 'Definir estratégia do próximo trimestre com metas de escala'],
       },
     ],
-
     key_actions: [
       `Definir CPL máximo de R$${bench.cpl_max} como KPI de corte — pausar qualquer grupo acima disso imediatamente`,
       `Implementar contato em até 5 minutos após conversão — isso sozinho pode dobrar a taxa de fechamento`,
@@ -281,30 +233,27 @@ function buildFallbackStrategy(data: {
   }
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json()
-    const {
-      clientName, niche, products, budget, objective, monthlyRevenue,
-      nicheDetails, city, currentCPL, currentLeadSource, mainChallenge,
-      campaignHistory,
-    } = body
+// ── Lógica principal separada para streaming ────────────────────────────────────
+async function runStrategy(body: any) {
+  const {
+    clientName, niche, products, budget, objective, monthlyRevenue,
+    nicheDetails, city, currentCPL, currentLeadSource, mainChallenge,
+    campaignHistory,
+  } = body
 
-    const bench = getBenchmark(niche)
-    const nicheContext = buildNichePromptContext(niche, nicheDetails || {})
+  const bench         = getBenchmark(niche)
+  const nicheContext  = buildNichePromptContext(niche, nicheDetails || {})
+  const realtimeDataPromise = fetchRealtimeBenchmarks(niche, city)
 
-    // Busca dados de mercado em tempo real (roda em paralelo enquanto prepara o resto)
-    const realtimeDataPromise = fetchRealtimeBenchmarks(niche, city)
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (apiKey) {
+    try {
+      const { default: Anthropic } = await import('@anthropic-ai/sdk')
+      const anthropic      = new Anthropic({ apiKey })
+      const benchmarkSection = getBenchmarkSummary(niche)
+      const realtimeData   = await realtimeDataPromise
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
-    if (apiKey) {
-      try {
-        const { default: Anthropic } = await import('@anthropic-ai/sdk')
-        const anthropic = new Anthropic({ apiKey })
-        const benchmarkSection = getBenchmarkSummary(niche)
-        const realtimeData = await realtimeDataPromise
-
-        const prompt = `Você é um Head de Growth altamente experiente, especializado em marketing digital, aquisição de clientes e tomada de decisão orientada por dados no mercado brasileiro.
+      const prompt = `Você é um Head de Growth altamente experiente, especializado em marketing digital, aquisição de clientes e tomada de decisão orientada por dados no mercado brasileiro.
 
 Sua função não é apenas gerenciar campanhas. Você é responsável por:
 - Diagnosticar problemas de crescimento e gargalos no funil
@@ -358,19 +307,9 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
   },
 
   "funnel_strategy": {
-    "tofu": {
-      "goal": "<meta de topo de funil>",
-      "channels": ["<canal1>", "<canal2>"],
-      "tactics": ["<tática 1>", "<tática 2>", "<tática 3>", "<tática 4>"]
-    },
-    "mofu": {
-      "goal": "<meta de meio de funil>",
-      "tactics": ["<tática 1>", "<tática 2>", "<tática 3>"]
-    },
-    "bofu": {
-      "goal": "<meta de fundo de funil>",
-      "tactics": ["<tática 1>", "<tática 2>", "<tática 3>"]
-    }
+    "tofu": {"goal": "<meta>", "channels": ["<canal1>", "<canal2>"], "tactics": ["<tática 1>", "<tática 2>", "<tática 3>", "<tática 4>"]},
+    "mofu": {"goal": "<meta>", "tactics": ["<tática 1>", "<tática 2>", "<tática 3>"]},
+    "bofu": {"goal": "<meta>", "tactics": ["<tática 1>", "<tática 2>", "<tática 3>"]}
   },
 
   "optimization_scale": {
@@ -381,15 +320,15 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
   },
 
   "brand_positioning": {
-    "authority_strategies": ["<estratégia de autoridade 1>", "<estratégia 2>", "<estratégia 3>"],
-    "communication_adjustments": ["<ajuste de comunicação 1>", "<ajuste 2>"],
-    "value_perception": ["<ação de valor percebido 1>", "<ação 2>"]
+    "authority_strategies": ["<estratégia 1>", "<estratégia 2>", "<estratégia 3>"],
+    "communication_adjustments": ["<ajuste 1>", "<ajuste 2>"],
+    "value_perception": ["<ação 1>", "<ação 2>"]
   },
 
   "vision_360": {
-    "website_improvements": ["<melhoria de site/conversão 1>", "<melhoria 2>", "<melhoria 3>"],
-    "sales_alignment": ["<alinhamento marketing-vendas 1>", "<alinhamento 2>"],
-    "off_ads_opportunities": ["<oportunidade fora dos anúncios 1>", "<oportunidade 2>", "<oportunidade 3>"]
+    "website_improvements": ["<melhoria 1>", "<melhoria 2>", "<melhoria 3>"],
+    "sales_alignment": ["<alinhamento 1>", "<alinhamento 2>"],
+    "off_ads_opportunities": ["<oportunidade 1>", "<oportunidade 2>", "<oportunidade 3>"]
   },
 
   "priority_ranking": [
@@ -416,44 +355,67 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
   "key_actions": ["<ação prioritária 1>", "<ação 2>", "<ação 3>", "<ação 4>", "<ação 5>"]
 }`
 
-        const message = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 4000,
-          messages: [{ role: 'user', content: prompt }],
-        })
+      const message = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4000,
+        messages: [{ role: 'user', content: prompt }],
+      })
 
-        const raw = (message.content[0] as any).text.trim()
-        const jsonStr = raw.startsWith('```')
-          ? raw.split('```')[1].replace(/^json\n/, '')
-          : raw
+      const raw     = (message.content[0] as any).text.trim()
+      const jsonStr = raw.startsWith('```') ? raw.split('```')[1].replace(/^json\n/, '') : raw
+      const strategy = JSON.parse(jsonStr)
+      return { success: true, strategy, source: 'ai' }
 
-        const strategy = JSON.parse(jsonStr)
-        return NextResponse.json({ success: true, strategy, source: 'ai' })
-
-      } catch (aiError: any) {
-        console.warn('Anthropic API falhou, usando fallback de benchmark:', aiError.message)
-      }
+    } catch (aiError: any) {
+      console.warn('Anthropic API falhou, usando fallback de benchmark:', aiError.message)
     }
-
-    if (!bench) {
-      return NextResponse.json(
-        { success: false, error: 'Nicho não reconhecido e API indisponível.' },
-        { status: 400 }
-      )
-    }
-
-    const strategy = buildFallbackStrategy(
-      { clientName, niche, products, budget, objective, monthlyRevenue, currentCPL, currentLeadSource, mainChallenge },
-      bench
-    )
-
-    return NextResponse.json({ success: true, strategy, source: 'benchmark' })
-
-  } catch (error: any) {
-    console.error('Strategy route error:', error)
-    return NextResponse.json(
-      { success: false, error: error.message || 'Erro inesperado.' },
-      { status: 500 }
-    )
   }
+
+  if (!bench) {
+    return { success: false, error: 'Nicho não reconhecido e API indisponível.' }
+  }
+
+  const strategy = buildFallbackStrategy(
+    { clientName, niche, products, budget, objective, monthlyRevenue, currentCPL, currentLeadSource, mainChallenge },
+    bench
+  )
+  return { success: true, strategy, source: 'benchmark' }
+}
+
+// ── POST com streaming (keepalive a cada 3s → Vercel Hobby suporta até 60s) ─────
+export async function POST(req: NextRequest) {
+  const body = await req.json()
+  const encoder = new TextEncoder()
+  let pingTimer: ReturnType<typeof setInterval> | null = null
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      // Keepalive a cada 3s — mantém a conexão aberta no Vercel Hobby
+      pingTimer = setInterval(() => {
+        try { controller.enqueue(encoder.encode(': keepalive\n\n')) } catch {}
+      }, 3000)
+
+      try {
+        const result = await runStrategy(body)
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(result)}\n\n`))
+      } catch (err: any) {
+        console.error('Strategy stream error:', err)
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ success: false, error: err.message || 'Erro inesperado.' })}\n\n`))
+      } finally {
+        if (pingTimer) clearInterval(pingTimer)
+        controller.close()
+      }
+    },
+    cancel() {
+      if (pingTimer) clearInterval(pingTimer)
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  })
 }
