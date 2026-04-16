@@ -358,7 +358,6 @@ export default function DashboardPage() {
   const { user, isLoaded } = useUser()
   const { signOut }        = useClerk()
   const userPlan   = user?.publicMetadata?.plan as string | undefined
-  const planLimits = getPlanLimits(userPlan)
 
   // Trial de 7 dias — baseado no createdAt do Clerk
   const TRIAL_DAYS = 7
@@ -367,6 +366,10 @@ export default function DashboardPage() {
   const inTrial        = trialMsLeft > 0
   const trialDaysLeft  = Math.ceil(trialMsLeft / (24 * 60 * 60 * 1000))
   const hasAccess      = hasActivePlan(userPlan) || inTrial
+
+  // Durante trial sem plano, aplica limites do Individual
+  const effectivePlan = hasActivePlan(userPlan) ? userPlan : (inTrial ? 'individual' : 'free')
+  const planLimits    = getPlanLimits(effectivePlan)
 
   const {
     clientData, strategyData, isGenerating,
@@ -479,7 +482,8 @@ export default function DashboardPage() {
 
   const handleReset = () => {
     clearAll()
-    setView('selector')
+    // Se só tem 1 cliente salvo e já está no limite, vai direto pro seletor (não wizard vazio)
+    setView(savedClients.length > 0 ? 'selector' : 'wizard')
     setActiveTab('overview')
     setWizardStep(0)
     setGenError('')
