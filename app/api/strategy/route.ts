@@ -4,6 +4,8 @@ import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { buildNichePromptContext } from '@/lib/niche_prompts'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
 
+export const maxDuration = 60 // Vercel: até 60s para esta rota
+
 // ── Fallback completo gerado a partir dos benchmarks ────────────────────────────
 function buildFallbackStrategy(data: {
   clientName: string; niche: string; products: string[]

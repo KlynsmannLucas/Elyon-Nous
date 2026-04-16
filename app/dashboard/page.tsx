@@ -373,7 +373,7 @@ export default function DashboardPage() {
 
     try {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 30000) // 30s timeout
+      const timeout = setTimeout(() => controller.abort(), 55000) // 55s timeout
       const res = await fetch('/api/strategy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

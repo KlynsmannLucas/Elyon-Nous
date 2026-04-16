@@ -64,7 +64,7 @@ async function searchTavily(query: string, apiKey: string): Promise<string> {
       include_answer: true,
       max_results: 3,
     }),
-    signal: AbortSignal.timeout(8000), // 8s timeout por query
+    signal: AbortSignal.timeout(4000), // 4s timeout por query
   })
 
   if (!res.ok) return ''
