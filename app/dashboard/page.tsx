@@ -143,6 +143,17 @@ function Header({
         >
           {pdfLoading ? '⏳ Gerando...' : '↓ Exportar PDF'}
         </button>
+        {/* Perfil */}
+        <a
+          href="/perfil"
+          title="Meu perfil"
+          className="flex items-center justify-center w-8 h-8 rounded-xl border border-[#2A2A30] text-slate-600 hover:text-[#F0B429] hover:border-[#F0B429]/30 transition-all"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </a>
         {/* Botão de logout */}
         <button
           onClick={onSignOut}

@@ -90,15 +90,15 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         },
         {
           label: 'Leads / mês',
-          value: `${proj.leadsMin}–${proj.leadsMax}`,
-          sub: `CPL médio R$${Math.round(proj.cplAvg)} · nicho ${bench!.name}`,
+          value: `~${proj.leadsMonth.toLocaleString('pt-BR')}`,
+          sub: `Intervalo R$${Math.round(proj.cplAvg)} CPL · ${bench!.cpl_min}–${bench!.cpl_max} nicho`,
           color: '#22C55E',
         },
         {
           label: 'ROAS Estimado',
-          value: proj.roasIsLtvBased ? `${proj.roas}× → ${proj.roasLtv}×` : `${proj.roas}×`,
+          value: proj.roasIsLtvBased ? `${proj.roasLtv}×` : `${proj.roas}×`,
           sub: proj.roasIsLtvBased
-            ? `Campanha → LTV · Meta: ${bench!.kpi_thresholds.roas_good}×`
+            ? `Inclui LTV · campanha direta: ${proj.roas}× · Meta: ${bench!.kpi_thresholds.roas_good}×`
             : `Meta do nicho: ${bench!.kpi_thresholds.roas_good}×`,
           color: roasColor,
         },
