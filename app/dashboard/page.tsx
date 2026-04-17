@@ -419,7 +419,11 @@ function ClientSelector({
 
                   {/* Delete */}
                   <button
-                    onClick={() => onDelete(sc.id)}
+                    onClick={() => {
+                      if (window.confirm(`Remover "${sc.clientData.clientName}"?\n\nEsta ação não pode ser desfeita.`)) {
+                        onDelete(sc.id)
+                      }
+                    }}
                     className="text-slate-700 hover:text-[#FF4D4D] transition-colors text-lg flex-shrink-0 ml-1"
                     title="Remover cliente"
                   >
