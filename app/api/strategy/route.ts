@@ -431,17 +431,27 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
 
 // ── POST com streaming (keepalive a cada 3s → Vercel Hobby suporta até 60s) ─────
 export async function POST(req: NextRequest) {
-  // Verificação de plano ativo
+  // Verificação de acesso: plano ativo OU trial de 7 dias
   const { userId, sessionClaims } = await auth()
   if (!userId) {
     return new Response('Não autenticado', { status: 401 })
   }
   const plan = (sessionClaims?.publicMetadata as any)?.plan as string | undefined
-  if (!plan || plan === 'free') {
-    return new Response(
-      `data: ${JSON.stringify({ success: false, error: 'Assinatura necessária para gerar estratégias.' })}\n\n`,
-      { status: 402, headers: { 'Content-Type': 'text/event-stream' } }
-    )
+  const hasActivePlan = plan && plan !== 'free'
+
+  if (!hasActivePlan) {
+    // Verifica trial via createdAt do Clerk
+    const { clerkClient } = await import('@clerk/nextjs/server')
+    const client = clerkClient()
+    const clerkUser = await client.users.getUser(userId)
+    const TRIAL_DAYS = 7
+    const inTrial = (Date.now() - clerkUser.createdAt) < TRIAL_DAYS * 24 * 60 * 60 * 1000
+    if (!inTrial) {
+      return new Response(
+        `data: ${JSON.stringify({ success: false, error: 'Período de avaliação encerrado. Assine um plano para continuar.' })}\n\n`,
+        { status: 402, headers: { 'Content-Type': 'text/event-stream' } }
+      )
+    }
   }
 
   const body = await req.json()

@@ -1,12 +1,13 @@
 // lib/planUtils.ts — Limites e permissões por plano
 
-export type PlanTier = 'free' | 'individual' | 'profissional' | 'avancada'
+export type PlanTier = 'free' | 'trial' | 'individual' | 'profissional' | 'avancada'
 
 export interface PlanLimits {
   maxClients: number
-  hasConnections: boolean   // Meta Ads + Google Ads OAuth
-  hasMultipleAccounts: boolean // Múltiplas contas por plataforma
-  hasAudit: boolean         // Auditoria com IA
+  maxStrategiesPerHour: number  // 0 = sem limite
+  hasConnections: boolean       // Meta Ads + Google Ads OAuth
+  hasMultipleAccounts: boolean  // Múltiplas contas por plataforma
+  hasAudit: boolean             // Auditoria com IA
   hasAdvancedDiagnostic: boolean
   hasAPI: boolean
 }
@@ -14,6 +15,16 @@ export interface PlanLimits {
 const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   free: {
     maxClients: 0,
+    maxStrategiesPerHour: 0,
+    hasConnections: false,
+    hasMultipleAccounts: false,
+    hasAudit: false,
+    hasAdvancedDiagnostic: false,
+    hasAPI: false,
+  },
+  trial: {
+    maxClients: 3,
+    maxStrategiesPerHour: 4,
     hasConnections: false,
     hasMultipleAccounts: false,
     hasAudit: false,
@@ -22,6 +33,7 @@ const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   },
   individual: {
     maxClients: 1,
+    maxStrategiesPerHour: 0,
     hasConnections: false,
     hasMultipleAccounts: false,
     hasAudit: false,
@@ -30,6 +42,7 @@ const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   },
   profissional: {
     maxClients: 10,
+    maxStrategiesPerHour: 0,
     hasConnections: true,
     hasMultipleAccounts: false,
     hasAudit: true,
@@ -38,6 +51,7 @@ const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   },
   avancada: {
     maxClients: 999,
+    maxStrategiesPerHour: 0,
     hasConnections: true,
     hasMultipleAccounts: true,
     hasAudit: true,

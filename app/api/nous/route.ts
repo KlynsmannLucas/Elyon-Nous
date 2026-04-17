@@ -79,8 +79,15 @@ export async function POST(req: NextRequest) {
   const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
   const plan = (sessionClaims?.publicMetadata as any)?.plan as string | undefined
-  if (!plan || plan === 'free') {
-    return NextResponse.json({ success: false, error: 'Assinatura necessária.' }, { status: 402 })
+  const hasActivePlan = plan && plan !== 'free'
+
+  if (!hasActivePlan) {
+    const { clerkClient } = await import('@clerk/nextjs/server')
+    const clerkUser = await clerkClient().users.getUser(userId)
+    const inTrial = (Date.now() - clerkUser.createdAt) < 7 * 24 * 60 * 60 * 1000
+    if (!inTrial) {
+      return NextResponse.json({ success: false, error: 'Período de avaliação encerrado. Assine um plano para continuar.' }, { status: 402 })
+    }
   }
 
   try {

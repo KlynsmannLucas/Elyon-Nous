@@ -100,6 +100,11 @@ interface AppStore {
   loadSavedClient: (id: string) => SavedClient | null
   deleteSavedClient: (id: string) => void
 
+  // Rate limiting: timestamps das gerações de estratégia (últimas 1h)
+  strategyTimestamps: number[]
+  recordStrategyGeneration: () => void
+  getStrategyCountLastHour: () => number
+
   clearAll: () => void
 }
 
@@ -203,6 +208,19 @@ export const useAppStore = create<AppStore>()(
         set({ savedClients: savedClients.filter((s) => s.id !== id) })
       },
 
+      strategyTimestamps: [],
+      recordStrategyGeneration: () => {
+        const now = Date.now()
+        const oneHourAgo = now - 60 * 60 * 1000
+        set((s) => ({
+          strategyTimestamps: [...s.strategyTimestamps.filter((t) => t > oneHourAgo), now],
+        }))
+      },
+      getStrategyCountLastHour: () => {
+        const oneHourAgo = Date.now() - 60 * 60 * 1000
+        return get().strategyTimestamps.filter((t) => t > oneHourAgo).length
+      },
+
       clearAll: () => set({
         clientData: null,
         strategyData: null,
@@ -213,11 +231,12 @@ export const useAppStore = create<AppStore>()(
     {
       name: 'elyon-store',
       partialize: (state) => ({
-        clientData:        state.clientData,
-        strategyData:      state.strategyData,
-        savedClients:      state.savedClients,
-        campaignHistory:   state.campaignHistory,
-        connectedAccounts: state.connectedAccounts,
+        clientData:          state.clientData,
+        strategyData:        state.strategyData,
+        savedClients:        state.savedClients,
+        campaignHistory:     state.campaignHistory,
+        connectedAccounts:   state.connectedAccounts,
+        strategyTimestamps:  state.strategyTimestamps,
       }),
     }
   )

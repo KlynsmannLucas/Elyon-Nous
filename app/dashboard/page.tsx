@@ -367,8 +367,8 @@ export default function DashboardPage() {
   const trialDaysLeft  = Math.ceil(trialMsLeft / (24 * 60 * 60 * 1000))
   const hasAccess      = hasActivePlan(userPlan) || inTrial
 
-  // Durante trial sem plano, aplica limites do Individual
-  const effectivePlan = hasActivePlan(userPlan) ? userPlan : (inTrial ? 'individual' : 'free')
+  // Durante trial sem plano, aplica limites do tier 'trial' (3 clientes, 4 estratégias/hora)
+  const effectivePlan = hasActivePlan(userPlan) ? userPlan : (inTrial ? 'trial' : 'free')
   const planLimits    = getPlanLimits(effectivePlan)
 
   const {
@@ -376,6 +376,7 @@ export default function DashboardPage() {
     setStrategyData, setIsGenerating, clearAll, wizardStep, setWizardStep,
     savedClients, saveCurrentClient, loadSavedClient, deleteSavedClient,
     campaignHistory,
+    recordStrategyGeneration, getStrategyCountLastHour,
   } = useAppStore()
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
@@ -395,6 +396,11 @@ export default function DashboardPage() {
 
   const handleWizardComplete = useCallback(async () => {
     if (!clientData) return
+
+    if (planLimits.maxStrategiesPerHour > 0 && getStrategyCountLastHour() >= planLimits.maxStrategiesPerHour) {
+      setGenError(`Limite de ${planLimits.maxStrategiesPerHour} estratégias por hora atingido. Tente novamente mais tarde.`)
+      return
+    }
 
     setIsGenerating(true)
     setGenError('')
@@ -443,12 +449,13 @@ export default function DashboardPage() {
         creativeBrief: {},
         generatedAt: new Date().toISOString(),
       })
+      recordStrategyGeneration()
     } catch (e: any) {
       setGenError(e.message)
     } finally {
       setIsGenerating(false)
     }
-  }, [clientData, setIsGenerating, setStrategyData])
+  }, [clientData, setIsGenerating, setStrategyData, planLimits, getStrategyCountLastHour, recordStrategyGeneration])
 
   const handleSelectSaved = (id: string) => {
     const found = loadSavedClient(id)
