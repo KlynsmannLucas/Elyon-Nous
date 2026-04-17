@@ -14,26 +14,26 @@ import { TabGrowth }       from '@/components/dashboard/TabGrowth'
 import { TabPerformance }  from '@/components/dashboard/TabPerformance'
 import { TabDiagnostic }   from '@/components/dashboard/TabDiagnostic'
 import { TabMetrics }      from '@/components/dashboard/TabMetrics'
-import { TabHistory }     from '@/components/dashboard/TabHistory'
-import { TabConnections } from '@/components/dashboard/TabConnections'
-import { TabAuditoria }  from '@/components/dashboard/TabAuditoria'
+import { TabConnections }       from '@/components/dashboard/TabConnections'
+import { TabAuditoria }         from '@/components/dashboard/TabAuditoria'
+import { TabMetaIntelligence }  from '@/components/dashboard/TabMetaIntelligence'
 import { NousChat }       from '@/components/dashboard/NousChat'
 import { getPlanLimits, hasActivePlan, UPGRADE_MESSAGES } from '@/lib/planUtils'
 
-type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'metrics' | 'history' | 'connections' | 'auditoria'
+type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'metrics' | 'connections' | 'auditoria' | 'meta-intelligence'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: 'overview',     label: 'Overview',     icon: '🏠' },
-  { key: 'strategy',     label: 'Estratégia',   icon: '⚡' },
-  { key: 'diagnostic',   label: 'Diagnóstico',  icon: '🎯' },
-  { key: 'intelligence', label: 'Inteligência', icon: '🧠' },
-  { key: 'auditoria',    label: 'Auditoria',    icon: '🔍' },
-  { key: 'audiences',    label: 'Audiências',   icon: '👥' },
-  { key: 'growth',       label: 'Crescimento',  icon: '📈' },
-  { key: 'performance',  label: 'Performance',  icon: '📊' },
-  { key: 'metrics',      label: 'Métricas',     icon: '📉' },
-  { key: 'history',      label: 'Histórico',    icon: '🗂️' },
-  { key: 'connections',  label: 'Conexões',     icon: '🔗' },
+  { key: 'overview',          label: 'Overview',        icon: '🏠' },
+  { key: 'strategy',          label: 'Estratégia',      icon: '⚡' },
+  { key: 'diagnostic',        label: 'Diagnóstico',     icon: '🎯' },
+  { key: 'intelligence',      label: 'Inteligência',    icon: '🧠' },
+  { key: 'auditoria',         label: 'Auditoria',       icon: '🔍' },
+  { key: 'meta-intelligence', label: 'Meta Ads IA',     icon: '📡' },
+  { key: 'audiences',         label: 'Audiências',      icon: '👥' },
+  { key: 'growth',            label: 'Crescimento',     icon: '📈' },
+  { key: 'performance',       label: 'Performance',     icon: '📊' },
+  { key: 'metrics',           label: 'Métricas',        icon: '📉' },
+  { key: 'connections',       label: 'Conexões',        icon: '🔗' },
 ]
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
@@ -565,12 +565,21 @@ export default function DashboardPage() {
         generatedAt: new Date().toISOString(),
       })
       recordStrategyGeneration()
+      // Auto-save imediato após gerar estratégia — garante que o cliente nunca se perde
+      saveCurrentClient()
     } catch (e: any) {
       setGenError(e.message)
     } finally {
       setIsGenerating(false)
     }
-  }, [clientData, setIsGenerating, setStrategyData, planLimits, getStrategyCountLastHour, recordStrategyGeneration])
+  }, [clientData, setIsGenerating, setStrategyData, saveCurrentClient, planLimits, getStrategyCountLastHour, recordStrategyGeneration])
+
+  // Auto-save sempre que a estratégia muda (protege contra perda de dados em refresh)
+  useEffect(() => {
+    if (clientData && strategyData) {
+      saveCurrentClient()
+    }
+  }, [strategyData])
 
   const handleSelectSaved = (id: string) => {
     const found = loadSavedClient(id)
@@ -644,9 +653,9 @@ export default function DashboardPage() {
       case 'audiences':    return <TabAudiences niche={clientData?.niche} />
       case 'growth':       return <TabGrowth analysis={analysis} clientData={clientData} />
       case 'performance':  return <TabPerformance clientData={clientData} />
-      case 'metrics':      return <TabMetrics clientData={clientData} />
-      case 'history':      return <TabHistory />
-      case 'connections':  return planLimits.hasConnections
+      case 'metrics':           return <TabMetrics clientData={clientData} />
+      case 'meta-intelligence': return <TabMetaIntelligence onNavigateToConnections={() => setActiveTab('connections')} />
+      case 'connections':       return planLimits.hasConnections
         ? <TabConnections />
         : <UpgradeGate feature="connections" />
       case 'auditoria':    return planLimits.hasAudit
