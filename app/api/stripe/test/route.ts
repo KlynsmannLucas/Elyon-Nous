@@ -27,36 +27,63 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: 'STRIPE_SECRET_KEY não configurada', results })
   }
 
-  // 2. Tenta conectar ao Stripe (usando chaves trimadas)
+  // 2. Teste 1: fetch nativo (sem SDK) — isola se é problema de rede ou do SDK
   try {
-    const { default: Stripe } = await import('stripe')
-    const stripe = new Stripe(secretKey, { apiVersion: '2024-06-20' as any })
-
-    // Testa conexão listando 1 produto
-    const products = await stripe.products.list({ limit: 1 })
-    results.stripeConnection = 'ok'
-    results.stripeMode = process.env.STRIPE_SECRET_KEY.startsWith('sk_live') ? 'live' : 'test'
-
-    // Valida cada price ID (trimado)
-    for (const [key, priceId] of Object.entries({
-      individual: priceInd,
-      profissional: priceProf,
-      avancada: priceAdv,
-    })) {
-      if (!priceId) { results[`price_${key}`] = 'MISSING'; continue }
-      try {
-        const price = await stripe.prices.retrieve(priceId)
-        results[`price_${key}`] = `ok — ${price.currency.toUpperCase()} ${price.unit_amount! / 100} (${price.recurring?.interval})`
-      } catch (e: any) {
-        results[`price_${key}`] = `ERRO: ${e.message}`
-      }
+    const fetchResp = await fetch('https://api.stripe.com/v1/products?limit=1', {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${secretKey}` },
+    })
+    const fetchBody = await fetchResp.json()
+    results.fetchTest = {
+      status: fetchResp.status,
+      ok: fetchResp.ok,
+      errorCode: fetchBody?.error?.code,
+      errorType: fetchBody?.error?.type,
+      errorMsg:  fetchBody?.error?.message,
     }
-
-    return NextResponse.json({ ok: true, results })
-  } catch (err: any) {
-    results.stripeConnection = 'FALHOU'
-    results.stripeError      = err.message
-    results.stripeErrorType  = err.type || err.constructor?.name
-    return NextResponse.json({ ok: false, error: err.message, results }, { status: 500 })
+    if (fetchResp.ok) {
+      results.networkOk = true
+      results.authOk    = true
+      results.stripeMode = secretKey.startsWith('sk_live') ? 'live' : 'test'
+    } else if (fetchResp.status === 401) {
+      results.networkOk = true
+      results.authOk    = false
+      results.authError = 'Chave inválida ou incorreta'
+    } else {
+      results.networkOk = true
+      results.authOk    = false
+    }
+  } catch (fetchErr: any) {
+    results.fetchTest = { error: fetchErr.message }
+    results.networkOk = false
   }
+
+  // 3. Teste 2: SDK Stripe (apenas se fetch funcionou)
+  if (results.networkOk && results.authOk) {
+    try {
+      const { default: Stripe } = await import('stripe')
+      const stripe = new Stripe(secretKey, { apiVersion: '2024-06-20' as any })
+
+      results.stripeConnection = 'ok'
+
+      for (const [key, priceId] of Object.entries({
+        individual: priceInd, profissional: priceProf, avancada: priceAdv,
+      })) {
+        if (!priceId) { results[`price_${key}`] = 'MISSING'; continue }
+        try {
+          const price = await stripe.prices.retrieve(priceId)
+          results[`price_${key}`] = `ok — ${price.currency.toUpperCase()} ${(price.unit_amount || 0) / 100} (${price.recurring?.interval})`
+        } catch (e: any) {
+          results[`price_${key}`] = `ERRO: ${e.message}`
+        }
+      }
+      return NextResponse.json({ ok: true, results })
+    } catch (err: any) {
+      results.stripeConnection = 'SDK falhou (mas fetch ok)'
+      results.sdkError = err.message
+    }
+  }
+
+  const isOk = results.networkOk && results.authOk
+  return NextResponse.json({ ok: isOk, results }, { status: isOk ? 200 : 500 })
 }
