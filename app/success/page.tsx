@@ -43,9 +43,10 @@ function SuccessContent() {
 
   useEffect(() => {
     if (step !== 'done') return
-    const t = setTimeout(() => router.push('/dashboard'), 4000)
+    // window.location.href força reload completo → Clerk busca JWT fresco com o plano novo
+    const t = setTimeout(() => { window.location.href = '/dashboard' }, 4000)
     return () => clearTimeout(t)
-  }, [step, router])
+  }, [step])
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
@@ -87,7 +88,7 @@ function SuccessContent() {
               }} />
             </div>
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => { window.location.href = '/dashboard' }}
               className="text-sm font-bold px-6 py-3 rounded-xl hover:opacity-80 transition-opacity"
               style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
             >

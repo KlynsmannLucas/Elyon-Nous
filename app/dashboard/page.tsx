@@ -497,6 +497,16 @@ export default function DashboardPage() {
     } else {
       setView('selector')
     }
+
+    // Se voltou de um checkout bem-sucedido, força reload do user no Clerk
+    // para buscar o plano atualizado (JWT pode estar em cache)
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('checkout') === 'ok' || params.get('checkout') === 'success') {
+      user?.reload().then(() => {
+        // Limpa o param da URL sem reload da página
+        window.history.replaceState({}, '', '/dashboard')
+      })
+    }
   }, []) // só na montagem
 
   const handleWizardComplete = useCallback(async () => {
