@@ -8,8 +8,9 @@ let _stripe: Stripe | null = null
 
 export function getStripe(): Stripe {
   if (!_stripe) {
-    if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY não configurado')
-    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' })
+    const key = process.env.STRIPE_SECRET_KEY?.trim()
+    if (!key) throw new Error('STRIPE_SECRET_KEY não configurado')
+    _stripe = new Stripe(key, { apiVersion: '2026-03-25.dahlia' })
   }
   return _stripe
 }
@@ -31,7 +32,7 @@ export const PLANS: Record<PlanKey, {
 }> = {
   individual: {
     name: 'Individual',
-    priceId: process.env.STRIPE_PRICE_INDIVIDUAL!,
+    priceId: (process.env.STRIPE_PRICE_INDIVIDUAL || '').trim(),
     price: 'R$197',
     priceEnd: '/mês',
     maxClients: 1,
@@ -39,7 +40,7 @@ export const PLANS: Record<PlanKey, {
   },
   profissional: {
     name: 'Profissional',
-    priceId: process.env.STRIPE_PRICE_PROFISSIONAL!,
+    priceId: (process.env.STRIPE_PRICE_PROFISSIONAL || '').trim(),
     price: 'R$497',
     priceEnd: '/mês',
     maxClients: 10,
@@ -47,7 +48,7 @@ export const PLANS: Record<PlanKey, {
   },
   avancada: {
     name: 'Avançada',
-    priceId: process.env.STRIPE_PRICE_AVANCADA!,
+    priceId: (process.env.STRIPE_PRICE_AVANCADA || '').trim(),
     price: 'R$1.497',
     priceEnd: '/mês',
     maxClients: 999,
