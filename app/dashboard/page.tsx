@@ -44,12 +44,12 @@ const PLAN_LABELS: Record<string, { label: string; color: string }> = {
 
 // ── Header fixo ────────────────────────────────────────────────────────────────
 function Header({
-  niche, clientName, onExport, onReset, onSave, isSaved, pdfLoading, userPlan,
+  niche, clientName, onExport, onReset, onSave, isSaved, pdfLoading, userPlan, onSignOut,
 }: {
   niche: string; clientName: string
   onExport: () => void; onReset: () => void
   onSave: () => void; isSaved: boolean; pdfLoading: boolean
-  userPlan?: string
+  userPlan?: string; onSignOut: () => void
 }) {
   const [savedFlash, setSavedFlash] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
@@ -114,7 +114,7 @@ function Header({
           </button>
         )}
         {!plan && (
-          <a href="/#pricing"
+          <a href="/landing#pricing"
             className="hidden md:block text-xs text-[#F0B429] hover:opacity-80 transition-opacity px-3 py-2 font-semibold">
             ⚡ Ver planos
           </a>
@@ -142,6 +142,18 @@ function Header({
           style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
         >
           {pdfLoading ? '⏳ Gerando...' : '↓ Exportar PDF'}
+        </button>
+        {/* Botão de logout */}
+        <button
+          onClick={onSignOut}
+          title="Sair da conta"
+          className="flex items-center justify-center w-8 h-8 rounded-xl border border-[#2A2A30] text-slate-600 hover:text-red-400 hover:border-red-400/30 transition-all"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
         </button>
       </div>
     </header>
@@ -507,7 +519,7 @@ export default function DashboardPage() {
           <div className="text-xs text-[#F0B429] mb-4 font-semibold">
             Disponível no plano {msg.requiredPlan}+
           </div>
-          <a href="/#pricing"
+          <a href="/landing#pricing"
             className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-black text-sm hover:opacity-90"
             style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
             ⚡ Fazer upgrade
@@ -542,6 +554,28 @@ export default function DashboardPage() {
 
   // ── Sem acesso (trial expirado + sem plano): mostra paywall ──
   if (isLoaded && !hasAccess) {
+    const [syncing, setSyncing] = useState(false)
+    const [syncMsg, setSyncMsg] = useState('')
+
+    const handleSync = async () => {
+      setSyncing(true)
+      setSyncMsg('')
+      try {
+        const res = await fetch('/api/stripe/sync', { method: 'POST' })
+        const data = await res.json()
+        if (data.success && data.plan) {
+          setSyncMsg(`Plano "${data.plan}" ativado! Recarregando...`)
+          setTimeout(() => window.location.reload(), 1500)
+        } else {
+          setSyncMsg(data.message || 'Nenhuma assinatura ativa encontrada.')
+        }
+      } catch {
+        setSyncMsg('Erro ao verificar. Tente novamente.')
+      } finally {
+        setSyncing(false)
+      }
+    }
+
     return (
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
@@ -560,28 +594,35 @@ export default function DashboardPage() {
               Você teve {TRIAL_DAYS} dias para explorar o ELYON. Assine agora para continuar gerando estratégias com IA, diagnósticos e relatórios para os seus clientes.
             </p>
             <a
-              href="/#pricing"
+              href="/landing#pricing"
               className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-black text-base hover:opacity-90 transition-opacity mb-3"
               style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
             >
               ⚡ Ver planos e assinar
             </a>
             <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50 mb-2"
+              style={{ borderColor: 'rgba(240,180,41,0.3)', color: '#F0B429', background: 'rgba(240,180,41,0.05)' }}
+            >
+              {syncing ? '🔄 Verificando...' : '✓ Já assinei — verificar plano'}
+            </button>
+            {syncMsg && (
+              <p className="text-xs mb-2" style={{ color: syncMsg.includes('ativado') ? '#22C55E' : '#F0B429' }}>{syncMsg}</p>
+            )}
+            <button
               onClick={() => signOut({ redirectUrl: '/sign-in' })}
               className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 border border-[#2A2A30] transition-colors"
             >
-              Entrar com outra conta
+              Sair da conta
             </button>
           </div>
           <p className="text-xs text-slate-600">
-            Já assinou?{' '}
-            <button
-              onClick={() => signOut({ redirectUrl: '/sign-in' })}
-              className="text-[#F0B429] hover:underline"
-            >
-              Saia e entre novamente
-            </button>{' '}
-            para sincronizar sua assinatura.
+            Problemas com sua assinatura?{' '}
+            <a href="mailto:suporte@elyon.app" className="text-[#F0B429] hover:underline">
+              Entre em contato
+            </a>
           </p>
         </div>
       </div>
@@ -598,7 +639,7 @@ export default function DashboardPage() {
         </span>
       </div>
       <a
-        href="/#pricing"
+        href="/landing#pricing"
         className="text-xs font-bold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
         style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
       >
@@ -696,6 +737,7 @@ export default function DashboardPage() {
         isSaved={savedClients.some((s) => s.clientData.clientName === clientData?.clientName)}
         pdfLoading={pdfLoading}
         userPlan={userPlan}
+        onSignOut={() => signOut({ redirectUrl: '/sign-in' })}
       />
       <TabNav active={activeTab} onChange={setActiveTab} />
       <main className="max-w-7xl mx-auto px-4 md:px-10 py-8">
