@@ -6,7 +6,7 @@ import { clerkClient } from '@clerk/nextjs/server'
 export async function POST(req: NextRequest) {
   const body = await req.text()
   const sig  = req.headers.get('stripe-signature')!
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+  const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || '').trim()
 
   let event
   try {

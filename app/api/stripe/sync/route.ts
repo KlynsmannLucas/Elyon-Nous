@@ -5,10 +5,11 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { stripe } from '@/lib/stripe'
 
+// trim() obrigatório — env vars no Vercel podem ter \n acidental no final
 const PRICE_TO_PLAN: Record<string, string> = {
-  [process.env.STRIPE_PRICE_INDIVIDUAL   || '']: 'individual',
-  [process.env.STRIPE_PRICE_PROFISSIONAL || '']: 'profissional',
-  [process.env.STRIPE_PRICE_AVANCADA     || '']: 'avancada',
+  [(process.env.STRIPE_PRICE_INDIVIDUAL   || '').trim()]: 'individual',
+  [(process.env.STRIPE_PRICE_PROFISSIONAL || '').trim()]: 'profissional',
+  [(process.env.STRIPE_PRICE_AVANCADA     || '').trim()]: 'avancada',
 }
 
 export async function POST() {
@@ -40,14 +41,25 @@ export async function POST() {
       })
 
       for (const sub of subs.data) {
+        // Tenta 1: mapeamento por price ID
         for (const item of sub.items.data) {
-          const plan = PRICE_TO_PLAN[item.price.id]
+          const plan = PRICE_TO_PLAN[item.price.id.trim()]
           if (plan) {
             activePlan = plan
             stripeCustomerId = customer.id
             break
           }
         }
+
+        // Tenta 2: fallback pelo metadata da subscription (definido no checkout)
+        if (!activePlan && sub.metadata?.plan) {
+          const validPlans = ['individual', 'profissional', 'avancada']
+          if (validPlans.includes(sub.metadata.plan)) {
+            activePlan = sub.metadata.plan
+            stripeCustomerId = customer.id
+          }
+        }
+
         if (activePlan) break
       }
       if (activePlan) break
