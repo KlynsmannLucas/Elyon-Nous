@@ -167,26 +167,52 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
   },
   ecommerce: {
     name: 'E-commerce / Varejo',
-    cpl_min: 8, cpl_max: 45,
+    cpl_min: 12, cpl_max: 55,
     cpl_by_channel: {
-      'Meta Ads': 'R$10–35',
-      'Google Shopping': 'R$12–40',
-      'TikTok': 'R$8–25',
-      'Google PMAX': 'R$10–30',
+      'Meta Ads': 'R$12–45',
+      'Google Shopping': 'R$15–50',
+      'TikTok': 'R$10–30',
+      'Google PMAX': 'R$12–35',
     },
-    cvr_lead_to_sale: 0.025,
-    avg_ticket: 280,
-    ltv_multiplier: 3.5,
+    cvr_lead_to_sale: 0.04,
+    avg_ticket: 420,
+    ltv_multiplier: 3.0,
     best_channels: ['Meta Ads', 'Google Shopping', 'Google PMAX'],
-    budget_floor: 1000,
-    budget_ideal: 5000,
-    kpi_thresholds: { cpl_good: 20, cpl_bad: 40, roas_good: 4.5, cvr_good: 0.03 },
+    budget_floor: 2000,
+    budget_ideal: 8000,
+    kpi_thresholds: { cpl_good: 25, cpl_bad: 50, roas_good: 4.5, cvr_good: 0.04 },
     seasonality: ['Nov', 'Dez'],
     insights: [
-      'ROAS break-even = ticket ÷ margem × 100 — calcule antes de escalar',
+      'ROAS break-even = ticket ÷ margem — calcule antes de escalar',
       'Recuperação de carrinho abandonado via email/WhatsApp recupera 15% das vendas',
       'Black Friday: CPL sobe 80% mas conversão triplica — planeje budget extra',
       'Google PMAX está convertendo 30% melhor que Shopping isolado em 2025',
+    ],
+  },
+  loja_moveis: {
+    name: 'Loja de Móveis',
+    cpl_min: 28, cpl_max: 80,
+    cpl_by_channel: {
+      'Meta Ads': 'R$30–75',
+      'Instagram': 'R$28–65',
+      'Google Search': 'R$40–85',
+      'Google Shopping': 'R$25–60',
+      'Pinterest': 'R$22–55',
+    },
+    cvr_lead_to_sale: 0.09,
+    avg_ticket: 2200,
+    ltv_multiplier: 2.0,
+    best_channels: ['Meta Ads', 'Instagram', 'Google Shopping', 'Pinterest'],
+    budget_floor: 3000,
+    budget_ideal: 12000,
+    kpi_thresholds: { cpl_good: 50, cpl_bad: 80, roas_good: 4.0, cvr_good: 0.10 },
+    seasonality: ['Jan', 'Fev', 'Out', 'Nov'],
+    insights: [
+      'Fotos de ambientes montados convertem 3× mais que produtos isolados',
+      'Antes/depois de decoração e reformas são os criativos de maior CTR',
+      'WhatsApp é essencial no pós-lead: aumenta comparecimento em 40%',
+      'Picos em Jan/Fev (mudanças, casamentos) e pré-Black Friday (Out/Nov)',
+      'Pinterest gera tráfego de alta intenção com CPL 20% menor que Meta',
     ],
   },
   juridico: {
@@ -604,58 +630,117 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
 // ── Keyword map para matching ─────────────────────────────────────────────────
 
 const KEY_MAP: Record<string, string> = {
+  // ── Frases compostas primeiro (mais específicas) ──────────────────────────
+  'móveis planejados': 'moveis_planejados',
+  'moveis planejados': 'moveis_planejados',
+  'loja de móveis':    'loja_moveis',
+  'loja de moveis':    'loja_moveis',
+  'loja moveis':       'loja_moveis',
+  'loja de decoração': 'loja_moveis',
+  'home decor':        'loja_moveis',
+
+  // ── Financeiro ────────────────────────────────────────────────────────────
   financeiro: 'financeiro', crédito: 'financeiro', credito: 'financeiro',
   investimento: 'financeiro', banco: 'financeiro', empréstimo: 'financeiro', emprestimo: 'financeiro',
+
+  // ── Saúde ─────────────────────────────────────────────────────────────────
   'saúde': 'saude', saude: 'saude', clínica: 'saude', clinica: 'saude', hospital: 'saude',
+  fisioterapia: 'saude', fisioterapeuta: 'saude',
+
+  // ── Odontologia ───────────────────────────────────────────────────────────
   odontolog: 'odontologia', dentista: 'odontologia', clareamento: 'odontologia',
   implante: 'odontologia', ortodont: 'odontologia',
+
+  // ── Educação ──────────────────────────────────────────────────────────────
   'educaç': 'educacao', educac: 'educacao', curso: 'educacao',
   escola: 'educacao', faculdade: 'educacao', ensino: 'educacao', treinamento: 'educacao',
+
+  // ── Imobiliário ───────────────────────────────────────────────────────────
   'imóvel': 'imobiliario', imovel: 'imobiliario', imobili: 'imobiliario',
   construtora: 'construcao', corretor: 'imobiliario',
-  ecommerce: 'ecommerce', loja: 'ecommerce', varejo: 'ecommerce',
-  produto: 'ecommerce', 'e-commerce': 'ecommerce', marketplace: 'ecommerce',
+
+  // ── Jurídico ──────────────────────────────────────────────────────────────
   'jurídico': 'juridico', juridico: 'juridico', advocacia: 'juridico',
   advogado: 'juridico', direito: 'juridico', oab: 'juridico',
+
+  // ── Contabilidade ─────────────────────────────────────────────────────────
   contabilidade: 'contabilidade', contabil: 'contabilidade',
   fiscal: 'contabilidade', contador: 'contabilidade',
+
+  // ── Beleza ────────────────────────────────────────────────────────────────
   beleza: 'beleza', 'estética': 'beleza', estetica: 'beleza',
   'salão': 'beleza', salao: 'beleza', barbearia: 'beleza', spa: 'beleza',
+
+  // ── Fitness ───────────────────────────────────────────────────────────────
   academia: 'fitness', fitness: 'fitness', personal: 'fitness', pilates: 'fitness',
   crossfit: 'fitness', musculação: 'fitness', musculacao: 'fitness',
+
+  // ── Tecnologia ────────────────────────────────────────────────────────────
   tech: 'tecnologia', tecnologia: 'tecnologia', software: 'tecnologia',
-  saas: 'tecnologia', startup: 'tecnologia', app: 'tecnologia', sistema: 'tecnologia',
+  saas: 'tecnologia', startup: 'tecnologia', sistema: 'tecnologia',
+
+  // ── Pet ───────────────────────────────────────────────────────────────────
   pet: 'pet', 'veterinário': 'pet', veterinario: 'pet', petshop: 'pet',
+
+  // ── Turismo ───────────────────────────────────────────────────────────────
   turismo: 'turismo', viagem: 'turismo', hotel: 'turismo', pousada: 'turismo', pacote: 'turismo',
+
+  // ── Restaurante ───────────────────────────────────────────────────────────
   restaurante: 'restaurante', food: 'restaurante', comida: 'restaurante',
   lanchonete: 'restaurante', pizzaria: 'restaurante', hamburger: 'restaurante', hamburguer: 'restaurante',
+
+  // ── Consultoria ───────────────────────────────────────────────────────────
   consultoria: 'consultoria', coach: 'consultoria', mentor: 'consultoria',
+
+  // ── Marketing ─────────────────────────────────────────────────────────────
   marketing: 'marketing_agencia', 'agência': 'marketing_agencia', agencia: 'marketing_agencia', publicidade: 'marketing_agencia',
+
+  // ── Construção ────────────────────────────────────────────────────────────
   'construção': 'construcao', construcao: 'construcao', reforma: 'construcao',
   engenharia: 'construcao', arquitetura: 'construcao',
+
+  // ── Moda ──────────────────────────────────────────────────────────────────
   moda: 'moda', 'vestuário': 'moda', vestuario: 'moda', roupas: 'moda', roupa: 'moda',
-  fisioterapia: 'saude', fisioterapeuta: 'saude',
+
+  // ── Psicologia ────────────────────────────────────────────────────────────
   'psicolog': 'psicologia', terapia: 'psicologia', terapeuta: 'psicologia',
+
+  // ── Nutrição ──────────────────────────────────────────────────────────────
   'nutriç': 'nutricao', nutric: 'nutricao', nutricionista: 'nutricao', dieta: 'nutricao',
+
+  // ── Eventos ───────────────────────────────────────────────────────────────
   eventos: 'eventos', evento: 'eventos', festa: 'eventos', casamento: 'eventos',
   formatura: 'eventos', show: 'eventos',
+
+  // ── Móveis Planejados ─────────────────────────────────────────────────────
+  marcenaria: 'moveis_planejados', planejados: 'moveis_planejados', marceneiro: 'moveis_planejados',
+  'móveis': 'loja_moveis', moveis: 'loja_moveis',  // genérico → loja_moveis
+
+  // ── E-commerce genérico (lojas sem niche específico) ─────────────────────
+  ecommerce: 'ecommerce', 'e-commerce': 'ecommerce', marketplace: 'ecommerce',
+  varejo: 'ecommerce', produto: 'ecommerce',
+  loja: 'ecommerce',   // fallback genérico para "loja" sem modificador específico
+
+  // ── Outro ─────────────────────────────────────────────────────────────────
   outro: 'outro',
-  'móveis planejados': 'moveis_planejados', 'moveis planejados': 'moveis_planejados',
-  'móveis': 'moveis_planejados', moveis: 'moveis_planejados', marcenaria: 'moveis_planejados',
-  planejados: 'moveis_planejados', marceneiro: 'moveis_planejados',
 }
 
 // ── Funções públicas ──────────────────────────────────────────────────────────
 
-/** Busca benchmark pelo nicho (matching por palavras-chave) */
+/** Busca benchmark pelo nicho (matching por palavras-chave, mais específico primeiro) */
 export function getBenchmark(nicheRaw: string): NicheBenchmark | null {
   if (!nicheRaw) return null
   const n = nicheRaw.toLowerCase()
-  for (const [kw, key] of Object.entries(KEY_MAP)) {
+
+  // Ordena por comprimento da keyword decrescente:
+  // palavras compostas ("móveis planejados") vencem sobre palavras simples ("loja")
+  const sorted = Object.entries(KEY_MAP).sort(([a], [b]) => b.length - a.length)
+
+  for (const [kw, key] of sorted) {
     if (n.includes(kw)) return BENCHMARKS[key] || null
   }
   // fallback genérico
-  if (n === 'outro' || n.length > 0) return BENCHMARKS['outro']
+  if (n.length > 0) return BENCHMARKS['outro']
   return null
 }
 
