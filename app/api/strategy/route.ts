@@ -431,19 +431,18 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
 
 // ── POST com streaming (keepalive a cada 3s → Vercel Hobby suporta até 60s) ─────
 export async function POST(req: NextRequest) {
-  // Verificação de acesso: plano ativo OU trial de 7 dias
-  const { userId, sessionClaims } = await auth()
+  // Verificação de acesso: sempre busca do Clerk diretamente (JWT pode estar cacheado)
+  const { userId } = auth()
   if (!userId) {
     return new Response('Não autenticado', { status: 401 })
   }
-  const plan = (sessionClaims?.publicMetadata as any)?.plan as string | undefined
+
+  const { clerkClient } = await import('@clerk/nextjs/server')
+  const clerkUser = await clerkClient().users.getUser(userId)
+  const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
   const hasActivePlan = plan && plan !== 'free'
 
   if (!hasActivePlan) {
-    // Verifica trial via createdAt do Clerk
-    const { clerkClient } = await import('@clerk/nextjs/server')
-    const client = clerkClient()
-    const clerkUser = await client.users.getUser(userId)
     const TRIAL_DAYS = 7
     const inTrial = (Date.now() - clerkUser.createdAt) < TRIAL_DAYS * 24 * 60 * 60 * 1000
     if (!inTrial) {
