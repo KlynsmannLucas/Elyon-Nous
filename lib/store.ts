@@ -101,6 +101,15 @@ interface AppStore {
   loadSavedClient: (id: string) => SavedClient | null
   deleteSavedClient: (id: string) => void
 
+  // Cache de auditoria por cliente (persiste entre reloads)
+  auditCache: Record<string, any>
+  setAuditCache: (clientName: string, audit: any) => void
+
+  // Cache do plano de ações por cliente
+  actionPlanCache: Record<string, any[]>
+  setActionPlanCache: (clientName: string, items: any[]) => void
+  updateActionStatus: (clientName: string, id: string, status: string) => void
+
   // Rate limiting: timestamps das gerações de estratégia (últimas 1h)
   strategyTimestamps: number[]
   recordStrategyGeneration: () => void
@@ -211,6 +220,23 @@ export const useAppStore = create<AppStore>()(
         set({ savedClients: savedClients.filter((s) => s.id !== id) })
       },
 
+      auditCache: {},
+      setAuditCache: (clientName, audit) =>
+        set((s) => ({ auditCache: { ...s.auditCache, [clientName]: audit } })),
+
+      actionPlanCache: {},
+      setActionPlanCache: (clientName, items) =>
+        set((s) => ({ actionPlanCache: { ...s.actionPlanCache, [clientName]: items } })),
+      updateActionStatus: (clientName, id, status) =>
+        set((s) => ({
+          actionPlanCache: {
+            ...s.actionPlanCache,
+            [clientName]: (s.actionPlanCache[clientName] || []).map((item: any) =>
+              item.id === id ? { ...item, status } : item
+            ),
+          },
+        })),
+
       strategyTimestamps: [],
       recordStrategyGeneration: () => {
         const now = Date.now()
@@ -240,6 +266,8 @@ export const useAppStore = create<AppStore>()(
         campaignHistory:     state.campaignHistory,
         connectedAccounts:   state.connectedAccounts,
         strategyTimestamps:  state.strategyTimestamps,
+        auditCache:          state.auditCache,
+        actionPlanCache:     state.actionPlanCache,
       }),
     }
   )

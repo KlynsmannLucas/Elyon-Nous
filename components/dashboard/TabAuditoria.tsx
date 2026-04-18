@@ -1,7 +1,7 @@
 // components/dashboard/TabAuditoria.tsx — Auditoria sênior nível consultor premium (11 seções)
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 
@@ -182,7 +182,7 @@ interface UploadedFile {
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export function TabAuditoria({ clientData }: Props) {
-  const { connectedAccounts } = useAppStore()
+  const { connectedAccounts, auditCache, setAuditCache } = useAppStore()
   const [audit,       setAudit]       = useState<Record<string, any> | null>(null)
   const [loading,     setLoading]     = useState(false)
   const [pdfLoading,  setPdfLoading]  = useState(false)
@@ -192,6 +192,14 @@ export function TabAuditoria({ clientData }: Props) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [parseError,  setParseError]  = useState('')
   const [activeAction, setActiveAction] = useState<'curto' | 'medio' | 'longo'>('curto')
+
+  // Carrega auditoria salva ao abrir a aba
+  useEffect(() => {
+    if (!audit && clientData?.clientName) {
+      const cached = auditCache[clientData.clientName]
+      if (cached) { setAudit(cached); setSource('ai') }
+    }
+  }, [clientData?.clientName])
 
   const fileRef = useRef<HTMLInputElement>(null)
   const metaAccount   = connectedAccounts.find(a => a.platform === 'meta')
@@ -301,6 +309,8 @@ export function TabAuditoria({ clientData }: Props) {
       if (!json.success) throw new Error(json.error)
       setAudit(json.audit)
       setSource(json.source)
+      // Persiste resultado no store para carregar automaticamente ao reabrir a aba
+      if (clientData?.clientName) setAuditCache(clientData.clientName, json.audit)
 
     } catch (e: any) {
       setError(e.message || 'Erro ao gerar auditoria.')

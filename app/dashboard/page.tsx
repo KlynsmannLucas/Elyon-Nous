@@ -13,14 +13,14 @@ import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
 import { TabGrowth }       from '@/components/dashboard/TabGrowth'
 import { TabPerformance }  from '@/components/dashboard/TabPerformance'
 import { TabDiagnostic }   from '@/components/dashboard/TabDiagnostic'
-import { TabMetrics }      from '@/components/dashboard/TabMetrics'
+import { TabAcoes }        from '@/components/dashboard/TabAcoes'
 import { TabConnections }       from '@/components/dashboard/TabConnections'
 import { TabAuditoria }         from '@/components/dashboard/TabAuditoria'
 import { TabMetaIntelligence }  from '@/components/dashboard/TabMetaIntelligence'
 import { NousChat }       from '@/components/dashboard/NousChat'
 import { getPlanLimits, hasActivePlan, UPGRADE_MESSAGES } from '@/lib/planUtils'
 
-type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'metrics' | 'connections' | 'auditoria' | 'meta-intelligence'
+type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'connections' | 'auditoria' | 'meta-intelligence' | 'acoes'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'overview',          label: 'Overview',        icon: '🏠' },
@@ -32,7 +32,7 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'audiences',         label: 'Audiências',      icon: '👥' },
   { key: 'growth',            label: 'Crescimento',     icon: '📈' },
   { key: 'performance',       label: 'Performance',     icon: '📊' },
-  { key: 'metrics',           label: 'Métricas',        icon: '📉' },
+  { key: 'acoes',             label: 'Plano de Ações',  icon: '✅' },
   { key: 'connections',       label: 'Conexões',        icon: '🔗' },
 ]
 
@@ -688,7 +688,7 @@ export default function DashboardPage() {
       case 'audiences':    return <TabAudiences niche={clientData?.niche} />
       case 'growth':       return <TabGrowth analysis={analysis} clientData={clientData} />
       case 'performance':  return <TabPerformance clientData={clientData} />
-      case 'metrics':           return <TabMetrics clientData={clientData} />
+      case 'acoes':             return <TabAcoes clientData={clientData} strategyData={strategyData} />
       case 'meta-intelligence': return <TabMetaIntelligence onNavigateToConnections={() => setActiveTab('connections')} />
       case 'connections':       return planLimits.hasConnections
         ? <TabConnections />
