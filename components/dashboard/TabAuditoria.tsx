@@ -75,39 +75,102 @@ function PlatformBlock({ label, icon, color, children }: { label: string; icon: 
 }
 
 // ─── Parser de arquivo ────────────────────────────────────────────────────────
-function normalizeRow(row: Record<string, string>): Record<string, any> {
+// Converte qualquer valor para número — suporta XLSX (number nativo), PT-BR (1.234,56) e US (1234.56)
+function parseNum(v: any): number {
+  if (v === null || v === undefined || v === '') return 0
+  // XLSX retorna números nativos — retorna direto sem processar como string
+  if (typeof v === 'number') return isNaN(v) ? 0 : v
+  const s = String(v).replace(/[R$\s%×x\u00A0]/g, '').trim()
+  if (!s || s === '-' || s === '–' || s === 'N/A' || s === '--' || s === '0,00' && false) return 0
+  // PT-BR: vírgula como decimal e ponto como milhar  → "1.234,56" → 1234.56
+  if (s.includes(',')) return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
+  // US / número limpo: ponto como decimal → "1234.56" ou "1234"
+  return parseFloat(s.replace(/,/g, '')) || 0
+}
+
+function normalizeRow(row: Record<string, any>): Record<string, any> {
   const get = (...keys: string[]) => {
     for (const k of keys) {
-      const found = Object.entries(row).find(([col]) => col.toLowerCase().includes(k.toLowerCase()))
+      const found = Object.entries(row).find(([col]) =>
+        col.toLowerCase().replace(/[^a-záéíóúãõâêîôûàüç\s]/gi, ' ').includes(k.toLowerCase())
+      )
       if (found) return found[1]
     }
     return ''
   }
-  const parseNum = (v: string) => {
-    if (!v) return 0
-    const clean = String(v).replace(/[R$\s%×x]/g, '').replace(/\./g, '').replace(',', '.')
-    return parseFloat(clean) || 0
-  }
-  const name      = get('campanha', 'campaign', 'conjunto', 'ad set', 'anúncio', 'ad name', 'nome')
-  const status    = get('status', 'situação')
-  const spend     = parseNum(get('valor usado', 'gasto', 'spend', 'custo', 'cost', 'investimento'))
-  const impr      = parseNum(get('impressões', 'impressions', 'impr'))
-  const clicks    = parseNum(get('cliques', 'clicks', 'clique'))
-  const ctr       = parseNum(get('ctr', 'taxa de cliques'))
-  const leads     = parseNum(get('leads', 'resultados', 'conversões', 'conversions', 'result'))
-  const cpl       = parseNum(get('custo por lead', 'custo por resultado', 'cost per result', 'cpl'))
-  const roas      = parseNum(get('roas', 'retorno'))
+
+  // Meta: "Nome da campanha" | "Campanha" | "Campaign name"
+  // Meta: "Conjunto de anúncios" | "Ad Set Name"
+  const name = get(
+    'nome da campanha', 'campanha', 'campaign name', 'campaign',
+    'conjunto de anúncios', 'ad set name', 'ad set',
+    'nome do anúncio', 'anúncio', 'ad name', 'nome'
+  )
+  const status = get('status', 'situação', 'delivery', 'veiculação')
+
+  // Meta: "Valor usado (BRL)" | "Amount spent" | "Quantia gasta"
+  // Google: "Custo" | "Cost"
+  const spend = parseNum(get(
+    'valor usado', 'amount spent', 'quantia gasta', 'gasto total',
+    'gasto', 'spend', 'custo total', 'custo', 'cost', 'investimento'
+  ))
+
+  const impr = parseNum(get('impressões', 'impressions', 'impr', 'impressao'))
+  const clicks = parseNum(get('cliques no link', 'cliques', 'link clicks', 'clicks', 'clique'))
+  const ctr = parseNum(get('ctr'))
+
+  // Meta: "Resultados" | "Leads" | Google: "Conversões" | "Conv."
+  const leads = parseNum(get(
+    'resultados', 'leads', 'conversões', 'conversions', 'conv.', 'conv ',
+    'result', 'actions', 'ações'
+  ))
+
+  // Meta: "Custo por resultado" | Google: "Custo / conv."
+  const cpl = parseNum(get(
+    'custo por resultado', 'custo por lead', 'custo por ação',
+    'cost per result', 'cost per lead', 'cpa', 'cpl',
+    'custo   conv', 'cost   conv'
+  ))
+
+  const roas = parseNum(get('roas', 'retorno sobre', 'purchase roas', 'conv. value'))
   const frequency = parseNum(get('frequência', 'frequency', 'freq'))
-  const placement = get('posicionamento', 'placement', 'posição', 'device')
-  const adName    = get('nome do anúncio', 'anúncio', 'ad name', 'creative')
-  return { name, status, spend, impressions: impr, clicks, ctr, leads, cpl, roas, frequency, placement, adName }
+  const placement = get('posicionamento', 'placement', 'posição', 'device', 'plataforma')
+  const adName = get('nome do anúncio', 'ad name', 'creative', 'criativo')
+  const reach = parseNum(get('alcance', 'reach'))
+  const revenue = parseNum(get('receita', 'revenue', 'valor de conversão', 'conv. value'))
+
+  return { name, status, spend, impressions: impr, clicks, ctr, leads, cpl, roas, frequency, placement, adName, reach, revenue }
 }
 
 function detectPlatform(headers: string[]): 'meta' | 'google' | 'unknown' {
   const h = headers.join(' ').toLowerCase()
-  if (h.includes('valor usado') || h.includes('conjunto de anúncios') || h.includes('ad set') || h.includes('facebook') || h.includes('meta')) return 'meta'
-  if (h.includes('campaign type') || h.includes('avg. cpc') || h.includes('google') || h.includes('keyword')) return 'google'
+  if (h.includes('valor usado') || h.includes('conjunto de anúncios') || h.includes('ad set') ||
+      h.includes('facebook') || h.includes('meta') || h.includes('frequência') ||
+      h.includes('amount spent') || h.includes('reach')) return 'meta'
+  if (h.includes('campaign type') || h.includes('avg. cpc') || h.includes('google') ||
+      h.includes('keyword') || h.includes('search term') || h.includes('quality score')) return 'google'
   return 'unknown'
+}
+
+// Parsing robusto de CSV: suporta campos quoted com vírgulas internas
+function parseCSVLine(line: string, sep: string): string[] {
+  if (!line.includes('"')) return line.split(sep).map(v => v.trim())
+  const result: string[] = []
+  let current = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (ch === '"') {
+      inQuotes = !inQuotes
+    } else if (ch === sep && !inQuotes) {
+      result.push(current.trim())
+      current = ''
+    } else {
+      current += ch
+    }
+  }
+  result.push(current.trim())
+  return result
 }
 
 interface UploadedFile {
@@ -145,15 +208,15 @@ export function TabAuditoria({ clientData }: Props) {
       let platform: 'meta' | 'google' | 'unknown' = 'unknown'
 
       if (name.endsWith('.csv')) {
-        const text = await file.text()
-        const lines = text.split('\n').filter(Boolean)
+        const text = (await file.text()).replace(/^\uFEFF/, '') // remove BOM
+        const lines = text.split('\n').filter(l => l.trim())
         const sep = lines[0].includes(';') ? ';' : ','
-        const headers = lines[0].split(sep).map(h => h.replace(/"/g, '').trim())
+        const headers = parseCSVLine(lines[0], sep).map(h => h.replace(/"/g, '').trim())
         platform = detectPlatform(headers)
         campaigns = lines.slice(1).map(line => {
-          const vals = line.split(sep).map(v => v.replace(/"/g, '').trim())
+          const vals = parseCSVLine(line, sep)
           const obj: Record<string, string> = {}
-          headers.forEach((h, i) => { obj[h] = vals[i] || '' })
+          headers.forEach((h, i) => { obj[h] = vals[i] ?? '' })
           return normalizeRow(obj)
         }).filter(r => r.name && r.name.trim())
 
@@ -331,19 +394,48 @@ export function TabAuditoria({ clientData }: Props) {
         {/* Lista de arquivos carregados */}
         {uploadedFiles.length > 0 && (
           <div className="space-y-2">
-            {uploadedFiles.map((f, i) => (
-              <div key={i} className="flex items-center gap-3 bg-[#111114] border border-[#22C55E]/20 rounded-xl px-4 py-2.5">
-                <span className="text-[#22C55E] text-sm">✓</span>
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-semibold text-white truncate block">{f.file.name}</span>
-                  <span className="text-[10px] text-slate-500">
-                    {f.rowCount} campanhas ·{' '}
-                    {f.platform !== 'unknown' ? `${f.platform.charAt(0).toUpperCase()}${f.platform.slice(1)} Ads detectado` : 'Plataforma auto'}
-                  </span>
+            {uploadedFiles.map((f, i) => {
+              const fSpend = f.campaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
+              const fLeads = f.campaigns.reduce((s: number, c: any) => s + (c.leads || 0), 0)
+              const fCpl   = fLeads > 0 ? fSpend / fLeads : 0
+              const hasData = fSpend > 0 || fLeads > 0
+              return (
+                <div key={i} className="bg-[#111114] border rounded-xl px-4 py-3"
+                  style={{ borderColor: hasData ? 'rgba(34,197,94,0.2)' : 'rgba(240,180,41,0.2)' }}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-sm" style={{ color: hasData ? '#22C55E' : '#F0B429' }}>{hasData ? '✓' : '⚠'}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-semibold text-white truncate block">{f.file.name}</span>
+                      <span className="text-[10px] text-slate-500">
+                        {f.rowCount} linhas ·{' '}
+                        {f.platform !== 'unknown' ? `${f.platform === 'meta' ? 'Meta' : 'Google'} Ads` : 'Plataforma não identificada'}
+                      </span>
+                    </div>
+                    <button onClick={() => removeFile(i)} className="text-slate-600 hover:text-[#FF4D4D] text-sm transition-colors flex-shrink-0">✕</button>
+                  </div>
+                  {/* Preview dos dados parseados */}
+                  {hasData ? (
+                    <div className="grid grid-cols-3 gap-2 mt-1">
+                      {[
+                        { label: 'Investimento', val: fmt(fSpend) },
+                        { label: 'Leads/Conv.', val: fLeads.toLocaleString('pt-BR') },
+                        { label: 'CPL médio', val: fCpl > 0 ? fmt(fCpl) : '—' },
+                      ].map(({ label, val }) => (
+                        <div key={label} className="bg-[#16161A] rounded-lg px-2.5 py-1.5 text-center">
+                          <div className="text-[9px] text-slate-500 uppercase tracking-wider">{label}</div>
+                          <div className="text-xs font-bold text-[#22C55E]">{val}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-[#F0B429] mt-1 flex items-center gap-1.5">
+                      <span>⚠</span>
+                      <span>Colunas de gasto/leads não identificadas. Verifique se o arquivo tem as colunas: <strong>Valor usado</strong>, <strong>Resultados</strong> ou <strong>Custo por resultado</strong>.</span>
+                    </div>
+                  )}
                 </div>
-                <button onClick={() => removeFile(i)} className="text-slate-600 hover:text-[#FF4D4D] text-sm transition-colors">✕</button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
