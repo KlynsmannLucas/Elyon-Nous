@@ -480,10 +480,45 @@ export default function DashboardPage() {
   const {
     clientData, strategyData, isGenerating,
     setStrategyData, setIsGenerating, clearAll, wizardStep, setWizardStep,
-    savedClients, saveCurrentClient, loadSavedClient, deleteSavedClient,
+    savedClients, setSavedClients, saveCurrentClient, loadSavedClient, deleteSavedClient,
     campaignHistory,
     recordStrategyGeneration, getStrategyCountLastHour,
   } = useAppStore()
+
+  // ── Sincronização com banco de dados ──────────────────────────────────────────
+  // Carrega clientes do Supabase ao montar (garante sync cross-device)
+  useEffect(() => {
+    if (!isLoaded || !user) return
+    fetch('/api/clients')
+      .then((r) => r.json())
+      .then(({ clients }) => {
+        if (Array.isArray(clients) && clients.length > 0) {
+          setSavedClients(clients)
+        }
+      })
+      .catch(() => {}) // falha silenciosa — localStorage continua funcionando
+  }, [isLoaded, user?.id])
+
+  // Persiste cliente no banco + localStorage
+  const persistSave = useCallback(async () => {
+    saveCurrentClient() // atualiza localStorage imediatamente
+    const state = useAppStore.getState()
+    const { clientData: cd, savedClients: sc } = state
+    if (!cd) return
+    const entry = sc.find((s) => s.clientData.clientName === cd.clientName)
+    if (!entry) return
+    fetch('/api/clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    }).catch(() => {})
+  }, [saveCurrentClient])
+
+  // Remove cliente do banco + localStorage
+  const persistDelete = useCallback((id: string) => {
+    deleteSavedClient(id)
+    fetch(`/api/clients/${id}`, { method: 'DELETE' }).catch(() => {})
+  }, [deleteSavedClient])
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
@@ -566,18 +601,18 @@ export default function DashboardPage() {
       })
       recordStrategyGeneration()
       // Auto-save imediato após gerar estratégia — garante que o cliente nunca se perde
-      saveCurrentClient()
+      await persistSave()
     } catch (e: any) {
       setGenError(e.message)
     } finally {
       setIsGenerating(false)
     }
-  }, [clientData, setIsGenerating, setStrategyData, saveCurrentClient, planLimits, getStrategyCountLastHour, recordStrategyGeneration])
+  }, [clientData, setIsGenerating, setStrategyData, persistSave, planLimits, getStrategyCountLastHour, recordStrategyGeneration])
 
   // Auto-save sempre que a estratégia muda (protege contra perda de dados em refresh)
   useEffect(() => {
     if (clientData && strategyData) {
-      saveCurrentClient()
+      persistSave()
     }
   }, [strategyData])
 
@@ -590,7 +625,7 @@ export default function DashboardPage() {
   }
 
   const handleSaveClient = () => {
-    saveCurrentClient()
+    persistSave()
   }
 
   const [pdfLoading, setPdfLoading] = useState(false)
@@ -774,7 +809,7 @@ export default function DashboardPage() {
           }
           setView('wizard'); setWizardStep(0)
         }}
-        onDelete={deleteSavedClient}
+        onDelete={persistDelete}
         clientLimitReached={atClientLimit}
         maxClients={planLimits.maxClients}
         user={user}

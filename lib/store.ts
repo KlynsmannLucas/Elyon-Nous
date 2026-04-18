@@ -96,6 +96,7 @@ interface AppStore {
 
   // Clientes salvos
   savedClients: SavedClient[]
+  setSavedClients: (clients: SavedClient[]) => void
   saveCurrentClient: () => void
   loadSavedClient: (id: string) => SavedClient | null
   deleteSavedClient: (id: string) => void
@@ -173,6 +174,8 @@ export const useAppStore = create<AppStore>()(
       },
 
       savedClients: [],
+
+      setSavedClients: (clients) => set({ savedClients: clients }),
 
       saveCurrentClient: () => {
         const { clientData, strategyData, savedClients } = get()
