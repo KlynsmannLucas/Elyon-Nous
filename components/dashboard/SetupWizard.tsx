@@ -454,7 +454,7 @@ export function SetupWizard({ onComplete }: Props) {
               Passo 5 de {TOTAL_STEPS}
             </p>
             <h2 className="font-display text-3xl font-bold text-white mb-2">
-              Budget mensal de mídia?
+              Investimento mensal de mídia?
             </h2>
             <p className="text-slate-500 text-sm mb-6">
               Quanto planeja investir por mês em anúncios (Meta Ads, Google Ads, etc).
@@ -620,7 +620,7 @@ export function SetupWizard({ onComplete }: Props) {
             <div className="p-4 rounded-xl mb-5" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
               <div className="text-xs text-[#F0B429] font-semibold mb-2">📋 O ELYON vai gerar para você:</div>
               <div className="space-y-1.5 text-xs text-slate-400">
-                <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> Estratégia completa de canais com budget recomendado</div>
+                <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> Estratégia completa de canais com investimento recomendado</div>
                 <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> CPL e ROAS esperados com benchmarks reais do nicho</div>
                 <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> Plano de ação de 90 dias pronto para executar</div>
                 <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> Perfil de audiência, dores, hooks e objeções</div>

@@ -7,6 +7,13 @@ const key  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 // Supabase is optional — features that depend on it degrade gracefully
 export const supabase = url && key ? createClient(url, key) : null as any
 
+// Cliente admin com service role key (server-side apenas)
+// Se SUPABASE_SERVICE_ROLE_KEY não estiver definido, usa a anon key como fallback
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || key
+export const supabaseAdmin = url && serviceKey
+  ? createClient(url, serviceKey, { auth: { persistSession: false } })
+  : null as any
+
 // ── Tipos das tabelas ──────────────────────────────────────────────────────────
 export interface StrategyRecord {
   id: string

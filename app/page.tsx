@@ -10,6 +10,6 @@ export default async function RootPage() {
     redirect('/dashboard')
   }
 
-  // Não autenticado → tela de login
-  redirect('/sign-in')
+  // Não autenticado → landing page
+  redirect('/landing')
 }
