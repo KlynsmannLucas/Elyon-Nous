@@ -1,15 +1,6 @@
-// app/page.tsx — Portão de entrada: login obrigatório
-import { auth } from '@clerk/nextjs/server'
+// app/page.tsx — Raiz sempre vai para a Landing Page
 import { redirect } from 'next/navigation'
 
-export default async function RootPage() {
-  const { userId } = auth()
-
-  if (userId) {
-    // Já autenticado → vai direto ao dashboard
-    redirect('/dashboard')
-  }
-
-  // Não autenticado → landing page
+export default function RootPage() {
   redirect('/landing')
 }
