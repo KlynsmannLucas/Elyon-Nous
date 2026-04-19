@@ -71,6 +71,25 @@ export function TabAcoes({ clientData, strategyData }: Props) {
     }
   }
 
+  const handleExportCSV = () => {
+    if (!actions.length) return
+    const header = ['Prioridade', 'Categoria', 'Status', 'Prazo', 'Título', 'Descrição', 'Como executar', 'Impacto esperado']
+    const rows = actions.map((a: any) => [
+      a.prioridade, a.categoria,
+      STATUS_CONFIG[a.status as Status]?.label || a.status,
+      a.prazo, a.titulo, a.descricao, a.como, a.impacto,
+    ])
+    const escape = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const csv = [header, ...rows].map(r => r.map(escape).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url
+    a.download = `plano-acoes-${key.replace(/\s+/g, '-').toLowerCase()}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const handleStatusChange = (id: string) => {
     const item = actions.find((a: any) => a.id === id)
     if (!item) return
@@ -106,17 +125,28 @@ export function TabAcoes({ clientData, strategyData }: Props) {
             Ações priorizadas geradas a partir de estratégia + auditoria · {clientData.clientName}
           </p>
         </div>
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
-          style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
-        >
-          {loading
-            ? <><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Gerando...</>
-            : actions.length > 0 ? '🔄 Atualizar plano' : '⚡ Gerar plano de ações'
-          }
-        </button>
+        <div className="flex items-center gap-2">
+          {actions.length > 0 && (
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80"
+              style={{ background: 'rgba(56,189,248,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.25)' }}
+            >
+              ↓ Exportar CSV
+            </button>
+          )}
+          <button
+            onClick={handleGenerate}
+            disabled={loading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
+          >
+            {loading
+              ? <><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Gerando...</>
+              : actions.length > 0 ? '🔄 Atualizar plano' : '⚡ Gerar plano de ações'
+            }
+          </button>
+        </div>
       </div>
 
       {/* Fontes disponíveis */}

@@ -182,22 +182,35 @@ interface UploadedFile {
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export function TabAuditoria({ clientData }: Props) {
-  const { connectedAccounts, auditCache, setAuditCache } = useAppStore()
-  const [audit,       setAudit]       = useState<Record<string, any> | null>(null)
-  const [loading,     setLoading]     = useState(false)
-  const [pdfLoading,  setPdfLoading]  = useState(false)
-  const [error,       setError]       = useState('')
-  const [source,      setSource]      = useState<'ai' | 'benchmark' | null>(null)
-  const [dragOver,    setDragOver]    = useState(false)
+  const { connectedAccounts, auditCache, setAuditCache, deleteAuditEntry } = useAppStore()
+  const [audit,         setAudit]         = useState<Record<string, any> | null>(null)
+  const [selectedId,    setSelectedId]    = useState<string | null>(null)
+  const [loading,       setLoading]       = useState(false)
+  const [pdfLoading,    setPdfLoading]    = useState(false)
+  const [error,         setError]         = useState('')
+  const [source,        setSource]        = useState<'ai' | 'benchmark' | null>(null)
+  const [dragOver,      setDragOver]      = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
-  const [parseError,  setParseError]  = useState('')
-  const [activeAction, setActiveAction] = useState<'curto' | 'medio' | 'longo'>('curto')
+  const [parseError,    setParseError]    = useState('')
+  const [activeAction,  setActiveAction]  = useState<'curto' | 'medio' | 'longo'>('curto')
 
-  // Carrega auditoria salva ao abrir a aba
+  const key = clientData?.clientName || ''
+
+  // Normaliza histórico: suporta formato legado (objeto único) e novo (array)
+  const history: import('@/lib/store').AuditEntry[] = (() => {
+    const raw = auditCache[key]
+    if (!raw) return []
+    if (Array.isArray(raw)) return raw
+    return [{ id: 'legacy', audit: raw, createdAt: '' }]
+  })()
+
+  // Carrega auditoria mais recente ao abrir a aba
   useEffect(() => {
-    if (!audit && clientData?.clientName) {
-      const cached = auditCache[clientData.clientName]
-      if (cached) { setAudit(cached); setSource('ai') }
+    if (clientData?.clientName && history.length > 0 && !audit) {
+      const first = history[0]
+      setAudit(first.audit)
+      setSelectedId(first.id)
+      setSource('ai')
     }
   }, [clientData?.clientName])
 
@@ -493,6 +506,52 @@ export function TabAuditoria({ clientData }: Props) {
               <div className="h-3 bg-[#2A2A30] rounded w-1/2" />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ══════════════════════ HISTÓRICO DE AUDITORIAS ══════════════════════ */}
+      {history.length > 1 && !loading && (
+        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4">
+          <div className="text-xs text-slate-500 uppercase tracking-wider mb-3">Histórico de auditorias · {clientData?.clientName}</div>
+          <div className="flex gap-2 flex-wrap">
+            {history.map((entry) => {
+              const grade = entry.audit?.grade || '—'
+              const score = entry.audit?.health_score
+              const color = gradeColor[grade] || '#64748B'
+              const date  = entry.createdAt
+                ? new Date(entry.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+                : 'Legado'
+              const isSelected = selectedId === entry.id
+              return (
+                <div key={entry.id} className="flex items-center gap-1">
+                  <button
+                    onClick={() => { setAudit(entry.audit); setSelectedId(entry.id); setSource('ai') }}
+                    className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                    style={isSelected
+                      ? { background: `${color}18`, border: `1px solid ${color}50`, color }
+                      : { background: 'transparent', border: '1px solid #2A2A30', color: '#64748B' }}
+                  >
+                    <span style={{ color }}>{grade}{score !== undefined ? ` · ${score}` : ''}</span>
+                    <span>{date}</span>
+                  </button>
+                  {entry.id !== 'legacy' && (
+                    <button
+                      onClick={() => {
+                        deleteAuditEntry(key, entry.id)
+                        if (selectedId === entry.id) {
+                          const next = history.find(e => e.id !== entry.id)
+                          if (next) { setAudit(next.audit); setSelectedId(next.id) }
+                          else { setAudit(null); setSelectedId(null) }
+                        }
+                      }}
+                      title="Remover esta auditoria"
+                      className="text-slate-600 hover:text-red-400 transition-colors text-xs px-1"
+                    >✕</button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 

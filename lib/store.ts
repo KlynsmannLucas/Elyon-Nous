@@ -60,6 +60,12 @@ export interface ClientData {
   conversionRate?: number                  // taxa de conversão lead → venda em % (ex: 10 = 10%)
 }
 
+export interface AuditEntry {
+  id: string
+  audit: any
+  createdAt: string
+}
+
 export interface StrategyData {
   analysis: Record<string, any>
   strategy: Record<string, any>
@@ -107,9 +113,10 @@ interface AppStore {
   loadSavedClient: (id: string) => SavedClient | null
   deleteSavedClient: (id: string) => void
 
-  // Cache de auditoria por cliente (persiste entre reloads)
-  auditCache: Record<string, any>
+  // Histórico de auditorias por cliente (até 10 por cliente, persiste entre reloads)
+  auditCache: Record<string, AuditEntry[]>
   setAuditCache: (clientName: string, audit: any) => void
+  deleteAuditEntry: (clientName: string, id: string) => void
 
   // Cache do plano de ações por cliente
   actionPlanCache: Record<string, any[]>
@@ -228,7 +235,22 @@ export const useAppStore = create<AppStore>()(
 
       auditCache: {},
       setAuditCache: (clientName, audit) =>
-        set((s) => ({ auditCache: { ...s.auditCache, [clientName]: audit } })),
+        set((s) => {
+          const prev: AuditEntry[] = Array.isArray(s.auditCache[clientName])
+            ? s.auditCache[clientName]
+            : s.auditCache[clientName]
+              ? [{ id: crypto.randomUUID(), audit: s.auditCache[clientName], createdAt: new Date().toISOString() }]
+              : []
+          const newEntry: AuditEntry = { id: crypto.randomUUID(), audit, createdAt: new Date().toISOString() }
+          return { auditCache: { ...s.auditCache, [clientName]: [newEntry, ...prev].slice(0, 10) } }
+        }),
+      deleteAuditEntry: (clientName, id) =>
+        set((s) => ({
+          auditCache: {
+            ...s.auditCache,
+            [clientName]: (s.auditCache[clientName] || []).filter((e) => e.id !== id),
+          },
+        })),
 
       actionPlanCache: {},
       setActionPlanCache: (clientName, items) =>
