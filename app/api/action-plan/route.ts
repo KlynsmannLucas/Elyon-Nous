@@ -75,13 +75,34 @@ Responda APENAS com JSON válido (array), sem markdown:
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
+      max_tokens: 8096,
       messages: [{ role: 'user', content: prompt }],
     })
 
     const raw = (message.content[0] as any).text.trim()
-    const jsonStr = raw.startsWith('```') ? raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '') : raw
-    const items = JSON.parse(jsonStr)
+    // Strip markdown fences if present
+    const jsonStr = raw.startsWith('```')
+      ? raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
+      : raw
+
+    let items: any[]
+    try {
+      items = JSON.parse(jsonStr)
+    } catch {
+      // Try to extract a valid JSON array even if the response was slightly truncated
+      const match = jsonStr.match(/^\s*(\[[\s\S]*\])\s*$/)
+      if (match) {
+        items = JSON.parse(match[1])
+      } else {
+        // Find the last complete object and close the array
+        const lastComplete = jsonStr.lastIndexOf('},')
+        if (lastComplete > 0) {
+          items = JSON.parse(jsonStr.slice(0, lastComplete + 1) + ']')
+        } else {
+          throw new Error('Resposta da IA inválida — tente novamente.')
+        }
+      }
+    }
 
     // Adiciona id e status padrão
     const actions = items.map((item: any, i: number) => ({
