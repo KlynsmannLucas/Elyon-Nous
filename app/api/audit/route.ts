@@ -252,6 +252,29 @@ export async function POST(req: NextRequest) {
     const totalLeads = (metaTotals?.leads || 0) + (googleTotals?.leads || 0) + uploadTotalLeads
     const realCPL    = totalLeads > 0 ? (totalSpend / totalLeads).toFixed(2) : '0'
 
+    // ── Métricas reais agregadas (usadas pelo Overview) ────────────────────────
+    const totalImpressions = allCampaigns.reduce((s: number, c: any) => s + (c.impressions || 0), 0)
+      + (metaTotals?.impressions || 0) + (googleTotals?.impressions || 0)
+    const totalClicks = allCampaigns.reduce((s: number, c: any) => s + (c.clicks || 0), 0)
+      + (metaTotals?.clicks || 0) + (googleTotals?.clicks || 0)
+    const totalRevenue = allCampaigns.reduce((s: number, c: any) => s + (c.revenue || c.conversionValue || 0), 0)
+      + (metaTotals?.revenue || 0) + (googleTotals?.revenue || 0)
+    const avgROAS = totalSpend > 0 && totalRevenue > 0 ? +(totalRevenue / Number(totalSpend)).toFixed(2) : null
+    const avgCTR  = totalImpressions > 0 ? +((totalClicks / totalImpressions) * 100).toFixed(2) : null
+
+    const realMetrics = {
+      totalSpend:    Math.round(Number(totalSpend)),
+      totalLeads:    Math.round(totalLeads),
+      totalRevenue:  Math.round(totalRevenue),
+      totalClicks:   Math.round(totalClicks),
+      totalImpressions: Math.round(totalImpressions),
+      avgCPL:        totalLeads > 0 ? Math.round(Number(totalSpend) / totalLeads) : null,
+      avgROAS,
+      avgCTR,
+      campaignCount: allCampaigns.length,
+      dataSource:    hasMeta && hasGoogle ? 'meta+google' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'upload',
+    }
+
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (apiKey) {
       try {
@@ -516,6 +539,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
         const jsonStr = raw.startsWith('```') ? raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '') : raw
         const audit = JSON.parse(jsonStr)
         audit.generated_at = new Date().toISOString()
+        audit._realMetrics = realMetrics
         return NextResponse.json({ success: true, audit, source: 'ai' })
 
       } catch (aiError: any) {
@@ -527,7 +551,8 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     if (!bench) {
       return NextResponse.json({ success: false, error: 'Nicho não reconhecido e API indisponível.' }, { status: 400 })
     }
-    const audit = buildFallbackAudit(clientName, niche, allCampaigns, metaTotals, googleTotals, bench)
+    const audit: Record<string, any> = buildFallbackAudit(clientName, niche, allCampaigns, metaTotals, googleTotals, bench)
+    audit._realMetrics = realMetrics
     return NextResponse.json({ success: true, audit, source: 'benchmark' })
 
   } catch (error: any) {

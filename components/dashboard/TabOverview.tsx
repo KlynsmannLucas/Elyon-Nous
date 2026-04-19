@@ -6,12 +6,28 @@ import { RevenueChart } from './RevenueChart'
 import { FunnelChart } from './FunnelChart'
 import { getBenchmark, computeNicheProjection } from '@/lib/niche_benchmarks'
 import { overviewKPIs, channelCards } from '@/lib/mockData'
+import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 
 interface Props {
   strategy: Record<string, any>
   analysis: Record<string, any>
   clientData: ClientData | null
+}
+
+function DataSourceBadge({ source }: { source: 'real' | 'estimated' }) {
+  return source === 'real' ? (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+      style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)' }}>
+      <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
+      Dados reais
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+      style={{ background: 'rgba(240,180,41,0.08)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.2)' }}>
+      ~ Estimado
+    </span>
+  )
 }
 
 function getChannelIcon(channel: string): string {
@@ -63,24 +79,83 @@ function BudgetStatusBadge({ status, budget, recommended }: {
 }
 
 export function TabOverview({ strategy, analysis, clientData }: Props) {
-  const niche = clientData?.niche || ''
+  const niche  = clientData?.niche || ''
   const budget = clientData?.budget || 0
-  const bench = getBenchmark(niche)
-  const proj = bench && budget > 0 ? computeNicheProjection(bench, budget) : null
+  const bench  = getBenchmark(niche)
+  const proj   = bench && budget > 0 ? computeNicheProjection(bench, budget) : null
+
+  // Dados reais da auditoria mais recente
+  const auditCache = useAppStore(s => s.auditCache)
+  const key = clientData?.clientName || ''
+  const auditHistory = auditCache[key]
+  const latestAudit  = Array.isArray(auditHistory)
+    ? auditHistory[0]?.audit
+    : (auditHistory && !Array.isArray(auditHistory) ? auditHistory : null)
+  const rm = latestAudit?._realMetrics as {
+    totalSpend: number; totalLeads: number; totalRevenue: number
+    avgCPL: number | null; avgROAS: number | null; avgCTR: number | null
+    campaignCount: number; dataSource: string
+  } | undefined
+
+  // Tem dados reais úteis quando há spend E leads reais
+  const hasRealData = !!(rm && rm.totalSpend > 0 && rm.totalLeads > 0)
 
   const hasAIStrategy = strategy && strategy.priority_ranking?.length > 0
 
-  // KPIs: prioridade → IA gerada → benchmark calculado → mock
+  // KPIs: prioridade → dados reais da auditoria → IA → benchmark → mock
+  const dataSource: 'real' | 'estimated' = hasRealData ? 'real' : 'estimated'
+
   const kpis = (() => {
+    // ── 1. Dados reais da auditoria ──────────────────────────────────────────
+    if (hasRealData && rm) {
+      const cplColor = bench
+        ? rm.avgCPL! <= bench.kpi_thresholds.cpl_good ? '#22C55E'
+          : rm.avgCPL! <= bench.kpi_thresholds.cpl_bad ? '#F0B429' : '#FF4D4D'
+        : '#F0B429'
+      const roasColor = bench && rm.avgROAS
+        ? rm.avgROAS >= bench.kpi_thresholds.roas_good ? '#22C55E'
+          : rm.avgROAS >= bench.kpi_thresholds.roas_good * 0.7 ? '#F0B429' : '#FF4D4D'
+        : '#64748B'
+      return [
+        {
+          label: 'Investimento Real',
+          value: rm.totalSpend >= 1000
+            ? `R$${(rm.totalSpend / 1000).toFixed(1)}k`
+            : `R$${rm.totalSpend}`,
+          sub: `${rm.campaignCount} campanhas · fonte: ${rm.dataSource}`,
+          color: '#F0B429',
+        },
+        {
+          label: 'Leads Reais',
+          value: rm.totalLeads.toLocaleString('pt-BR'),
+          sub: bench ? `Benchmark CPL: R$${bench.cpl_min}–${bench.cpl_max}` : 'Dados da auditoria',
+          color: '#22C55E',
+        },
+        {
+          label: rm.avgROAS ? 'ROAS Real' : 'CPL Real',
+          value: rm.avgROAS ? `${rm.avgROAS}×` : `R$${rm.avgCPL}`,
+          sub: rm.avgROAS
+            ? bench ? `Meta nicho: ${bench.kpi_thresholds.roas_good}×` : 'Dados de conversão'
+            : bench ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}` : 'CPL médio real',
+          color: rm.avgROAS ? roasColor : cplColor,
+        },
+        {
+          label: 'CPL Real',
+          value: rm.avgCPL ? `R$${rm.avgCPL}` : '—',
+          sub: bench ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}` : 'CPL médio da conta',
+          color: cplColor,
+        },
+      ]
+    }
+
+    // ── 2. Benchmark calculado (projeção) ────────────────────────────────────
     if (proj) {
       const roasColor =
         proj.roasStatus === 'excelente' ? '#22C55E' :
         proj.roasStatus === 'bom'       ? '#F0B429' : '#FF4D4D'
-
       const cplColor =
-        proj.cplAvg <= (bench!.kpi_thresholds.cpl_good)  ? '#22C55E' :
-        proj.cplAvg <= (bench!.kpi_thresholds.cpl_bad)   ? '#F0B429' : '#FF4D4D'
-
+        proj.cplAvg <= bench!.kpi_thresholds.cpl_good ? '#22C55E' :
+        proj.cplAvg <= bench!.kpi_thresholds.cpl_bad  ? '#F0B429' : '#FF4D4D'
       return [
         {
           label: 'Receita Estimada',
@@ -148,8 +223,26 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
   return (
     <div className="space-y-6">
 
+      {/* Banner de fonte de dados */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <DataSourceBadge source={dataSource} />
+        {hasRealData && rm && (
+          <span className="text-[11px] text-slate-500">
+            Última auditoria · {latestAudit?.generated_at
+              ? new Date(latestAudit.generated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+              : 'data desconhecida'}
+            {' · '}{rm.campaignCount} campanhas · {rm.dataSource}
+          </span>
+        )}
+        {!hasRealData && (
+          <span className="text-[11px] text-[#F0B429] flex items-center gap-1">
+            ⚠ Execute a <strong>Auditoria</strong> para ver dados reais da sua conta
+          </span>
+        )}
+      </div>
+
       {/* Alerta de budget */}
-      {proj && (
+      {proj && !hasRealData && (
         <BudgetStatusBadge
           status={proj.budgetStatus}
           budget={budget}
@@ -172,8 +265,30 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         ))}
       </div>
 
+      {/* Métricas reais da auditoria — CTR, total investido, total leads */}
+      {hasRealData && rm && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: 'Investimento total',  value: `R$${rm.totalSpend >= 1000 ? (rm.totalSpend/1000).toFixed(1)+'k' : rm.totalSpend}`, color: '#F0B429' },
+            { label: 'Total de leads',      value: rm.totalLeads.toLocaleString('pt-BR'), color: '#22C55E' },
+            { label: 'CPL real',            value: rm.avgCPL ? `R$${rm.avgCPL}` : '—', color: rm.avgCPL && bench ? (rm.avgCPL <= bench.cpl_max ? '#22C55E' : '#FF4D4D') : '#64748B' },
+            { label: rm.avgROAS ? 'ROAS real' : 'CTR médio', value: rm.avgROAS ? `${rm.avgROAS}×` : rm.avgCTR ? `${rm.avgCTR}%` : '—', color: '#A78BFA' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-3 text-center">
+              <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{label}</div>
+              <div className="font-display text-lg font-bold" style={{ color }}>{value}</div>
+              {bench && label === 'CPL real' && rm.avgCPL && (
+                <div className="text-[10px] mt-0.5" style={{ color: rm.avgCPL <= bench.cpl_max ? '#22C55E' : '#FF4D4D' }}>
+                  {rm.avgCPL <= bench.cpl_min ? '↓ Abaixo benchmark' : rm.avgCPL <= bench.cpl_max ? '~ Dentro benchmark' : '↑ Acima benchmark'}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Métricas adicionais do nicho */}
-      {proj && bench && (
+      {proj && bench && !hasRealData && (
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
             <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">LTV por Cliente</div>
