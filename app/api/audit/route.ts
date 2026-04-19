@@ -289,15 +289,54 @@ ${file.campaigns.slice(0, 25).map((c: any) =>
 Subtotal: Gasto R$${file.campaigns.reduce((s:number,c:any)=>s+(c.spend||0),0).toFixed(2)} | Leads ${file.campaigns.reduce((s:number,c:any)=>s+(c.leads||0),0)}`
         ).join('\n') : ''
 
-        const prompt = `Você é um consultor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro. Especialista em Meta Ads, Google Ads e estratégia de growth para PMEs. Você já gerenciou mais de R$50M em investimento publicitário.
+        // ── Detecção de anomalias e qualidade de dados ─────────────────
+        const allCamps = [...metaCampaigns, ...googleCampaigns, ...allUploadedCampaigns]
+        const anomalies: string[] = []
 
-Faça uma AUDITORIA COMPLETA E CIRÚRGICA da conta abaixo. Seja direto, analítico e estratégico. Não dê dicas genéricas — analise os dados reais, cite nomes de campanhas, valores e métricas específicas. Fale como um consultor premium que cobra R$10.000 por uma análise assim.
+        // CTR suspeito (possível tráfego bot ou erro de tracking)
+        const highCTR = allCamps.filter((c: any) => (c.ctr || 0) > 10)
+        if (highCTR.length > 0) anomalies.push(`⚠ CTR SUSPEITO (>10%): ${highCTR.map((c:any) => `${c.name} (${c.ctr}%)`).join(', ')} — possível tráfego inválido, bot traffic ou erro de configuração de evento`)
+
+        // ROAS impossível (conversão inflacionada)
+        const absurdROAS = allCamps.filter((c: any) => (c.roas || 0) > 40)
+        if (absurdROAS.length > 0) anomalies.push(`⚠ ROAS IMPOSSÍVEL (>40×): ${absurdROAS.map((c:any) => `${c.name} (${c.roas}×)`).join(', ')} — provável erro no valor de conversão (duplicado ou errado no pixel)`)
+
+        // CPL zero com leads (evento de conversão mal configurado)
+        const zeroCPL = allCamps.filter((c: any) => (c.leads || 0) > 0 && (c.cpl || 0) === 0 && (c.spend || 0) > 0)
+        if (zeroCPL.length > 0) anomalies.push(`⚠ CPL=R$0 COM LEADS: ${zeroCPL.map((c:any) => c.name).join(', ')} — pixel contando evento mas não vinculando ao gasto correto`)
+
+        // Campanhas com gasto alto mas zero leads (desperdício crítico)
+        const wasteCamps = allCamps.filter((c: any) => (c.spend || 0) > (totalSpend * 0.1) && (c.leads || 0) === 0)
+        if (wasteCamps.length > 0) anomalies.push(`🔴 DESPERDÍCIO CRÍTICO: ${wasteCamps.map((c:any) => `${c.name} (R$${c.spend?.toFixed(0)})`).join(', ')} — investimento alto SEM resultado`)
+
+        // Frequência muito alta (fadiga criativa)
+        const highFreq = allCamps.filter((c: any) => (c.frequency || 0) > 4)
+        if (highFreq.length > 0) anomalies.push(`⚠ FADIGA CRIATIVA: ${highFreq.map((c:any) => `${c.name} (freq ${c.frequency?.toFixed(1)})`).join(', ')} — público saturado, CTR caindo progressivamente`)
+
+        // Gasto total zerado com campanhas ativas (tracking quebrado)
+        if (totalSpend === 0 && allCamps.length > 0) anomalies.push(`🔴 GASTO TOTAL = R$0 COM ${allCamps.length} CAMPANHAS — dados provavelmente incompletos ou período sem atividade`)
+
+        const anomalySection = anomalies.length > 0 ? `
+=== ANOMALIAS DETECTADAS (analise estas PRIMEIRO) ===
+${anomalies.join('\n')}
+` : '=== QUALIDADE DOS DADOS: OK (nenhuma anomalia crítica detectada) ==='
+
+        const prompt = `Você é um consultor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro. Especialista em Meta Ads (Advantage+, CBO, ASC, campanhas de conversão/leads), Google Ads (Search, PMAX, Display, YouTube, smart bidding com tCPA/tROAS/Max Conversions), atribuição de conversões e growth para PMEs. Você já gerenciou mais de R$50M em investimento publicitário.
+
+Faça uma AUDITORIA COMPLETA E CIRÚRGICA. Seja direto como um especialista de R$10.000/análise:
+- Cite nomes REAIS das campanhas nos problemas identificados
+- Interprete o que cada métrica SIGNIFICA para o negócio (não apenas descreva)
+- Priorize as anomalias detectadas automaticamente (listadas abaixo)
+- Avalie uso correto de Advantage+ vs campanha manual, objetivo vs estratégia de lance
+- Identifique problemas de atribuição (last-click inflacionado, sem API de Conversões, janela errada)
 
 === DADOS DO CLIENTE ===
 Cliente: ${clientName}
 Nicho: ${niche}
 Investimento mensal: R$${budget}
 Objetivo: ${objective}
+
+${anomalySection}
 
 === DADOS DE PERFORMANCE ===
 ${metaSummary}

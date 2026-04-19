@@ -265,10 +265,23 @@ async function runStrategy(body: any) {
     clientName, niche, products, budget, objective, monthlyRevenue,
     nicheDetails, city, currentCPL, currentLeadSource, mainChallenge,
     campaignHistory,
+    // Unit economics
+    ticketPrice, grossMargin, isRecurring, conversionRate,
   } = body
 
   const bench         = getBenchmark(niche)
   const nicheContext  = buildNichePromptContext(niche, nicheDetails || {})
+
+  // Cálculos de unit economics para incluir no prompt
+  const ticket          = ticketPrice || bench?.avg_ticket || 0
+  const margin          = grossMargin ? grossMargin / 100 : null
+  const cvr             = conversionRate ? conversionRate / 100 : bench?.cvr_lead_to_sale || null
+  const breakEvenROAS   = margin ? +(1 / margin).toFixed(2) : null
+  const maxProfitCPL    = (margin && cvr && ticket) ? Math.round(ticket * margin * cvr) : null
+  const ltv             = (isRecurring && ticket && margin)
+    ? Math.round(ticket / ((body.avgChurnMonthly || 5) / 100) * margin) : null
+  const cacPaybackMonths = (maxProfitCPL && cvr && ticket && margin)
+    ? +((maxProfitCPL / (ticket * margin)).toFixed(1)) : null
 
   // Tavily roda em paralelo — não bloqueia a IA (apenas enriquece se chegar a tempo)
   const realtimeDataPromise = fetchRealtimeBenchmarks(niche, city)
@@ -294,25 +307,35 @@ async function runStrategy(body: any) {
         ]),
       ])
 
-      const prompt = `Você é um Head de Growth altamente experiente, especializado em marketing digital, aquisição de clientes e tomada de decisão orientada por dados no mercado brasileiro.
+      const unitEconomicsSection = (breakEvenROAS || maxProfitCPL || ltv || cacPaybackMonths) ? `
+=== UNIT ECONOMICS DO CLIENTE ===
+${ticket ? `- Ticket médio: R$${ticket.toLocaleString('pt-BR')}` : ''}
+${margin ? `- Margem bruta: ${(margin * 100).toFixed(0)}%` : ''}
+${cvr ? `- Taxa conversão lead→venda: ${(cvr * 100).toFixed(1)}%` : ''}
+${isRecurring ? `- Produto RECORRENTE (assinatura/mensalidade)` : '- Produto de venda única'}
+${breakEvenROAS ? `- ROAS break-even real: ${breakEvenROAS}× (abaixo disso opera com prejuízo)` : ''}
+${maxProfitCPL ? `- CPL máximo lucrativo: R$${maxProfitCPL} (acima disso perde dinheiro por lead)` : ''}
+${ltv ? `- LTV estimado: R$${ltv.toLocaleString('pt-BR')}` : ''}
+${cacPaybackMonths ? `- Payback do CAC: ${cacPaybackMonths} mês(es)` : ''}
 
-Sua função não é apenas gerenciar campanhas. Você é responsável por:
-- Diagnosticar problemas de crescimento e gargalos no funil
-- Criar sistemas previsíveis de aquisição de clientes
-- Melhorar eficiência do investimento em mídia
-- Estruturar crescimento escalável e orientado a dados
+ATENÇÃO: Use esses dados para calibrar metas de ROAS e CPL. Não recomende estratégias que não cubram o break-even. Se o CPL recomendado ultrapassar R$${maxProfitCPL || 'X'}, a operação fica deficitária.` : ''
+
+      const prompt = `Você é um Head de Growth e gestor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro. Especialista em Meta Ads (Advantage+, CBO, campanhas de conversão e geração de leads), Google Ads (Search, PMAX, Display, YouTube, smart bidding), TikTok Ads e estratégia de growth para PMEs.
+
+Você já gerenciou mais de R$50M em investimento publicitário. Sabe diagnosticar gargalos reais, não apenas recomendar "testar criativos". Você pensa em unit economics, CAC payback, LTV e margem — não apenas em CPL e ROAS brutos.
 
 DADOS DO CLIENTE:
 - Nome: ${clientName}
 - Nicho: ${niche}
 - Cidade/Região: ${city || 'Não informada'}
 - Produtos/Serviços: ${products.join(', ')}
-- Budget mensal: R$${budget.toLocaleString('pt-BR')}
+- Investimento mensal: R$${budget.toLocaleString('pt-BR')}
 - Objetivo: ${objective}
 - Faturamento atual: R$${monthlyRevenue.toLocaleString('pt-BR')}/mês
 ${currentCPL ? `- CPL atual: R$${currentCPL}` : ''}
 ${currentLeadSource ? `- Principal origem de leads atual: ${currentLeadSource}` : ''}
 ${mainChallenge ? `- Maior desafio atual: ${mainChallenge}` : ''}
+${unitEconomicsSection}
 ${campaignHistory?.length > 0 ? `
 HISTÓRICO DE CAMPANHAS REAIS DO CLIENTE:
 ${campaignHistory.map((c: any) => `

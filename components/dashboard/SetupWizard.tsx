@@ -129,6 +129,11 @@ export function SetupWizard({ onComplete }: Props) {
     currentCPL:         '',
     mainChallenge:      '',
     currentLeadSource:  '',
+    // Unit economics
+    ticketPrice:        '',
+    grossMargin:        '',
+    isRecurring:        false,
+    conversionRate:     '',
   })
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
@@ -169,6 +174,11 @@ export function SetupWizard({ onComplete }: Props) {
         currentCPL:        form.currentCPL ? Number(form.currentCPL) : undefined,
         mainChallenge:     form.mainChallenge || undefined,
         currentLeadSource: form.currentLeadSource || undefined,
+        // Unit economics
+        ticketPrice:       form.ticketPrice ? Number(form.ticketPrice) : undefined,
+        grossMargin:       form.grossMargin ? Number(form.grossMargin) : undefined,
+        isRecurring:       form.isRecurring || undefined,
+        conversionRate:    form.conversionRate ? Number(form.conversionRate) : undefined,
       }
       setClientData(clientData)
       onComplete()
@@ -582,6 +592,84 @@ export function SetupWizard({ onComplete }: Props) {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Unit economics — ROAS break-even e CAC payback */}
+            <div className="pt-2 border-t border-[#1E1E24]">
+              <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">
+                Unit economics (opcional · estratégia muito mais precisa)
+              </p>
+              <p className="text-[10px] text-slate-700 mb-3">
+                Com esses dados calculamos ROAS break-even real, CAC payback e LTV do cliente.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 block">Ticket médio (R$)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">R$</span>
+                    <input type="number" className={inputClass()} style={{ paddingLeft: '2rem', fontSize: '0.875rem' }}
+                      placeholder={bench ? String(bench.avg_ticket) : '2000'}
+                      value={form.ticketPrice}
+                      onChange={(e) => update('ticketPrice', e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 block">Margem bruta (%)</label>
+                  <div className="relative">
+                    <input type="number" className={inputClass()} style={{ paddingRight: '2rem', fontSize: '0.875rem' }}
+                      placeholder="40" min="1" max="100"
+                      value={form.grossMargin}
+                      onChange={(e) => update('grossMargin', e.target.value)} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">%</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 block">Conversão lead→venda (%)</label>
+                  <div className="relative">
+                    <input type="number" className={inputClass()} style={{ paddingRight: '2rem', fontSize: '0.875rem' }}
+                      placeholder={bench ? String(Math.round((bench.cvr_lead_to_sale || 0.1) * 100)) : '10'} min="0.1" max="100"
+                      value={form.conversionRate}
+                      onChange={(e) => update('conversionRate', e.target.value)} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">%</span>
+                  </div>
+                </div>
+                <div className="flex flex-col justify-center">
+                  <label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 block">Produto recorrente?</label>
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, isRecurring: !f.isRecurring }))}
+                    className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
+                    style={form.isRecurring
+                      ? { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.4)', color: '#22C55E' }
+                      : { background: '#111114', border: '1px solid #2A2A30', color: '#64748B' }
+                    }
+                  >
+                    {form.isRecurring ? '✓ Sim (assinatura/recorrente)' : 'Não (venda única)'}
+                  </button>
+                </div>
+              </div>
+              {/* Preview do ROAS break-even em tempo real */}
+              {form.ticketPrice && form.grossMargin && form.conversionRate && (() => {
+                const ticket = Number(form.ticketPrice)
+                const margin = Number(form.grossMargin) / 100
+                const cvr    = Number(form.conversionRate) / 100
+                const breakEvenROAS = margin > 0 ? (1 / margin).toFixed(2) : '—'
+                const maxCPL = cvr > 0 ? (ticket * margin * cvr).toFixed(0) : '—'
+                return (
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {[
+                      { label: 'ROAS break-even', val: `${breakEvenROAS}×`, tip: 'ROAS mínimo para não ter prejuízo' },
+                      { label: 'CPL máximo lucrativo', val: `R$${maxCPL}`, tip: 'CPL acima disso você perde dinheiro' },
+                    ].map(({ label, val, tip }) => (
+                      <div key={label} className="bg-[#16161A] rounded-xl p-2.5 border border-[#2A2A30]">
+                        <div className="text-[9px] text-slate-500 mb-0.5">{label}</div>
+                        <div className="text-sm font-bold text-[#F0B429]">{val}</div>
+                        <div className="text-[9px] text-slate-600">{tip}</div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}

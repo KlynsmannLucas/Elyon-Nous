@@ -197,6 +197,55 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         </div>
       )}
 
+      {/* Unit Economics do cliente */}
+      {clientData?.ticketPrice && clientData?.grossMargin ? (() => {
+        const ticket  = clientData.ticketPrice!
+        const margin  = clientData.grossMargin! / 100
+        const cvr     = clientData.conversionRate ? clientData.conversionRate / 100 : null
+        const churn   = clientData.avgChurnMonthly ? clientData.avgChurnMonthly / 100 : 0.05
+        const breakEvenROAS = +(1 / margin).toFixed(2)
+        const maxCPL  = cvr ? Math.round(ticket * margin * cvr) : null
+        const ltv     = clientData.isRecurring ? Math.round(ticket / churn * margin) : null
+        const payback = maxCPL ? +(maxCPL / (ticket * margin)).toFixed(1) : null
+
+        return (
+          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-lg">📐</span>
+              <div className="font-display font-bold text-white text-sm">Unit Economics · {clientData.clientName}</div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-[#16161A] rounded-xl p-3 text-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Break-even ROAS</div>
+                <div className="font-display text-xl font-bold text-[#F0B429]">{breakEvenROAS}×</div>
+                <div className="text-[10px] text-slate-600 mt-1">mínimo para lucro</div>
+              </div>
+              {maxCPL !== null && (
+                <div className="bg-[#16161A] rounded-xl p-3 text-center">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">CPL Máx. Lucrativo</div>
+                  <div className="font-display text-xl font-bold text-[#22C55E]">R${maxCPL}</div>
+                  <div className="text-[10px] text-slate-600 mt-1">acima disso = prejuízo</div>
+                </div>
+              )}
+              {ltv !== null && (
+                <div className="bg-[#16161A] rounded-xl p-3 text-center">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">LTV Real</div>
+                  <div className="font-display text-xl font-bold text-[#A78BFA]">R${ltv.toLocaleString('pt-BR')}</div>
+                  <div className="text-[10px] text-slate-600 mt-1">margem × recorrência</div>
+                </div>
+              )}
+              {payback !== null && (
+                <div className="bg-[#16161A] rounded-xl p-3 text-center">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">CAC Payback</div>
+                  <div className="font-display text-xl font-bold text-[#38BDF8]">{payback} meses</div>
+                  <div className="text-[10px] text-slate-600 mt-1">para recuperar CAC</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })() : null}
+
       {/* Recomendação — IA ou benchmark local */}
       {(proj || hasAIStrategy) && (
         <div className="rounded-2xl p-5" style={{

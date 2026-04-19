@@ -52,6 +52,12 @@ export interface ClientData {
   currentCPL?: number                      // CPL atual do cliente
   mainChallenge?: string                   // maior desafio de crescimento atual
   currentLeadSource?: string               // principal origem de leads hoje
+  // Unit economics — para cálculo de ROAS break-even, CAC payback e LTV real
+  ticketPrice?: number                     // ticket médio do produto/serviço (R$)
+  grossMargin?: number                     // margem bruta em % (ex: 40 = 40%)
+  isRecurring?: boolean                    // produto recorrente (assinatura, mensalidade)?
+  avgChurnMonthly?: number                 // churn mensal em % (ex: 5 = 5%/mês) — só se recorrente
+  conversionRate?: number                  // taxa de conversão lead → venda em % (ex: 10 = 10%)
 }
 
 export interface StrategyData {
