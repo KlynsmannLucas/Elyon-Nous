@@ -1,5 +1,6 @@
 // app/api/diagnostic/route.ts — Diagnóstico inteligente por nicho com fallback por benchmark
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { getBenchmarkSummary, getBenchmark } from '@/lib/niche_benchmarks'
 import { buildNichePromptContext } from '@/lib/niche_prompts'
 
@@ -58,9 +59,12 @@ function buildFallbackDiagnostic(
 }
 
 export async function POST(req: NextRequest) {
+  const { userId } = auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
   try {
     const body = await req.json()
-    const { clientName, niche, strategy, analysis, nicheDetails } = body
+    const { clientName, niche, analysis, nicheDetails } = body
 
     const bench = getBenchmark(niche)
     const benchmarkText = getBenchmarkSummary(niche)

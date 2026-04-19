@@ -1,7 +1,7 @@
 // app/dashboard/page.tsx — Dashboard principal
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
@@ -14,6 +14,7 @@ import { TabGrowth }       from '@/components/dashboard/TabGrowth'
 import { TabPerformance }  from '@/components/dashboard/TabPerformance'
 import { TabDiagnostic }   from '@/components/dashboard/TabDiagnostic'
 import { TabAcoes }        from '@/components/dashboard/TabAcoes'
+import { TabErrorBoundary } from '@/components/dashboard/ErrorBoundary'
 import { TabConnections }       from '@/components/dashboard/TabConnections'
 import { TabAuditoria }         from '@/components/dashboard/TabAuditoria'
 import { TabMetaIntelligence }  from '@/components/dashboard/TabMetaIntelligence'
@@ -499,19 +500,24 @@ export default function DashboardPage() {
       .catch(() => {}) // falha silenciosa — localStorage continua funcionando
   }, [isLoaded, user?.id])
 
-  // Persiste cliente no banco + localStorage
+  // Persiste cliente no banco + localStorage (debounced: máx 1 req/3s)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const persistSave = useCallback(async () => {
     saveCurrentClient() // atualiza localStorage imediatamente
-    const state = useAppStore.getState()
-    const { clientData: cd, savedClients: sc } = state
-    if (!cd) return
-    const entry = sc.find((s) => s.clientData.clientName === cd.clientName)
-    if (!entry) return
-    fetch('/api/clients', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry),
-    }).catch(() => {})
+    // Debounce: cancela requisição pendente e agenda nova em 3s
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      const state = useAppStore.getState()
+      const { clientData: cd, savedClients: sc } = state
+      if (!cd) return
+      const entry = sc.find((s) => s.clientData.clientName === cd.clientName)
+      if (!entry) return
+      fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      }).catch(() => {})
+    }, 3000)
   }, [saveCurrentClient])
 
   // Remove cliente do banco + localStorage
@@ -680,22 +686,26 @@ export default function DashboardPage() {
     const strategy = strategyData?.strategy || {}
     const analysis = strategyData?.analysis || {}
 
+    const wrap = (name: string, node: React.ReactNode) => (
+      <TabErrorBoundary tabName={name}>{node}</TabErrorBoundary>
+    )
+
     switch (activeTab) {
-      case 'overview':     return <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} />
-      case 'strategy':     return <TabStrategy strategy={strategy} analysis={analysis} />
-      case 'diagnostic':   return <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />
-      case 'intelligence': return <TabIntelligence clientData={clientData} />
-      case 'audiences':    return <TabAudiences niche={clientData?.niche} />
-      case 'growth':       return <TabGrowth analysis={analysis} clientData={clientData} />
-      case 'performance':  return <TabPerformance clientData={clientData} />
-      case 'acoes':             return <TabAcoes clientData={clientData} strategyData={strategyData} />
-      case 'meta-intelligence': return <TabMetaIntelligence onNavigateToConnections={() => setActiveTab('connections')} />
-      case 'connections':       return planLimits.hasConnections
+      case 'overview':     return wrap('Overview',     <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} />)
+      case 'strategy':     return wrap('Estratégia',   <TabStrategy strategy={strategy} analysis={analysis} />)
+      case 'diagnostic':   return wrap('Diagnóstico',  <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />)
+      case 'intelligence': return wrap('Inteligência', <TabIntelligence clientData={clientData} />)
+      case 'audiences':    return wrap('Audiências',   <TabAudiences niche={clientData?.niche} />)
+      case 'growth':       return wrap('Crescimento',  <TabGrowth analysis={analysis} clientData={clientData} />)
+      case 'performance':  return wrap('Performance',  <TabPerformance clientData={clientData} />)
+      case 'acoes':        return wrap('Plano de Ações', <TabAcoes clientData={clientData} strategyData={strategyData} />)
+      case 'meta-intelligence': return wrap('Meta Ads IA', <TabMetaIntelligence onNavigateToConnections={() => setActiveTab('connections')} />)
+      case 'connections':  return wrap('Conexões', planLimits.hasConnections
         ? <TabConnections />
-        : <UpgradeGate feature="connections" />
-      case 'auditoria':    return planLimits.hasAudit
+        : <UpgradeGate feature="connections" />)
+      case 'auditoria':    return wrap('Auditoria', planLimits.hasAudit
         ? <TabAuditoria clientData={clientData} />
-        : <UpgradeGate feature="audit" />
+        : <UpgradeGate feature="audit" />)
     }
   }
 

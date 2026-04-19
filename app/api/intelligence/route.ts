@@ -1,8 +1,12 @@
 // app/api/intelligence/route.ts — Insights personalizados por cliente usando IA
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 
 export async function POST(req: NextRequest) {
+  const { userId } = auth()
+  if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
+
   try {
     const body = await req.json()
     const { clientName, niche, budget, objective, currentCPL, mainChallenge, strategy, campaignHistory } = body

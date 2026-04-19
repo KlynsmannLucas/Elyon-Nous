@@ -465,7 +465,18 @@ export function TabAuditoria({ clientData }: Props) {
         </div>
       )}
 
-      {error && <div className="bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">{error}</div>}
+      {error && (
+        <div className="bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
+          <span className="text-sm text-red-400">{error}</span>
+          <button
+            onClick={handleAudit}
+            className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+            style={{ background: 'rgba(255,77,77,0.15)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.3)' }}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
 
       {/* Loading */}
       {loading && (
