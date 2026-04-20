@@ -344,30 +344,69 @@ Subtotal: Gasto R$${file.campaigns.reduce((s:number,c:any)=>s+(c.spend||0),0).to
 ${anomalies.join('\n')}
 ` : '=== QUALIDADE DOS DADOS: OK (nenhuma anomalia crítica detectada) ==='
 
-        const prompt = `Você é um consultor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro. Especialista em Meta Ads (Advantage+, CBO, ASC, campanhas de conversão/leads), Google Ads (Search, PMAX, Display, YouTube, smart bidding com tCPA/tROAS/Max Conversions), atribuição de conversões e growth para PMEs. Você já gerenciou mais de R$50M em investimento publicitário.
+        // ── Pré-análise de campanhas: ranking por eficiência ───────────────
+        const rankedCamps = [...allCampaigns]
+          .filter((c: any) => (c.spend || 0) > 0)
+          .sort((a: any, b: any) => {
+            // Campanhas com leads: ordena por CPA crescente (menor = melhor)
+            if ((a.leads || 0) > 0 && (b.leads || 0) > 0)
+              return (a.cpl || a.spend / a.leads) - (b.cpl || b.spend / b.leads)
+            // Campanhas sem leads: vai para o final
+            if ((a.leads || 0) === 0) return 1
+            if ((b.leads || 0) === 0) return -1
+            return 0
+          })
 
-Faça uma AUDITORIA COMPLETA E CIRÚRGICA. Seja direto como um especialista de R$10.000/análise:
-- Cite nomes REAIS das campanhas nos problemas identificados
-- Interprete o que cada métrica SIGNIFICA para o negócio (não apenas descreva)
-- Priorize as anomalias detectadas automaticamente (listadas abaixo)
-- Avalie uso correto de Advantage+ vs campanha manual, objetivo vs estratégia de lance
-- Identifique problemas de atribuição (last-click inflacionado, sem API de Conversões, janela errada)
+        const campRankingText = rankedCamps.length > 0 ? `
+=== RANKING DE CAMPANHAS POR EFICIÊNCIA (pré-calculado — use estes dados) ===
+${rankedCamps.map((c: any, i: number) => {
+  const cpa = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+  const efficiency = cpa === null ? '⛔ SEM CONVERSÃO' :
+    (bench && cpa <= bench.cpl_min * 1.1) ? '🏆 EXCELENTE' :
+    (bench && cpa <= bench.cpl_max) ? '✅ DENTRO DO BENCHMARK' :
+    (bench && cpa <= bench.cpl_max * 2) ? '⚠ ACIMA DO BENCHMARK' : '🔴 CRÍTICO'
+  return `  ${i+1}. [${efficiency}] "${c.name}"${c.campaignType ? ` (${c.campaignType})` : ''}
+     Gasto: R$${Math.round(c.spend).toLocaleString('pt-BR')} | Conversões: ${c.leads || 0} | CPA: ${cpa ? `R$${cpa}` : 'N/A'} | CTR: ${(c.ctr||0).toFixed(2)}%${c.roas ? ` | ROAS: ${c.roas.toFixed(1)}×` : ''}`
+}).join('\n')}
+
+Campanhas CRÍTICAS (gasto alto, zero conversões):
+${rankedCamps.filter((c: any) => (c.leads || 0) === 0).map((c: any) =>
+  `  ⛔ "${c.name}" — R$${Math.round(c.spend).toLocaleString('pt-BR')} GASTOS SEM RESULTADO`
+).join('\n') || '  Nenhuma'}
+
+Melhor campanha: ${rankedCamps[0] ? `"${rankedCamps[0].name}" (CPA R$${rankedCamps[0].leads > 0 ? Math.round(rankedCamps[0].spend / rankedCamps[0].leads) : 'N/A'})` : 'N/A'}
+Pior campanha com gasto: ${rankedCamps.filter((c:any) => c.leads === 0).length > 0
+  ? `"${rankedCamps.filter((c:any) => c.leads === 0).sort((a:any,b:any) => b.spend - a.spend)[0].name}" (R$${Math.round(rankedCamps.filter((c:any) => c.leads === 0).sort((a:any,b:any) => b.spend - a.spend)[0].spend).toLocaleString('pt-BR')} sem conversão)`
+  : rankedCamps[rankedCamps.length-1] ? `"${rankedCamps[rankedCamps.length-1].name}" (CPA R$${rankedCamps[rankedCamps.length-1].leads > 0 ? Math.round(rankedCamps[rankedCamps.length-1].spend / rankedCamps[rankedCamps.length-1].leads) : 'N/A'})` : 'N/A'}
+` : ''
+
+        const prompt = `Você é um consultor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro, especialista em Meta Ads (Advantage+, CBO, ASC) e Google Ads (Search, PMAX, Smart Bidding, tCPA/tROAS). Já gerenciou mais de R$50M em investimento publicitário.
+
+REGRAS DA ANÁLISE — siga obrigatoriamente:
+1. Use os NOMES EXATOS das campanhas do ranking abaixo em todos os problemas e recomendações
+2. Cite NÚMEROS REAIS (CPA, gasto, conversões) — nunca invente métricas
+3. Classifique cada campanha como ESCALAR / MANTER / PAUSAR com justificativa numérica
+4. Dê % exatas de realocação de verba (ex: "+30% para X, -50% de Y")
+5. Para Google: liste negativos específicos para adicionar com base nos dados
+6. Seja tão direto quanto um relatório de R$10.000 — sem rodeios, sem genéricos
 
 === DADOS DO CLIENTE ===
 Cliente: ${clientName}
 Nicho: ${niche}
-Investimento mensal: R$${budget}
+Investimento mensal configurado: R$${budget}
 Objetivo: ${objective}
 
 ${anomalySection}
 
-=== DADOS DE PERFORMANCE ===
+${campRankingText}
+
+=== DADOS BRUTOS DE PERFORMANCE ===
 ${metaSummary}
 ${googleSummary}
 ${uploadSummary}
 
 === CONSOLIDADO GERAL ===
-Investimento total analisado: R$${totalSpend.toFixed(2)}
+Investimento total analisado: R$${Number(totalSpend).toFixed(2)}
 Total de leads/conversões: ${totalLeads}
 CPL médio real: R$${realCPL}
 

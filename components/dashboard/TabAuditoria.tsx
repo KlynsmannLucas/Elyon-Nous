@@ -88,67 +88,171 @@ function parseNum(v: any): number {
   return parseFloat(s.replace(/,/g, '')) || 0
 }
 
-function normalizeRow(row: Record<string, any>): Record<string, any> {
-  const get = (...keys: string[]) => {
-    for (const k of keys) {
-      const found = Object.entries(row).find(([col]) =>
-        col.toLowerCase().replace(/[^a-záéíóúãõâêîôûàüç\s]/gi, ' ').includes(k.toLowerCase())
-      )
-      if (found) return found[1]
-    }
-    return ''
+// Normaliza string de coluna: remove acentos, pontuação, espaços extras → comparação limpa
+function colKey(s: string) {
+  return s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // remove acentos
+    .replace(/[^a-z0-9\s]/g, ' ')                        // remove pontuação
+    .replace(/\s+/g, ' ').trim()
+}
+
+// Encontra coluna por lista de aliases — tenta match exato primeiro, depois partial
+function findCol(row: Record<string, any>, ...aliases: string[]): any {
+  const entries = Object.entries(row)
+  const normalized = entries.map(([k, v]) => [colKey(k), v] as [string, any])
+
+  for (const alias of aliases) {
+    const a = colKey(alias)
+    // Exact match
+    const exact = normalized.find(([k]) => k === a)
+    if (exact) return exact[1]
   }
+  for (const alias of aliases) {
+    const a = colKey(alias)
+    // Starts-with match (evita false positives: "custo" não pega "custo por conv")
+    const sw = normalized.find(([k]) => k.startsWith(a + ' ') || k === a)
+    if (sw) return sw[1]
+  }
+  for (const alias of aliases) {
+    const a = colKey(alias)
+    // Contains match como último recurso
+    const inc = normalized.find(([k]) => k.includes(a))
+    if (inc) return inc[1]
+  }
+  return ''
+}
 
-  // Meta: "Nome da campanha" | "Campanha" | "Campaign name"
-  // Meta: "Conjunto de anúncios" | "Ad Set Name"
-  const name = get(
+function normalizeRow(row: Record<string, any>): Record<string, any> {
+  // ── Nome da campanha / conjunto / anúncio ──────────────────────────────────
+  // Google PT: "Campanha" | Google EN: "Campaign"
+  // Meta PT: "Nome da campanha" | Meta EN: "Campaign name"
+  const name = findCol(row,
     'nome da campanha', 'campanha', 'campaign name', 'campaign',
-    'conjunto de anúncios', 'ad set name', 'ad set',
-    'nome do anúncio', 'anúncio', 'ad name', 'nome'
+    'conjunto de anuncios', 'ad set name', 'ad set',
+    'nome do anuncio', 'anuncio', 'ad name', 'nome',
   )
-  const status = get('status', 'situação', 'delivery', 'veiculação')
 
-  // Meta: "Valor usado (BRL)" | "Amount spent" | "Quantia gasta"
-  // Google: "Custo" | "Cost"
-  const spend = parseNum(get(
-    'valor usado', 'amount spent', 'quantia gasta', 'gasto total',
-    'gasto', 'spend', 'custo total', 'custo', 'cost', 'investimento'
+  // ── Status ─────────────────────────────────────────────────────────────────
+  const status = findCol(row, 'estado', 'status', 'situacao', 'delivery', 'veiculo', 'veiculacao')
+
+  // ── Tipo de campanha (Google: "Tipo de campanha" / "Campaign type") ────────
+  const campaignType = findCol(row, 'tipo de campanha', 'campaign type', 'tipo')
+
+  // ── Investimento / Custo ───────────────────────────────────────────────────
+  // Google PT: "Custo" | Google EN: "Cost"
+  // Meta PT: "Valor usado (BRL)" / "Quantia gasta" | Meta EN: "Amount spent"
+  const spend = parseNum(findCol(row,
+    'valor usado', 'amount spent', 'quantia gasta',
+    'custo', 'cost', 'gasto', 'spend', 'investimento',
   ))
 
-  const impr = parseNum(get('impressões', 'impressions', 'impr', 'impressao'))
-  const clicks = parseNum(get('cliques no link', 'cliques', 'link clicks', 'clicks', 'clique'))
-  const ctr = parseNum(get('ctr'))
+  // ── Impressões ─────────────────────────────────────────────────────────────
+  const impr = parseNum(findCol(row, 'impressoes', 'impressions', 'impr'))
 
-  // Meta: "Resultados" | "Leads" | Google: "Conversões" | "Conv."
-  const leads = parseNum(get(
-    'resultados', 'leads', 'conversões', 'conversions', 'conv.', 'conv ',
-    'result', 'actions', 'ações'
+  // ── Cliques ────────────────────────────────────────────────────────────────
+  // Meta: "Cliques no link" | Google: "Cliques"
+  const clicks = parseNum(findCol(row, 'cliques no link', 'link clicks', 'cliques', 'clicks', 'clique'))
+
+  // ── CTR ────────────────────────────────────────────────────────────────────
+  // Google EN: "CTR" | Meta PT: "CTR (taxa de cliques no link)"
+  const ctr = parseNum(findCol(row, 'ctr'))
+
+  // ── CPC ────────────────────────────────────────────────────────────────────
+  // Google: "CPC med." / "Avg. CPC" | Meta: "CPC (custo por clique)"
+  const cpc = parseNum(findCol(row, 'cpc med', 'avg cpc', 'cpc medio', 'cpc'))
+
+  // ── Conversões / Leads / Resultados ───────────────────────────────────────
+  // Google PT: "Conversoes" | Google EN: "Conversions" / "Conv."
+  // Meta PT: "Resultados" | Meta EN: "Results"
+  const leads = parseNum(findCol(row,
+    'conversoes', 'conversions', 'conv ',
+    'resultados', 'results', 'leads',
+    'acoes', 'actions',
   ))
 
-  // Meta: "Custo por resultado" | Google: "Custo / conv."
-  const cpl = parseNum(get(
-    'custo por resultado', 'custo por lead', 'custo por ação',
-    'cost per result', 'cost per lead', 'cpa', 'cpl',
-    'custo   conv', 'cost   conv'
+  // ── CPA / CPL — custo por conversão ───────────────────────────────────────
+  // Google PT: "Custo / conv." | Google EN: "Cost / conv."
+  // Meta PT: "Custo por resultado" | Meta EN: "Cost per result"
+  const cpl = parseNum(findCol(row,
+    'custo   conv', 'cost   conv',    // Google (após colKey remove "/" → "custo   conv")
+    'custo por resultado', 'cost per result',
+    'custo por lead', 'cost per lead',
+    'custo por acao', 'cpa', 'cpl',
   ))
 
-  const roas = parseNum(get('roas', 'retorno sobre', 'purchase roas', 'conv. value'))
-  const frequency = parseNum(get('frequência', 'frequency', 'freq'))
-  const placement = get('posicionamento', 'placement', 'posição', 'device', 'plataforma')
-  const adName = get('nome do anúncio', 'ad name', 'creative', 'criativo')
-  const reach = parseNum(get('alcance', 'reach'))
-  const revenue = parseNum(get('receita', 'revenue', 'valor de conversão', 'conv. value'))
+  // ── Taxa de conversão ──────────────────────────────────────────────────────
+  const convRate = parseNum(findCol(row, 'taxa de conv', 'conv  rate', 'conversion rate'))
 
-  return { name, status, spend, impressions: impr, clicks, ctr, leads, cpl, roas, frequency, placement, adName, reach, revenue }
+  // ── ROAS ───────────────────────────────────────────────────────────────────
+  const roas = parseNum(findCol(row, 'roas', 'retorno sobre', 'purchase roas'))
+
+  // ── Frequência (Meta) ──────────────────────────────────────────────────────
+  const frequency = parseNum(findCol(row, 'frequencia', 'frequency', 'freq'))
+
+  // ── Alcance / Reach (Meta) ─────────────────────────────────────────────────
+  const reach = parseNum(findCol(row, 'alcance', 'reach'))
+
+  // ── Valor de conversão / Receita ───────────────────────────────────────────
+  // Google: "Valor conv." / "Conv. value" | Meta: "Valor de conversão de compra"
+  const revenue = parseNum(findCol(row,
+    'valor conv', 'conv  value', 'valor de conversao',
+    'receita', 'revenue', 'conversion value',
+  ))
+
+  // ── Outros ────────────────────────────────────────────────────────────────
+  const placement = findCol(row, 'posicionamento', 'placement', 'posicao', 'device', 'dispositivo')
+  const adName    = findCol(row, 'nome do anuncio', 'ad name', 'criativo', 'creative')
+
+  return {
+    name, status, campaignType,
+    spend, impressions: impr, clicks, ctr, cpc,
+    leads, cpl, convRate, roas, frequency, reach, revenue,
+    placement, adName,
+  }
+}
+
+// Agrega linhas da mesma campanha (ex: export com breakdown por dia/dispositivo)
+function aggregateCampaigns(rows: Record<string, any>[]): Record<string, any>[] {
+  const map = new Map<string, Record<string, any>>()
+  for (const r of rows) {
+    const key = r.name?.trim()
+    if (!key) continue
+    if (!map.has(key)) {
+      map.set(key, { ...r })
+    } else {
+      const agg = map.get(key)!
+      agg.spend       = (agg.spend       || 0) + (r.spend       || 0)
+      agg.impressions = (agg.impressions || 0) + (r.impressions || 0)
+      agg.clicks      = (agg.clicks      || 0) + (r.clicks      || 0)
+      agg.leads       = (agg.leads       || 0) + (r.leads       || 0)
+      agg.revenue     = (agg.revenue     || 0) + (r.revenue     || 0)
+      agg.reach       = (agg.reach       || 0) + (r.reach       || 0)
+      // recalcula métricas derivadas
+      agg.cpl         = agg.leads > 0 ? agg.spend / agg.leads : 0
+      agg.ctr         = agg.impressions > 0 ? (agg.clicks / agg.impressions) * 100 : 0
+      agg.cpc         = agg.clicks > 0 ? agg.spend / agg.clicks : 0
+      agg.roas        = agg.spend > 0 && agg.revenue > 0 ? agg.revenue / agg.spend : 0
+    }
+  }
+  return Array.from(map.values())
 }
 
 function detectPlatform(headers: string[]): 'meta' | 'google' | 'unknown' {
   const h = headers.join(' ').toLowerCase()
-  if (h.includes('valor usado') || h.includes('conjunto de anúncios') || h.includes('ad set') ||
-      h.includes('facebook') || h.includes('meta') || h.includes('frequência') ||
-      h.includes('amount spent') || h.includes('reach')) return 'meta'
-  if (h.includes('campaign type') || h.includes('avg. cpc') || h.includes('google') ||
-      h.includes('keyword') || h.includes('search term') || h.includes('quality score')) return 'google'
+  // Google Ads signals (PT + EN)
+  if (h.includes('custo / conv') || h.includes('cost / conv') ||
+      h.includes('cpc med') || h.includes('avg. cpc') || h.includes('avg cpc') ||
+      h.includes('tipo de campanha') || h.includes('campaign type') ||
+      h.includes('taxa de conv') || h.includes('conv. rate') ||
+      h.includes('keyword') || h.includes('search term') ||
+      h.includes('quality score') || h.includes('impressao') && !h.includes('frequencia')) return 'google'
+  // Meta Ads signals (PT + EN)
+  if (h.includes('valor usado') || h.includes('amount spent') ||
+      h.includes('conjunto de anuncios') || h.includes('ad set') ||
+      h.includes('frequencia') || h.includes('frequency') ||
+      h.includes('alcance') || h.includes('reach') ||
+      h.includes('facebook') || h.includes('meta') ||
+      h.includes('custo por resultado') || h.includes('cost per result')) return 'meta'
   return 'unknown'
 }
 
@@ -234,12 +338,14 @@ export function TabAuditoria({ clientData }: Props) {
         const sep = lines[0].includes(';') ? ';' : ','
         const headers = parseCSVLine(lines[0], sep).map(h => h.replace(/"/g, '').trim())
         platform = detectPlatform(headers)
-        campaigns = lines.slice(1).map(line => {
-          const vals = parseCSVLine(line, sep)
-          const obj: Record<string, string> = {}
-          headers.forEach((h, i) => { obj[h] = vals[i] ?? '' })
-          return normalizeRow(obj)
-        }).filter(r => r.name && r.name.trim())
+        campaigns = aggregateCampaigns(
+          lines.slice(1).map(line => {
+            const vals = parseCSVLine(line, sep)
+            const obj: Record<string, string> = {}
+            headers.forEach((h, i) => { obj[h] = vals[i] ?? '' })
+            return normalizeRow(obj)
+          }).filter(r => r.name && r.name.trim())
+        )
 
       } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
         const buf = await file.arrayBuffer()
@@ -249,7 +355,7 @@ export function TabAuditoria({ clientData }: Props) {
         const json: Record<string, string>[] = utils.sheet_to_json(ws, { defval: '' })
         const headers = json.length > 0 ? Object.keys(json[0]) : []
         platform = detectPlatform(headers)
-        campaigns = json.map(normalizeRow).filter(r => r.name && r.name.trim())
+        campaigns = aggregateCampaigns(json.map(normalizeRow).filter(r => r.name && r.name.trim()))
 
       } else {
         setParseError('Formato inválido. Use .xlsx, .xls ou .csv')
