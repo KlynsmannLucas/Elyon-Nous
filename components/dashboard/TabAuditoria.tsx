@@ -162,19 +162,38 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
   const cpc = parseNum(findCol(row, 'cpc med', 'avg cpc', 'cpc medio', 'cpc'))
 
   // ── Conversões / Leads / Resultados ───────────────────────────────────────
+  // Prioridade: métricas específicas de lead/conversa antes de "Resultados"
+  // (que no Meta pode ser micro-conversão — ex: "cliques em mensagem")
+  //
   // Google PT: "Conversoes" | Google EN: "Conversions" / "Conv."
-  // Meta PT: "Resultados" | Meta EN: "Results"
+  // Meta Mensagens PT: "Mensagens iniciadas" / "Conversas iniciadas" / "Contatos no WhatsApp"
+  // Meta Lead Ads PT: "Leads" | Meta genérico PT: "Resultados"
   const leads = parseNum(findCol(row,
+    // Google
     'conversoes', 'conversions', 'conv ',
-    'resultados', 'results', 'leads',
+    // Meta — específicos de mensagens/WhatsApp (prioridade antes de "resultados")
+    'mensagens iniciadas', 'conversas iniciadas', 'novo contato no whatsapp',
+    'contatos no whatsapp', 'mensagem iniciada', 'conversa iniciada',
+    'messaging conversations started', 'conversations started',
+    // Meta Lead Ads
+    'leads',
+    // Meta genérico — último recurso (pode ser micro-métrica)
+    'resultados', 'results',
     'acoes', 'actions',
   ))
 
   // ── CPA / CPL — custo por conversão ───────────────────────────────────────
   // Google PT: "Custo / conv." | Google EN: "Cost / conv."
-  // Meta PT: "Custo por resultado" | Meta EN: "Cost per result"
+  // Meta Mensagens: "Custo por conversa iniciada" / "Custo por mensagem iniciada"
+  // Meta genérico: "Custo por resultado" | Meta EN: "Cost per result"
   const cpl = parseNum(findCol(row,
-    'custo   conv', 'cost   conv',    // Google (após colKey remove "/" → "custo   conv")
+    // Google
+    'custo   conv', 'cost   conv',    // colKey remove "/" → "custo   conv"
+    // Meta — específicos de mensagens/WhatsApp (prioridade)
+    'custo por conversa iniciada', 'custo por mensagem iniciada',
+    'custo por novo contato no whatsapp', 'custo por contato no whatsapp',
+    'cost per messaging conversation started', 'cost per conversation started',
+    // Meta Lead Ads / genérico
     'custo por resultado', 'cost per result',
     'custo por lead', 'cost per lead',
     'custo por acao', 'cpa', 'cpl',
