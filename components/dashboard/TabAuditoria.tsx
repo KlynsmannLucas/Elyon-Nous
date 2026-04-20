@@ -122,15 +122,29 @@ function findCol(row: Record<string, any>, ...aliases: string[]): any {
   return ''
 }
 
+// Detecta o nível do export (campanha / conjunto / anúncio) pelas colunas presentes
+function detectLevel(row: Record<string, any>): 'ad' | 'adset' | 'campaign' {
+  const keys = Object.keys(row).map(k => colKey(k))
+  if (keys.some(k => k.includes('nome do anuncio') || k === 'ad name' || k.includes('ad name'))) return 'ad'
+  if (keys.some(k => k.includes('conjunto de anuncios') || k.includes('ad set'))) return 'adset'
+  return 'campaign'
+}
+
 function normalizeRow(row: Record<string, any>): Record<string, any> {
-  // ── Nome da campanha / conjunto / anúncio ──────────────────────────────────
-  // Google PT: "Campanha" | Google EN: "Campaign"
-  // Meta PT: "Nome da campanha" | Meta EN: "Campaign name"
-  const name = findCol(row,
-    'nome da campanha', 'campanha', 'campaign name', 'campaign',
-    'conjunto de anuncios', 'ad set name', 'ad set',
-    'nome do anuncio', 'anuncio', 'ad name', 'nome',
-  )
+  // ── Nome: usa o identificador MAIS ESPECÍFICO disponível ──────────────────
+  // Isso evita que exports de conjunto + anúncio colem no mesmo nome de campanha
+  // e dupliquem o gasto na agregação.
+  //
+  // Ad level   → usa nome do anúncio (único por linha)
+  // Ad set level → usa nome do conjunto (único por linha)
+  // Campaign level → usa nome da campanha
+  const level = detectLevel(row)
+  const adName     = findCol(row, 'nome do anuncio', 'ad name', 'criativo', 'creative')
+  const adSetName  = findCol(row, 'conjunto de anuncios', 'ad set name', 'ad set')
+  const campName   = findCol(row, 'nome da campanha', 'campanha', 'campaign name', 'campaign', 'nome')
+  const name = level === 'ad'    ? (adName    || adSetName || campName)
+             : level === 'adset' ? (adSetName || campName)
+             : campName
 
   // ── Status ─────────────────────────────────────────────────────────────────
   const status = findCol(row, 'estado', 'status', 'situacao', 'delivery', 'veiculo', 'veiculacao')
@@ -220,10 +234,9 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
 
   // ── Outros ────────────────────────────────────────────────────────────────
   const placement = findCol(row, 'posicionamento', 'placement', 'posicao', 'device', 'dispositivo')
-  const adName    = findCol(row, 'nome do anuncio', 'ad name', 'criativo', 'creative')
 
   return {
-    name, status, campaignType,
+    name, status, campaignType, level,
     spend, impressions: impr, clicks, ctr, cpc,
     leads, cpl, convRate, roas, frequency, reach, revenue,
     placement, adName,
@@ -300,7 +313,9 @@ interface UploadedFile {
   file: File
   campaigns: any[]
   platform: 'meta' | 'google' | 'unknown'
+  level: 'ad' | 'adset' | 'campaign' | 'mixed'
   rowCount: number
+  showCampaigns?: boolean
 }
 
 // ─── Componente principal ────────────────────────────────────────────────────
@@ -381,7 +396,12 @@ export function TabAuditoria({ clientData }: Props) {
         return
       }
 
-      const newFile: UploadedFile = { file, campaigns, platform, rowCount: campaigns.length }
+      // Detecta o nível predominante do export
+      const levels = campaigns.map((c: any) => c.level as string).filter(Boolean)
+      const levelCounts = levels.reduce((acc: Record<string, number>, l) => { acc[l] = (acc[l] || 0) + 1; return acc }, {})
+      const dominantLevel = (Object.entries(levelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'campaign') as UploadedFile['level']
+
+      const newFile: UploadedFile = { file, campaigns, platform, level: dominantLevel, rowCount: campaigns.length }
       setUploadedFiles(prev => [...prev, newFile])
 
     } catch {
@@ -542,43 +562,125 @@ export function TabAuditoria({ clientData }: Props) {
         {/* Lista de arquivos carregados */}
         {uploadedFiles.length > 0 && (
           <div className="space-y-2">
+            {/* Aviso de dupla contagem quando múltiplos arquivos da mesma plataforma */}
+            {(() => {
+              const counts: Record<string, number> = {}
+              uploadedFiles.forEach(f => { if (f.platform !== 'unknown') counts[f.platform] = (counts[f.platform] || 0) + 1 })
+              const duped = Object.entries(counts).filter(([, n]) => n > 1)
+              if (!duped.length) return null
+              return (
+                <div className="flex items-start gap-2 bg-[#F0B429]/06 border border-[#F0B429]/25 rounded-xl px-4 py-3 text-[11px] text-[#F0B429]">
+                  <span className="flex-shrink-0 mt-0.5">⚠</span>
+                  <span>
+                    Você importou <strong>{duped.map(([p, n]) => `${n} arquivos de ${p === 'meta' ? 'Meta Ads' : 'Google Ads'}`).join(' e ')}</strong>.
+                    {' '}Para evitar dupla contagem nos totais, o sistema usará automaticamente <strong>o arquivo com maior investimento por plataforma</strong>. Todos os arquivos são enviados à IA para análise.
+                  </span>
+                </div>
+              )
+            })()}
+
             {uploadedFiles.map((f, i) => {
               const fSpend = f.campaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
               const fLeads = f.campaigns.reduce((s: number, c: any) => s + (c.leads || 0), 0)
               const fCpl   = fLeads > 0 ? fSpend / fLeads : 0
               const hasData = fSpend > 0 || fLeads > 0
+
+              const levelLabel: Record<string, string> = { ad: 'Anúncios', adset: 'Conjuntos', campaign: 'Campanhas', mixed: 'Misto' }
+              const levelColor: Record<string, string> = { ad: '#A78BFA', adset: '#38BDF8', campaign: '#22C55E', mixed: '#F0B429' }
+              const lc = levelColor[f.level] || '#64748B'
+
               return (
                 <div key={i} className="bg-[#111114] border rounded-xl px-4 py-3"
                   style={{ borderColor: hasData ? 'rgba(34,197,94,0.2)' : 'rgba(240,180,41,0.2)' }}>
+                  {/* Cabeçalho do arquivo */}
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-sm" style={{ color: hasData ? '#22C55E' : '#F0B429' }}>{hasData ? '✓' : '⚠'}</span>
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-semibold text-white truncate block">{f.file.name}</span>
-                      <span className="text-[10px] text-slate-500">
-                        {f.rowCount} linhas ·{' '}
-                        {f.platform !== 'unknown' ? `${f.platform === 'meta' ? 'Meta' : 'Google'} Ads` : 'Plataforma não identificada'}
-                      </span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-slate-500">
+                          {f.rowCount} linhas ·{' '}
+                          {f.platform !== 'unknown' ? `${f.platform === 'meta' ? 'Meta' : 'Google'} Ads` : 'Plataforma não identificada'}
+                        </span>
+                        {f.platform !== 'unknown' && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                            style={{ color: lc, background: `${lc}18`, border: `1px solid ${lc}30` }}>
+                            {levelLabel[f.level]}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <button onClick={() => removeFile(i)} className="text-slate-600 hover:text-[#FF4D4D] text-sm transition-colors flex-shrink-0">✕</button>
                   </div>
-                  {/* Preview dos dados parseados */}
+
+                  {/* Métricas resumidas */}
                   {hasData ? (
-                    <div className="grid grid-cols-3 gap-2 mt-1">
-                      {[
-                        { label: 'Investimento', val: fmt(fSpend) },
-                        { label: 'Leads/Conv.', val: fLeads.toLocaleString('pt-BR') },
-                        { label: 'CPL médio', val: fCpl > 0 ? fmt(fCpl) : '—' },
-                      ].map(({ label, val }) => (
-                        <div key={label} className="bg-[#16161A] rounded-lg px-2.5 py-1.5 text-center">
-                          <div className="text-[9px] text-slate-500 uppercase tracking-wider">{label}</div>
-                          <div className="text-xs font-bold text-[#22C55E]">{val}</div>
+                    <>
+                      <div className="grid grid-cols-3 gap-2 mt-1">
+                        {[
+                          { label: 'Investimento', val: fmt(fSpend) },
+                          { label: 'Leads/Conv.', val: fLeads.toLocaleString('pt-BR') },
+                          { label: 'CPL médio', val: fCpl > 0 ? fmt(fCpl) : '—' },
+                        ].map(({ label, val }) => (
+                          <div key={label} className="bg-[#16161A] rounded-lg px-2.5 py-1.5 text-center">
+                            <div className="text-[9px] text-slate-500 uppercase tracking-wider">{label}</div>
+                            <div className="text-xs font-bold text-[#22C55E]">{val}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Toggle tabela de campanhas */}
+                      <button
+                        onClick={() => setUploadedFiles(prev => prev.map((x, j) => j === i ? { ...x, showCampaigns: !x.showCampaigns } : x))}
+                        className="mt-2 text-[10px] text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1"
+                      >
+                        <span>{f.showCampaigns ? '▲' : '▼'}</span>
+                        {f.showCampaigns ? 'Ocultar' : `Ver ${f.campaigns.length} linha(s) detectada(s)`}
+                      </button>
+
+                      {/* Tabela de preview */}
+                      {f.showCampaigns && (
+                        <div className="mt-2 rounded-xl overflow-hidden border border-[#2A2A30]">
+                          <div className="grid text-[9px] text-slate-500 uppercase tracking-wider px-3 py-2 bg-[#0E0E11] border-b border-[#2A2A30]"
+                            style={{ gridTemplateColumns: '1fr 70px 50px 70px 60px' }}>
+                            <span>Nome</span>
+                            <span className="text-right">Gasto</span>
+                            <span className="text-right">Conv.</span>
+                            <span className="text-right">CPL</span>
+                            <span className="text-right">Status</span>
+                          </div>
+                          {f.campaigns.slice(0, 12).map((c: any, ci: number) => {
+                            const cpl = c.leads > 0 ? c.spend / c.leads : null
+                            const hasConv = (c.leads || 0) > 0
+                            return (
+                              <div key={ci} className="grid items-center px-3 py-2 border-b border-[#1E1E24] last:border-0 hover:bg-[#16161A]"
+                                style={{ gridTemplateColumns: '1fr 70px 50px 70px 60px' }}>
+                                <span className="text-[10px] text-slate-300 truncate pr-2">{c.name || '—'}</span>
+                                <span className="text-[10px] text-right text-slate-400">{fmt(c.spend || 0)}</span>
+                                <span className="text-[10px] text-right" style={{ color: hasConv ? '#22C55E' : '#64748B' }}>{c.leads || 0}</span>
+                                <span className="text-[10px] text-right text-[#F0B429]">{cpl ? fmt(cpl) : '—'}</span>
+                                <span className="text-[9px] text-right" style={{ color: hasConv ? '#22C55E' : '#FF4D4D' }}>
+                                  {hasConv ? '✓ conv.' : '⛔ sem conv.'}
+                                </span>
+                              </div>
+                            )
+                          })}
+                          {f.campaigns.length > 12 && (
+                            <div className="text-center text-[10px] text-slate-600 py-2">
+                              + {f.campaigns.length - 12} linha(s) não exibidas
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   ) : (
-                    <div className="text-[10px] text-[#F0B429] mt-1 flex items-center gap-1.5">
-                      <span>⚠</span>
-                      <span>Colunas de gasto/leads não identificadas. Verifique se o arquivo tem as colunas: <strong>Valor usado</strong>, <strong>Resultados</strong> ou <strong>Custo por resultado</strong>.</span>
+                    <div className="text-[10px] text-[#F0B429] mt-1 flex items-start gap-1.5">
+                      <span className="flex-shrink-0">⚠</span>
+                      <span>
+                        Colunas de gasto/leads não identificadas. O arquivo deve conter:{' '}
+                        <strong>Valor usado</strong> (Meta) ou <strong>Custo</strong> (Google) para gasto, e{' '}
+                        <strong>Mensagens iniciadas</strong>, <strong>Resultados</strong> ou <strong>Conversões</strong> para leads.
+                      </span>
                     </div>
                   )}
                 </div>

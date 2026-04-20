@@ -26,7 +26,6 @@ function buildFallbackAudit(
   else if (realCPL > bench.cpl_max) score = 50
 
   const grade = score >= 85 ? 'A' : score >= 72 ? 'B+' : score >= 58 ? 'B' : score >= 45 ? 'C+' : 'C'
-  const activeCamps = allCampaigns.filter(c => c.leads > 0).sort((a, b) => (a.cpl || 999) - (b.cpl || 999))
 
   return {
     health_score: score,
@@ -246,8 +245,21 @@ export async function POST(req: NextRequest) {
     const benchmarkText = getBenchmarkSummary(niche)
     const allCampaigns = [...metaCampaigns, ...googleCampaigns, ...allUploadedCampaigns]
 
-    const uploadTotalSpend = allUploadedCampaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
-    const uploadTotalLeads = allUploadedCampaigns.reduce((s: number, c: any) => s + (c.leads || 0), 0)
+    // ── Totais de arquivos enviados — usa MAX spend por plataforma ─────────────
+    // Quando o usuário sobe 2 arquivos do mesmo Meta (ex: conjuntos + anúncios),
+    // os totais seriam duplicados se simplesmente somados. A heurística: para
+    // cada plataforma, usa o arquivo com maior investimento total (mais completo).
+    const platformBest: Record<string, { spend: number; leads: number }> = {}
+    for (const file of allUploadedFiles) {
+      const p = file.platform || 'unknown'
+      const fs = file.campaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
+      const fl = file.campaigns.reduce((s: number, c: any) => s + (c.leads || 0), 0)
+      if (!platformBest[p] || fs > platformBest[p].spend) {
+        platformBest[p] = { spend: fs, leads: fl }
+      }
+    }
+    const uploadTotalSpend = Object.values(platformBest).reduce((s, v) => s + v.spend, 0)
+    const uploadTotalLeads = Object.values(platformBest).reduce((s, v) => s + v.leads, 0)
     const totalSpend = (metaTotals?.spend || 0) + (googleTotals?.spend || 0) + uploadTotalSpend
     const totalLeads = (metaTotals?.leads || 0) + (googleTotals?.leads || 0) + uploadTotalLeads
     const realCPL    = totalLeads > 0 ? (totalSpend / totalLeads).toFixed(2) : '0'
