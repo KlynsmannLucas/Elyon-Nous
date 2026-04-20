@@ -1,10 +1,9 @@
 // app/layout.tsx — Layout raiz com fontes e ClerkProvider
 import type { Metadata } from 'next'
-import { Syne, DM_Sans } from 'next/font/google'
+import { Syne, DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 
-// Fonte display — títulos e headers
 const syne = Syne({
   subsets: ['latin'],
   weight: ['700', '800'],
@@ -12,11 +11,17 @@ const syne = Syne({
   display: 'swap',
 })
 
-// Fonte corpo — textos e UI
 const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   variable: '--font-dm-sans',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-mono',
   display: 'swap',
 })
 
@@ -54,7 +59,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="pt-BR" className={`${syne.variable} ${dmSans.variable}`}>
+      <html lang="pt-BR" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}>
         <body className="bg-[#0A0A0B] text-slate-200 font-body antialiased">
           {children}
         </body>
