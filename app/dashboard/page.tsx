@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
-import { SetupWizard }    from '@/components/dashboard/SetupWizard'
+import { SetupWizard, type WizardImportData }    from '@/components/dashboard/SetupWizard'
 import { TabOverview }     from '@/components/dashboard/TabOverview'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
@@ -484,6 +484,7 @@ export default function DashboardPage() {
     savedClients, setSavedClients, saveCurrentClient, loadSavedClient, deleteSavedClient,
     campaignHistory,
     recordStrategyGeneration, getStrategyCountLastHour,
+    setAuditCache,
   } = useAppStore()
 
   // ── Sincronização com banco de dados ──────────────────────────────────────────
@@ -550,7 +551,7 @@ export default function DashboardPage() {
     }
   }, []) // só na montagem
 
-  const handleWizardComplete = useCallback(async () => {
+  const handleWizardComplete = useCallback(async (importData?: WizardImportData[]) => {
     if (!clientData) return
 
     if (planLimits.maxStrategiesPerHour > 0 && getStrategyCountLastHour() >= planLimits.maxStrategiesPerHour) {
@@ -560,7 +561,7 @@ export default function DashboardPage() {
 
     setIsGenerating(true)
     setGenError('')
-    setView('dashboard') // vai pro dashboard durante geração
+    setView('dashboard')
 
     try {
       const controller = new AbortController()
@@ -573,7 +574,6 @@ export default function DashboardPage() {
       })
       clearTimeout(timeout)
 
-      // Lê stream SSE (keepalive + resultado final)
       const reader = res.body!.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -606,14 +606,42 @@ export default function DashboardPage() {
         generatedAt: new Date().toISOString(),
       })
       recordStrategyGeneration()
-      // Auto-save imediato após gerar estratégia — garante que o cliente nunca se perde
       await persistSave()
+
+      // Se o usuário importou arquivos no wizard, auto-executa a auditoria
+      if (importData && importData.length > 0) {
+        try {
+          const uploadedFiles = importData.map(d => ({
+            filename: d.filename,
+            platform: d.platform,
+            campaigns: d.campaigns,
+          }))
+          const auditRes = await fetch('/api/audit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientName: clientData.clientName,
+              niche: clientData.niche,
+              budget: clientData.budget,
+              objective: clientData.objective,
+              uploadedFiles,
+            }),
+          })
+          const auditJson = await auditRes.json()
+          if (auditJson.success) {
+            setAuditCache(clientData.clientName, auditJson.audit)
+            setActiveTab('auditoria')
+          }
+        } catch {
+          // Auditoria automática falhou — não bloqueia o fluxo principal
+        }
+      }
     } catch (e: any) {
       setGenError(e.message)
     } finally {
       setIsGenerating(false)
     }
-  }, [clientData, setIsGenerating, setStrategyData, persistSave, planLimits, getStrategyCountLastHour, recordStrategyGeneration])
+  }, [clientData, setIsGenerating, setStrategyData, persistSave, planLimits, getStrategyCountLastHour, recordStrategyGeneration, setAuditCache, setActiveTab])
 
   // Auto-save sempre que a estratégia muda (protege contra perda de dados em refresh)
   useEffect(() => {

@@ -1,10 +1,11 @@
 // components/dashboard/SetupWizard.tsx — Onboarding inteligente por nicho (ELYON AGENT)
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { getNicheConfig } from '@/lib/niche_prompts'
+import { parseImportFile, type ImportSummary } from '@/lib/csv-import'
 
 const NICHE_GROUPS: { label: string; niches: string[] }[] = [
   {
@@ -101,10 +102,19 @@ const OBJECTIVES = [
   { value: 'retencao', label: 'Reter e fidelizar clientes',            icon: '❤️' },
 ]
 
-const TOTAL_STEPS = 6
+const TOTAL_STEPS = 7
+
+export interface WizardImportData {
+  platform: 'meta' | 'google' | 'unknown'
+  filename: string
+  campaigns: any[]
+  totalSpend: number
+  totalLeads: number
+  avgCPL: number
+}
 
 interface Props {
-  onComplete: () => void
+  onComplete: (importData?: WizardImportData[]) => void
 }
 
 function inputClass(focused = false) {
@@ -137,6 +147,11 @@ export function SetupWizard({ onComplete }: Props) {
   })
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
+  const [importedFiles, setImportedFiles] = useState<ImportSummary[]>([])
+  const [importLoading, setImportLoading] = useState(false)
+  const [importError, setImportError] = useState('')
+  const [importDragOver, setImportDragOver] = useState(false)
+  const importRef = useRef<HTMLInputElement>(null)
 
   const step      = wizardStep
   const niche     = form.niche === 'Outro' ? form.customNiche : form.niche
@@ -152,10 +167,37 @@ export function SetupWizard({ onComplete }: Props) {
   const canNext = () => {
     if (step === 0) return form.clientName.trim().length > 1
     if (step === 1) return form.niche.length > 0
-    if (step === 2) return true // detalhes do nicho são opcionais
+    if (step === 2) return true
     if (step === 3) return form.products.trim().length > 3
     if (step === 4) return Number(form.budget) >= 500
+    if (step === 5) return true // import é opcional
     return true
+  }
+
+  const handleImportFile = async (file: File) => {
+    const name = file.name.toLowerCase()
+    if (!name.endsWith('.csv') && !name.endsWith('.xlsx') && !name.endsWith('.xls')) {
+      setImportError('Formato inválido. Use .csv ou .xlsx')
+      return
+    }
+    setImportLoading(true)
+    setImportError('')
+    try {
+      const summary = await parseImportFile(file)
+      if (summary.campaigns.length === 0) {
+        setImportError('Nenhuma campanha encontrada no arquivo. Verifique o formato.')
+        return
+      }
+      setImportedFiles(prev => [...prev, summary])
+      // Auto-preenche CPL se não estiver definido
+      if (!form.currentCPL && summary.avgCPL > 0) {
+        setForm(f => ({ ...f, currentCPL: String(summary.avgCPL) }))
+      }
+    } catch {
+      setImportError('Erro ao ler o arquivo. Verifique se é um CSV ou XLSX válido do Meta Ads / Google Ads.')
+    } finally {
+      setImportLoading(false)
+    }
   }
 
   const handleGenerate = async () => {
@@ -174,14 +216,13 @@ export function SetupWizard({ onComplete }: Props) {
         currentCPL:        form.currentCPL ? Number(form.currentCPL) : undefined,
         mainChallenge:     form.mainChallenge || undefined,
         currentLeadSource: form.currentLeadSource || undefined,
-        // Unit economics
         ticketPrice:       form.ticketPrice ? Number(form.ticketPrice) : undefined,
         grossMargin:       form.grossMargin ? Number(form.grossMargin) : undefined,
         isRecurring:       form.isRecurring || undefined,
         conversionRate:    form.conversionRate ? Number(form.conversionRate) : undefined,
       }
       setClientData(clientData)
-      onComplete()
+      onComplete(importedFiles.length > 0 ? importedFiles : undefined)
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -674,11 +715,128 @@ export function SetupWizard({ onComplete }: Props) {
           </div>
         )}
 
-        {/* ── Step 5: Objetivo + Gerar ── */}
+        {/* ── Step 5: Import de CSV (opcional) ── */}
         {step === 5 && (
           <div className="animate-fade-up">
             <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
-              Passo 6 de {TOTAL_STEPS} · Último passo
+              Passo 6 de {TOTAL_STEPS} · Opcional
+            </p>
+            <h2 className="font-display text-3xl font-bold text-white mb-2">
+              Importar dados de campanhas
+            </h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Faça upload do export do <strong className="text-slate-300">Meta Ads</strong> ou <strong className="text-slate-300">Google Ads</strong> para receber uma análise completa imediata. Ou pule e faça depois na aba Auditoria.
+            </p>
+
+            {/* Zona de drop */}
+            <div
+              onDragOver={e => { e.preventDefault(); setImportDragOver(true) }}
+              onDragLeave={() => setImportDragOver(false)}
+              onDrop={e => {
+                e.preventDefault(); setImportDragOver(false)
+                Array.from(e.dataTransfer.files).forEach(handleImportFile)
+              }}
+              onClick={() => importRef.current?.click()}
+              className="border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-colors mb-4"
+              style={{
+                borderColor: importDragOver ? '#F0B429' : '#2A2A30',
+                background: importDragOver ? 'rgba(240,180,41,0.05)' : '#111114',
+              }}
+            >
+              <input
+                ref={importRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                multiple
+                className="hidden"
+                onChange={e => { Array.from(e.target.files || []).forEach(handleImportFile); e.target.value = '' }}
+              />
+              {importLoading ? (
+                <div className="text-[#F0B429] text-sm font-semibold animate-pulse">⚡ Analisando arquivo...</div>
+              ) : (
+                <>
+                  <div className="text-3xl mb-3 opacity-40">📊</div>
+                  <div className="text-sm font-semibold text-white mb-1">Arraste o CSV/XLSX aqui ou clique para selecionar</div>
+                  <div className="text-xs text-slate-600">Meta Ads ou Google Ads · .csv, .xlsx</div>
+                </>
+              )}
+            </div>
+
+            {/* Como exportar */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {[
+                { platform: 'Meta Ads', steps: 'Gerenciador de Anúncios → Relatórios → Exportar CSV', icon: '📘' },
+                { platform: 'Google Ads', steps: 'Campanhas → Download → Formato CSV', icon: '🔵' },
+              ].map(p => (
+                <div key={p.platform} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-3">
+                  <div className="text-xs font-semibold text-white mb-1">{p.icon} {p.platform}</div>
+                  <div className="text-[10px] text-slate-600">{p.steps}</div>
+                </div>
+              ))}
+            </div>
+
+            {importError && (
+              <div className="text-xs text-red-400 bg-red-900/20 border border-red-500/30 rounded-xl px-3 py-2 mb-3">{importError}</div>
+            )}
+
+            {/* Arquivos importados */}
+            {importedFiles.length > 0 && (
+              <div className="space-y-3">
+                <div className="text-xs text-[#22C55E] font-semibold mb-1">✓ {importedFiles.length} arquivo{importedFiles.length > 1 ? 's' : ''} importado{importedFiles.length > 1 ? 's' : ''}:</div>
+                {importedFiles.map((f, i) => (
+                  <div key={i} className="bg-[#111114] border border-[#22C55E30] rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-white">{f.filename}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                          style={{ color: f.platform === 'meta' ? '#38BDF8' : f.platform === 'google' ? '#F0B429' : '#64748B',
+                            background: f.platform === 'meta' ? 'rgba(56,189,248,0.1)' : f.platform === 'google' ? 'rgba(240,180,41,0.1)' : 'rgba(100,116,139,0.1)' }}>
+                          {f.platform === 'unknown' ? 'desconhecido' : f.platform}
+                        </span>
+                        <button onClick={() => setImportedFiles(prev => prev.filter((_, j) => j !== i))}
+                          className="text-slate-700 hover:text-slate-500 text-sm">×</button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <div className="text-xs font-bold text-white">{f.campaigns.length}</div>
+                        <div className="text-[10px] text-slate-600">campanhas</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-[#F0B429]">R${Math.round(f.totalSpend).toLocaleString('pt-BR')}</div>
+                        <div className="text-[10px] text-slate-600">investimento</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-[#22C55E]">{f.totalLeads}</div>
+                        <div className="text-[10px] text-slate-600">leads/conv.</div>
+                      </div>
+                    </div>
+                    {f.avgCPL > 0 && (
+                      <div className="mt-2 text-center text-[10px] text-slate-500">
+                        CPL médio: <span className="text-[#F0B429] font-bold">R${f.avgCPL}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div className="text-[10px] text-slate-600 text-center">
+                  ✓ CPL preenchido automaticamente · a IA vai analisar esses dados ao gerar a estratégia
+                </div>
+              </div>
+            )}
+
+            {importedFiles.length === 0 && !importLoading && (
+              <div className="text-center text-xs text-slate-600 py-2">
+                Passo opcional — você pode pular e importar depois na aba Auditoria.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Step 6: Objetivo + Gerar ── */}
+        {step === 6 && (
+          <div className="animate-fade-up">
+            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+              Passo 7 de {TOTAL_STEPS} · Último passo
             </p>
             <h2 className="font-display text-3xl font-bold text-white mb-2">
               Objetivo principal?
@@ -742,7 +900,7 @@ export function SetupWizard({ onComplete }: Props) {
           >
             ← Voltar
           </button>
-          {step < 5 && (
+          {step < 6 && (
             <button
               onClick={() => setWizardStep(step + 1)}
               disabled={!canNext()}
@@ -753,7 +911,7 @@ export function SetupWizard({ onComplete }: Props) {
                 color: '#F0B429',
               }}
             >
-              Próximo →
+              {step === 5 && importedFiles.length === 0 ? 'Pular →' : 'Próximo →'}
             </button>
           )}
         </div>

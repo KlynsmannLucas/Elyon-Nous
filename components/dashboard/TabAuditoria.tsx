@@ -156,8 +156,12 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
   // Google PT: "Custo" | Google EN: "Cost"
   // Meta PT: "Valor usado (BRL)" / "Quantia gasta" | Meta EN: "Amount spent"
   const spend = parseNum(findCol(row,
-    'valor usado', 'amount spent', 'quantia gasta',
-    'custo', 'cost', 'gasto', 'spend', 'investimento',
+    // Meta PT: "Valor usado (BRL)" / "Quantia gasta (BRL)"
+    'valor usado', 'valor gasto', 'quantia gasta', 'amount spent',
+    // Google PT: "Custo" | EN: "Cost"
+    'custo', 'cost',
+    // genéricos
+    'gasto', 'spend', 'investimento', 'total gasto', 'total spent',
   ))
 
   // ── Impressões ─────────────────────────────────────────────────────────────
@@ -183,8 +187,8 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
   // Meta Mensagens PT: "Mensagens iniciadas" / "Conversas iniciadas" / "Contatos no WhatsApp"
   // Meta Lead Ads PT: "Leads" | Meta genérico PT: "Resultados"
   const leads = parseNum(findCol(row,
-    // Google
-    'conversoes', 'conversions', 'conv ',
+    // Google PT/EN
+    'conversoes', 'conversions', 'conv.', 'conv ', 'conv',
     // Meta — específicos de mensagens/WhatsApp (prioridade antes de "resultados")
     'mensagens iniciadas', 'conversas iniciadas', 'novo contato no whatsapp',
     'contatos no whatsapp', 'mensagem iniciada', 'conversa iniciada',
@@ -192,8 +196,10 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
     // Meta Lead Ads
     'leads',
     // Meta genérico — último recurso (pode ser micro-métrica)
-    'resultados', 'results',
-    'acoes', 'actions',
+    'resultados', 'resultado', 'results', 'result',
+    'acoes na publicacao', 'acoes', 'actions',
+    // outros padrões de exportação
+    'total de resultados', 'total de leads', 'total de conversoes',
   ))
 
   // ── CPA / CPL — custo por conversão ───────────────────────────────────────
@@ -201,8 +207,9 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
   // Meta Mensagens: "Custo por conversa iniciada" / "Custo por mensagem iniciada"
   // Meta genérico: "Custo por resultado" | Meta EN: "Cost per result"
   const cpl = parseNum(findCol(row,
-    // Google
-    'custo   conv', 'cost   conv',    // colKey remove "/" → "custo   conv"
+    // Google PT: "Custo / conv." → colKey → "custo conv"
+    'custo conv', 'custo   conv', 'cost conv', 'cost   conv',
+    'custo por conversao', 'cost per conversion',
     // Meta — específicos de mensagens/WhatsApp (prioridade)
     'custo por conversa iniciada', 'custo por mensagem iniciada',
     'custo por novo contato no whatsapp', 'custo por contato no whatsapp',
@@ -210,7 +217,8 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
     // Meta Lead Ads / genérico
     'custo por resultado', 'cost per result',
     'custo por lead', 'cost per lead',
-    'custo por acao', 'cpa', 'cpl',
+    'custo por acao na publicacao', 'custo por acao', 'cost per action',
+    'cpa', 'cpl',
   ))
 
   // ── Taxa de conversão ──────────────────────────────────────────────────────
