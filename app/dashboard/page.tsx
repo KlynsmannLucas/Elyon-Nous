@@ -17,24 +17,26 @@ import { TabAcoes }        from '@/components/dashboard/TabAcoes'
 import { TabErrorBoundary } from '@/components/dashboard/ErrorBoundary'
 import { TabConnections }       from '@/components/dashboard/TabConnections'
 import { TabAuditoria }         from '@/components/dashboard/TabAuditoria'
-import { TabMetaIntelligence }  from '@/components/dashboard/TabMetaIntelligence'
+import { TabMetaIntelligence }    from '@/components/dashboard/TabMetaIntelligence'
+import { TabGoogleIntelligence }  from '@/components/dashboard/TabGoogleIntelligence'
 import { NousChat }       from '@/components/dashboard/NousChat'
 import { getPlanLimits, hasActivePlan, UPGRADE_MESSAGES } from '@/lib/planUtils'
 
-type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'connections' | 'auditoria' | 'meta-intelligence' | 'acoes'
+type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'connections' | 'auditoria' | 'meta-intelligence' | 'google-intelligence' | 'acoes'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: 'overview',          label: 'Overview',        icon: '🏠' },
-  { key: 'strategy',          label: 'Estratégia',      icon: '⚡' },
-  { key: 'diagnostic',        label: 'Diagnóstico',     icon: '🎯' },
-  { key: 'intelligence',      label: 'Inteligência',    icon: '🧠' },
-  { key: 'auditoria',         label: 'Auditoria',       icon: '🔍' },
-  { key: 'meta-intelligence', label: 'Meta Ads IA',     icon: '📡' },
-  { key: 'audiences',         label: 'Audiências',      icon: '👥' },
-  { key: 'growth',            label: 'Crescimento',     icon: '📈' },
-  { key: 'performance',       label: 'Performance',     icon: '📊' },
-  { key: 'acoes',             label: 'Plano de Ações',  icon: '✅' },
-  { key: 'connections',       label: 'Conexões',        icon: '🔗' },
+  { key: 'overview',            label: 'Overview',          icon: '🏠' },
+  { key: 'strategy',            label: 'Estratégia',        icon: '⚡' },
+  { key: 'diagnostic',          label: 'Diagnóstico',       icon: '🎯' },
+  { key: 'intelligence',        label: 'Inteligência',      icon: '🧠' },
+  { key: 'auditoria',           label: 'Auditoria',         icon: '🔍' },
+  { key: 'meta-intelligence',   label: 'Meta Ads IA',       icon: '📡' },
+  { key: 'google-intelligence', label: 'Google Ads IA',     icon: '🎯' },
+  { key: 'audiences',           label: 'Audiências',        icon: '👥' },
+  { key: 'growth',              label: 'Crescimento',       icon: '📈' },
+  { key: 'performance',         label: 'Performance',       icon: '📊' },
+  { key: 'acoes',               label: 'Plano de Ações',    icon: '✅' },
+  { key: 'connections',         label: 'Conexões',          icon: '🔗' },
 ]
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
@@ -727,7 +729,8 @@ export default function DashboardPage() {
       case 'growth':       return wrap('Crescimento',  <TabGrowth analysis={analysis} clientData={clientData} />)
       case 'performance':  return wrap('Performance',  <TabPerformance clientData={clientData} />)
       case 'acoes':        return wrap('Plano de Ações', <TabAcoes clientData={clientData} strategyData={strategyData} />)
-      case 'meta-intelligence': return wrap('Meta Ads IA', <TabMetaIntelligence onNavigateToConnections={() => setActiveTab('connections')} />)
+      case 'meta-intelligence':    return wrap('Meta Ads IA',    <TabMetaIntelligence    onNavigateToConnections={() => setActiveTab('connections')} />)
+      case 'google-intelligence': return wrap('Google Ads IA', <TabGoogleIntelligence onNavigateToConnections={() => setActiveTab('connections')} />)
       case 'connections':  return wrap('Conexões', planLimits.hasConnections
         ? <TabConnections />
         : <UpgradeGate feature="connections" />)
