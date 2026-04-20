@@ -5,14 +5,14 @@ function DashboardPreview() {
   return (
     <div className="relative w-full max-w-[580px]">
       <div className="absolute -inset-4 opacity-20 blur-3xl rounded-3xl"
-        style={{ background: 'radial-gradient(ellipse, #F0B429 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(ellipse, #F5A500 0%, transparent 70%)' }} />
 
-      <div className="relative bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 shadow-2xl">
+      <div className="relative bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-5 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="font-display font-bold text-sm" style={{
-              background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+              background: 'linear-gradient(135deg, #F5A500, #FFD166)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>ELYON</span>
             <span className="text-[10px] text-slate-600">· Dashboard</span>
@@ -26,7 +26,7 @@ function DashboardPreview() {
         {/* Nicho badge + Meta conectado */}
         <div className="mb-3 flex items-center gap-2 flex-wrap">
           <span className="text-[10px] px-2 py-1 rounded-full font-semibold"
-            style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.25)' }}>
+            style={{ background: 'rgba(245,165,0,0.1)', color: '#F5A500', border: '1px solid rgba(245,165,0,0.25)' }}>
             Odontologia Estética
           </span>
           <span className="text-[10px] px-2 py-1 rounded-full font-semibold flex items-center gap-1"
@@ -39,12 +39,12 @@ function DashboardPreview() {
         {/* KPI cards */}
         <div className="grid grid-cols-2 gap-2.5 mb-3">
           {[
-            { label: 'Receita Estimada', value: 'R$38k', sub: '+24% vs mês anterior', color: '#F0B429' },
+            { label: 'Receita Estimada', value: 'R$38k', sub: '+24% vs mês anterior', color: '#F5A500' },
             { label: 'Leads / mês',      value: '62–95',  sub: 'CPL médio R$70',       color: '#22C55E' },
             { label: 'ROAS Real',        value: '3.9×',   sub: 'Meta: 3.8× ✓',         color: '#22C55E' },
-            { label: 'CPL Real',         value: 'R$70',   sub: 'Benchmark R$45–95',     color: '#F0B429' },
+            { label: 'CPL Real',         value: 'R$70',   sub: 'Benchmark R$45–95',     color: '#F5A500' },
           ].map((kpi) => (
-            <div key={kpi.label} className="bg-[#16161A] border border-[#2A2A30] rounded-xl p-3">
+            <div key={kpi.label} className="bg-[#111118] border border-white/[0.06] rounded-xl p-3">
               <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-1">{kpi.label}</div>
               <div className="text-base font-display font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
               <div className="text-[9px] text-slate-600 mt-0.5">{kpi.sub}</div>
@@ -53,7 +53,7 @@ function DashboardPreview() {
         </div>
 
         {/* Mini chart */}
-        <div className="bg-[#16161A] border border-[#2A2A30] rounded-xl p-3 mb-3">
+        <div className="bg-[#111118] border border-white/[0.06] rounded-xl p-3 mb-3">
           <div className="flex items-center justify-between mb-2">
             <div className="text-[10px] text-slate-500">Projeção de Receita · 6 meses</div>
             <div className="text-[10px] text-[#22C55E] font-semibold">↑ 34%</div>
@@ -64,8 +64,8 @@ function DashboardPreview() {
                 <div className="rounded-sm" style={{
                   height: `${h}%`,
                   background: i === 5
-                    ? 'linear-gradient(to top, #F0B429, #FFD166)'
-                    : `rgba(240,180,41,${0.15 + i * 0.08})`,
+                    ? 'linear-gradient(to top, #F5A500, #FFD166)'
+                    : `rgba(245,165,0,${0.15 + i * 0.08})`,
                 }} />
               </div>
             ))}
@@ -98,12 +98,12 @@ export default function LandingPage() {
   ]
 
   return (
-    <main className="min-h-screen bg-[#0A0A0B] overflow-x-hidden">
+    <main className="min-h-screen bg-[#030305] overflow-x-hidden" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px)', backgroundSize: '44px 44px' }}>
 
       {/* ── Navbar ──────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 border-b border-[#2A2A30] bg-[#0A0A0B]/80 backdrop-blur-xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 border-b border-white/[0.05] bg-[#030305]/90 backdrop-blur-xl">
         <span className="font-display font-bold text-xl" style={{
-          background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+          background: 'linear-gradient(135deg, #F5A500, #FFD166)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>ELYON</span>
         <div className="hidden md:flex items-center gap-8 text-sm text-slate-500">
@@ -117,7 +117,7 @@ export default function LandingPage() {
           </Link>
           <Link href="/sign-up"
             className="text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}>
+            style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000' }}>
             Começar grátis →
           </Link>
         </div>
@@ -127,9 +127,9 @@ export default function LandingPage() {
       <section className="pt-36 pb-24 px-6 md:px-12 max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1 max-w-xl">
-            <div className="inline-flex items-center gap-2 bg-[#111114] border border-[#2A2A30] rounded-full px-4 py-2 mb-8">
-              <span className="w-2 h-2 rounded-full bg-[#F0B429] animate-pulse" />
-              <span className="text-xs font-semibold text-[#F0B429] tracking-widest uppercase">
+            <div className="inline-flex items-center gap-2 bg-[#0C0C12] border border-white/[0.06] rounded-full px-4 py-2 mb-8">
+              <span className="w-2 h-2 rounded-full bg-[#F5A500] animate-pulse" />
+              <span className="text-xs font-semibold text-[#F5A500] tracking-widest uppercase">
                 ELYON AGENT · Seu Head de Growth com IA 24h
               </span>
             </div>
@@ -138,7 +138,7 @@ export default function LandingPage() {
               <span className="text-white">Não damos opinião.</span>
               <br />
               <span style={{
-                background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+                background: 'linear-gradient(135deg, #F5A500, #FFD166)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
                 Damos dado + direção.
@@ -154,11 +154,11 @@ export default function LandingPage() {
             <div className="flex flex-wrap gap-3 mb-8">
               <Link href="/sign-up"
                 className="inline-flex items-center gap-2 font-bold px-7 py-4 rounded-xl hover:opacity-90 transition-opacity text-lg"
-                style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000', boxShadow: '0 0 32px rgba(240,180,41,0.25)' }}>
+                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000', boxShadow: '0 0 32px rgba(245,165,0,0.25)' }}>
                 Quero minha análise grátis →
               </Link>
               <Link href="/sign-in"
-                className="inline-flex items-center gap-2 border border-[#2A2A30] text-slate-300 font-medium px-6 py-4 rounded-xl hover:border-[#3A3A42] hover:text-white transition-colors">
+                className="inline-flex items-center gap-2 border border-white/[0.06] text-slate-300 font-medium px-6 py-4 rounded-xl hover:border-white/[0.12] hover:text-white transition-colors">
                 Já tenho conta
               </Link>
             </div>
@@ -184,8 +184,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── BARRA DE MÉTRICAS ─────────────────────────────────────────────────── */}
-      <section className="py-14 px-6 md:px-12 border-y border-[#2A2A30]"
-        style={{ background: 'rgba(240,180,41,0.02)' }}>
+      <section className="py-14 px-6 md:px-12 border-y border-white/[0.06]"
+        style={{ background: 'rgba(245,165,0,0.02)' }}>
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { value: '80+',    label: 'Nichos com estratégia especializada' },
@@ -195,7 +195,7 @@ export default function LandingPage() {
           ].map((m, i) => (
             <div key={i}>
               <div className="font-display text-4xl font-bold mb-2"
-                style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 {m.value}
               </div>
               <div className="text-sm text-slate-500">{m.label}</div>
@@ -207,7 +207,7 @@ export default function LandingPage() {
       {/* ── PROBLEMA → SOLUÇÃO ────────────────────────────────────────────────── */}
       <section className="py-24 px-6 md:px-12 max-w-5xl mx-auto">
         <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-8">
+          <div className="bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-8">
             <div className="text-sm font-semibold text-[#FF4D4D] uppercase tracking-wider mb-4">
               ❌ Sem o ELYON
             </div>
@@ -228,8 +228,8 @@ export default function LandingPage() {
           </div>
 
           <div className="rounded-2xl p-8"
-            style={{ background: 'linear-gradient(135deg, rgba(240,180,41,0.08) 0%, rgba(240,180,41,0.03) 100%)', border: '1px solid rgba(240,180,41,0.25)' }}>
-            <div className="text-sm font-semibold text-[#F0B429] uppercase tracking-wider mb-4">
+            style={{ background: 'linear-gradient(135deg, rgba(245,165,0,0.08) 0%, rgba(245,165,0,0.03) 100%)', border: '1px solid rgba(245,165,0,0.25)' }}>
+            <div className="text-sm font-semibold text-[#F5A500] uppercase tracking-wider mb-4">
               ✅ Com o ELYON
             </div>
             <div className="space-y-4">
@@ -251,11 +251,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── COMO FUNCIONA ─────────────────────────────────────────────────────── */}
-      <section id="como-funciona" className="py-24 px-6 md:px-12 border-t border-[#2A2A30]"
-        style={{ background: 'rgba(240,180,41,0.02)' }}>
+      <section id="como-funciona" className="py-24 px-6 md:px-12 border-t border-white/[0.06]"
+        style={{ background: 'rgba(245,165,0,0.02)' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <div className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">Simples e direto</div>
+            <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-widest mb-3">Simples e direto</div>
             <h2 className="font-display text-4xl font-bold text-white mb-4">
               Decisão pronta em 3 passos
             </h2>
@@ -266,14 +266,14 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { step: '01', icon: '⚙️', color: '#F0B429', title: 'Configure o negócio',
+              { step: '01', icon: '⚙️', color: '#F5A500', title: 'Configure o negócio',
                 desc: 'Informe nicho, cidade e budget. Conecte suas contas Meta Ads e Google Ads. O ELYON identifica os benchmarks reais do seu segmento.' },
               { step: '02', icon: '🧠', color: '#A78BFA', title: 'O Head de Growth analisa',
                 desc: 'Em 2 minutos: diagnóstico do funil TOFU/MOFU/BOFU, o que escalar, cortar e testar. Plano de 90 dias com metas de leads e receita.' },
               { step: '03', icon: '🎯', color: '#22C55E', title: 'Execute com dados reais',
                 desc: 'NOUS responde suas dúvidas com contexto real do seu negócio. Histórico de campanhas alimenta decisões futuras. Zero achismo.' },
             ].map((s, i) => (
-              <div key={i} className="relative bg-[#111114] border border-[#2A2A30] rounded-2xl p-8">
+              <div key={i} className="relative bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-8">
                 <div className="text-5xl font-display font-bold mb-4" style={{ color: `${s.color}18` }}>{s.step}</div>
                 <div className="text-3xl mb-4">{s.icon}</div>
                 <h3 className="font-display font-bold text-white text-lg mb-3">{s.title}</h3>
@@ -288,7 +288,7 @@ export default function LandingPage() {
       {/* ── FEATURES / RECURSOS ───────────────────────────────────────────────── */}
       <section id="features" className="py-24 px-6 md:px-12 max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <div className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">Tudo que você precisa</div>
+          <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-widest mb-3">Tudo que você precisa</div>
           <h2 className="font-display text-4xl font-bold text-white mb-4">
             Uma plataforma. Inteligência completa.
           </h2>
@@ -314,7 +314,7 @@ export default function LandingPage() {
             <p className="text-slate-400 text-sm leading-relaxed mb-4">
               Chat inteligente que conhece seu cliente, seu nicho, seu budget e suas campanhas. Não dá respostas genéricas — responde com os dados reais do seu negócio.
             </p>
-            <div className="bg-[#0A0A0B]/60 rounded-xl p-3 border border-[#2A2A30]">
+            <div className="bg-[#030305]/60 rounded-xl p-3 border border-white/[0.06]">
               <div className="text-[10px] text-[#A78BFA] font-semibold mb-1">NOUS · Clínica Odontológica · R$3k/mês</div>
               <p className="text-[11px] text-slate-400">"Seu CPL de R$82 está dentro do benchmark (R$45–95). Recomendo escalar Meta em 20% e pausar Google Display — retorno abaixo do esperado para o nicho."</p>
             </div>
@@ -341,7 +341,7 @@ export default function LandingPage() {
                 { icon: '📘', name: 'Meta Ads', status: 'Disponível', color: '#38BDF8' },
                 { icon: '🔵', name: 'Google Ads', status: 'Disponível', color: '#38BDF8' },
               ].map((p) => (
-                <div key={p.name} className="bg-[#0A0A0B]/60 rounded-xl p-3 border border-[#2A2A30] flex items-center gap-2">
+                <div key={p.name} className="bg-[#030305]/60 rounded-xl p-3 border border-white/[0.06] flex items-center gap-2">
                   <span className="text-lg">{p.icon}</span>
                   <div>
                     <div className="text-xs font-semibold text-white">{p.name}</div>
@@ -354,14 +354,14 @@ export default function LandingPage() {
 
           {/* Head of Growth */}
           <div className="rounded-2xl p-8"
-            style={{ background: 'linear-gradient(135deg, rgba(240,180,41,0.08) 0%, rgba(240,180,41,0.03) 100%)', border: '1px solid rgba(240,180,41,0.25)' }}>
+            style={{ background: 'linear-gradient(135deg, rgba(245,165,0,0.08) 0%, rgba(245,165,0,0.03) 100%)', border: '1px solid rgba(245,165,0,0.25)' }}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                style={{ background: 'rgba(240,180,41,0.15)', border: '1px solid rgba(240,180,41,0.3)' }}>
+                style={{ background: 'rgba(245,165,0,0.15)', border: '1px solid rgba(245,165,0,0.3)' }}>
                 ⚡
               </div>
               <div>
-                <div className="text-xs text-[#F0B429] font-semibold uppercase tracking-wider">HEAD OF GROWTH</div>
+                <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-wider">HEAD OF GROWTH</div>
                 <h3 className="font-display font-bold text-white">Diagnóstico Estratégico</h3>
               </div>
             </div>
@@ -370,11 +370,11 @@ export default function LandingPage() {
             </p>
             <div className="flex gap-2">
               {[
-                { label: 'TOFU', sub: 'Atração', color: '#F0B429' },
+                { label: 'TOFU', sub: 'Atração', color: '#F5A500' },
                 { label: 'MOFU', sub: 'Engajamento', color: '#A78BFA' },
                 { label: 'BOFU', sub: 'Conversão', color: '#22C55E' },
               ].map((f) => (
-                <div key={f.label} className="flex-1 bg-[#0A0A0B]/60 rounded-xl p-2.5 border border-[#2A2A30] text-center">
+                <div key={f.label} className="flex-1 bg-[#030305]/60 rounded-xl p-2.5 border border-white/[0.06] text-center">
                   <div className="text-xs font-bold" style={{ color: f.color }}>{f.label}</div>
                   <div className="text-[10px] text-slate-600">{f.sub}</div>
                 </div>
@@ -403,7 +403,7 @@ export default function LandingPage() {
                 { label: 'Meta Ads · Jan 2025', outcome: 'Vencedora', color: '#22C55E', cpl: 'CPL R$68' },
                 { label: 'Google Search · Dez 2024', outcome: 'Perdedora', color: '#FF4D4D', cpl: 'CPL R$142' },
               ].map((c) => (
-                <div key={c.label} className="bg-[#0A0A0B]/60 rounded-xl p-2.5 border border-[#2A2A30] flex items-center justify-between">
+                <div key={c.label} className="bg-[#030305]/60 rounded-xl p-2.5 border border-white/[0.06] flex items-center justify-between">
                   <div>
                     <div className="text-[11px] text-white font-semibold">{c.label}</div>
                     <div className="text-[10px] text-slate-600">{c.cpl}</div>
@@ -420,25 +420,25 @@ export default function LandingPage() {
       </section>
 
       {/* ── NOUS INTELLIGENCE ────────────────────────────────────────────────── */}
-      <section className="py-28 px-6 md:px-12 border-t border-[#2A2A30] relative overflow-hidden"
-        style={{ background: '#080809' }}>
+      <section className="py-28 px-6 md:px-12 border-t border-white/[0.06] relative overflow-hidden"
+        style={{ background: '#030305' }}>
         {/* Glows dramáticos */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, rgba(240,180,41,0.12) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+          style={{ background: 'radial-gradient(ellipse, rgba(245,165,0,0.12) 0%, transparent 70%)', filter: 'blur(40px)' }} />
         <div className="absolute bottom-0 left-1/4 w-[400px] h-[200px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, rgba(240,180,41,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+          style={{ background: 'radial-gradient(ellipse, rgba(245,165,0,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
 
         <div className="max-w-5xl mx-auto relative">
           {/* Badge */}
           <div className="flex justify-center mb-8">
             <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full"
-              style={{ background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.3)' }}>
+              style={{ background: 'rgba(245,165,0,0.08)', border: '1px solid rgba(245,165,0,0.3)' }}>
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm"
-                style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
+                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)' }}>
                 N
               </div>
               <span className="font-display font-bold text-sm tracking-widest uppercase"
-                style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 ELYON NOUS
               </span>
             </div>
@@ -448,7 +448,7 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <h2 className="font-display text-5xl md:text-6xl font-bold leading-tight mb-5">
               <span className="text-white">Inteligência estratégica</span><br />
-              <span style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <span style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 para decisões que geram lucro.
               </span>
             </h2>
@@ -460,7 +460,7 @@ export default function LandingPage() {
           {/* 4 cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-14">
             {[
-              { icon: '📊', color: '#F0B429', glow: 'rgba(240,180,41,0.15)', title: 'Análise de Mercado', desc: 'Descubra onde sua empresa está perdendo dinheiro e o que já está funcionando no seu nicho.' },
+              { icon: '📊', color: '#F5A500', glow: 'rgba(245,165,0,0.15)', title: 'Análise de Mercado', desc: 'Descubra onde sua empresa está perdendo dinheiro e o que já está funcionando no seu nicho.' },
               { icon: '🎯', color: '#22C55E', glow: 'rgba(34,197,94,0.15)', title: 'Análise de Concorrentes', desc: 'Entenda exatamente o que empresas do seu mercado estão fazendo para crescer.' },
               { icon: '💡', color: '#A78BFA', glow: 'rgba(167,139,250,0.15)', title: 'Oportunidades Estratégicas', desc: 'Identifique onde está o crescimento real e quais movimentos geram mais retorno.' },
               { icon: '📋', color: '#38BDF8', glow: 'rgba(56,189,248,0.15)', title: 'Plano de Ação Estruturado', desc: 'Receba um direcionamento objetivo do que fazer, como fazer e por onde começar.' },
@@ -483,14 +483,14 @@ export default function LandingPage() {
 
           {/* Frase de impacto */}
           <div className="relative text-center rounded-3xl py-10 px-8 overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, rgba(240,180,41,0.08) 0%, rgba(240,180,41,0.02) 100%)', border: '1px solid rgba(240,180,41,0.25)' }}>
+            style={{ background: 'linear-gradient(135deg, rgba(245,165,0,0.08) 0%, rgba(245,165,0,0.02) 100%)', border: '1px solid rgba(245,165,0,0.25)' }}>
             <div className="absolute inset-0 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(240,180,41,0.08) 0%, transparent 70%)' }} />
+              style={{ background: 'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(245,165,0,0.08) 0%, transparent 70%)' }} />
             <p className="font-display text-2xl md:text-3xl font-bold text-slate-300 mb-2 relative">
               Pare de tomar decisões no escuro.
             </p>
             <p className="font-display text-2xl md:text-3xl font-bold relative"
-              style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Comece a crescer com base no que realmente funciona.
             </p>
           </div>
@@ -498,8 +498,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── PLATAFORMAS MONITORADAS ───────────────────────────────────────────── */}
-      <section className="py-28 px-6 md:px-12 border-t border-[#2A2A30] relative overflow-hidden"
-        style={{ background: '#06060A' }}>
+      <section className="py-28 px-6 md:px-12 border-t border-white/[0.06] relative overflow-hidden"
+        style={{ background: '#030305' }}>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] pointer-events-none"
           style={{ background: 'radial-gradient(ellipse, rgba(167,139,250,0.08) 0%, transparent 70%)', filter: 'blur(60px)' }} />
 
@@ -513,7 +513,7 @@ export default function LandingPage() {
                 N
               </div>
               <span className="font-display font-bold text-sm tracking-widest uppercase"
-                style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 ELYON NOUS
               </span>
             </div>
@@ -522,7 +522,7 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <h2 className="font-display text-5xl md:text-6xl font-bold leading-tight mb-5">
               <span className="text-white">Conectado às</span><br />
-              <span style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <span style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 principais plataformas.
               </span>
             </h2>
@@ -536,7 +536,7 @@ export default function LandingPage() {
 
             {/* Meta Ads */}
             <div className="relative rounded-2xl p-7 flex flex-col items-center text-center gap-4 hover:translate-y-[-4px] transition-all duration-300"
-              style={{ background: '#111114', border: '1px solid rgba(24,119,242,0.4)', boxShadow: '0 0 30px rgba(24,119,242,0.15)' }}>
+              style={{ background: '#0C0C12', border: '1px solid rgba(24,119,242,0.4)', boxShadow: '0 0 30px rgba(24,119,242,0.15)' }}>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
                 style={{ background: 'linear-gradient(135deg, #1877F2, #0D5FD6)', boxShadow: '0 8px 24px rgba(24,119,242,0.4)' }}>
                 <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
@@ -554,7 +554,7 @@ export default function LandingPage() {
 
             {/* Google Ads */}
             <div className="relative rounded-2xl p-7 flex flex-col items-center text-center gap-4 hover:translate-y-[-4px] transition-all duration-300"
-              style={{ background: '#111114', border: '1px solid rgba(66,133,244,0.4)', boxShadow: '0 0 30px rgba(66,133,244,0.15)' }}>
+              style={{ background: '#0C0C12', border: '1px solid rgba(66,133,244,0.4)', boxShadow: '0 0 30px rgba(66,133,244,0.15)' }}>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
                 style={{ background: '#fff', boxShadow: '0 8px 24px rgba(66,133,244,0.3)' }}>
                 <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
@@ -574,7 +574,7 @@ export default function LandingPage() {
 
             {/* YouTube Ads */}
             <div className="relative rounded-2xl p-7 flex flex-col items-center text-center gap-4 hover:translate-y-[-4px] transition-all duration-300"
-              style={{ background: '#111114', border: '1px solid rgba(255,0,0,0.3)', boxShadow: '0 0 30px rgba(255,0,0,0.1)' }}>
+              style={{ background: '#0C0C12', border: '1px solid rgba(255,0,0,0.3)', boxShadow: '0 0 30px rgba(255,0,0,0.1)' }}>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
                 style={{ background: '#FF0000', boxShadow: '0 8px 24px rgba(255,0,0,0.35)' }}>
                 <svg width="38" height="28" viewBox="0 0 38 28" fill="none">
@@ -593,7 +593,7 @@ export default function LandingPage() {
 
             {/* TikTok Ads */}
             <div className="relative rounded-2xl p-7 flex flex-col items-center text-center gap-4 hover:translate-y-[-4px] transition-all duration-300"
-              style={{ background: '#111114', border: '1px solid rgba(105,201,208,0.3)', boxShadow: '0 0 30px rgba(105,201,208,0.1)' }}>
+              style={{ background: '#0C0C12', border: '1px solid rgba(105,201,208,0.3)', boxShadow: '0 0 30px rgba(105,201,208,0.1)' }}>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
                 style={{ background: '#010101', boxShadow: '0 8px 24px rgba(105,201,208,0.3)' }}>
                 <svg width="32" height="36" viewBox="0 0 32 36" fill="none">
@@ -629,7 +629,7 @@ export default function LandingPage() {
               De Meta a TikTok —
             </p>
             <p className="font-display text-2xl md:text-3xl font-bold relative"
-              style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               tudo integrado na sua tomada de decisão.
             </p>
           </div>
@@ -637,11 +637,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── PREÇOS ────────────────────────────────────────────────────────────── */}
-      <section id="precos" className="py-24 px-6 md:px-12 border-t border-[#2A2A30]"
-        style={{ background: 'rgba(240,180,41,0.02)' }}>
+      <section id="precos" className="py-24 px-6 md:px-12 border-t border-white/[0.06]"
+        style={{ background: 'rgba(245,165,0,0.02)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">Estrutura de produtos</div>
+            <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-widest mb-3">Estrutura de produtos</div>
             <h2 className="font-display text-4xl font-bold text-white mb-4">
               Você não contrata marketing.
             </h2>
@@ -652,16 +652,16 @@ export default function LandingPage() {
 
           {/* Diagnóstico — entrada */}
           <div className="mb-6 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
-            style={{ background: 'linear-gradient(135deg, rgba(240,180,41,0.1) 0%, rgba(240,180,41,0.04) 100%)', border: '1px solid rgba(240,180,41,0.35)' }}>
+            style={{ background: 'linear-gradient(135deg, rgba(245,165,0,0.1) 0%, rgba(245,165,0,0.04) 100%)', border: '1px solid rgba(245,165,0,0.35)' }}>
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                style={{ background: 'rgba(240,180,41,0.15)', border: '1px solid rgba(240,180,41,0.3)' }}>
+                style={{ background: 'rgba(245,165,0,0.15)', border: '1px solid rgba(245,165,0,0.3)' }}>
                 🔥
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ color: '#F0B429', background: 'rgba(240,180,41,0.15)', border: '1px solid rgba(240,180,41,0.3)' }}>
+                    style={{ color: '#F5A500', background: 'rgba(245,165,0,0.15)', border: '1px solid rgba(245,165,0,0.3)' }}>
                     PRIMEIRO PASSO · ENTRADA
                   </span>
                 </div>
@@ -671,8 +671,8 @@ export default function LandingPage() {
                 </p>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {['Análise de mercado e concorrência', 'Diagnóstico do posicionamento', 'Plano de ação prático'].map((d) => (
-                    <span key={d} className="text-[11px] px-2.5 py-1 rounded-full text-[#F0B429]"
-                      style={{ background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.2)' }}>
+                    <span key={d} className="text-[11px] px-2.5 py-1 rounded-full text-[#F5A500]"
+                      style={{ background: 'rgba(245,165,0,0.08)', border: '1px solid rgba(245,165,0,0.2)' }}>
                       ✓ {d}
                     </span>
                   ))}
@@ -680,11 +680,11 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex-shrink-0 text-right">
-              <div className="font-display text-3xl font-bold text-[#F0B429]">R$3.000</div>
+              <div className="font-display text-3xl font-bold text-[#F5A500]">R$3.000</div>
               <div className="text-xs text-slate-500">por projeto</div>
               <Link href="/sign-up"
                 className="mt-3 inline-flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-                style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}>
+                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000' }}>
                 Começar com diagnóstico →
               </Link>
             </div>
@@ -705,8 +705,8 @@ export default function LandingPage() {
                 planKey: 'individual',
               },
               {
-                icon: '🚀', tag: 'MAIS POPULAR', color: '#F0B429', border: 'rgba(240,180,41,0.5)',
-                bg: 'linear-gradient(135deg, rgba(240,180,41,0.12) 0%, rgba(240,180,41,0.05) 100%)',
+                icon: '🚀', tag: 'MAIS POPULAR', color: '#F5A500', border: 'rgba(245,165,0,0.5)',
+                bg: 'linear-gradient(135deg, rgba(245,165,0,0.12) 0%, rgba(245,165,0,0.05) 100%)',
                 title: 'Profissional',
                 desc: 'Para gestores de tráfego e consultores que querem capacidade estratégica elevada e atender clientes com o sistema.',
                 price: 'R$497', priceEnd: '/mês',
@@ -732,7 +732,7 @@ export default function LandingPage() {
                 {plan.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="text-xs font-bold px-3 py-1 rounded-full text-black"
-                      style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
+                      style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)' }}>
                       ★ Mais popular
                     </span>
                   </div>
@@ -757,7 +757,7 @@ export default function LandingPage() {
                   <Link href={`/checkout?plan=${plan.planKey}`}
                     className="w-full flex items-center justify-center gap-2 text-sm font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity"
                     style={plan.highlight
-                      ? { background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }
+                      ? { background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000' }
                       : { background: 'rgba(255,255,255,0.06)', border: `1px solid ${plan.border}`, color: '#fff' }
                     }>
                     {plan.cta}
@@ -808,18 +808,18 @@ export default function LandingPage() {
           </div>
 
           {/* Lógica do negócio */}
-          <div className="mt-8 bg-[#111114] border border-[#2A2A30] rounded-2xl p-6 text-center">
+          <div className="mt-8 bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-6 text-center">
             <div className="text-xs text-slate-500 uppercase tracking-wider mb-4">Lógica completa do negócio</div>
             <div className="flex items-center justify-center gap-2 flex-wrap text-sm font-semibold">
               {[
-                { label: '🔥 Confiança', color: '#F0B429' },
-                { label: '→', color: '#2A2A30' },
+                { label: '🔥 Confiança', color: '#F5A500' },
+                { label: '→', color: 'rgba(255,255,255,0.06)' },
                 { label: '🔄 Recorrência', color: '#38BDF8' },
-                { label: '→', color: '#2A2A30' },
+                { label: '→', color: 'rgba(255,255,255,0.06)' },
                 { label: '🚀 Escala', color: '#A78BFA' },
-                { label: '→', color: '#2A2A30' },
+                { label: '→', color: 'rgba(255,255,255,0.06)' },
                 { label: '💣 Ticket alto', color: '#22C55E' },
-                { label: '→', color: '#2A2A30' },
+                { label: '→', color: 'rgba(255,255,255,0.06)' },
                 { label: '🔥 Execução $$$', color: '#FF4D4D' },
               ].map((item, i) => (
                 <span key={i} style={{ color: item.color }}>{item.label}</span>
@@ -830,13 +830,13 @@ export default function LandingPage() {
       </section>
 
       {/* ── NICHOS ────────────────────────────────────────────────────────────── */}
-      <section id="nichos" className="py-24 px-6 md:px-12 border-t border-[#2A2A30]"
-        style={{ background: 'rgba(240,180,41,0.02)' }}>
+      <section id="nichos" className="py-24 px-6 md:px-12 border-t border-white/[0.06]"
+        style={{ background: 'rgba(245,165,0,0.02)' }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <div className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">Benchmarks reais de mercado</div>
+            <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-widest mb-3">Benchmarks reais de mercado</div>
             <h2 className="font-display text-4xl font-bold text-white mb-4">
-              Analista especializado no <span style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>seu segmento</span>
+              Analista especializado no <span style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>seu segmento</span>
             </h2>
             <p className="text-slate-400 max-w-xl mx-auto">
               CPL, ROAS, CVR, ticket médio, sazonalidade e canais ideais para cada setor —
@@ -849,35 +849,35 @@ export default function LandingPage() {
               <span key={i}
                 className="text-sm px-4 py-2 rounded-full font-medium transition-all hover:scale-105 cursor-default"
                 style={{
-                  background: i % 3 === 0 ? 'rgba(240,180,41,0.1)' : i % 3 === 1 ? 'rgba(167,139,250,0.08)' : 'rgba(34,197,94,0.07)',
-                  border: i % 3 === 0 ? '1px solid rgba(240,180,41,0.25)' : i % 3 === 1 ? '1px solid rgba(167,139,250,0.2)' : '1px solid rgba(34,197,94,0.2)',
-                  color: i % 3 === 0 ? '#F0B429' : i % 3 === 1 ? '#A78BFA' : '#22C55E',
+                  background: i % 3 === 0 ? 'rgba(245,165,0,0.1)' : i % 3 === 1 ? 'rgba(167,139,250,0.08)' : 'rgba(34,197,94,0.07)',
+                  border: i % 3 === 0 ? '1px solid rgba(245,165,0,0.25)' : i % 3 === 1 ? '1px solid rgba(167,139,250,0.2)' : '1px solid rgba(34,197,94,0.2)',
+                  color: i % 3 === 0 ? '#F5A500' : i % 3 === 1 ? '#A78BFA' : '#22C55E',
                 }}>
                 {niche}
               </span>
             ))}
           </div>
 
-          <div className="max-w-3xl mx-auto bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#2A2A30]">
-              <span className="text-xs font-semibold text-[#F0B429] uppercase tracking-widest">Exemplo · Odontologia Estética</span>
+          <div className="max-w-3xl mx-auto bg-[#0C0C12] border border-white/[0.06] rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/[0.06]">
+              <span className="text-xs font-semibold text-[#F5A500] uppercase tracking-widest">Exemplo · Odontologia Estética</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
               {[
-                { label: 'CPL benchmark', value: 'R$45–95', color: '#F0B429' },
+                { label: 'CPL benchmark', value: 'R$45–95', color: '#F5A500' },
                 { label: 'ROAS bom',      value: '3.8×',   color: '#22C55E' },
                 { label: 'CVR lead→venda', value: '15%',   color: '#A78BFA' },
                 { label: 'Budget mínimo', value: 'R$2.500', color: '#38BDF8' },
               ].map((m, i) => (
-                <div key={i} className="p-5 text-center border-r border-[#1E1E24] last:border-r-0">
+                <div key={i} className="p-5 text-center border-r border-white/[0.04] last:border-r-0">
                   <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">{m.label}</div>
                   <div className="font-display text-xl font-bold" style={{ color: m.color }}>{m.value}</div>
                 </div>
               ))}
             </div>
-            <div className="px-6 py-4 bg-[#16161A] text-xs text-slate-500">
-              <span className="text-[#F0B429] font-semibold">Canais top:</span> Meta Ads · Google Search · Instagram &nbsp;·&nbsp;
-              <span className="text-[#F0B429] font-semibold">Pico:</span> Dezembro · Março
+            <div className="px-6 py-4 bg-[#111118] text-xs text-slate-500">
+              <span className="text-[#F5A500] font-semibold">Canais top:</span> Meta Ads · Google Search · Instagram &nbsp;·&nbsp;
+              <span className="text-[#F5A500] font-semibold">Pico:</span> Dezembro · Março
             </div>
           </div>
         </div>
@@ -906,11 +906,11 @@ export default function LandingPage() {
               highlight: 'Diagnóstico → Plataforma Individual',
             },
           ].map((p, i) => (
-            <div key={i} className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-7">
+            <div key={i} className="bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-7">
               <div className="text-3xl mb-4">{p.icon}</div>
               <h3 className="font-display font-bold text-white text-lg mb-3">{p.title}</h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-4">{p.desc}</p>
-              <div className="text-xs font-semibold text-[#F0B429]">→ {p.highlight}</div>
+              <div className="text-xs font-semibold text-[#F5A500]">→ {p.highlight}</div>
             </div>
           ))}
         </div>
@@ -921,10 +921,10 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto text-center">
           <div className="rounded-3xl p-14"
             style={{
-              background: 'linear-gradient(135deg, rgba(240,180,41,0.12) 0%, rgba(167,139,250,0.08) 50%, rgba(34,197,94,0.05) 100%)',
-              border: '1px solid rgba(240,180,41,0.3)',
+              background: 'linear-gradient(135deg, rgba(245,165,0,0.12) 0%, rgba(167,139,250,0.08) 50%, rgba(34,197,94,0.05) 100%)',
+              border: '1px solid rgba(245,165,0,0.3)',
             }}>
-            <div className="inline-flex items-center gap-2 bg-[#0A0A0B]/60 border border-[#2A2A30] rounded-full px-4 py-2 mb-6">
+            <div className="inline-flex items-center gap-2 bg-[#030305]/60 border border-white/[0.06] rounded-full px-4 py-2 mb-6">
               <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
               <span className="text-xs font-semibold text-[#22C55E] tracking-widest uppercase">Diagnóstico gratuito para começar</span>
             </div>
@@ -938,11 +938,11 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/sign-up"
                 className="inline-flex items-center justify-center gap-2 font-bold px-9 py-4 rounded-xl hover:opacity-90 transition-opacity text-lg"
-                style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000', boxShadow: '0 0 40px rgba(240,180,41,0.3)' }}>
+                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000', boxShadow: '0 0 40px rgba(245,165,0,0.3)' }}>
                 Fazer diagnóstico grátis →
               </Link>
               <Link href="/sign-in"
-                className="inline-flex items-center justify-center gap-2 border border-[#2A2A30] text-slate-300 font-medium px-7 py-4 rounded-xl hover:border-[#3A3A42] hover:text-white transition-colors">
+                className="inline-flex items-center justify-center gap-2 border border-white/[0.06] text-slate-300 font-medium px-7 py-4 rounded-xl hover:border-white/[0.12] hover:text-white transition-colors">
                 Já tenho conta
               </Link>
             </div>
@@ -958,10 +958,10 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[#2A2A30] py-10 px-6 md:px-12">
+      <footer className="border-t border-white/[0.06] py-10 px-6 md:px-12">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="font-display font-bold text-lg" style={{
-            background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+            background: 'linear-gradient(135deg, #F5A500, #FFD166)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>ELYON</span>
           <div className="flex gap-8 text-sm text-slate-600">
