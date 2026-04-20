@@ -800,6 +800,44 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Serviços pontuais */}
+              <div className="lp-fade" style={{marginTop:32,display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                {[
+                  {
+                    ico:'📋', tag:'SERVIÇO PONTUAL',
+                    name:'Relatório Completo',
+                    desc:'Análise completa do negócio: benchmark do nicho, diagnóstico de funil, histórico de campanhas e plano de ação documentado — entregue em 48h.',
+                    price:'3.000',
+                    per:'por relatório',
+                    feats:['Diagnóstico TOFU · MOFU · BOFU','Benchmark detalhado do nicho','Análise de campanhas anteriores','Plano de ação com prioridades','PDF executivo para apresentação'],
+                  },
+                  {
+                    ico:'🚀', tag:'SERVIÇO PONTUAL',
+                    name:'Implantação',
+                    desc:'Configuração completa do ELYON para o seu negócio: setup de contas, integração Meta + Google Ads, treinamento da equipe e estratégia inicial definida.',
+                    price:'5.000',
+                    per:'por implantação',
+                    feats:['Setup completo da plataforma','Conexão Meta Ads + Google Ads','Configuração de benchmarks do nicho','Treinamento da equipe (até 3 pessoas)','Estratégia inicial com NOUS IA'],
+                  },
+                ].map((s,i)=>(
+                  <div key={i} className="b-pcard" style={{display:'flex',flexDirection:'column',gap:0}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                      <span style={{fontSize:20}}>{s.ico}</span>
+                      <span style={{fontFamily:'var(--f-mono)',fontSize:9,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--muted)'}}>{s.tag}</span>
+                    </div>
+                    <div className="b-pc-name">{s.name}</div>
+                    <div className="b-pc-desc" style={{marginBottom:14}}>{s.desc}</div>
+                    <div className="b-pc-price" style={{marginBottom:18}}>
+                      <span className="b-pc-cur">R$</span>
+                      <span className="b-pc-val">{s.price}</span>
+                      <span className="b-pc-per" style={{marginLeft:6}}>a partir · {s.per}</span>
+                    </div>
+                    <button className="b-pc-btn ghost" onClick={()=>window.location.href='/sign-up'}>Solicitar orçamento →</button>
+                    <ul className="b-pc-feats">{s.feats.map((f,j)=><li key={j} className="b-pc-feat">{f}</li>)}</ul>
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
 
