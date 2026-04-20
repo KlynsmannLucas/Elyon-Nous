@@ -300,24 +300,25 @@ export default function LandingPage() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d')!
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
+    const c = canvas
+    const ctx = c.getContext('2d')!
+    function resize() { c.width = window.innerWidth; c.height = window.innerHeight }
     window.addEventListener('resize', resize); resize()
     type P = { x:number;y:number;vx:number;vy:number;size:number;alpha:number;color:string }
     const pts: P[] = Array.from({ length: 60 }, () => ({
-      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+      x: Math.random() * c.width, y: Math.random() * c.height,
       vx: (Math.random()-.5)*.4, vy: (Math.random()-.5)*.4,
       size: Math.random()*1.5+.3, alpha: Math.random()*.4+.05,
       color: Math.random()>.7?'245,165,0':Math.random()>.5?'167,139,250':'255,255,255',
     }))
     function draw() {
-      ctx.clearRect(0,0,canvas.width,canvas.height)
+      ctx.clearRect(0,0,c.width,c.height)
       pts.forEach(p => {
         ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2)
         ctx.fillStyle=`rgba(${p.color},${p.alpha})`; ctx.fill()
         p.x+=p.vx; p.y+=p.vy
-        if(p.x<0||p.x>canvas.width) p.vx*=-1
-        if(p.y<0||p.y>canvas.height) p.vy*=-1
+        if(p.x<0||p.x>c.width) p.vx*=-1
+        if(p.y<0||p.y>c.height) p.vy*=-1
       })
       pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{
         const d=Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2)
