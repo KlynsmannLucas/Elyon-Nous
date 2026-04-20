@@ -560,6 +560,15 @@ export default function DashboardPage() {
       .then(({ clients }) => {
         if (Array.isArray(clients) && clients.length > 0) {
           setSavedClients(clients)
+          const restored: Record<string, any[]> = {}
+          for (const c of clients) {
+            if (c.auditData && c.clientData?.clientName) {
+              restored[c.clientData.clientName] = c.auditData
+            }
+          }
+          if (Object.keys(restored).length > 0) {
+            useAppStore.setState((s) => ({ auditCache: { ...s.auditCache, ...restored } }))
+          }
         }
       })
       .catch(() => {}) // falha silenciosa — localStorage continua funcionando
@@ -573,14 +582,14 @@ export default function DashboardPage() {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
       const state = useAppStore.getState()
-      const { clientData: cd, savedClients: sc } = state
+      const { clientData: cd, savedClients: sc, auditCache: ac } = state
       if (!cd) return
       const entry = sc.find((s) => s.clientData.clientName === cd.clientName)
       if (!entry) return
       fetch('/api/clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry),
+        body: JSON.stringify({ ...entry, auditData: ac[cd.clientName] ?? null }),
       }).catch(() => {})
     }, 3000)
   }, [saveCurrentClient])

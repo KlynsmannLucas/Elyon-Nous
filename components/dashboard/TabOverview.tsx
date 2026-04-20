@@ -78,6 +78,87 @@ function BudgetStatusBadge({ status, budget, recommended }: {
   )
 }
 
+// ── Pacing de Budget ─────────────────────────────────────────────────────────
+function BudgetPacing({ spend, budget }: { spend: number; budget: number }) {
+  const today = new Date()
+  const day = today.getDate()
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
+  const monthPct  = Math.round((day / daysInMonth) * 100)
+  const spendPct  = budget > 0 ? Math.round((spend / budget) * 100) : 0
+  const diff      = spendPct - monthPct
+  const status    = diff > 12 ? 'adiantado' : diff < -15 ? 'atrasado' : 'no_ritmo'
+  const color     = status === 'no_ritmo' ? '#22C55E' : status === 'adiantado' ? '#F0B429' : '#FF4D4D'
+  const label     = status === 'no_ritmo' ? '✓ No ritmo' : status === 'adiantado' ? '▲ Adiantado' : '▼ Atrasado'
+  const desc      = status === 'no_ritmo'
+    ? `${Math.abs(diff)}% ${diff >= 0 ? 'acima' : 'abaixo'} do esperado para o dia ${day} — saudável`
+    : status === 'adiantado'
+    ? `Gastando ${diff}% mais rápido que o previsto — monitore CPL e frequência`
+    : `${Math.abs(diff)}% abaixo do ritmo — verifique campanhas pausadas ou com baixo entrega`
+  const projected = day > 0 ? Math.round((spend / day) * daysInMonth) : null
+  const remaining = Math.max(budget - spend, 0)
+  const fmt = (v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v.toLocaleString('pt-BR')}`
+
+  return (
+    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 animate-fade-up">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Pacing do Budget</div>
+          <div className="text-sm font-semibold text-white">Dia {day} de {daysInMonth} · {monthPct}% do mês decorrido</div>
+        </div>
+        <span className="text-xs font-bold px-3 py-1.5 rounded-full"
+          style={{ color, background: `${color}15`, border: `1px solid ${color}30` }}>{label}</span>
+      </div>
+
+      {/* Barra dupla: mês elapsed vs spend */}
+      <div className="mb-4 space-y-2">
+        <div>
+          <div className="flex justify-between text-[10px] text-slate-600 mb-1">
+            <span>Mês decorrido</span><span>{monthPct}%</span>
+          </div>
+          <div className="h-1.5 bg-[#1E1E24] rounded-full overflow-hidden">
+            <div className="h-full bg-[#2A2A30] rounded-full transition-all" style={{ width: `${monthPct}%` }} />
+          </div>
+        </div>
+        <div>
+          <div className="flex justify-between text-[10px] text-slate-600 mb-1">
+            <span>Budget consumido</span><span>{spendPct}%</span>
+          </div>
+          <div className="h-2 bg-[#1E1E24] rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${Math.min(spendPct, 100)}%`, background: color }} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <div>
+          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Gasto até hoje</div>
+          <div className="font-display text-lg font-bold text-[#F0B429]">{fmt(spend)}</div>
+          <div className="text-[10px] text-slate-600">{spendPct}% do budget</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Saldo restante</div>
+          <div className="font-display text-lg font-bold text-slate-300">{fmt(remaining)}</div>
+          <div className="text-[10px] text-slate-600">{100 - spendPct}% disponível</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Projeção fim mês</div>
+          <div className="font-display text-lg font-bold"
+            style={{ color: projected ? (projected > budget * 1.1 ? '#FF4D4D' : projected < budget * 0.88 ? '#F0B429' : '#22C55E') : '#64748B' }}>
+            {projected ? fmt(projected) : '—'}
+          </div>
+          <div className="text-[10px] text-slate-600">no ritmo atual</div>
+        </div>
+      </div>
+
+      <div className="text-[11px] rounded-lg px-3 py-2"
+        style={{ background: `${color}08`, border: `1px solid ${color}18`, color }}>
+        {desc}
+      </div>
+    </div>
+  )
+}
+
 export function TabOverview({ strategy, analysis, clientData }: Props) {
   const niche  = clientData?.niche || ''
   const budget = clientData?.budget || 0
@@ -285,6 +366,11 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Pacing de budget — só quando há dados reais e budget configurado */}
+      {hasRealData && rm && budget > 0 && (
+        <BudgetPacing spend={rm.totalSpend} budget={budget} />
       )}
 
       {/* Métricas adicionais do nicho */}

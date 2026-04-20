@@ -603,6 +603,318 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
       'Concorrência com grandes redes (Tok&Stok, MadeiraMadeira) — diferencie pelo projeto personalizado',
     ],
   },
+  automotivo: {
+    name: 'Automotivo / Oficina / Concessionária',
+    cpl_min: 30, cpl_max: 110,
+    cpl_by_channel: {
+      'Google Search': 'R$40–100',
+      'Meta Ads': 'R$30–80',
+      'YouTube': 'R$50–110',
+      'Instagram': 'R$35–75',
+    },
+    cvr_lead_to_sale: 0.14,
+    avg_ticket: 1800,
+    ltv_multiplier: 4.0,
+    best_channels: ['Google Search', 'Meta Ads', 'Instagram'],
+    budget_floor: 2000,
+    budget_ideal: 7000,
+    kpi_thresholds: { cpl_good: 55, cpl_bad: 95, roas_good: 4.5, cvr_good: 0.18 },
+    seasonality: ['Jan', 'Jul'],
+    insights: [
+      'Google Search com "revisão + cidade" capta leads de alta intenção',
+      'Vídeos de serviços sendo realizados geram confiança e reduzem objeções',
+      'LTV alto: cliente fiel retorna a cada 6 meses para revisão',
+      'Jan (IPVA/licenciamento) e Jul (viagens) são picos de demanda',
+    ],
+  },
+  barbearia: {
+    name: 'Barbearia / Salão Masculino',
+    cpl_min: 12, cpl_max: 45,
+    cpl_by_channel: {
+      'Instagram': 'R$12–32',
+      'Meta Ads': 'R$15–40',
+      'TikTok': 'R$10–28',
+      'Google Maps': 'R$18–45',
+    },
+    cvr_lead_to_sale: 0.35,
+    avg_ticket: 80,
+    ltv_multiplier: 10.0,
+    best_channels: ['Instagram', 'TikTok', 'Google Maps'],
+    budget_floor: 600,
+    budget_ideal: 2500,
+    kpi_thresholds: { cpl_good: 22, cpl_bad: 40, roas_good: 5.0, cvr_good: 0.40 },
+    seasonality: ['Dez', 'Jun'],
+    insights: [
+      'LTV excepcional: cliente fiel vai toda semana — fidelização é prioridade',
+      'Reels de transformações (corte + barba) têm CTR 5× maior que posts estáticos',
+      'Google Meu Negócio gratuito gera 50%+ das buscas locais',
+      'Programa de fidelidade (ex: 9ª visita grátis) reduz churn em 60%',
+    ],
+  },
+  fisioterapia: {
+    name: 'Fisioterapia / Reabilitação',
+    cpl_min: 28, cpl_max: 85,
+    cpl_by_channel: {
+      'Google Search': 'R$35–80',
+      'Meta Ads': 'R$28–65',
+      'Instagram': 'R$30–70',
+      'YouTube': 'R$40–85',
+    },
+    cvr_lead_to_sale: 0.22,
+    avg_ticket: 600,
+    ltv_multiplier: 4.5,
+    best_channels: ['Google Search', 'Meta Ads', 'Instagram'],
+    budget_floor: 1500,
+    budget_ideal: 5000,
+    kpi_thresholds: { cpl_good: 45, cpl_bad: 75, roas_good: 4.5, cvr_good: 0.25 },
+    seasonality: ['Jan', 'Ago'],
+    insights: [
+      'Google Search para dores específicas (ex: "fisio para hérnia de disco") tem CVR altíssimo',
+      'Conteúdo educativo sobre prevenção gera autoridade e leads orgânicos',
+      'Regulação CREFITO proíbe promessas de cura — foco em qualidade de vida',
+      'Parceria com academias e médicos ortopedistas é canal de indicação poderoso',
+    ],
+  },
+  farmacia: {
+    name: 'Farmácia / Drogaria',
+    cpl_min: 8, cpl_max: 35,
+    cpl_by_channel: {
+      'Google Shopping': 'R$8–25',
+      'Meta Ads': 'R$10–30',
+      'Google Search': 'R$12–35',
+      'Instagram': 'R$10–28',
+    },
+    cvr_lead_to_sale: 0.25,
+    avg_ticket: 120,
+    ltv_multiplier: 6.0,
+    best_channels: ['Google Shopping', 'Meta Ads', 'Google Search'],
+    budget_floor: 1000,
+    budget_ideal: 4000,
+    kpi_thresholds: { cpl_good: 18, cpl_bad: 30, roas_good: 5.0, cvr_good: 0.30 },
+    seasonality: ['Jan', 'Jun'],
+    insights: [
+      'Google Shopping para medicamentos de marca tem ROAS elevado e intenção alta',
+      'ANVISA regula publicidade de medicamentos — foco em dermocosméticos e suplementos',
+      'Programa de fidelidade e delivery expressam diferenciação de grandes redes',
+      'Jan (gripes/alergias) e Jun (inverno) são os maiores picos de demanda',
+    ],
+  },
+  servicos_residenciais: {
+    name: 'Serviços Residenciais (Limpeza, Jardinagem, Dedetização)',
+    cpl_min: 18, cpl_max: 65,
+    cpl_by_channel: {
+      'Google Search': 'R$22–60',
+      'Meta Ads': 'R$18–50',
+      'Google Maps': 'R$20–55',
+      'Instagram': 'R$20–45',
+    },
+    cvr_lead_to_sale: 0.28,
+    avg_ticket: 350,
+    ltv_multiplier: 5.0,
+    best_channels: ['Google Search', 'Meta Ads', 'Google Maps'],
+    budget_floor: 1000,
+    budget_ideal: 3500,
+    kpi_thresholds: { cpl_good: 32, cpl_bad: 58, roas_good: 4.5, cvr_good: 0.30 },
+    seasonality: ['Jan', 'Out'],
+    insights: [
+      'Google Search com "serviço + bairro/cidade" capta intenção imediata',
+      'Fotos de antes/depois do ambiente tratado aumentam CVR em 45%',
+      'Contratos mensais de manutenção criam LTV recorrente — foco em recorrência',
+      'Velocidade de resposta (< 30min) é fator decisivo no fechamento',
+    ],
+  },
+  arquitetura_design: {
+    name: 'Arquitetura / Design de Interiores',
+    cpl_min: 50, cpl_max: 160,
+    cpl_by_channel: {
+      'Instagram': 'R$50–130',
+      'Pinterest': 'R$40–110',
+      'Meta Ads': 'R$55–150',
+      'Google Search': 'R$70–160',
+    },
+    cvr_lead_to_sale: 0.12,
+    avg_ticket: 35000,
+    ltv_multiplier: 2.0,
+    best_channels: ['Instagram', 'Pinterest', 'Meta Ads'],
+    budget_floor: 2500,
+    budget_ideal: 8000,
+    kpi_thresholds: { cpl_good: 90, cpl_bad: 140, roas_good: 5.0, cvr_good: 0.15 },
+    seasonality: ['Jan', 'Fev', 'Out'],
+    insights: [
+      'Portfolio visual no Instagram e Pinterest é o principal canal de conversão',
+      'Ciclo de venda longo (60–120 dias) — nurturing com projetos inspiracionais é essencial',
+      'Projeto 3D gratuito como isca digital converte 4× mais que orçamento direto',
+      'Parceria com construtoras e imobiliárias é fonte estratégica de indicações',
+    ],
+  },
+  fotografia_video: {
+    name: 'Fotografia / Vídeo / Produção',
+    cpl_min: 35, cpl_max: 120,
+    cpl_by_channel: {
+      'Instagram': 'R$35–90',
+      'Meta Ads': 'R$40–100',
+      'Google Search': 'R$50–120',
+      'YouTube': 'R$55–115',
+    },
+    cvr_lead_to_sale: 0.18,
+    avg_ticket: 2500,
+    ltv_multiplier: 2.5,
+    best_channels: ['Instagram', 'Meta Ads', 'Google Search'],
+    budget_floor: 1500,
+    budget_ideal: 5000,
+    kpi_thresholds: { cpl_good: 65, cpl_bad: 105, roas_good: 4.0, cvr_good: 0.22 },
+    seasonality: ['Nov', 'Dez'],
+    insights: [
+      'Portfólio visual é o maior gatilho de conversão — Instagram como vitrine principal',
+      'Datas: casamentos (Out–Dez), formaturas (Nov–Dez), Natal são picos de alta demanda',
+      'Depoimentos em vídeo de noivos e empresas convertem 3× mais que texto',
+      'Especialização em nicho (ex: só casamentos ou só corporativo) reduz CPL em 35%',
+    ],
+  },
+  seguranca_privada: {
+    name: 'Segurança Privada / Monitoramento',
+    cpl_min: 55, cpl_max: 180,
+    cpl_by_channel: {
+      'Google Search': 'R$65–160',
+      'Meta Ads': 'R$55–130',
+      'LinkedIn': 'R$90–180',
+      'YouTube': 'R$70–150',
+    },
+    cvr_lead_to_sale: 0.15,
+    avg_ticket: 1200,
+    ltv_multiplier: 8.0,
+    best_channels: ['Google Search', 'Meta Ads', 'LinkedIn'],
+    budget_floor: 3000,
+    budget_ideal: 9000,
+    kpi_thresholds: { cpl_good: 90, cpl_bad: 155, roas_good: 5.0, cvr_good: 0.18 },
+    seasonality: ['Jan', 'Out'],
+    insights: [
+      'LTV altíssimo: contratos mensais recorrentes por anos — CAC elevado é justificável',
+      'Google Search para "segurança eletrônica + cidade" capta intenção de alta urgência',
+      'LinkedIn para abordagem B2B (condomínios, empresas, shoppings)',
+      'Cases de segurança frustrada evitada geram credibilidade imediata',
+    ],
+  },
+  padaria_cafeteria: {
+    name: 'Padaria / Cafeteria / Confeitaria',
+    cpl_min: 8, cpl_max: 35,
+    cpl_by_channel: {
+      'Instagram': 'R$8–25',
+      'Meta Ads': 'R$10–30',
+      'TikTok': 'R$7–22',
+      'Google Maps': 'R$12–35',
+    },
+    cvr_lead_to_sale: 0.40,
+    avg_ticket: 55,
+    ltv_multiplier: 12.0,
+    best_channels: ['Instagram', 'TikTok', 'Google Maps'],
+    budget_floor: 500,
+    budget_ideal: 2000,
+    kpi_thresholds: { cpl_good: 15, cpl_bad: 30, roas_good: 6.0, cvr_good: 0.45 },
+    seasonality: ['Dez', 'Jun'],
+    insights: [
+      'LTV excepcional: cliente fiel visita 3–4× por semana — foco em fidelização',
+      'Google Meu Negócio e fotos atualizadas geram 60% das descobertas orgânicas',
+      'Reels de produtos sendo preparados (pão saindo do forno, café artesanal) viralizam',
+      'Delivery via iFood/Rappi amplia alcance geográfico sem custo de mídia extra',
+    ],
+  },
+  depilacao: {
+    name: 'Depilação a Laser / Cera',
+    cpl_min: 18, cpl_max: 60,
+    cpl_by_channel: {
+      'Instagram': 'R$18–45',
+      'Meta Ads': 'R$20–55',
+      'TikTok': 'R$15–38',
+      'Google Search': 'R$28–60',
+    },
+    cvr_lead_to_sale: 0.28,
+    avg_ticket: 300,
+    ltv_multiplier: 5.0,
+    best_channels: ['Instagram', 'Meta Ads', 'TikTok'],
+    budget_floor: 1000,
+    budget_ideal: 3500,
+    kpi_thresholds: { cpl_good: 32, cpl_bad: 55, roas_good: 4.5, cvr_good: 0.32 },
+    seasonality: ['Out', 'Nov'],
+    insights: [
+      'Pré-verão (Out/Nov) é o pico de demanda — concentre 40% do budget anual',
+      'Pacotes de sessões criam recorrência e aumentam LTV em 3×',
+      'Antes/depois (somente com autorização) têm CTR 4× maior que imagens genéricas',
+      'TikTok emerge como canal de baixo CPL para público 20–35 anos',
+    ],
+  },
+  harmonizacao: {
+    name: 'Harmonização Facial / Estética Avançada',
+    cpl_min: 40, cpl_max: 120,
+    cpl_by_channel: {
+      'Instagram': 'R$40–95',
+      'Meta Ads': 'R$45–110',
+      'TikTok': 'R$35–80',
+      'YouTube': 'R$55–120',
+    },
+    cvr_lead_to_sale: 0.18,
+    avg_ticket: 1500,
+    ltv_multiplier: 4.0,
+    best_channels: ['Instagram', 'Meta Ads', 'TikTok'],
+    budget_floor: 2000,
+    budget_ideal: 6000,
+    kpi_thresholds: { cpl_good: 65, cpl_bad: 105, roas_good: 4.0, cvr_good: 0.22 },
+    seasonality: ['Nov', 'Dez'],
+    insights: [
+      'CFM/CFO regulam antes/depois — use conteúdo educativo sobre procedimentos',
+      'TikTok está superando Instagram em alcance orgânico para este nicho',
+      'Autoridade médica (formação, certificações) é o principal gatilho de conversão',
+      'Pré-Natal e pré-Carnaval são picos além do verão',
+    ],
+  },
+  autoescola: {
+    name: 'Autoescola / CNH',
+    cpl_min: 20, cpl_max: 70,
+    cpl_by_channel: {
+      'Google Search': 'R$25–65',
+      'Meta Ads': 'R$20–55',
+      'Instagram': 'R$22–60',
+      'TikTok': 'R$18–45',
+    },
+    cvr_lead_to_sale: 0.30,
+    avg_ticket: 1800,
+    ltv_multiplier: 1.5,
+    best_channels: ['Google Search', 'Meta Ads', 'Instagram'],
+    budget_floor: 1000,
+    budget_ideal: 3500,
+    kpi_thresholds: { cpl_good: 38, cpl_bad: 62, roas_good: 5.0, cvr_good: 0.35 },
+    seasonality: ['Jan', 'Jul'],
+    insights: [
+      'Google Search com "autoescola + bairro" tem a maior intenção de compra',
+      'Jan (início do ano, novos objetivos) e Jul (férias escolares) são picos',
+      'Parcelamento sem juros é diferencial decisivo na conversão',
+      'Depoimentos de alunos aprovados na primeira tentativa reduzem objeções',
+    ],
+  },
+  lavanderia: {
+    name: 'Lavanderia / Lavanderias Industriais',
+    cpl_min: 15, cpl_max: 55,
+    cpl_by_channel: {
+      'Google Search': 'R$18–50',
+      'Meta Ads': 'R$15–45',
+      'Google Maps': 'R$20–55',
+      'Instagram': 'R$15–40',
+    },
+    cvr_lead_to_sale: 0.32,
+    avg_ticket: 120,
+    ltv_multiplier: 8.0,
+    best_channels: ['Google Search', 'Meta Ads', 'Google Maps'],
+    budget_floor: 800,
+    budget_ideal: 3000,
+    kpi_thresholds: { cpl_good: 28, cpl_bad: 48, roas_good: 5.0, cvr_good: 0.38 },
+    seasonality: ['Jan', 'Jun'],
+    insights: [
+      'LTV alto: cliente fiel usa mensalmente por anos — fidelização tem ROI enorme',
+      'Google Maps e Meu Negócio geram 50% dos leads locais sem custo adicional',
+      'Serviço de coleta e entrega é diferencial competitivo decisivo',
+      'Parcerias com hotéis, pousadas e restaurantes criam receita B2B recorrente',
+    ],
+  },
   outro: {
     name: 'Outro / Geral',
     cpl_min: 30, cpl_max: 120,
@@ -643,9 +955,56 @@ const KEY_MAP: Record<string, string> = {
   financeiro: 'financeiro', crédito: 'financeiro', credito: 'financeiro',
   investimento: 'financeiro', banco: 'financeiro', empréstimo: 'financeiro', emprestimo: 'financeiro',
 
+  // ── Automotivo ────────────────────────────────────────────────────────────
+  automotivo: 'automotivo', oficina: 'automotivo', concessionária: 'automotivo', concessionaria: 'automotivo',
+  mecânica: 'automotivo', mecanica: 'automotivo', carro: 'automotivo', veículo: 'automotivo', veiculo: 'automotivo',
+
+  // ── Barbearia ─────────────────────────────────────────────────────────────
+  barbearia: 'barbearia', barbeiro: 'barbearia', barber: 'barbearia',
+
+  // ── Fisioterapia ──────────────────────────────────────────────────────────
+  fisioterapia: 'fisioterapia', fisioterapeuta: 'fisioterapia', reabilitação: 'fisioterapia', reabilitacao: 'fisioterapia',
+
+  // ── Farmácia ──────────────────────────────────────────────────────────────
+  farmácia: 'farmacia', farmacia: 'farmacia', drogaria: 'farmacia', droga: 'farmacia',
+
+  // ── Serviços Residenciais ─────────────────────────────────────────────────
+  'serviços residenciais': 'servicos_residenciais', 'servicos residenciais': 'servicos_residenciais',
+  limpeza: 'servicos_residenciais', jardinagem: 'servicos_residenciais', dedetização: 'servicos_residenciais',
+  dedetizacao: 'servicos_residenciais', diarista: 'servicos_residenciais', faxina: 'servicos_residenciais',
+
+  // ── Arquitetura / Design ──────────────────────────────────────────────────
+  'design de interiores': 'arquitetura_design', 'interiores': 'arquitetura_design',
+  arquiteto: 'arquitetura_design', designer: 'arquitetura_design',
+
+  // ── Fotografia / Vídeo ────────────────────────────────────────────────────
+  fotografia: 'fotografia_video', fotografo: 'fotografia_video', fotógrafo: 'fotografia_video',
+  videomaker: 'fotografia_video', produção: 'fotografia_video', producao: 'fotografia_video',
+  filmagem: 'fotografia_video',
+
+  // ── Segurança Privada ─────────────────────────────────────────────────────
+  'segurança': 'seguranca_privada', seguranca: 'seguranca_privada', monitoramento: 'seguranca_privada',
+  vigilância: 'seguranca_privada', vigilancia: 'seguranca_privada', câmera: 'seguranca_privada', camera: 'seguranca_privada',
+
+  // ── Padaria / Cafeteria ───────────────────────────────────────────────────
+  padaria: 'padaria_cafeteria', cafeteria: 'padaria_cafeteria', confeitaria: 'padaria_cafeteria',
+  café: 'padaria_cafeteria', cafe: 'padaria_cafeteria', pãodaçúcar: 'padaria_cafeteria', doces: 'padaria_cafeteria',
+
+  // ── Depilação ─────────────────────────────────────────────────────────────
+  'depilação': 'depilacao', depilacao: 'depilacao', 'depilação a laser': 'depilacao', laser: 'depilacao',
+
+  // ── Harmonização ──────────────────────────────────────────────────────────
+  'harmonização': 'harmonizacao', harmonizacao: 'harmonizacao',
+  botox: 'harmonizacao', preenchimento: 'harmonizacao', lipo: 'harmonizacao',
+
+  // ── Autoescola ────────────────────────────────────────────────────────────
+  autoescola: 'autoescola', 'auto escola': 'autoescola', cnh: 'autoescola', habilitação: 'autoescola', habilitacao: 'autoescola',
+
+  // ── Lavanderia ────────────────────────────────────────────────────────────
+  lavanderia: 'lavanderia', lavagem: 'lavanderia', laundry: 'lavanderia',
+
   // ── Saúde ─────────────────────────────────────────────────────────────────
-  'saúde': 'saude', saude: 'saude', clínica: 'saude', clinica: 'saude', hospital: 'saude',
-  fisioterapia: 'saude', fisioterapeuta: 'saude',
+  'saúde': 'saude', saude: 'saude', clínica: 'saude', clinica: 'saude', hospital: 'saude', médico: 'saude', medico: 'saude',
 
   // ── Odontologia ───────────────────────────────────────────────────────────
   odontolog: 'odontologia', dentista: 'odontologia', clareamento: 'odontologia',
@@ -669,7 +1028,7 @@ const KEY_MAP: Record<string, string> = {
 
   // ── Beleza ────────────────────────────────────────────────────────────────
   beleza: 'beleza', 'estética': 'beleza', estetica: 'beleza',
-  'salão': 'beleza', salao: 'beleza', barbearia: 'beleza', spa: 'beleza',
+  'salão': 'beleza', salao: 'beleza', spa: 'beleza', manicure: 'beleza', pedicure: 'beleza',
 
   // ── Fitness ───────────────────────────────────────────────────────────────
   academia: 'fitness', fitness: 'fitness', personal: 'fitness', pilates: 'fitness',
@@ -697,7 +1056,7 @@ const KEY_MAP: Record<string, string> = {
 
   // ── Construção ────────────────────────────────────────────────────────────
   'construção': 'construcao', construcao: 'construcao', reforma: 'construcao',
-  engenharia: 'construcao', arquitetura: 'construcao',
+  engenharia: 'construcao',
 
   // ── Moda ──────────────────────────────────────────────────────────────────
   moda: 'moda', 'vestuário': 'moda', vestuario: 'moda', roupas: 'moda', roupa: 'moda',

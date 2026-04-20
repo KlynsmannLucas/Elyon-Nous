@@ -394,6 +394,30 @@ export function TabPerformance({ clientData }: Props) {
         { label: 'Gasto total', value: '—', sub: 'sem histórico', color: '#38BDF8' },
       ]
 
+  // ── Comparativo Mês a Mês ───────────────────────────────────────────────────
+  const mom = (() => {
+    if (periods.length < 2) return null
+    const curr = byPeriod[periods[periods.length - 1]]
+    const prev = byPeriod[periods[periods.length - 2]]
+    const currPeriod = periods[periods.length - 1]
+    const prevPeriod = periods[periods.length - 2]
+    const currCPL = curr.leads > 0 ? Math.round(curr.spend / curr.leads) : null
+    const prevCPL = prev.leads > 0 ? Math.round(prev.spend / prev.leads) : null
+    const currROAS = curr.spend > 0 && curr.revenue > 0 ? +(curr.revenue / curr.spend).toFixed(1) : null
+    const prevROAS = prev.spend > 0 && prev.revenue > 0 ? +(prev.revenue / prev.spend).toFixed(1) : null
+    const pct = (c: number | null, p: number | null) =>
+      c != null && p != null && p !== 0 ? +((( c - p) / p * 100).toFixed(1)) : null
+    return {
+      currPeriod, prevPeriod,
+      items: [
+        { label: 'Investimento', curr: curr.spend,   prev: prev.spend,   delta: pct(curr.spend, prev.spend),     fmt: (v: number) => v >= 1000 ? `R$${(v/1000).toFixed(1)}k` : `R$${v}`, higherIsBetter: null },
+        { label: 'Leads',        curr: curr.leads,   prev: prev.leads,   delta: pct(curr.leads, prev.leads),     fmt: (v: number) => v.toLocaleString('pt-BR'),                           higherIsBetter: true  },
+        { label: 'CPL',          curr: currCPL,      prev: prevCPL,      delta: pct(currCPL, prevCPL),           fmt: (v: number) => `R$${v}`,                                            higherIsBetter: false },
+        { label: 'ROAS',         curr: currROAS,     prev: prevROAS,     delta: pct(currROAS, prevROAS),         fmt: (v: number) => `${v}×`,                                             higherIsBetter: true  },
+      ],
+    }
+  })()
+
   return (
     <div className="space-y-6">
       {/* KPIs */}
@@ -402,6 +426,40 @@ export function TabPerformance({ clientData }: Props) {
           <StatCard key={s.label} label={s.label} value={s.value} sub={s.sub} color={s.color} delay={i * 0.08} />
         ))}
       </div>
+
+      {/* Comparativo MoM */}
+      {mom && (
+        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 animate-fade-up">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="font-display font-bold text-white text-sm">Comparativo Mês a Mês</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">{mom.prevPeriod} → {mom.currPeriod}</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {mom.items.map(item => {
+              const d = item.delta
+              const isGood = d === null || item.higherIsBetter === null ? null
+                : item.higherIsBetter ? d >= 0 : d <= 0
+              const color = isGood === null ? '#64748B' : isGood ? '#22C55E' : '#FF4D4D'
+              return (
+                <div key={item.label} className="bg-[#16161A] rounded-xl p-3">
+                  <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">{item.label}</div>
+                  <div className="font-display text-xl font-bold text-white mb-1">
+                    {item.curr != null ? item.fmt(item.curr as number) : '—'}
+                  </div>
+                  <div className="text-[11px] font-semibold" style={{ color }}>
+                    {d !== null ? `${d >= 0 ? '▲' : '▼'} ${Math.abs(d)}%` : 'Sem dado anterior'}
+                  </div>
+                  <div className="text-[10px] text-slate-700 mt-0.5">
+                    Ant.: {item.prev != null ? item.fmt(item.prev as number) : '—'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Seção de Histórico */}
       <div>
