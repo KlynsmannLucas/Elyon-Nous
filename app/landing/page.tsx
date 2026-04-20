@@ -1,978 +1,802 @@
-// app/page.tsx — Landing Page ELYON
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
-function DashboardPreview() {
-  return (
-    <div className="relative w-full max-w-[580px]">
-      <div className="absolute -inset-4 opacity-20 blur-3xl rounded-3xl"
-        style={{ background: 'radial-gradient(ellipse, #F5A500 0%, transparent 70%)' }} />
+// ── CSS ──────────────────────────────────────────────────────────────────────
+const LP_CSS = `
+:root{--bg:#030305;--surface:#0C0C12;--card:#111118;--border:rgba(255,255,255,.06);--border-hi:rgba(255,255,255,.12);--gold:#F5A500;--gold-hi:#FFB800;--gold-dim:rgba(245,165,0,.06);--green:#22C55E;--red:#EF4444;--cyan:#06B6D4;--purple:#A78BFA;--text:#F0F0F2;--muted:#6B7280;--sub:#9CA3AF;--f-display:'Syne',sans-serif;--f-mono:'JetBrains Mono',monospace;--f-body:'DM Sans',sans-serif;}
+.lp-wrap{position:relative;z-index:1;min-height:100vh;}
+/* NAV */
+.lp-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:rgba(3,3,5,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);}
+.lp-logo{font-family:var(--f-display);font-weight:800;font-size:20px;color:var(--gold);letter-spacing:-.5px;text-decoration:none;}
+.lp-nav-links{display:flex;gap:32px;}
+.lp-nav-links a{font-size:14px;color:var(--sub);text-decoration:none;transition:color .15s;}
+.lp-nav-links a:hover{color:var(--text);}
+.lp-nav-actions{display:flex;gap:12px;align-items:center;}
+.lp-nav-cta{background:var(--gold);color:#000;font-weight:700;font-size:13px;padding:9px 20px;border-radius:8px;border:none;cursor:pointer;font-family:var(--f-body);transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;}
+.lp-nav-cta:hover{background:var(--gold-hi);box-shadow:0 0 24px rgba(245,165,0,.4);transform:translateY(-1px);}
+.lp-ghost-link{font-size:14px;color:var(--sub);text-decoration:none;transition:color .15s;}
+.lp-ghost-link:hover{color:var(--text);}
+/* VAR TOGGLE */
+.var-toggle{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:200;display:flex;gap:4px;background:var(--card);border:1px solid var(--border-hi);border-radius:12px;padding:4px;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+.var-btn{padding:8px 20px;border-radius:8px;font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:none;cursor:pointer;transition:all .18s;color:var(--muted);background:transparent;}
+.var-btn.active{background:var(--gold);color:#000;}
+/* SHARED */
+.lp-container{max-width:1140px;margin:0 auto;padding:0 48px;}
+.tag-badge{display:inline-flex;align-items:center;gap:6px;background:var(--gold-dim);border:1px solid rgba(245,165,0,.25);border-radius:999px;padding:5px 14px;font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:28px;}
+.tag-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);animation:lp-blink 2s infinite;}
+.section-eyebrow{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow::before{content:'';height:1px;width:32px;background:var(--gold);opacity:.5;}
+.section-eyebrow-c{justify-content:center;}
+.section-eyebrow-c::before{display:none;}
+.section-h{font-family:var(--f-display);font-size:40px;font-weight:800;letter-spacing:-1.5px;color:var(--text);margin-bottom:56px;max-width:500px;}
+.section-h em{color:var(--gold);font-style:normal;}
+.trust-row{display:flex;gap:20px;flex-wrap:wrap;}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);}
+.trust-check{color:var(--green);font-size:12px;}
+/* BUTTONS */
+.btn-p{background:var(--gold);color:#000;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;border:none;cursor:pointer;font-family:var(--f-body);letter-spacing:-.2px;transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;}
+.btn-p:hover{background:var(--gold-hi);box-shadow:0 0 32px rgba(245,165,0,.4);transform:translateY(-1px);}
+.btn-p.lg{font-size:17px;padding:16px 36px;border-radius:12px;}
+.btn-s{background:transparent;color:var(--sub);font-size:15px;padding:14px 24px;border-radius:10px;border:1px solid var(--border-hi);cursor:pointer;font-family:var(--f-body);transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;}
+.btn-s:hover{color:var(--text);border-color:rgba(245,165,0,.3);}
+/* FADE UP */
+.lp-fade{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease;}
+.lp-fade.lp-visible{opacity:1;transform:none;}
+.lp-d1{transition-delay:.1s;}.lp-d2{transition-delay:.2s;}.lp-d3{transition-delay:.3s;}
+/* TERMINAL */
+.terminal{background:#07080D;border:1px solid rgba(34,197,94,.25);border-radius:14px;overflow:hidden;box-shadow:0 0 40px rgba(34,197,94,.08),0 24px 64px rgba(0,0,0,.5);margin-bottom:28px;}
+.terminal-bar{display:flex;align-items:center;gap:6px;padding:10px 16px;background:#0C0E15;border-bottom:1px solid rgba(255,255,255,.06);}
+.t-dot{width:10px;height:10px;border-radius:50%;}
+.terminal-body{padding:16px 20px;min-height:130px;font-family:var(--f-mono);font-size:12.5px;line-height:1.7;overflow:hidden;}
+.t-cursor{display:inline-block;width:7px;height:14px;background:#22C55E;margin-left:2px;animation:lp-cursor .9s infinite;vertical-align:middle;}
+@keyframes lp-cursor{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes lp-blink{0%,100%{opacity:1}50%{opacity:.3}}
+/* DASH MOCKUP */
+.dash-mockup{background:var(--surface);border:1px solid var(--border-hi);border-radius:20px;overflow:hidden;box-shadow:0 0 80px rgba(245,165,0,.07),0 40px 100px rgba(0,0,0,.6);position:relative;}
+.dash-top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#0E0E18;border-bottom:1px solid var(--border);}
+.dash-logo-sm{font-family:var(--f-display);font-weight:800;color:var(--gold);font-size:14px;}
+.live-pill{display:flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:10px;font-weight:700;color:var(--green);letter-spacing:.08em;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:lp-blink 1.5s infinite;}
+.dash-body{padding:14px;}
+.dash-niche-row{display:flex;gap:6px;margin-bottom:12px;}
+.pill-sm{padding:3px 10px;border-radius:999px;font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.06em;background:var(--card);border:1px solid var(--border);color:var(--sub);}
+.pill-sm.active{background:rgba(245,165,0,.08);border-color:rgba(245,165,0,.25);color:var(--gold);}
+.dm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.dm{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.dm-label{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.dm-val{font-family:var(--f-mono);font-size:22px;font-weight:700;letter-spacing:-.5px;line-height:1;}
+.dm-sub{font-family:var(--f-mono);font-size:10px;color:var(--muted);margin-top:3px;}
+.ai-mini{background:#0A0A14;border:1px solid rgba(245,165,0,.2);border-radius:10px;padding:10px 12px;margin-top:4px;}
+.ai-mini-label{font-family:var(--f-mono);font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:5px;}
+.ai-mini-text{font-size:11px;color:var(--sub);line-height:1.5;}
+.ai-mini-text strong{color:var(--text);}
+/* HERO A */
+.hero-a{min-height:100vh;padding-top:120px;padding-bottom:80px;display:grid;align-items:center;}
+.hero-a-inner{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;}
+.hero-a-h{font-family:var(--f-display);font-size:clamp(40px,5vw,62px);font-weight:800;letter-spacing:-2px;line-height:1.05;color:var(--text);margin-bottom:20px;}
+.hero-a-h em{color:var(--gold);font-style:normal;display:block;}
+.hero-a-sub{font-size:17px;color:var(--sub);line-height:1.75;margin-bottom:36px;max-width:440px;}
+.hero-a-sub strong{color:var(--text);font-weight:500;}
+.hero-a-ctas{display:flex;gap:14px;align-items:center;margin-bottom:28px;}
+/* STATS A */
+.stats-a{padding:0 0 80px;}
+.stats-a-inner{border:1px solid var(--border);border-radius:16px;background:var(--surface);display:grid;grid-template-columns:repeat(4,1fr);gap:0;overflow:hidden;}
+.stat-a{padding:36px 32px;text-align:center;border-right:1px solid var(--border);}
+.stat-a:last-child{border-right:none;}
+.stat-a-val{font-family:var(--f-display);font-size:52px;font-weight:800;letter-spacing:-2px;color:var(--gold);line-height:1;margin-bottom:8px;}
+.stat-a-label{font-size:13px;color:var(--muted);line-height:1.4;}
+/* HOW A */
+.how-a{padding:80px 0;}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px 28px;position:relative;overflow:hidden;transition:border-color .2s;}
+.step:hover{border-color:rgba(245,165,0,.3);}
+.step-n{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.step-h{font-family:var(--f-display);font-size:20px;font-weight:700;margin-bottom:10px;letter-spacing:-.3px;}
+.step-p{font-size:14px;color:var(--sub);line-height:1.7;}
+/* COMP A */
+.comp-a{padding:80px 0;}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:820px;margin:0 auto;}
+.comp-side{border-radius:16px;padding:32px 28px;border:1px solid var(--border);}
+.comp-side.bad{background:rgba(239,68,68,.04);}
+.comp-side.good{background:linear-gradient(135deg,rgba(245,165,0,.05),rgba(34,197,94,.04));border-color:rgba(245,165,0,.2);box-shadow:0 0 40px rgba(245,165,0,.05);}
+.comp-side-h{font-family:var(--f-display);font-size:15px;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:8px;}
+.comp-side.bad .comp-side-h{color:var(--red);}
+.comp-side.good .comp-side-h{color:var(--green);}
+.comp-items{display:flex;flex-direction:column;gap:14px;}
+.comp-item{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--sub);line-height:1.5;}
+.comp-icon{flex-shrink:0;margin-top:1px;font-weight:700;font-family:var(--f-mono);font-size:13px;}
+.comp-side.bad .comp-icon{color:var(--red);}
+.comp-side.good .comp-icon{color:var(--green);}
+/* CTA A */
+.cta-final{padding:100px 0 120px;text-align:center;}
+.cta-final-h{font-family:var(--f-display);font-size:clamp(36px,5vw,60px);font-weight:800;letter-spacing:-2px;line-height:1.05;margin-bottom:20px;max-width:700px;margin-left:auto;margin-right:auto;}
+.cta-final-h em{color:var(--gold);font-style:normal;}
+.cta-final-sub{font-size:17px;color:var(--sub);margin-bottom:40px;}
+.cta-row{display:flex;gap:14px;justify-content:center;align-items:center;margin-bottom:28px;}
+/* HERO B */
+.hero-b{min-height:100vh;padding-top:100px;position:relative;overflow:hidden;}
+.hero-b-top{min-height:88vh;display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:stretch;position:relative;z-index:1;}
+.hero-b-left{padding:80px 48px 80px 0;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border);}
+.hero-b-right{padding:80px 0 80px 64px;display:flex;flex-direction:column;justify-content:center;}
+.hero-b-metric-label{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.hero-b-number{font-family:var(--f-display);font-size:clamp(80px,12vw,136px);font-weight:800;letter-spacing:-5px;line-height:.9;color:var(--gold);text-shadow:0 0 80px rgba(245,165,0,.25);margin-bottom:16px;transition:all .3s;}
+.hero-b-niche-label{font-family:var(--f-mono);font-size:13px;font-weight:500;color:var(--sub);letter-spacing:.02em;margin-bottom:4px;}
+.niche-slot{font-family:var(--f-mono);font-size:16px;font-weight:700;color:var(--cyan);letter-spacing:-.2px;display:inline-block;min-width:280px;border-bottom:1px solid rgba(6,182,212,.3);padding-bottom:2px;transition:all .25s;}
+.hero-b-h{font-family:var(--f-display);font-size:clamp(32px,4vw,50px);font-weight:800;letter-spacing:-1.5px;line-height:1.08;color:var(--text);margin-bottom:20px;}
+.hero-b-h em{color:var(--gold);font-style:normal;}
+.hero-b-sub{font-size:16px;color:var(--sub);line-height:1.75;margin-bottom:36px;max-width:400px;}
+.niches-cloud{display:flex;flex-wrap:wrap;gap:8px;padding:20px 0;margin-top:8px;}
+.niche-tag{padding:4px 12px;border-radius:999px;font-family:var(--f-mono);font-size:11px;font-weight:500;background:var(--card);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;}
+.niche-tag:hover,.niche-tag.active{background:rgba(6,182,212,.08);border-color:rgba(6,182,212,.3);color:var(--cyan);}
+/* STATS B */
+.stats-b{padding:0 0 80px;}
+.stats-b-inner{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat-b{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;transition:border-color .2s,transform .2s;}
+.stat-b:hover{border-color:rgba(245,165,0,.3);transform:translateY(-2px);}
+.stat-b-val{font-family:var(--f-display);font-size:44px;font-weight:800;letter-spacing:-2px;color:var(--gold);line-height:1;margin-bottom:8px;}
+.stat-b-label{font-size:13px;color:var(--muted);line-height:1.4;}
+.stat-b-sub{font-family:var(--f-mono);font-size:10px;color:var(--green);margin-top:6px;font-weight:600;}
+/* TIMELINE */
+.how-b{padding:80px 0;}
+.timeline{display:flex;flex-direction:column;gap:0;max-width:680px;}
+.tl-item{display:grid;grid-template-columns:64px 1fr;gap:24px;padding-bottom:40px;position:relative;}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:30px;top:48px;width:1px;bottom:0;background:linear-gradient(var(--border),transparent);}
+.tl-num{width:44px;height:44px;border-radius:50%;background:var(--gold-dim);border:1px solid rgba(245,165,0,.3);display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:14px;font-weight:700;color:var(--gold);flex-shrink:0;margin-top:2px;}
+.tl-h{font-family:var(--f-display);font-size:20px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px;}
+.tl-p{font-size:14px;color:var(--sub);line-height:1.7;}
+.tl-tag{display:inline-block;margin-top:8px;padding:2px 10px;border-radius:999px;font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.06em;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:var(--green);}
+/* COMP B */
+.comp-b{padding:80px 0;}
+.comp-b-inner{display:grid;grid-template-columns:1fr 1fr;gap:2px;border-radius:16px;overflow:hidden;border:1px solid var(--border);}
+.comp-b-side{padding:40px 36px;}
+.comp-b-side.bad{background:var(--surface);}
+.comp-b-side.good{background:linear-gradient(160deg,rgba(245,165,0,.05),var(--surface));}
+.comp-b-head{font-family:var(--f-display);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:28px;display:flex;align-items:center;gap:8px;}
+.comp-b-side.bad .comp-b-head{color:var(--red);}
+.comp-b-side.good .comp-b-head{color:var(--gold);}
+.comp-b-items{display:flex;flex-direction:column;gap:16px;}
+.comp-b-item{font-size:14px;color:var(--sub);line-height:1.55;display:flex;gap:10px;align-items:flex-start;}
+.comp-b-icon{flex-shrink:0;font-family:var(--f-mono);font-weight:700;font-size:12px;margin-top:1px;}
+.comp-b-side.bad .comp-b-icon{color:var(--red);}
+.comp-b-side.good .comp-b-icon{color:var(--gold);}
+/* FEATURES B */
+.b-feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:48px;}
+.b-feat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 24px;transition:border-color .2s;}
+.b-feat:hover{border-color:var(--border-hi);}
+.b-feat-iw{width:38px;height:38px;border-radius:9px;background:rgba(245,165,0,.06);border:1px solid rgba(245,165,0,.2);display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:14px;}
+.b-feat-lbl{font-family:var(--f-mono);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:7px;}
+.b-feat-h{font-family:var(--f-display);font-size:18px;font-weight:700;letter-spacing:-.3px;margin-bottom:8px;}
+.b-feat-p{font-size:13.5px;color:var(--sub);line-height:1.7;}
+.b-feat-demo{margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 13px;font-size:12px;color:var(--sub);line-height:1.55;}
+.b-feat-demo strong{color:var(--text);}
+.b-feat-badges{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;}
+.b-fbadge{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:11.5px;font-weight:500;color:var(--sub);}
+.funnel-b{display:flex;gap:5px;margin-top:12px;}
+.funnel-b-p{flex:1;padding:6px;background:var(--card);border-radius:6px;text-align:center;border:1px solid var(--border);}
+.funnel-b-p.mid{border-color:rgba(245,165,0,.25);background:rgba(245,165,0,.04);}
+.fb-lbl{font-family:var(--f-mono);font-size:8.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.fb-name{font-size:10.5px;font-weight:600;color:var(--text);margin-top:2px;}
+.camp-b{display:flex;flex-direction:column;gap:6px;margin-top:12px;}
+.camp-b-i{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:6px 10px;}
+.camp-b-n{font-size:11px;color:var(--sub);}
+.camp-b-r{font-family:var(--f-mono);font-size:10px;font-weight:700;}
+/* BENCHMARKS B */
+.b-bench{padding:80px 0;}
+.b-niche-sel{display:flex;flex-wrap:wrap;gap:6px;margin:28px 0 24px;}
+.b-ntag{padding:5px 13px;border-radius:999px;font-family:var(--f-mono);font-size:11px;font-weight:600;background:var(--card);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;}
+.b-ntag:hover{color:var(--text);border-color:var(--border-hi);}
+.b-ntag.active{background:rgba(6,182,212,.08);border-color:rgba(6,182,212,.3);color:var(--cyan);}
+.b-ndata{background:var(--surface);border:1px solid rgba(6,182,212,.25);border-radius:16px;padding:28px 30px;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;}
+.b-nd-t{font-family:var(--f-display);font-size:21px;font-weight:700;letter-spacing:-.4px;color:var(--text);margin-bottom:14px;}
+.b-nd-metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.b-nd-m{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:11px 13px;}
+.b-nd-ml{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.b-nd-mv{font-family:var(--f-mono);font-size:20px;font-weight:700;letter-spacing:-.4px;}
+.b-nd-ms{font-size:10.5px;color:var(--muted);margin-top:2px;}
+.b-nd-ch-lbl{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.b-nd-chs{display:flex;flex-direction:column;gap:7px;}
+.b-nd-ch{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:7px 11px;}
+.b-nd-cn{font-size:13px;font-weight:500;color:var(--text);}
+.b-nd-cv{font-family:var(--f-mono);font-size:10.5px;font-weight:700;color:var(--cyan);}
+.b-nd-ins{background:rgba(6,182,212,.04);border:1px solid rgba(6,182,212,.2);border-radius:9px;padding:11px 13px;margin-top:10px;font-size:12.5px;color:var(--sub);line-height:1.6;}
+.b-nd-ins strong{color:var(--text);}
+/* PRICING B */
+.b-price{padding:80px 0;}
+.b-pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:44px;}
+.b-pcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px 22px;position:relative;transition:border-color .2s,transform .2s;}
+.b-pcard:hover{border-color:var(--border-hi);transform:translateY(-2px);}
+.b-pcard.pop{border-color:rgba(245,165,0,.3);background:linear-gradient(155deg,rgba(245,165,0,.04),var(--surface));}
+.b-pop-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;font-family:var(--f-mono);font-size:9.5px;font-weight:700;padding:3px 12px;border-radius:999px;white-space:nowrap;letter-spacing:.05em;}
+.b-pc-lbl{font-family:var(--f-mono);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.b-pc-name{font-family:var(--f-display);font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;}
+.b-pc-desc{font-size:13px;color:var(--sub);margin-bottom:18px;line-height:1.5;}
+.b-pc-price{display:flex;align-items:baseline;gap:3px;margin-bottom:18px;}
+.b-pc-cur{font-family:var(--f-display);font-size:15px;font-weight:700;color:var(--sub);}
+.b-pc-val{font-family:var(--f-display);font-size:42px;font-weight:800;letter-spacing:-2px;color:var(--text);line-height:1;}
+.b-pc-per{font-size:13px;color:var(--muted);}
+.b-pc-btn{width:100%;padding:11px;border-radius:8px;font-family:var(--f-body);font-size:13.5px;font-weight:700;cursor:pointer;border:none;transition:all .18s;margin-bottom:18px;}
+.b-pc-btn.prim{background:var(--gold);color:#000;}
+.b-pc-btn.prim:hover{background:var(--gold-hi);box-shadow:0 0 20px rgba(245,165,0,.35);}
+.b-pc-btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--border-hi);}
+.b-pc-btn.ghost:hover{border-color:rgba(245,165,0,.3);color:var(--text);}
+.b-pc-feats{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.b-pc-feat{font-size:13px;color:var(--sub);display:flex;gap:7px;align-items:flex-start;line-height:1.4;}
+.b-pc-feat::before{content:'✓';color:var(--green);font-size:11px;flex-shrink:0;margin-top:2px;font-weight:700;}
+/* AUDIENCE B */
+.b-aud{padding:80px 0;}
+.b-aud-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:38px;}
+.b-aud-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 20px;transition:border-color .2s;}
+.b-aud-card:hover{border-color:var(--border-hi);}
+.b-aud-ico{font-size:26px;margin-bottom:14px;display:block;}
+.b-aud-who{font-family:var(--f-mono);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.b-aud-h{font-family:var(--f-display);font-size:17px;font-weight:700;letter-spacing:-.3px;margin-bottom:9px;}
+.b-aud-p{font-size:13.5px;color:var(--sub);line-height:1.7;margin-bottom:12px;}
+.b-aud-plan{font-family:var(--f-mono);font-size:10.5px;font-weight:600;color:var(--cyan);}
+/* CTA B */
+.cta-b{padding:100px 0 120px;text-align:center;position:relative;}
+.cta-b::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(245,165,0,.06) 0%,transparent 60%);pointer-events:none;}
+.cta-b-h{position:relative;z-index:1;font-family:var(--f-display);font-size:clamp(40px,6vw,72px);font-weight:800;letter-spacing:-3px;line-height:1;color:var(--text);margin-bottom:24px;}
+.cta-b-h em{color:var(--gold);font-style:normal;}
+.cta-b-h span{color:var(--muted);}
+.cta-b-sub{position:relative;z-index:1;font-size:18px;color:var(--sub);margin-bottom:44px;}
+/* FOOTER */
+.lp-footer{border-top:1px solid var(--border);padding:40px 0;}
+.lp-footer-inner{display:flex;flex-direction:column;align-items:center;gap:16px;}
+.lp-footer-links{display:flex;gap:28px;}
+.lp-footer-links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s;}
+.lp-footer-links a:hover{color:var(--sub);}
+`
 
-      <div className="relative bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-5 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="font-display font-bold text-sm" style={{
-              background: 'linear-gradient(135deg, #F5A500, #FFD166)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>ELYON</span>
-            <span className="text-[10px] text-slate-600">· Dashboard</span>
-          </div>
-          <span className="flex items-center gap-1.5 text-[10px] text-[#22C55E] font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
-            AO VIVO
-          </span>
-        </div>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const TERMINAL_LINES = [
+  { delay: 400,  html: '<span style="color:#22C55E">$</span> <span style="color:#F0F0F2">elyon analyze --nicho "Odontologia Estética"</span>' },
+  { delay: 1200, html: '<span style="color:#6EE7B7">⏳ Carregando benchmark...</span>' },
+  { delay: 1800, html: '<span style="color:#9CA3AF">  CPL médio: </span><span style="color:#F5A500;font-weight:700">R$87</span>&nbsp;&nbsp;<span style="color:#9CA3AF">ROAS:</span> <span style="color:#22C55E;font-weight:700">4.1×</span>&nbsp;&nbsp;<span style="color:#9CA3AF">Canal:</span> Meta Ads' },
+  { delay: 2200, html: '<span style="color:#9CA3AF">  Leads/mês: </span><span style="color:#22C55E;font-weight:700">62–95</span>&nbsp;&nbsp;<span style="color:#9CA3AF">LTV:</span> <span style="color:#A78BFA;font-weight:700">R$38k</span>' },
+  { delay: 2800, html: '' },
+  { delay: 3000, html: '<span style="color:#22C55E">$</span> <span style="color:#F0F0F2">elyon analyze --nicho "Móveis Planejados"</span>' },
+  { delay: 3800, html: '<span style="color:#9CA3AF">  CPL médio: </span><span style="color:#F5A500;font-weight:700">R$63</span>&nbsp;&nbsp;<span style="color:#9CA3AF">ROAS:</span> <span style="color:#22C55E;font-weight:700">34.8×</span>&nbsp;&nbsp;<span style="color:#9CA3AF">Canal:</span> Facebook' },
+  { delay: 4300, html: '<span style="color:#9CA3AF">  Receita est:</span> <span style="color:#F5A500;font-weight:700">R$1.04M/ano</span>&nbsp;&nbsp;<span style="color:#9CA3AF">Score:</span> <span style="color:#22C55E;font-weight:700">EXCELENTE ✓</span>' },
+]
 
-        {/* Nicho badge + Meta conectado */}
-        <div className="mb-3 flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] px-2 py-1 rounded-full font-semibold"
-            style={{ background: 'rgba(245,165,0,0.1)', color: '#F5A500', border: '1px solid rgba(245,165,0,0.25)' }}>
-            Odontologia Estética
-          </span>
-          <span className="text-[10px] px-2 py-1 rounded-full font-semibold flex items-center gap-1"
-            style={{ background: 'rgba(34,197,94,0.08)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)' }}>
-            <span className="w-1 h-1 rounded-full bg-[#22C55E]" />
-            Meta Ads conectado
-          </span>
-        </div>
+const HERO_NICHES = [
+  { label: 'Móveis Planejados', roas: 34.8, niche: 'Marcenaria / Móveis Planejados' },
+  { label: 'Odontologia',       roas: 4.1,  niche: 'Odontologia Estética' },
+  { label: 'Advocacia',         roas: 6.8,  niche: 'Advocacia Previdenciária' },
+  { label: 'Estética',          roas: 5.2,  niche: 'Clínica de Estética' },
+  { label: 'Personal',          roas: 3.9,  niche: 'Personal Trainer' },
+  { label: 'Imobiliária',       roas: 7.4,  niche: 'Imobiliária de Luxo' },
+  { label: 'Psicologia',        roas: 4.5,  niche: 'Psicologia Online' },
+  { label: 'Cursos Online',     roas: 9.2,  niche: 'Cursos de Inglês' },
+]
 
-        {/* KPI cards */}
-        <div className="grid grid-cols-2 gap-2.5 mb-3">
-          {[
-            { label: 'Receita Estimada', value: 'R$38k', sub: '+24% vs mês anterior', color: '#F5A500' },
-            { label: 'Leads / mês',      value: '62–95',  sub: 'CPL médio R$70',       color: '#22C55E' },
-            { label: 'ROAS Real',        value: '3.9×',   sub: 'Meta: 3.8× ✓',         color: '#22C55E' },
-            { label: 'CPL Real',         value: 'R$70',   sub: 'Benchmark R$45–95',     color: '#F5A500' },
-          ].map((kpi) => (
-            <div key={kpi.label} className="bg-[#111118] border border-white/[0.06] rounded-xl p-3">
-              <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-1">{kpi.label}</div>
-              <div className="text-base font-display font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
-              <div className="text-[9px] text-slate-600 mt-0.5">{kpi.sub}</div>
-            </div>
-          ))}
-        </div>
+const BENCHMARKS = [
+  { label: 'Odontologia',    name: 'Odontologia Estética',        cpl: 'R$45–95',  roas: '3.8×', cvr: '15%', bmin: 'R$2.500', ch1: 'Meta Ads',     ch2: 'Google Search', ch3: 'Instagram',      tip: 'Pico: Dezembro · Março' },
+  { label: 'Estética',       name: 'Clínica de Estética',         cpl: 'R$35–70',  roas: '4.5×', cvr: '18%', bmin: 'R$2.000', ch1: 'Instagram Ads', ch2: 'Meta Ads',       ch3: 'Google Display', tip: 'Pico: Janeiro · Outubro' },
+  { label: 'Imobiliária',    name: 'Imobiliária',                  cpl: 'R$80–180', roas: '12×',  cvr: '6%',  bmin: 'R$5.000', ch1: 'Meta Ads',     ch2: 'Google Search', ch3: 'Portais',        tip: 'Pico: Fevereiro · Agosto' },
+  { label: 'Advocacia',      name: 'Advocacia Previdenciária',     cpl: 'R$40–90',  roas: '6.8×', cvr: '12%', bmin: 'R$3.000', ch1: 'Google Search', ch2: 'Meta Ads',       ch3: 'YouTube',        tip: 'Evergreen' },
+  { label: 'Cursos Online',  name: 'Cursos Online',                cpl: 'R$15–35',  roas: '9.2×', cvr: '22%', bmin: 'R$1.500', ch1: 'Meta Ads',     ch2: 'YouTube Ads',   ch3: 'Google',         tip: 'Pico: Janeiro · Julho' },
+  { label: 'Móveis Planej.', name: 'Marcenaria / Móveis Planej.', cpl: 'R$50–80',  roas: '34.8×',cvr: '12%', bmin: 'R$3.000', ch1: 'Facebook Ads', ch2: 'Instagram',      ch3: 'Google Search',  tip: 'Pico: Março · Outubro' },
+  { label: 'Academia',       name: 'Academia / Fitness',           cpl: 'R$18–45',  roas: '4.2×', cvr: '25%', bmin: 'R$1.500', ch1: 'Instagram Ads', ch2: 'Meta Ads',       ch3: 'TikTok',         tip: 'Pico: Janeiro · Junho' },
+  { label: 'Psicologia',     name: 'Psicologia Online',            cpl: 'R$30–65',  roas: '4.5×', cvr: '20%', bmin: 'R$2.000', ch1: 'Google Search', ch2: 'Meta Ads',       ch3: 'Instagram',      tip: 'Evergreen' },
+  { label: 'E-commerce',     name: 'E-commerce',                   cpl: 'R$8–25',   roas: '5.5×', cvr: '3%',  bmin: 'R$3.000', ch1: 'Meta Ads',     ch2: 'Google Shopping',ch3: 'TikTok',         tip: 'Pico: Nov · Dez' },
+  { label: 'SaaS / Tech',    name: 'SaaS / Tech',                  cpl: 'R$50–120', roas: '8×',   cvr: '8%',  bmin: 'R$4.000', ch1: 'Google Search', ch2: 'LinkedIn',       ch3: 'Meta Ads',       tip: 'Evergreen' },
+]
 
-        {/* Mini chart */}
-        <div className="bg-[#111118] border border-white/[0.06] rounded-xl p-3 mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[10px] text-slate-500">Projeção de Receita · 6 meses</div>
-            <div className="text-[10px] text-[#22C55E] font-semibold">↑ 34%</div>
-          </div>
-          <div className="flex items-end gap-1 h-10">
-            {[35, 48, 58, 69, 80, 100].map((h, i) => (
-              <div key={i} className="flex-1 flex flex-col justify-end">
-                <div className="rounded-sm" style={{
-                  height: `${h}%`,
-                  background: i === 5
-                    ? 'linear-gradient(to top, #F5A500, #FFD166)'
-                    : `rgba(245,165,0,${0.15 + i * 0.08})`,
-                }} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* NOUS chat preview */}
-        <div className="rounded-xl p-2.5 flex items-start gap-2"
-          style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)' }}>
-          <span className="text-sm flex-shrink-0">🧠</span>
-          <div>
-            <div className="text-[9px] text-[#A78BFA] font-semibold mb-0.5">NOUS · IA contextual</div>
-            <span className="text-[10px] text-slate-400">Seu CPL de R$70 está dentro do benchmark. Recomendo escalar Meta Ads em 20% e testar Google Search.</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
+// ── COMPONENT ────────────────────────────────────────────────────────────────
 export default function LandingPage() {
-  const niches = [
-    'Odontologia', 'Saúde / Clínica', 'Financeiro', 'Educação / Cursos',
-    'Imobiliário', 'E-commerce', 'Jurídico', 'Contabilidade',
-    'Beleza / Estética', 'Academia / Fitness', 'SaaS / Tech', 'Pet Shop',
-    'Turismo', 'Restaurante', 'Consultoria', 'Construção Civil',
-    'Moda', 'Psicologia', 'Nutrição', 'Eventos', 'Marketing / Agência',
-    'Barbearia', 'Clínica Veterinária', 'Advocacia', 'Arquitetura',
-    'Autoescola', 'Concessionária', 'Franquias', '+52 mais',
-  ]
+  const [activeVar, setActiveVar] = useState<'A' | 'B'>('A')
+  const [heroNiche, setHeroNiche] = useState(HERO_NICHES[0])
+  const [activeBench, setActiveBench] = useState(BENCHMARKS[0])
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const termBodyRef = useRef<HTMLDivElement>(null)
+  const termDoneRef = useRef(false)
+  const animFrameRef = useRef<number>()
+
+  // Particles
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')!
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
+    window.addEventListener('resize', resize); resize()
+    type P = { x:number;y:number;vx:number;vy:number;size:number;alpha:number;color:string }
+    const pts: P[] = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+      vx: (Math.random()-.5)*.4, vy: (Math.random()-.5)*.4,
+      size: Math.random()*1.5+.3, alpha: Math.random()*.4+.05,
+      color: Math.random()>.7?'245,165,0':Math.random()>.5?'167,139,250':'255,255,255',
+    }))
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height)
+      pts.forEach(p => {
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2)
+        ctx.fillStyle=`rgba(${p.color},${p.alpha})`; ctx.fill()
+        p.x+=p.vx; p.y+=p.vy
+        if(p.x<0||p.x>canvas.width) p.vx*=-1
+        if(p.y<0||p.y>canvas.height) p.vy*=-1
+      })
+      pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{
+        const d=Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2)
+        if(d<120){ctx.beginPath();ctx.strokeStyle=`rgba(245,165,0,${.06*(1-d/120)})`;ctx.lineWidth=.5;ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+      }))
+      animFrameRef.current=requestAnimationFrame(draw)
+    }
+    draw()
+    return () => { window.removeEventListener('resize',resize); if(animFrameRef.current) cancelAnimationFrame(animFrameRef.current) }
+  }, [])
+
+  // Terminal
+  useEffect(() => {
+    if (activeVar !== 'A' || termDoneRef.current) return
+    const el = termBodyRef.current; if (!el) return
+    termDoneRef.current = true
+    const cursor = document.createElement('span'); cursor.className='t-cursor'; el.appendChild(cursor)
+    TERMINAL_LINES.forEach(({ delay, html }) => {
+      setTimeout(() => {
+        if (!html) return
+        const line = document.createElement('div'); line.innerHTML = html
+        line.style.cssText = 'font-family:var(--f-mono);font-size:12.5px;line-height:1.7;'
+        el.insertBefore(line, cursor); el.scrollTop = el.scrollHeight
+      }, delay)
+    })
+  }, [activeVar])
+
+  // Scroll fade
+  useEffect(() => {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('lp-visible');obs.unobserve(e.target)} })
+    }, { threshold: 0.12 })
+    document.querySelectorAll('.lp-fade').forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [activeVar])
+
+  // Counters
+  useEffect(() => {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return
+        const el = e.target as HTMLElement
+        const target = parseFloat(el.dataset.target||'0'), dec = parseInt(el.dataset.dec||'0')
+        const dur = 1800, t0 = performance.now()
+        function step(now:number){const p=Math.min((now-t0)/dur,1),ease=1-Math.pow(1-p,4),v=target*ease;el.textContent=dec>0?v.toFixed(dec):Math.round(v).toString();if(p<1)requestAnimationFrame(step)}
+        requestAnimationFrame(step); obs.unobserve(e.target)
+      })
+    }, { threshold: 0.5 })
+    document.querySelectorAll('.lp-counter').forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [activeVar])
+
+  const BAD = ['Consultor caro que fala muito e entrega pouco','Budget queimado em canal errado para o seu nicho','Sem visão do funil — TOFU, MOFU e BOFU no achismo','Decisão baseada em feeling — sem benchmark real','Campanhas passadas esquecidas, erros repetidos']
+  const GOOD = ['Head de Growth IA especializado no seu nicho — 24h','Canal certo + budget certo, com dados reais do mercado','Diagnóstico TOFU/MOFU/BOFU — onde está o gargalo','CPL e ROAS reais das suas campanhas Meta e Google','Histórico de campanhas alimentando decisões futuras']
 
   return (
-    <main className="min-h-screen bg-[#030305] overflow-x-hidden" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px)', backgroundSize: '44px 44px' }}>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: LP_CSS }} />
+      <canvas ref={canvasRef} style={{ position:'fixed',inset:0,zIndex:0,pointerEvents:'none',opacity:.5 }} />
 
-      {/* ── Navbar ──────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 border-b border-white/[0.05] bg-[#030305]/90 backdrop-blur-xl">
-        <span className="font-display font-bold text-xl" style={{
-          background: 'linear-gradient(135deg, #F5A500, #FFD166)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>ELYON</span>
-        <div className="hidden md:flex items-center gap-8 text-sm text-slate-500">
-          <a href="#como-funciona" className="hover:text-white transition-colors">Como funciona</a>
-          <a href="#nichos" className="hover:text-white transition-colors">Nichos</a>
-          <a href="#features" className="hover:text-white transition-colors">Recursos</a>
+      {/* NAV */}
+      <nav className="lp-nav">
+        <Link href="/landing" className="lp-logo">ELYON</Link>
+        <div className="lp-nav-links">
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#nichos">Nichos</a>
+          <a href="#features">Recursos</a>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/sign-in" className="text-sm text-slate-400 hover:text-white transition-colors px-4 py-2 hidden md:block">
-            Entrar
-          </Link>
-          <Link href="/sign-up"
-            className="text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000' }}>
-            Começar grátis →
-          </Link>
+        <div className="lp-nav-actions">
+          <Link href="/sign-in" className="lp-ghost-link">Entrar</Link>
+          <Link href="/sign-up" className="lp-nav-cta">Começar grátis →</Link>
         </div>
       </nav>
 
-      {/* ── HERO ──────────────────────────────────────────────────────────────── */}
-      <section className="pt-36 pb-24 px-6 md:px-12 max-w-7xl mx-auto">
-        <div className="flex flex-col lg:flex-row items-center gap-16">
-          <div className="flex-1 max-w-xl">
-            <div className="inline-flex items-center gap-2 bg-[#0C0C12] border border-white/[0.06] rounded-full px-4 py-2 mb-8">
-              <span className="w-2 h-2 rounded-full bg-[#F5A500] animate-pulse" />
-              <span className="text-xs font-semibold text-[#F5A500] tracking-widest uppercase">
-                ELYON AGENT · Seu Head de Growth com IA 24h
-              </span>
-            </div>
+      {/* VARIATION TOGGLE */}
+      <div className="var-toggle">
+        <button className={`var-btn${activeVar==='A'?' active':''}`} onClick={()=>setActiveVar('A')}>A — Terminal</button>
+        <button className={`var-btn${activeVar==='B'?' active':''}`} onClick={()=>setActiveVar('B')}>B — Data Gravity</button>
+      </div>
 
-            <h1 className="font-display text-5xl md:text-6xl leading-[1.1] mb-6">
-              <span className="text-white">Não damos opinião.</span>
-              <br />
-              <span style={{
-                background: 'linear-gradient(135deg, #F5A500, #FFD166)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>
-                Damos dado + direção.
-              </span>
-            </h1>
-
-            <p className="text-slate-400 text-lg leading-relaxed mb-8">
-              O ELYON funciona como um Head de Growth especializado no seu nicho —
-              conecta suas contas de anúncio, diagnostica o funil, calcula CPL e ROAS reais
-              e entrega um plano pronto para executar. Em 2 minutos.
-            </p>
-
-            <div className="flex flex-wrap gap-3 mb-8">
-              <Link href="/sign-up"
-                className="inline-flex items-center gap-2 font-bold px-7 py-4 rounded-xl hover:opacity-90 transition-opacity text-lg"
-                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000', boxShadow: '0 0 32px rgba(245,165,0,0.25)' }}>
-                Quero minha análise grátis →
-              </Link>
-              <Link href="/sign-in"
-                className="inline-flex items-center gap-2 border border-white/[0.06] text-slate-300 font-medium px-6 py-4 rounded-xl hover:border-white/[0.12] hover:text-white transition-colors">
-                Já tenho conta
-              </Link>
-            </div>
-
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-              {[
-                'Análise gratuita para começar',
-                'Resultado em 2 minutos',
-                'Sem cartão de crédito',
-              ].map((item) => (
-                <span key={item} className="flex items-center gap-2 text-sm text-slate-500">
-                  <span className="text-[#22C55E] font-bold">✓</span>
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex-1 flex justify-center lg:justify-end">
-            <DashboardPreview />
-          </div>
-        </div>
-      </section>
-
-      {/* ── BARRA DE MÉTRICAS ─────────────────────────────────────────────────── */}
-      <section className="py-14 px-6 md:px-12 border-y border-white/[0.06]"
-        style={{ background: 'rgba(245,165,0,0.02)' }}>
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            { value: '80+',    label: 'Nichos com estratégia especializada' },
-            { value: '4.2×',   label: 'ROAS médio calculado por cliente' },
-            { value: '90 dias', label: 'Plano de ação pronto para executar' },
-            { value: '2 min',  label: 'Para ter análise estratégica completa' },
-          ].map((m, i) => (
-            <div key={i}>
-              <div className="font-display text-4xl font-bold mb-2"
-                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                {m.value}
-              </div>
-              <div className="text-sm text-slate-500">{m.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── PROBLEMA → SOLUÇÃO ────────────────────────────────────────────────── */}
-      <section className="py-24 px-6 md:px-12 max-w-5xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-8">
-            <div className="text-sm font-semibold text-[#FF4D4D] uppercase tracking-wider mb-4">
-              ❌ Sem o ELYON
-            </div>
-            <div className="space-y-4">
-              {[
-                'Consultor caro que fala muito e entrega pouco',
-                'Budget queimado em canal errado para o seu nicho',
-                'Sem visão do funil — TOFU, MOFU e BOFU no achismo',
-                'Decisão baseada em feeling — sem benchmark real',
-                'Campanhas passadas esquecidas, erros repetidos',
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3 text-sm text-slate-400">
-                  <span className="text-[#FF4D4D] font-bold mt-0.5 flex-shrink-0">✗</span>
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl p-8"
-            style={{ background: 'linear-gradient(135deg, rgba(245,165,0,0.08) 0%, rgba(245,165,0,0.03) 100%)', border: '1px solid rgba(245,165,0,0.25)' }}>
-            <div className="text-sm font-semibold text-[#F5A500] uppercase tracking-wider mb-4">
-              ✅ Com o ELYON
-            </div>
-            <div className="space-y-4">
-              {[
-                'Head de Growth IA especializado no seu nicho — 24h',
-                'Canal certo + budget certo, com dados reais do mercado',
-                'Diagnóstico TOFU/MOFU/BOFU — onde está o gargalo',
-                'CPL e ROAS reais das suas campanhas Meta e Google',
-                'Histórico de campanhas alimentando decisões futuras',
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3 text-sm text-slate-200">
-                  <span className="text-[#22C55E] font-bold mt-0.5 flex-shrink-0">✓</span>
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── COMO FUNCIONA ─────────────────────────────────────────────────────── */}
-      <section id="como-funciona" className="py-24 px-6 md:px-12 border-t border-white/[0.06]"
-        style={{ background: 'rgba(245,165,0,0.02)' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-widest mb-3">Simples e direto</div>
-            <h2 className="font-display text-4xl font-bold text-white mb-4">
-              Decisão pronta em 3 passos
-            </h2>
-            <p className="text-slate-400 max-w-lg mx-auto">
-              Sem planilhas. Sem consultor caro. Sem achismo.
-              Configure o negócio e o ELYON entrega tudo que precisa para crescer.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { step: '01', icon: '⚙️', color: '#F5A500', title: 'Configure o negócio',
-                desc: 'Informe nicho, cidade e budget. Conecte suas contas Meta Ads e Google Ads. O ELYON identifica os benchmarks reais do seu segmento.' },
-              { step: '02', icon: '🧠', color: '#A78BFA', title: 'O Head de Growth analisa',
-                desc: 'Em 2 minutos: diagnóstico do funil TOFU/MOFU/BOFU, o que escalar, cortar e testar. Plano de 90 dias com metas de leads e receita.' },
-              { step: '03', icon: '🎯', color: '#22C55E', title: 'Execute com dados reais',
-                desc: 'NOUS responde suas dúvidas com contexto real do seu negócio. Histórico de campanhas alimenta decisões futuras. Zero achismo.' },
-            ].map((s, i) => (
-              <div key={i} className="relative bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-8">
-                <div className="text-5xl font-display font-bold mb-4" style={{ color: `${s.color}18` }}>{s.step}</div>
-                <div className="text-3xl mb-4">{s.icon}</div>
-                <h3 className="font-display font-bold text-white text-lg mb-3">{s.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{s.desc}</p>
-                {i < 2 && <div className="hidden md:block absolute top-1/2 -right-3 text-slate-700 text-xl">→</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURES / RECURSOS ───────────────────────────────────────────────── */}
-      <section id="features" className="py-24 px-6 md:px-12 max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-widest mb-3">Tudo que você precisa</div>
-          <h2 className="font-display text-4xl font-bold text-white mb-4">
-            Uma plataforma. Inteligência completa.
-          </h2>
-          <p className="text-slate-400 max-w-xl mx-auto">
-            Cada recurso foi construído para um objetivo: eliminar achismo e colocar dados reais na sua tomada de decisão.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-5">
-          {/* NOUS */}
-          <div className="rounded-2xl p-8"
-            style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(167,139,250,0.03) 100%)', border: '1px solid rgba(167,139,250,0.25)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                style={{ background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)' }}>
-                🧠
-              </div>
-              <div>
-                <div className="text-xs text-[#A78BFA] font-semibold uppercase tracking-wider">NOUS</div>
-                <h3 className="font-display font-bold text-white">IA contextual por nicho</h3>
-              </div>
-            </div>
-            <p className="text-slate-400 text-sm leading-relaxed mb-4">
-              Chat inteligente que conhece seu cliente, seu nicho, seu budget e suas campanhas. Não dá respostas genéricas — responde com os dados reais do seu negócio.
-            </p>
-            <div className="bg-[#030305]/60 rounded-xl p-3 border border-white/[0.06]">
-              <div className="text-[10px] text-[#A78BFA] font-semibold mb-1">NOUS · Clínica Odontológica · R$3k/mês</div>
-              <p className="text-[11px] text-slate-400">"Seu CPL de R$82 está dentro do benchmark (R$45–95). Recomendo escalar Meta em 20% e pausar Google Display — retorno abaixo do esperado para o nicho."</p>
-            </div>
-          </div>
-
-          {/* Meta + Google Ads */}
-          <div className="rounded-2xl p-8"
-            style={{ background: 'linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(56,189,248,0.03) 100%)', border: '1px solid rgba(56,189,248,0.25)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)' }}>
-                🔗
-              </div>
-              <div>
-                <div className="text-xs text-[#38BDF8] font-semibold uppercase tracking-wider">CONEXÕES</div>
-                <h3 className="font-display font-bold text-white">Meta Ads + Google Ads reais</h3>
-              </div>
-            </div>
-            <p className="text-slate-400 text-sm leading-relaxed mb-4">
-              Conecte suas contas via OAuth e veja CPL, ROAS, leads e investimento real das suas campanhas — diretamente no dashboard, sem copiar e colar planilha.
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { icon: '📘', name: 'Meta Ads', status: 'Disponível', color: '#38BDF8' },
-                { icon: '🔵', name: 'Google Ads', status: 'Disponível', color: '#38BDF8' },
-              ].map((p) => (
-                <div key={p.name} className="bg-[#030305]/60 rounded-xl p-3 border border-white/[0.06] flex items-center gap-2">
-                  <span className="text-lg">{p.icon}</span>
-                  <div>
-                    <div className="text-xs font-semibold text-white">{p.name}</div>
-                    <div className="text-[10px]" style={{ color: p.color }}>{p.status}</div>
+      {/* ─── VARIATION A ────────────────────────────────────────────────────── */}
+      {activeVar === 'A' && (
+        <div className="lp-wrap">
+          {/* Hero A */}
+          <section className="hero-a">
+            <div className="lp-container">
+              <div className="hero-a-inner">
+                <div className="lp-fade">
+                  <div className="tag-badge"><span className="tag-dot" />&nbsp;ELYON AGENT · HEAD DE GROWTH COM IA 24H</div>
+                  <h1 className="hero-a-h">O ELYON sabe o CPL real<em>do seu nicho específico.</em></h1>
+                  <p className="hero-a-sub">Não de forma genérica. Treinado em <strong>80+ nichos</strong> do mercado brasileiro — conecta suas contas, lê o histórico e entrega os dados reais do seu mercado em <strong>2 minutos</strong>.</p>
+                  <div className="terminal">
+                    <div className="terminal-bar">
+                      <span className="t-dot" style={{background:'#FF5F56'}} />
+                      <span className="t-dot" style={{background:'#FFBD2E'}} />
+                      <span className="t-dot" style={{background:'#27C93F'}} />
+                    </div>
+                    <div className="terminal-body" ref={termBodyRef} />
+                  </div>
+                  <div className="hero-a-ctas">
+                    <Link href="/sign-up" className="btn-p">Ver dados do meu nicho →</Link>
+                    <Link href="/sign-in" style={{fontSize:14,color:'var(--sub)',textDecoration:'none'}}>Já tenho conta</Link>
+                  </div>
+                  <div className="trust-row">
+                    <div className="trust-item"><span className="trust-check">✓</span>Análise gratuita</div>
+                    <div className="trust-item"><span className="trust-check">✓</span>Em 2 minutos</div>
+                    <div className="trust-item"><span className="trust-check">✓</span>Sem cartão</div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Head of Growth */}
-          <div className="rounded-2xl p-8"
-            style={{ background: 'linear-gradient(135deg, rgba(245,165,0,0.08) 0%, rgba(245,165,0,0.03) 100%)', border: '1px solid rgba(245,165,0,0.25)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                style={{ background: 'rgba(245,165,0,0.15)', border: '1px solid rgba(245,165,0,0.3)' }}>
-                ⚡
-              </div>
-              <div>
-                <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-wider">HEAD OF GROWTH</div>
-                <h3 className="font-display font-bold text-white">Diagnóstico Estratégico</h3>
-              </div>
-            </div>
-            <p className="text-slate-400 text-sm leading-relaxed mb-4">
-              Identifica onde está o gargalo do seu funil. Diagnóstico de desperdícios, bloqueios de crescimento e o que está travando sua escala — com plano de ação prático.
-            </p>
-            <div className="flex gap-2">
-              {[
-                { label: 'TOFU', sub: 'Atração', color: '#F5A500' },
-                { label: 'MOFU', sub: 'Engajamento', color: '#A78BFA' },
-                { label: 'BOFU', sub: 'Conversão', color: '#22C55E' },
-              ].map((f) => (
-                <div key={f.label} className="flex-1 bg-[#030305]/60 rounded-xl p-2.5 border border-white/[0.06] text-center">
-                  <div className="text-xs font-bold" style={{ color: f.color }}>{f.label}</div>
-                  <div className="text-[10px] text-slate-600">{f.sub}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Histórico de campanhas */}
-          <div className="rounded-2xl p-8"
-            style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.03) 100%)', border: '1px solid rgba(34,197,94,0.25)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)' }}>
-                🗂️
-              </div>
-              <div>
-                <div className="text-xs text-[#22C55E] font-semibold uppercase tracking-wider">HISTÓRICO</div>
-                <h3 className="font-display font-bold text-white">Memória de campanhas</h3>
-              </div>
-            </div>
-            <p className="text-slate-400 text-sm leading-relaxed mb-4">
-              Registre o que funcionou e o que falhou em cada campanha. O ELYON usa esse histórico para gerar estratégias mais precisas e evitar erros repetidos.
-            </p>
-            <div className="space-y-2">
-              {[
-                { label: 'Meta Ads · Jan 2025', outcome: 'Vencedora', color: '#22C55E', cpl: 'CPL R$68' },
-                { label: 'Google Search · Dez 2024', outcome: 'Perdedora', color: '#FF4D4D', cpl: 'CPL R$142' },
-              ].map((c) => (
-                <div key={c.label} className="bg-[#030305]/60 rounded-xl p-2.5 border border-white/[0.06] flex items-center justify-between">
-                  <div>
-                    <div className="text-[11px] text-white font-semibold">{c.label}</div>
-                    <div className="text-[10px] text-slate-600">{c.cpl}</div>
+                {/* Dashboard mockup */}
+                <div className="dash-mockup lp-fade lp-d1">
+                  <div className="dash-top">
+                    <span className="dash-logo-sm">ELYON</span>
+                    <span style={{fontFamily:'var(--f-mono)',fontSize:11,color:'var(--muted)'}}>Dashboard</span>
+                    <span className="live-pill"><span className="live-dot" />AO VIVO</span>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ color: c.color, background: `${c.color}15`, border: `1px solid ${c.color}30` }}>
-                    {c.outcome}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── NOUS INTELLIGENCE ────────────────────────────────────────────────── */}
-      <section className="py-28 px-6 md:px-12 border-t border-white/[0.06] relative overflow-hidden"
-        style={{ background: '#030305' }}>
-        {/* Glows dramáticos */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, rgba(245,165,0,0.12) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-        <div className="absolute bottom-0 left-1/4 w-[400px] h-[200px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, rgba(245,165,0,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
-
-        <div className="max-w-5xl mx-auto relative">
-          {/* Badge */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full"
-              style={{ background: 'rgba(245,165,0,0.08)', border: '1px solid rgba(245,165,0,0.3)' }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm"
-                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)' }}>
-                N
-              </div>
-              <span className="font-display font-bold text-sm tracking-widest uppercase"
-                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                ELYON NOUS
-              </span>
-            </div>
-          </div>
-
-          {/* Título */}
-          <div className="text-center mb-16">
-            <h2 className="font-display text-5xl md:text-6xl font-bold leading-tight mb-5">
-              <span className="text-white">Inteligência estratégica</span><br />
-              <span style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                para decisões que geram lucro.
-              </span>
-            </h2>
-            <p className="text-slate-500 text-lg max-w-lg mx-auto">
-              Baseada em dados reais de mercado — não em tentativa e erro.
-            </p>
-          </div>
-
-          {/* 4 cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-14">
-            {[
-              { icon: '📊', color: '#F5A500', glow: 'rgba(245,165,0,0.15)', title: 'Análise de Mercado', desc: 'Descubra onde sua empresa está perdendo dinheiro e o que já está funcionando no seu nicho.' },
-              { icon: '🎯', color: '#22C55E', glow: 'rgba(34,197,94,0.15)', title: 'Análise de Concorrentes', desc: 'Entenda exatamente o que empresas do seu mercado estão fazendo para crescer.' },
-              { icon: '💡', color: '#A78BFA', glow: 'rgba(167,139,250,0.15)', title: 'Oportunidades Estratégicas', desc: 'Identifique onde está o crescimento real e quais movimentos geram mais retorno.' },
-              { icon: '📋', color: '#38BDF8', glow: 'rgba(56,189,248,0.15)', title: 'Plano de Ação Estruturado', desc: 'Receba um direcionamento objetivo do que fazer, como fazer e por onde começar.' },
-            ].map((card) => (
-              <div key={card.title}
-                className="relative rounded-2xl p-7 flex flex-col gap-4 hover:translate-y-[-4px] transition-all duration-300"
-                style={{ background: `linear-gradient(160deg, ${card.glow} 0%, rgba(17,17,20,0.9) 60%)`, border: `1px solid ${card.color}40` }}>
-                {/* Glow no topo do card */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-10 pointer-events-none"
-                  style={{ background: `radial-gradient(ellipse, ${card.color}30, transparent)`, filter: 'blur(12px)' }} />
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl relative"
-                  style={{ background: `linear-gradient(135deg, ${card.color}25, ${card.color}08)`, border: `1px solid ${card.color}40`, boxShadow: `0 0 20px ${card.color}20` }}>
-                  {card.icon}
-                </div>
-                <h3 className="font-display font-bold text-white text-base leading-tight">{card.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{card.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Frase de impacto */}
-          <div className="relative text-center rounded-3xl py-10 px-8 overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, rgba(245,165,0,0.08) 0%, rgba(245,165,0,0.02) 100%)', border: '1px solid rgba(245,165,0,0.25)' }}>
-            <div className="absolute inset-0 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(245,165,0,0.08) 0%, transparent 70%)' }} />
-            <p className="font-display text-2xl md:text-3xl font-bold text-slate-300 mb-2 relative">
-              Pare de tomar decisões no escuro.
-            </p>
-            <p className="font-display text-2xl md:text-3xl font-bold relative"
-              style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Comece a crescer com base no que realmente funciona.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── PLATAFORMAS MONITORADAS ───────────────────────────────────────────── */}
-      <section className="py-28 px-6 md:px-12 border-t border-white/[0.06] relative overflow-hidden"
-        style={{ background: '#030305' }}>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, rgba(167,139,250,0.08) 0%, transparent 70%)', filter: 'blur(60px)' }} />
-
-        <div className="max-w-5xl mx-auto relative">
-          {/* Badge */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full"
-              style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.3)' }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm"
-                style={{ background: 'linear-gradient(135deg, #A78BFA, #C4B5FD)' }}>
-                N
-              </div>
-              <span className="font-display font-bold text-sm tracking-widest uppercase"
-                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                ELYON NOUS
-              </span>
-            </div>
-          </div>
-
-          <div className="text-center mb-16">
-            <h2 className="font-display text-5xl md:text-6xl font-bold leading-tight mb-5">
-              <span className="text-white">Conectado às</span><br />
-              <span style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                principais plataformas.
-              </span>
-            </h2>
-            <p className="text-slate-500 text-lg max-w-lg mx-auto">
-              Extraímos insights e oportunidades das principais redes de anúncios — direto para o seu dashboard.
-            </p>
-          </div>
-
-          {/* Plataformas */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-14">
-
-            {/* Meta Ads */}
-            <div className="relative rounded-2xl p-7 flex flex-col items-center text-center gap-4 hover:translate-y-[-4px] transition-all duration-300"
-              style={{ background: '#0C0C12', border: '1px solid rgba(24,119,242,0.4)', boxShadow: '0 0 30px rgba(24,119,242,0.15)' }}>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #1877F2, #0D5FD6)', boxShadow: '0 8px 24px rgba(24,119,242,0.4)' }}>
-                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                  <path d="M18 8C12.5 8 8.5 12.8 8.5 18.5C8.5 23.5 11.5 27.5 15.5 28.5V21H13V18H15.5V15.8C15.5 13.3 17 11.9 19.3 11.9C20.4 11.9 21.5 12.1 21.5 12.1V14.5H20.3C19.1 14.5 18.7 15.3 18.7 16.1V18H21.4L21 21H18.7V28.5C22.7 27.5 25.7 23.5 25.7 18.5C25.7 12.8 23.5 8 18 8Z" fill="white"/>
-                </svg>
-              </div>
-              <div>
-                <div className="font-display font-bold text-white text-base mb-1">Meta Ads</div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
-                  <span className="text-xs font-semibold text-[#22C55E]">Disponível</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Google Ads */}
-            <div className="relative rounded-2xl p-7 flex flex-col items-center text-center gap-4 hover:translate-y-[-4px] transition-all duration-300"
-              style={{ background: '#0C0C12', border: '1px solid rgba(66,133,244,0.4)', boxShadow: '0 0 30px rgba(66,133,244,0.15)' }}>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ background: '#fff', boxShadow: '0 8px 24px rgba(66,133,244,0.3)' }}>
-                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                  <path d="M18 7L9 22H27L18 7Z" fill="#FBBC05"/>
-                  <circle cx="10" cy="25" r="4" fill="#EA4335"/>
-                  <circle cx="26" cy="25" r="4" fill="#4285F4"/>
-                </svg>
-              </div>
-              <div>
-                <div className="font-display font-bold text-white text-base mb-1">Google Ads</div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
-                  <span className="text-xs font-semibold text-[#22C55E]">Disponível</span>
-                </div>
-              </div>
-            </div>
-
-            {/* YouTube Ads */}
-            <div className="relative rounded-2xl p-7 flex flex-col items-center text-center gap-4 hover:translate-y-[-4px] transition-all duration-300"
-              style={{ background: '#0C0C12', border: '1px solid rgba(255,0,0,0.3)', boxShadow: '0 0 30px rgba(255,0,0,0.1)' }}>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ background: '#FF0000', boxShadow: '0 8px 24px rgba(255,0,0,0.35)' }}>
-                <svg width="38" height="28" viewBox="0 0 38 28" fill="none">
-                  <rect width="38" height="28" rx="6" fill="#FF0000"/>
-                  <path d="M15 8L28 14L15 20V8Z" fill="white"/>
-                </svg>
-              </div>
-              <div>
-                <div className="font-display font-bold text-white text-base mb-1">YouTube Ads</div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#475569]" />
-                  <span className="text-xs font-semibold text-[#475569]">Em breve</span>
-                </div>
-              </div>
-            </div>
-
-            {/* TikTok Ads */}
-            <div className="relative rounded-2xl p-7 flex flex-col items-center text-center gap-4 hover:translate-y-[-4px] transition-all duration-300"
-              style={{ background: '#0C0C12', border: '1px solid rgba(105,201,208,0.3)', boxShadow: '0 0 30px rgba(105,201,208,0.1)' }}>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ background: '#010101', boxShadow: '0 8px 24px rgba(105,201,208,0.3)' }}>
-                <svg width="32" height="36" viewBox="0 0 32 36" fill="none">
-                  {/* sombra ciano */}
-                  <path d="M13.5 6H19.5V24C19.5 26.2 17.7 28 15.5 28C13.3 28 11.5 26.2 11.5 24C11.5 21.8 13.3 20 15.5 20" stroke="#69C9D0" strokeWidth="2.5" fill="none" transform="translate(1,1)"/>
-                  {/* sombra vermelha */}
-                  <path d="M13.5 6H19.5V24C19.5 26.2 17.7 28 15.5 28C13.3 28 11.5 26.2 11.5 24C11.5 21.8 13.3 20 15.5 20" stroke="#EE1D52" strokeWidth="2.5" fill="none" transform="translate(-1,-1)"/>
-                  {/* branco principal */}
-                  <path d="M13.5 6H19.5V24C19.5 26.2 17.7 28 15.5 28C13.3 28 11.5 26.2 11.5 24C11.5 21.8 13.3 20 15.5 20" stroke="white" strokeWidth="2" fill="none"/>
-                  {/* nota musical topo direito */}
-                  <path d="M19.5 10C21 10.5 23 10.5 24.5 9" stroke="#69C9D0" strokeWidth="2.5" fill="none" transform="translate(1,1)"/>
-                  <path d="M19.5 10C21 10.5 23 10.5 24.5 9" stroke="#EE1D52" strokeWidth="2.5" fill="none" transform="translate(-1,-1)"/>
-                  <path d="M19.5 10C21 10.5 23 10.5 24.5 9" stroke="white" strokeWidth="2" fill="none"/>
-                </svg>
-              </div>
-              <div>
-                <div className="font-display font-bold text-white text-base mb-1">TikTok Ads</div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#475569]" />
-                  <span className="text-xs font-semibold text-[#475569]">Em breve</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Frase de impacto */}
-          <div className="relative text-center rounded-3xl py-10 px-8 overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(167,139,250,0.02) 100%)', border: '1px solid rgba(167,139,250,0.25)' }}>
-            <div className="absolute inset-0 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(167,139,250,0.08) 0%, transparent 70%)' }} />
-            <p className="font-display text-2xl md:text-3xl font-bold text-slate-300 mb-2 relative">
-              De Meta a TikTok —
-            </p>
-            <p className="font-display text-2xl md:text-3xl font-bold relative"
-              style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              tudo integrado na sua tomada de decisão.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── PREÇOS ────────────────────────────────────────────────────────────── */}
-      <section id="precos" className="py-24 px-6 md:px-12 border-t border-white/[0.06]"
-        style={{ background: 'rgba(245,165,0,0.02)' }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-widest mb-3">Estrutura de produtos</div>
-            <h2 className="font-display text-4xl font-bold text-white mb-4">
-              Você não contrata marketing.
-            </h2>
-            <p className="text-slate-400 text-lg max-w-xl mx-auto">
-              Você passa a ter um sistema que mostra exatamente o que fazer para crescer.
-            </p>
-          </div>
-
-          {/* Diagnóstico — entrada */}
-          <div className="mb-6 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
-            style={{ background: 'linear-gradient(135deg, rgba(245,165,0,0.1) 0%, rgba(245,165,0,0.04) 100%)', border: '1px solid rgba(245,165,0,0.35)' }}>
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                style={{ background: 'rgba(245,165,0,0.15)', border: '1px solid rgba(245,165,0,0.3)' }}>
-                🔥
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ color: '#F5A500', background: 'rgba(245,165,0,0.15)', border: '1px solid rgba(245,165,0,0.3)' }}>
-                    PRIMEIRO PASSO · ENTRADA
-                  </span>
-                </div>
-                <h3 className="font-display font-bold text-white text-lg mb-1">Diagnóstico Estratégico</h3>
-                <p className="text-slate-400 text-sm max-w-xl">
-                  Estudo aprofundado do seu negócio: onde você perde vendas, o que a concorrência faz, oportunidades não aproveitadas e um plano claro de crescimento. Nada genérico.
-                </p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {['Análise de mercado e concorrência', 'Diagnóstico do posicionamento', 'Plano de ação prático'].map((d) => (
-                    <span key={d} className="text-[11px] px-2.5 py-1 rounded-full text-[#F5A500]"
-                      style={{ background: 'rgba(245,165,0,0.08)', border: '1px solid rgba(245,165,0,0.2)' }}>
-                      ✓ {d}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex-shrink-0 text-right">
-              <div className="font-display text-3xl font-bold text-[#F5A500]">R$3.000</div>
-              <div className="text-xs text-slate-500">por projeto</div>
-              <Link href="/sign-up"
-                className="mt-3 inline-flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000' }}>
-                Começar com diagnóstico →
-              </Link>
-            </div>
-          </div>
-
-          {/* 3 planos de recorrência */}
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
-            {[
-              {
-                icon: '🔄', tag: 'RECORRÊNCIA BASE', color: '#38BDF8', border: 'rgba(56,189,248,0.3)',
-                bg: 'linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(56,189,248,0.03) 100%)',
-                title: 'Individual',
-                desc: 'Para donos de negócio e profissionais que querem direção contínua baseada em dados reais do mercado.',
-                price: 'R$197', priceEnd: '/mês',
-                features: ['Estratégia atualizada mensalmente', 'Benchmarks por nicho', 'NOUS IA contextual', 'Histórico de campanhas', 'Conexão Meta Ads'],
-                highlight: false,
-                cta: 'Começar agora →',
-                planKey: 'individual',
-              },
-              {
-                icon: '🚀', tag: 'MAIS POPULAR', color: '#F5A500', border: 'rgba(245,165,0,0.5)',
-                bg: 'linear-gradient(135deg, rgba(245,165,0,0.12) 0%, rgba(245,165,0,0.05) 100%)',
-                title: 'Profissional',
-                desc: 'Para gestores de tráfego e consultores que querem capacidade estratégica elevada e atender clientes com o sistema.',
-                price: 'R$497', priceEnd: '/mês',
-                features: ['Tudo do Individual', 'Estratégias avançadas e múltiplos cenários', 'Diagnóstico como oferta para clientes', 'Conexão Meta + Google Ads', 'Suporte prioritário'],
-                highlight: true,
-                cta: 'Começar agora →',
-                planKey: 'profissional',
-              },
-              {
-                icon: '💣', tag: 'EMPRESAS E AGÊNCIAS', color: '#22C55E', border: 'rgba(34,197,94,0.3)',
-                bg: 'linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.03) 100%)',
-                title: 'Avançada',
-                desc: 'Para agências e empresas que querem escalar atendimento com inteligência estratégica de alto nível.',
-                price: 'R$1.497', priceEnd: '/mês',
-                features: ['Tudo do Profissional', 'Múltiplas contas e negócios', 'Comparação de mercado e performance', 'Leitura avançada de dados', 'Geração contínua de estratégias'],
-                highlight: false,
-                cta: 'Começar agora →',
-                planKey: 'avancada',
-              },
-            ].map((plan) => (
-              <div key={plan.title} className="relative rounded-2xl p-7 flex flex-col"
-                style={{ background: plan.bg, border: `1px solid ${plan.border}` }}>
-                {plan.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="text-xs font-bold px-3 py-1 rounded-full text-black"
-                      style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)' }}>
-                      ★ Mais popular
-                    </span>
+                  <div className="dash-body">
+                    <div className="dash-niche-row">
+                      <span className="pill-sm active">Odontologia Estética</span>
+                      <span className="pill-sm">✓ Meta Ads</span>
+                    </div>
+                    <div className="dm-grid">
+                      <div className="dm"><div className="dm-label">Receita Est.</div><div className="dm-val" style={{color:'var(--gold)'}}>R$538k</div><div className="dm-sub" style={{color:'var(--green)'}}>↑ 34% vs anterior</div></div>
+                      <div className="dm"><div className="dm-label">Leads / Mês</div><div className="dm-val" style={{color:'var(--green)'}}>62–95</div><div className="dm-sub">c/1 médico</div></div>
+                    </div>
+                    <div className="dm-grid">
+                      <div className="dm"><div className="dm-label">ROAS Real</div><div className="dm-val" style={{color:'var(--purple)'}}>3.9×</div><div className="dm-sub">Meta: 3.5×</div></div>
+                      <div className="dm"><div className="dm-label">CPL Real</div><div className="dm-val" style={{color:'var(--text)'}}>R$70</div><div className="dm-sub">Bench: R$45–90</div></div>
+                    </div>
+                    <div className="ai-mini">
+                      <div className="ai-mini-label">🧠 IA CONTEXTUAL</div>
+                      <div className="ai-mini-text">Seu CPL de <strong>R$70</strong> está dentro do benchmark. Recomendo <strong>escalar Meta Ads em 20%</strong> e testar Google Search.</div>
+                    </div>
                   </div>
-                )}
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">{plan.icon}</span>
-                  <span className="text-[10px] font-bold" style={{ color: plan.color }}>{plan.tag}</span>
-                </div>
-                <h3 className="font-display font-bold text-white text-xl mb-2">{plan.title}</h3>
-                <p className="text-slate-500 text-xs leading-relaxed mb-5">{plan.desc}</p>
-                <ul className="space-y-2 mb-6 flex-1">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-xs text-slate-300">
-                      <span className="flex-shrink-0 mt-0.5" style={{ color: plan.color }}>✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <div className="border-t pt-5" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                  <div className="font-display text-3xl font-bold mb-0.5" style={{ color: plan.color }}>{plan.price}</div>
-                  <div className="text-xs text-slate-500 mb-4">{plan.priceEnd}</div>
-                  <Link href={`/checkout?plan=${plan.planKey}`}
-                    className="w-full flex items-center justify-center gap-2 text-sm font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity"
-                    style={plan.highlight
-                      ? { background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000' }
-                      : { background: 'rgba(255,255,255,0.06)', border: `1px solid ${plan.border}`, color: '#fff' }
-                    }>
-                    {plan.cta}
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Implementação — upsell */}
-          <div className="rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
-            style={{ background: 'linear-gradient(135deg, rgba(255,77,77,0.08) 0%, rgba(255,77,77,0.03) 100%)', border: '1px solid rgba(255,77,77,0.3)' }}>
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                style={{ background: 'rgba(255,77,77,0.15)', border: '1px solid rgba(255,77,77,0.3)' }}>
-                💣
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ color: '#FF4D4D', background: 'rgba(255,77,77,0.15)', border: '1px solid rgba(255,77,77,0.3)' }}>
-                    OPCIONAL · MUITO FORTE
-                  </span>
-                </div>
-                <h3 className="font-display font-bold text-white text-lg mb-1">Implementação</h3>
-                <p className="text-slate-400 text-sm max-w-xl">
-                  Execução completa das estratégias definidas no diagnóstico e na plataforma. Aqui você tira o cliente da teoria e coloca no resultado — setup de campanhas, criativos, copies e estrutura de conversão.
-                </p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {['Setup completo de campanhas', 'Criativos e copies', 'Estrutura de conversão', 'Resultados mensuráveis'].map((d) => (
-                    <span key={d} className="text-[11px] px-2.5 py-1 rounded-full text-[#FF4D4D]"
-                      style={{ background: 'rgba(255,77,77,0.08)', border: '1px solid rgba(255,77,77,0.2)' }}>
-                      ✓ {d}
-                    </span>
-                  ))}
                 </div>
               </div>
             </div>
-            <div className="flex-shrink-0 text-right">
-              <div className="text-xs text-slate-500 mb-1">a partir de</div>
-              <div className="font-display text-3xl font-bold text-[#FF4D4D]">R$5.000</div>
-              <Link href="/sign-up"
-                className="mt-3 inline-flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-                style={{ background: 'rgba(255,77,77,0.15)', border: '1px solid rgba(255,77,77,0.4)', color: '#FF4D4D' }}>
-                Quero implementação →
-              </Link>
+          </section>
+
+          {/* Stats A */}
+          <section className="stats-a">
+            <div className="lp-container">
+              <div className="stats-a-inner">
+                {[{v:'80',suf:'+',label:'Nichos com dados reais de CPL e ROAS'},{v:'4',suf:'×',dec:'1',label:'ROAS médio calculado por cliente'},{v:'90',suf:'d',label:'Plano de ação pronto para executar'},{v:'2',suf:'min',label:'Para diagnóstico estratégico completo'}].map((s,i)=>(
+                  <div key={i} className={`stat-a lp-fade lp-d${i}`}>
+                    <div className="stat-a-val"><span className="lp-counter" data-target={s.v} data-dec={s.dec||'0'}>0</span>{s.suf}</div>
+                    <div className="stat-a-label">{s.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          </section>
 
-          {/* Lógica do negócio */}
-          <div className="mt-8 bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-6 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-4">Lógica completa do negócio</div>
-            <div className="flex items-center justify-center gap-2 flex-wrap text-sm font-semibold">
-              {[
-                { label: '🔥 Confiança', color: '#F5A500' },
-                { label: '→', color: 'rgba(255,255,255,0.06)' },
-                { label: '🔄 Recorrência', color: '#38BDF8' },
-                { label: '→', color: 'rgba(255,255,255,0.06)' },
-                { label: '🚀 Escala', color: '#A78BFA' },
-                { label: '→', color: 'rgba(255,255,255,0.06)' },
-                { label: '💣 Ticket alto', color: '#22C55E' },
-                { label: '→', color: 'rgba(255,255,255,0.06)' },
-                { label: '🔥 Execução $$$', color: '#FF4D4D' },
-              ].map((item, i) => (
-                <span key={i} style={{ color: item.color }}>{item.label}</span>
-              ))}
+          {/* How A */}
+          <section className="how-a" id="como-funciona">
+            <div className="lp-container">
+              <div className="section-eyebrow">Como funciona</div>
+              <h2 className="section-h lp-fade">Seu Head de Growth IA.<br /><em>Em 3 passos.</em></h2>
+              <div className="steps-grid">
+                {[{n:'01',title:'Conecte Meta Ads e Google',p:'Conecte suas contas de anúncio em segundos. O ELYON lê o histórico e identifica padrões do seu nicho específico.'},{n:'02',title:'TOFU, MOFU e BOFU mapeados',p:'A IA identifica onde está o gargalo do seu funil com dados reais — sem achismo, sem benchmark genérico.'},{n:'03',title:'Plano de ação pronto',p:'Receba um plano executável com canais, budget e next steps específicos para o seu nicho. Em 2 minutos.'}].map((s,i)=>(
+                  <div key={i} className={`step lp-fade lp-d${i}`}>
+                    <div className="step-n">{s.n} — Passo {i+1}</div>
+                    <div className="step-h">{s.title}</div>
+                    <p className="step-p">{s.p}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* ── NICHOS ────────────────────────────────────────────────────────────── */}
-      <section id="nichos" className="py-24 px-6 md:px-12 border-t border-white/[0.06]"
-        style={{ background: 'rgba(245,165,0,0.02)' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="text-xs text-[#F5A500] font-semibold uppercase tracking-widest mb-3">Benchmarks reais de mercado</div>
-            <h2 className="font-display text-4xl font-bold text-white mb-4">
-              Analista especializado no <span style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>seu segmento</span>
-            </h2>
-            <p className="text-slate-400 max-w-xl mx-auto">
-              CPL, ROAS, CVR, ticket médio, sazonalidade e canais ideais para cada setor —
-              dados reais do mercado brasileiro 2024–2025.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-2.5 mb-12">
-            {niches.map((niche, i) => (
-              <span key={i}
-                className="text-sm px-4 py-2 rounded-full font-medium transition-all hover:scale-105 cursor-default"
-                style={{
-                  background: i % 3 === 0 ? 'rgba(245,165,0,0.1)' : i % 3 === 1 ? 'rgba(167,139,250,0.08)' : 'rgba(34,197,94,0.07)',
-                  border: i % 3 === 0 ? '1px solid rgba(245,165,0,0.25)' : i % 3 === 1 ? '1px solid rgba(167,139,250,0.2)' : '1px solid rgba(34,197,94,0.2)',
-                  color: i % 3 === 0 ? '#F5A500' : i % 3 === 1 ? '#A78BFA' : '#22C55E',
-                }}>
-                {niche}
-              </span>
-            ))}
-          </div>
-
-          <div className="max-w-3xl mx-auto bg-[#0C0C12] border border-white/[0.06] rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-white/[0.06]">
-              <span className="text-xs font-semibold text-[#F5A500] uppercase tracking-widest">Exemplo · Odontologia Estética</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
-              {[
-                { label: 'CPL benchmark', value: 'R$45–95', color: '#F5A500' },
-                { label: 'ROAS bom',      value: '3.8×',   color: '#22C55E' },
-                { label: 'CVR lead→venda', value: '15%',   color: '#A78BFA' },
-                { label: 'Budget mínimo', value: 'R$2.500', color: '#38BDF8' },
-              ].map((m, i) => (
-                <div key={i} className="p-5 text-center border-r border-white/[0.04] last:border-r-0">
-                  <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">{m.label}</div>
-                  <div className="font-display text-xl font-bold" style={{ color: m.color }}>{m.value}</div>
+          {/* Comparison A */}
+          <section className="comp-a">
+            <div className="lp-container">
+              <div style={{textAlign:'center',marginBottom:48}}>
+                <div className="section-eyebrow section-eyebrow-c lp-fade">A diferença</div>
+                <h2 className="section-h lp-fade" style={{textAlign:'center',margin:'0 auto',maxWidth:500}}>Dados reais<br /><em>vs. achismo caro</em></h2>
+              </div>
+              <div className="comp-grid">
+                <div className="comp-side bad lp-fade">
+                  <div className="comp-side-h">✗ Sem o ELYON</div>
+                  <div className="comp-items">
+                    {BAD.map((t,i)=><div key={i} className="comp-item"><span className="comp-icon">✗</span>{t}</div>)}
+                  </div>
                 </div>
-              ))}
+                <div className="comp-side good lp-fade lp-d1">
+                  <div className="comp-side-h">✓ Com o ELYON</div>
+                  <div className="comp-items">
+                    {GOOD.map((t,i)=><div key={i} className="comp-item"><span className="comp-icon">✓</span>{t}</div>)}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="px-6 py-4 bg-[#111118] text-xs text-slate-500">
-              <span className="text-[#F5A500] font-semibold">Canais top:</span> Meta Ads · Google Search · Instagram &nbsp;·&nbsp;
-              <span className="text-[#F5A500] font-semibold">Pico:</span> Dezembro · Março
-            </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* ── PARA QUEM É ───────────────────────────────────────────────────────── */}
-      <section className="py-24 px-6 md:px-12 max-w-5xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-4xl font-bold text-white mb-4">Para quem é o ELYON?</h2>
-        </div>
-        <div className="grid md:grid-cols-3 gap-5">
-          {[
-            {
-              icon: '🏢', title: 'Agências de marketing',
-              desc: 'Gerencie múltiplos clientes com benchmarks reais por nicho. Conecte as contas de anúncio deles e tenha visão completa de CPL e ROAS em tempo real.',
-              highlight: 'Plataforma Profissional ou Avançada',
-            },
-            {
-              icon: '👤', title: 'Gestores de tráfego',
-              desc: 'Saiba exatamente qual CPL aceitar, qual ROAS esperar e quais criativos convertem no nicho. NOUS responde suas dúvidas com dados reais do cliente.',
-              highlight: 'Plataforma Individual ou Profissional',
-            },
-            {
-              icon: '🏬', title: 'Donos de negócio',
-              desc: 'Veja se seu marketing está acima ou abaixo do benchmark. Conecte Meta e Google Ads e entenda onde está perdendo dinheiro — sem depender de relatório de agência.',
-              highlight: 'Diagnóstico → Plataforma Individual',
-            },
-          ].map((p, i) => (
-            <div key={i} className="bg-[#0C0C12] border border-white/[0.06] rounded-2xl p-7">
-              <div className="text-3xl mb-4">{p.icon}</div>
-              <h3 className="font-display font-bold text-white text-lg mb-3">{p.title}</h3>
-              <p className="text-slate-400 text-sm leading-relaxed mb-4">{p.desc}</p>
-              <div className="text-xs font-semibold text-[#F5A500]">→ {p.highlight}</div>
+          {/* CTA A */}
+          <section className="cta-final">
+            <div className="lp-container">
+              <div className="section-eyebrow section-eyebrow-c lp-fade">Comece agora</div>
+              <h2 className="cta-final-h lp-fade">Veja os dados reais<br /><em>do seu nicho.</em></h2>
+              <p className="cta-final-sub lp-fade">Em 2 minutos. Gratuito. Sem cartão.</p>
+              <div className="cta-row lp-fade">
+                <Link href="/sign-up" className="btn-p lg">Quero minha análise grátis →</Link>
+              </div>
+              <div className="trust-row lp-fade" style={{justifyContent:'center',marginTop:16}}>
+                <div className="trust-item"><span className="trust-check">✓</span>Análise gratuita para começar</div>
+                <div className="trust-item"><span className="trust-check">✓</span>Resultado em 2 minutos</div>
+                <div className="trust-item"><span className="trust-check">✓</span>Sem cartão de crédito</div>
+              </div>
             </div>
-          ))}
+          </section>
         </div>
-      </section>
+      )}
 
-      {/* ── CTA FINAL ─────────────────────────────────────────────────────────── */}
-      <section className="py-24 px-6 md:px-12">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="rounded-3xl p-14"
-            style={{
-              background: 'linear-gradient(135deg, rgba(245,165,0,0.12) 0%, rgba(167,139,250,0.08) 50%, rgba(34,197,94,0.05) 100%)',
-              border: '1px solid rgba(245,165,0,0.3)',
-            }}>
-            <div className="inline-flex items-center gap-2 bg-[#030305]/60 border border-white/[0.06] rounded-full px-4 py-2 mb-6">
-              <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
-              <span className="text-xs font-semibold text-[#22C55E] tracking-widest uppercase">Diagnóstico gratuito para começar</span>
+      {/* ─── VARIATION B ────────────────────────────────────────────────────── */}
+      {activeVar === 'B' && (
+        <div className="lp-wrap">
+          {/* Hero B */}
+          <section className="hero-b">
+            <div style={{maxWidth:'100%',padding:'0 64px',margin:'0 auto'}}>
+              <div className="hero-b-top">
+                <div className="hero-b-left lp-fade">
+                  <div className="tag-badge"><span className="tag-dot" />&nbsp;ELYON · IA ESPECIALIZADA POR NICHO</div>
+                  <div className="hero-b-metric-label">ROAS MÉDIO CALCULADO</div>
+                  <div className="hero-b-number">{heroNiche.roas.toFixed(1)}×</div>
+                  <div className="hero-b-niche-label">nicho ativo:</div>
+                  <div className="niche-slot">{heroNiche.niche}</div>
+                  <div className="niches-cloud">
+                    {HERO_NICHES.map((n,i) => (
+                      <span key={i} className={`niche-tag${heroNiche.label===n.label?' active':''}`}
+                        onClick={() => setHeroNiche(n)}>{n.label}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="hero-b-right lp-fade lp-d1">
+                  <h1 className="hero-b-h">Esse é o número real<br /><em>do seu mercado.</em><br />Qual é o seu?</h1>
+                  <p className="hero-b-sub">O ELYON calcula CPL, ROAS e projeção de receita com dados do seu nicho específico — não de uma média genérica. Em 2 minutos.</p>
+                  <div style={{display:'flex',gap:14,alignItems:'center',flexWrap:'wrap',marginBottom:24}}>
+                    <Link href="/sign-up" className="btn-p">Ver os dados do meu nicho →</Link>
+                    <Link href="/sign-in" className="btn-s">Já tenho conta</Link>
+                  </div>
+                  <div className="trust-row">
+                    <div className="trust-item"><span className="trust-check">✓</span>Gratuito para começar</div>
+                    <div className="trust-item"><span className="trust-check">✓</span>2 minutos</div>
+                    <div className="trust-item"><span className="trust-check">✓</span>Sem cartão</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-              Quanto você está perdendo sem benchmark?
-            </h2>
-            <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-              Faça o diagnóstico gratuito agora. Em 2 minutos você sabe exatamente
-              qual CPL aceitar, qual ROAS esperar e onde colocar cada real do budget.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/sign-up"
-                className="inline-flex items-center justify-center gap-2 font-bold px-9 py-4 rounded-xl hover:opacity-90 transition-opacity text-lg"
-                style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000', boxShadow: '0 0 40px rgba(245,165,0,0.3)' }}>
-                Fazer diagnóstico grátis →
-              </Link>
-              <Link href="/sign-in"
-                className="inline-flex items-center justify-center gap-2 border border-white/[0.06] text-slate-300 font-medium px-7 py-4 rounded-xl hover:border-white/[0.12] hover:text-white transition-colors">
-                Já tenho conta
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-x-8 gap-y-2 justify-center mt-8">
-              {['Sem cartão de crédito', 'Resultado em 2 minutos', '80+ nichos cobertos', 'Dados reais 2025'].map((item) => (
-                <span key={item} className="flex items-center gap-2 text-sm text-slate-500">
-                  <span className="text-[#22C55E]">✓</span>{item}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-10 px-6 md:px-12">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <span className="font-display font-bold text-lg" style={{
-            background: 'linear-gradient(135deg, #F5A500, #FFD166)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>ELYON</span>
-          <div className="flex gap-8 text-sm text-slate-600">
-            <a href="#como-funciona" className="hover:text-slate-400 transition-colors">Como funciona</a>
-            <a href="#features" className="hover:text-slate-400 transition-colors">Recursos</a>
-            <a href="#nichos" className="hover:text-slate-400 transition-colors">Nichos</a>
-            <Link href="/sign-in" className="hover:text-slate-400 transition-colors">Entrar</Link>
+          {/* Stats B */}
+          <section className="stats-b">
+            <div className="lp-container">
+              <div className="stats-b-inner">
+                {[{v:'80',suf:'+',label:'Nichos com dados reais mapeados',sub:'↑ 12 novos este mês'},{v:'4',suf:'×',dec:'1',label:'ROAS médio calculado por cliente',sub:'vs. 1.8× sem estratégia'},{v:'90',suf:'d',label:'Plano de ação para executar',sub:'Pronto em 2 minutos'},{v:'2',suf:'min',label:'Para análise estratégica completa',sub:'Sem reunião, sem espera'}].map((s,i)=>(
+                  <div key={i} className={`stat-b lp-fade lp-d${i}`}>
+                    <div className="stat-b-val"><span className="lp-counter" data-target={s.v} data-dec={s.dec||'0'}>0</span>{s.suf}</div>
+                    <div className="stat-b-label">{s.label}</div>
+                    <div className="stat-b-sub">{s.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* How B */}
+          <section className="how-b" id="como-funciona">
+            <div className="lp-container">
+              <div className="section-eyebrow">Como funciona</div>
+              <h2 className="section-h lp-fade">Inteligência de mercado.<br /><em>Sem complexidade.</em></h2>
+              <div className="timeline">
+                {[
+                  {n:'01',h:'Informe seu nicho e budget',p:'80+ nichos mapeados. O ELYON já conhece os benchmarks de CPL, ROAS e funil do seu mercado antes de você conectar qualquer conta.',tag:'Em 30 segundos'},
+                  {n:'02',h:'IA diagnostica o funil',p:'TOFU, MOFU e BOFU analisados com dados reais. Identifica onde o seu dinheiro está sendo desperdiçado — com precisão de nicho.',tag:'Diagnóstico em 90 segundos'},
+                  {n:'03',h:'Plano de ação na mão',p:'Canal, budget, next steps e projeção de receita — tudo documentado e executável. Sem reunião, sem achismo, sem espera.',tag:'Resultado em 2 minutos'},
+                ].map((t,i)=>(
+                  <div key={i} className={`tl-item lp-fade lp-d${i}`}>
+                    <div className="tl-num">{t.n}</div>
+                    <div>
+                      <div className="tl-h">{t.h}</div>
+                      <p className="tl-p">{t.p}</p>
+                      <span className="tl-tag">{t.tag}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Comparison B */}
+          <section className="comp-b">
+            <div className="lp-container">
+              <div className="section-eyebrow lp-fade">A diferença</div>
+              <h2 className="section-h lp-fade">Dados reais<br /><em>vs. achismo caro.</em></h2>
+              <div className="comp-b-inner lp-fade">
+                <div className="comp-b-side bad">
+                  <div className="comp-b-head">✗ Sem o ELYON</div>
+                  <div className="comp-b-items">{BAD.map((t,i)=><div key={i} className="comp-b-item"><span className="comp-b-icon">✗</span>{t}</div>)}</div>
+                </div>
+                <div className="comp-b-side good">
+                  <div className="comp-b-head">✓ Com o ELYON</div>
+                  <div className="comp-b-items">{GOOD.map((t,i)=><div key={i} className="comp-b-item"><span className="comp-b-icon">✓</span>{t}</div>)}</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Features B */}
+          <section style={{padding:'80px 0',position:'relative',zIndex:1}} id="features">
+            <div className="lp-container">
+              <div className="section-eyebrow lp-fade">Tudo que você precisa</div>
+              <h2 className="section-h lp-fade">Uma plataforma.<br /><em>Inteligência completa.</em></h2>
+              <p style={{fontSize:16,color:'var(--sub)',lineHeight:1.75,maxWidth:520,marginBottom:0}} className="lp-fade">Cada recurso foi construído para eliminar achismo e colocar dados reais na sua tomada de decisão.</p>
+              <div className="b-feat-grid">
+                <div className="b-feat lp-fade">
+                  <div className="b-feat-iw">🧠</div>
+                  <div className="b-feat-lbl">NOUS</div>
+                  <div className="b-feat-h">IA contextual por nicho</div>
+                  <p className="b-feat-p">Chat inteligente que conhece seu cliente, seu nicho, seu budget e suas campanhas. Não dá respostas genéricas — responde com dados reais do seu negócio.</p>
+                  <div className="b-feat-demo">
+                    <div style={{fontFamily:'var(--f-mono)',fontSize:9,fontWeight:700,color:'var(--gold)',marginBottom:5}}>🧠 NOUS · Clínica Odontológica · R$3k/mês</div>
+                    "Seu CPL de <strong>R$82</strong> está dentro do benchmark (<span style={{color:'var(--gold)',fontWeight:600}}>R$45–95</span>). Recomendo escalar Meta em 20% e pausar Google Display."
+                  </div>
+                </div>
+                <div className="b-feat lp-fade lp-d1">
+                  <div className="b-feat-iw">🔗</div>
+                  <div className="b-feat-lbl">CONEXÕES</div>
+                  <div className="b-feat-h">Meta Ads + Google Ads reais</div>
+                  <p className="b-feat-p">Conecte suas contas via OAuth e veja CPL, ROAS, leads e investimento real das suas campanhas — diretamente no dashboard.</p>
+                  <div className="b-feat-badges">
+                    <div className="b-fbadge"><span style={{width:8,height:8,borderRadius:'50%',background:'#1877F2',flexShrink:0,display:'inline-block'}} />Meta Ads <span style={{color:'var(--green)',fontSize:11,marginLeft:4}}>Disponível</span></div>
+                    <div className="b-fbadge"><span style={{width:8,height:8,borderRadius:'50%',background:'#4285F4',flexShrink:0,display:'inline-block'}} />Google Ads <span style={{color:'var(--green)',fontSize:11,marginLeft:4}}>Disponível</span></div>
+                  </div>
+                </div>
+                <div className="b-feat lp-fade lp-d1">
+                  <div className="b-feat-iw">⚡</div>
+                  <div className="b-feat-lbl">HEAD OF GROWTH</div>
+                  <div className="b-feat-h">Diagnóstico Estratégico</div>
+                  <p className="b-feat-p">Identifica onde está o gargalo do seu funil. Diagnóstico de desperdícios, bloqueios de crescimento e o que está travando sua escala.</p>
+                  <div className="funnel-b">
+                    <div className="funnel-b-p"><div className="fb-lbl">TOFU</div><div className="fb-name">Atração</div></div>
+                    <div className="funnel-b-p mid"><div className="fb-lbl" style={{color:'var(--gold)'}}>MOFU</div><div className="fb-name">Engajamento</div></div>
+                    <div className="funnel-b-p"><div className="fb-lbl">BOFU</div><div className="fb-name">Conversão</div></div>
+                  </div>
+                </div>
+                <div className="b-feat lp-fade lp-d2">
+                  <div className="b-feat-iw">🗂️</div>
+                  <div className="b-feat-lbl">HISTÓRICO</div>
+                  <div className="b-feat-h">Memória de campanhas</div>
+                  <p className="b-feat-p">Registre o que funcionou e o que falhou em cada campanha. O ELYON usa esse histórico para gerar estratégias mais precisas.</p>
+                  <div className="camp-b">
+                    <div className="camp-b-i"><span className="camp-b-n">Meta Ads · Jan 2025</span><span className="camp-b-r" style={{color:'var(--green)'}}>CPL R$68 · Vencedora ↑</span></div>
+                    <div className="camp-b-i"><span className="camp-b-n">Google Search · Dez 2024</span><span className="camp-b-r" style={{color:'var(--red)'}}>CPL R$142 · Perdedora ↓</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Benchmarks B */}
+          <section className="b-bench" id="nichos">
+            <div className="lp-container">
+              <div className="section-eyebrow lp-fade">Benchmarks reais de mercado</div>
+              <h2 className="section-h lp-fade">Analista especializado<br /><em>no seu segmento.</em></h2>
+              <p style={{fontSize:16,color:'var(--sub)',lineHeight:1.75,maxWidth:520}} className="lp-fade">CPL, ROAS, CVR e canais ideais — dados reais do mercado brasileiro 2024–2025.</p>
+              <div className="b-niche-sel lp-fade">
+                {BENCHMARKS.map((b,i) => (
+                  <span key={i} className={`b-ntag${activeBench.label===b.label?' active':''}`} onClick={()=>setActiveBench(b)}>{b.label}</span>
+                ))}
+                <span style={{padding:'5px 13px',borderRadius:999,fontFamily:'var(--f-mono)',fontSize:11,fontWeight:600,background:'var(--card)',border:'1px solid var(--border)',color:'var(--muted)'}}>+70 nichos →</span>
+              </div>
+              <div className="b-ndata lp-fade">
+                <div>
+                  <div className="b-nd-t">{activeBench.name}</div>
+                  <div className="b-nd-metrics">
+                    <div className="b-nd-m"><div className="b-nd-ml">CPL Benchmark</div><div className="b-nd-mv" style={{color:'var(--gold)'}}>{activeBench.cpl}</div><div className="b-nd-ms">Faixa do nicho</div></div>
+                    <div className="b-nd-m"><div className="b-nd-ml">ROAS bom</div><div className="b-nd-mv" style={{color:'var(--green)'}}>{activeBench.roas}</div><div className="b-nd-ms">Acima da média</div></div>
+                    <div className="b-nd-m"><div className="b-nd-ml">CVR lead→venda</div><div className="b-nd-mv" style={{color:'var(--purple)'}}>{activeBench.cvr}</div><div className="b-nd-ms">Benchmark nicho</div></div>
+                    <div className="b-nd-m"><div className="b-nd-ml">Budget mínimo</div><div className="b-nd-mv" style={{color:'var(--text)'}}>{activeBench.bmin}</div><div className="b-nd-ms">Para ter dados</div></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="b-nd-ch-lbl">Canais recomendados</div>
+                  <div className="b-nd-chs">
+                    <div className="b-nd-ch"><span className="b-nd-cn">{activeBench.ch1}</span><span className="b-nd-cv">Principal</span></div>
+                    <div className="b-nd-ch"><span className="b-nd-cn">{activeBench.ch2}</span><span className="b-nd-cv">Secundário</span></div>
+                    <div className="b-nd-ch"><span className="b-nd-cn">{activeBench.ch3}</span><span className="b-nd-cv">Suporte</span></div>
+                  </div>
+                  <div className="b-nd-ins">💡 <strong>{activeBench.tip}.</strong> Use essa janela para maximizar budget no pico do nicho.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Pricing B */}
+          <section className="b-price" id="precos">
+            <div className="lp-container">
+              <div style={{textAlign:'center'}}>
+                <div className="section-eyebrow section-eyebrow-c lp-fade">Planos</div>
+                <h2 className="section-h lp-fade" style={{margin:'0 auto'}}>Você não contrata marketing.<br /><em>Você tem um sistema.</em></h2>
+                <p style={{fontSize:16,color:'var(--sub)',margin:'0 auto',maxWidth:480}} className="lp-fade">Que mostra exatamente o que fazer para crescer.</p>
+              </div>
+              <div className="b-pgrid">
+                {[
+                  {lbl:'🔄 Recorrência base',name:'Individual',desc:'Para donos de negócio e profissionais que querem direção contínua baseada em dados reais.',price:'197',plan:'individual',pop:false,feats:['Estratégia atualizada mensalmente','Benchmarks por nicho','NOUS IA contextual','Histórico de campanhas','Conexão Meta Ads']},
+                  {lbl:'🚀 Mais popular',name:'Profissional',desc:'Para gestores de tráfego e consultores com capacidade estratégica elevada e múltiplos clientes.',price:'497',plan:'profissional',pop:true,feats:['Tudo do Individual','Estratégias avançadas e múltiplos cenários','Diagnóstico como oferta para clientes','Conexão Meta + Google Ads','Suporte prioritário']},
+                  {lbl:'💣 Empresas e agências',name:'Avançada',desc:'Para agências e empresas que querem escalar atendimento com inteligência estratégica de alto nível.',price:'1.497',plan:'avancada',pop:false,feats:['Tudo do Profissional','Múltiplas contas e negócios','Comparação de mercado e performance','Leitura avançada de dados','Geração contínua de estratégias']},
+                ].map((p,i)=>(
+                  <div key={i} className={`b-pcard lp-fade lp-d${i}${p.pop?' pop':''}`}>
+                    {p.pop && <div className="b-pop-badge">★ Mais popular</div>}
+                    <div className="b-pc-lbl">{p.lbl}</div>
+                    <div className="b-pc-name">{p.name}</div>
+                    <div className="b-pc-desc">{p.desc}</div>
+                    <div className="b-pc-price"><span className="b-pc-cur">R$</span><span className="b-pc-val">{p.price}</span><span className="b-pc-per">/mês</span></div>
+                    <button className={`b-pc-btn${p.pop?' prim':' ghost'}`} onClick={()=>window.location.href=`/checkout?plan=${p.plan}`}>Começar agora →</button>
+                    <ul className="b-pc-feats">{p.feats.map((f,j)=><li key={j} className="b-pc-feat">{f}</li>)}</ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Audience B */}
+          <section className="b-aud">
+            <div className="lp-container">
+              <div style={{textAlign:'center'}}>
+                <div className="section-eyebrow section-eyebrow-c lp-fade">Para quem é</div>
+                <h2 className="section-h lp-fade" style={{margin:'0 auto'}}>Para quem é <em>o ELYON?</em></h2>
+              </div>
+              <div className="b-aud-grid">
+                {[
+                  {ico:'🏢',who:'Agências de marketing',h:'Gerencie múltiplos clientes',p:'Benchmarks reais por nicho. Conecte as contas de anúncio deles e tenha visão completa de CPL e ROAS em tempo real.',plan:'→ Plano Profissional ou Avançada'},
+                  {ico:'👤',who:'Gestores de tráfego',h:'Saiba o CPL certo do nicho',p:'Saiba exatamente qual CPL aceitar, qual ROAS esperar e quais criativos convertem. NOUS responde com dados reais do cliente.',plan:'→ Plano Individual ou Profissional'},
+                  {ico:'🏬',who:'Donos de negócio',h:'Veja se seu marketing funciona',p:'Veja se seu marketing está acima ou abaixo do benchmark. Conecte Meta e Google Ads e entenda onde está perdendo dinheiro.',plan:'→ Diagnóstico → Plano Individual'},
+                ].map((a,i)=>(
+                  <div key={i} className={`b-aud-card lp-fade lp-d${i}`}>
+                    <span className="b-aud-ico">{a.ico}</span>
+                    <div className="b-aud-who">{a.who}</div>
+                    <div className="b-aud-h">{a.h}</div>
+                    <p className="b-aud-p">{a.p}</p>
+                    <div className="b-aud-plan">{a.plan}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* CTA B */}
+          <section className="cta-b">
+            <div className="lp-container">
+              <h2 className="cta-b-h lp-fade"><span>Quanto você está</span><br /><em>perdendo</em><br /><span>sem benchmark?</span></h2>
+              <p className="cta-b-sub lp-fade">Em 2 minutos você sabe o CPL certo, o ROAS esperado e onde colocar cada real do budget.</p>
+              <div style={{position:'relative',zIndex:1,display:'flex',gap:14,justifyContent:'center',alignItems:'center',marginBottom:28}} className="lp-fade">
+                <Link href="/sign-up" className="btn-p lg">Fazer diagnóstico grátis →</Link>
+              </div>
+              <div className="trust-row lp-fade" style={{justifyContent:'center',marginTop:16}}>
+                <div className="trust-item"><span className="trust-check">✓</span>Sem cartão de crédito</div>
+                <div className="trust-item"><span className="trust-check">✓</span>Resultado em 2 minutos</div>
+                <div className="trust-item"><span className="trust-check">✓</span>80+ nichos cobertos</div>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer className="lp-footer" style={{position:'relative',zIndex:1}}>
+        <div className="lp-container">
+          <div className="lp-footer-inner">
+            <span style={{fontFamily:'var(--f-display)',fontWeight:800,fontSize:18,color:'var(--gold)'}}>ELYON</span>
+            <div className="lp-footer-links">
+              <a href="#como-funciona">Como funciona</a>
+              <a href="#features">Recursos</a>
+              <a href="#nichos">Nichos</a>
+              <Link href="/sign-in">Entrar</Link>
+            </div>
+            <span style={{fontSize:13,color:'var(--muted)'}}>© 2026 ELYON · Head of Growth com IA · Brasil</span>
           </div>
-          <span className="text-sm text-slate-700">© 2026 ELYON · Head of Growth com IA · Brasil</span>
         </div>
       </footer>
-    </main>
+    </>
   )
 }
