@@ -287,7 +287,8 @@ const BENCHMARKS = [
 
 // ── COMPONENT ────────────────────────────────────────────────────────────────
 export default function LandingPage() {
-  const [activeVar, setActiveVar] = useState<'A' | 'B'>('A')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [activeVar] = useState<'A' | 'B'>('B')
   const [heroNiche, setHeroNiche] = useState(HERO_NICHES[0])
   const [activeBench, setActiveBench] = useState(BENCHMARKS[0])
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -391,13 +392,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* VARIATION TOGGLE */}
-      <div className="var-toggle">
-        <button className={`var-btn${activeVar==='A'?' active':''}`} onClick={()=>setActiveVar('A')}>A — Terminal</button>
-        <button className={`var-btn${activeVar==='B'?' active':''}`} onClick={()=>setActiveVar('B')}>B — Data Gravity</button>
-      </div>
-
-      {/* ─── VARIATION A ────────────────────────────────────────────────────── */}
+      {/* ─── VARIATION A (hidden) ───────────────────────────────────────────── */}
       {activeVar === 'A' && (
         <div className="lp-wrap">
           {/* Hero A */}

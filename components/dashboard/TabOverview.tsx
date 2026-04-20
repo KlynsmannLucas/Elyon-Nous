@@ -395,15 +395,17 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         </div>
       )}
 
-      {/* Gráfico de projeção */}
-      <RevenueChart
-        data={proj?.chartData}
-        title={proj ? 'Projeção de Receita' : 'Receita Real vs Meta'}
-        subtitle={proj
-          ? `Ramp-up 6 meses · Base: R$${Math.round(proj.revenueMonth / 1000)}k/mês`
-          : 'Últimos 7 meses · R$'
-        }
-      />
+      {/* Gráfico de projeção — só mostra quando não há dados reais (evita números de benchmark enganosos) */}
+      {!hasRealData && (
+        <RevenueChart
+          data={proj?.chartData}
+          title="Projeção de Receita"
+          subtitle={proj
+            ? `Ramp-up 6 meses · Base: R$${Math.round(proj.revenueMonth / 1000)}k/mês`
+            : 'Últimos 7 meses · R$'
+          }
+        />
+      )}
 
       {/* Funil + Canais */}
       <div className="grid md:grid-cols-2 gap-6">
