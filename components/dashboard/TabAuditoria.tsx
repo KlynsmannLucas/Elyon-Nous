@@ -179,6 +179,27 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
   // Google: "CPC med." / "Avg. CPC" | Meta: "CPC (custo por clique)"
   const cpc = parseNum(findCol(row, 'cpc med', 'avg cpc', 'cpc medio', 'cpc'))
 
+  // ── Indicador de resultado (Meta) ─────────────────────────────────────────
+  // "Indicador de resultado" diz o que "Resultados" representa naquela campanha.
+  // Para campanhas de Tráfego: "Cliques no link" → resultados = cliques, NÃO leads.
+  // Para campanhas de Leads: "Leads" ou "Mensagens iniciadas" → resultados = leads.
+  const resultIndicatorRaw = String(findCol(row,
+    'indicador de resultado', 'indicador do resultado',
+    'result indicator', 'tipo de resultado', 'result type',
+  ) || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  // Se o indicador aponta para métrica de tráfego, zera leads para não poluir o CPL
+  const resultIsTraffic = resultIndicatorRaw.length > 0 && (
+    resultIndicatorRaw.includes('clique') || resultIndicatorRaw.includes('click') ||
+    resultIndicatorRaw.includes('visualiza') || resultIndicatorRaw.includes('view') ||
+    resultIndicatorRaw.includes('alcance') || resultIndicatorRaw.includes('reach') ||
+    resultIndicatorRaw.includes('impressao') || resultIndicatorRaw.includes('impression') ||
+    resultIndicatorRaw.includes('reproducao') || resultIndicatorRaw.includes('play') ||
+    resultIndicatorRaw.includes('engajamento') || resultIndicatorRaw.includes('engagement') ||
+    resultIndicatorRaw.includes('curtida') || resultIndicatorRaw.includes('like') ||
+    resultIndicatorRaw.includes('trafego') || resultIndicatorRaw.includes('traffic')
+  )
+
   // ── Conversões / Leads / Resultados ───────────────────────────────────────
   // Prioridade: métricas específicas de lead/conversa antes de "Resultados"
   // (que no Meta pode ser micro-conversão — ex: "cliques em mensagem")
@@ -186,7 +207,7 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
   // Google PT: "Conversoes" | Google EN: "Conversions" / "Conv."
   // Meta Mensagens PT: "Mensagens iniciadas" / "Conversas iniciadas" / "Contatos no WhatsApp"
   // Meta Lead Ads PT: "Leads" | Meta genérico PT: "Resultados"
-  const leads = parseNum(findCol(row,
+  const leads = resultIsTraffic ? 0 : parseNum(findCol(row,
     // Google PT/EN
     'conversoes', 'conversions', 'conv.', 'conv ', 'conv',
     // Meta — específicos de mensagens/WhatsApp (prioridade antes de "resultados")
@@ -206,7 +227,8 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
   // Google PT: "Custo / conv." | Google EN: "Cost / conv."
   // Meta Mensagens: "Custo por conversa iniciada" / "Custo por mensagem iniciada"
   // Meta genérico: "Custo por resultado" | Meta EN: "Cost per result"
-  const cpl = parseNum(findCol(row,
+  // Quando resultIsTraffic: "Custo por resultado" é CPC, não CPL real → zeramos
+  const rawCPL = parseNum(findCol(row,
     // Google PT: "Custo / conv." → colKey → "custo conv"
     'custo conv', 'custo   conv', 'cost conv', 'cost   conv',
     'custo por conversao', 'cost per conversion',
@@ -220,6 +242,7 @@ function normalizeRow(row: Record<string, any>): Record<string, any> {
     'custo por acao na publicacao', 'custo por acao', 'cost per action',
     'cpa', 'cpl',
   ))
+  const cpl = resultIsTraffic ? 0 : rawCPL
 
   // ── Taxa de conversão ──────────────────────────────────────────────────────
   const convRate = parseNum(findCol(row, 'taxa de conv', 'conv  rate', 'conversion rate'))

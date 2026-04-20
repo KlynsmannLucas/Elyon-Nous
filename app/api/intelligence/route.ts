@@ -144,7 +144,7 @@ Gere EXATAMENTE 6 seções de inteligência, cada uma com foco diferente. Respon
       "titulo": "<ângulo criativo mais eficiente para ${niche} baseado em psicologia do consumidor>",
       "categoria": "Criativo",
       "categoriaColor": "#EC4899",
-      "insight": "<o que move o público de ${niche} a agir — medo, desejo, status, urgência ou transformação?">",
+      "insight": "<o que move o público de ${niche} a agir — medo, desejo, status, urgência ou transformação?>",
       "dados": "<CTR esperado por tipo de gancho, formato que converte mais (vídeo/imagem/carrossel) no nicho>",
       "acao_concreta": "<brief do próximo criativo: gancho, proposta de valor, CTA e formato>",
       "potencial": "<aumento de CTR e redução de CPL com criativos otimizados para o nicho>"
@@ -154,13 +154,37 @@ Gere EXATAMENTE 6 seções de inteligência, cada uma com foco diferente. Respon
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
+      max_tokens: 6000,
       messages: [{ role: 'user', content: prompt }],
     })
 
     const raw = (message.content[0] as any).text.trim()
-    const jsonStr = raw.startsWith('```') ? raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '') : raw
-    const data = JSON.parse(jsonStr)
+    const jsonStr = raw.startsWith('```') ? raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '') : raw
+
+    let data: any
+    try {
+      data = JSON.parse(jsonStr)
+    } catch {
+      // Tenta recuperar JSON truncado: busca o último objeto completo
+      const lastBrace = jsonStr.lastIndexOf('}')
+      const lastBracket = jsonStr.lastIndexOf(']')
+      const cutAt = Math.max(lastBrace, lastBracket)
+      if (cutAt > 100) {
+        try {
+          // Fecha a estrutura esperada: {"inteligencia": [...]}
+          const partial = jsonStr.slice(0, cutAt + 1)
+          const repaired = partial.endsWith(']}') ? partial
+            : partial.endsWith('}')  ? partial + ']}'
+            : partial + '}]}'
+          data = JSON.parse(repaired)
+        } catch {
+          throw new Error('Resposta da IA com JSON inválido — tente novamente.')
+        }
+      } else {
+        throw new Error('Resposta da IA com JSON inválido — tente novamente.')
+      }
+    }
+
     return NextResponse.json({ success: true, inteligencia: data.inteligencia, source: 'ai' })
 
   } catch (error: any) {

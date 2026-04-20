@@ -78,7 +78,25 @@ function normalizeRow(row: Record<string, any>): ParsedCampaign {
   const roas = parseNum(findCol(row, 'roas', 'retorno sobre', 'purchase roas'))
   const revenue = parseNum(findCol(row, 'valor conv', 'conv  value', 'valor de conversao', 'receita', 'revenue'))
 
-  const leads = parseNum(findCol(row,
+  // "Indicador de resultado" diz o que "Resultados" significa na campanha.
+  // Para Traffic: "Cliques no link" → resultados = cliques, NÃO leads.
+  const resultIndicatorRaw = String(findCol(row,
+    'indicador de resultado', 'indicador do resultado',
+    'result indicator', 'tipo de resultado', 'result type',
+  ) || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  const resultIsTraffic = resultIndicatorRaw.length > 0 && (
+    resultIndicatorRaw.includes('clique') || resultIndicatorRaw.includes('click') ||
+    resultIndicatorRaw.includes('visualiza') || resultIndicatorRaw.includes('view') ||
+    resultIndicatorRaw.includes('alcance') || resultIndicatorRaw.includes('reach') ||
+    resultIndicatorRaw.includes('impressao') || resultIndicatorRaw.includes('impression') ||
+    resultIndicatorRaw.includes('reproducao') || resultIndicatorRaw.includes('play') ||
+    resultIndicatorRaw.includes('engajamento') || resultIndicatorRaw.includes('engagement') ||
+    resultIndicatorRaw.includes('curtida') || resultIndicatorRaw.includes('like') ||
+    resultIndicatorRaw.includes('trafego') || resultIndicatorRaw.includes('traffic')
+  )
+
+  const leads = resultIsTraffic ? 0 : parseNum(findCol(row,
     'conversoes', 'conversions', 'conv.', 'conv ', 'conv',
     'mensagens iniciadas', 'conversas iniciadas', 'novo contato no whatsapp',
     'contatos no whatsapp', 'mensagem iniciada', 'conversa iniciada',
@@ -89,7 +107,7 @@ function normalizeRow(row: Record<string, any>): ParsedCampaign {
     'total de resultados', 'total de leads',
   ))
 
-  const cpl = parseNum(findCol(row,
+  const rawCPL = parseNum(findCol(row,
     'custo conv', 'custo   conv', 'cost conv', 'cost   conv',
     'custo por conversao', 'cost per conversion',
     'custo por conversa iniciada', 'custo por mensagem iniciada',
@@ -97,7 +115,8 @@ function normalizeRow(row: Record<string, any>): ParsedCampaign {
     'custo por resultado', 'cost per result',
     'custo por lead', 'cost per lead',
     'custo por acao', 'cpa', 'cpl',
-  )) || (leads > 0 && spend > 0 ? spend / leads : 0)
+  ))
+  const cpl = resultIsTraffic ? 0 : (rawCPL || (leads > 0 && spend > 0 ? spend / leads : 0))
 
   const status = String(findCol(row, 'estado', 'status', 'situacao', 'delivery', 'veiculacao') || '')
 
