@@ -247,6 +247,39 @@ const LP_CSS = `
 .lp-footer-links{display:flex;gap:28px;}
 .lp-footer-links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s;}
 .lp-footer-links a:hover{color:var(--sub);}
+/* NICHE SLOT MACHINE */
+@keyframes niche-in{0%{opacity:0;transform:translateY(-14px)}100%{opacity:1;transform:none}}
+@keyframes roas-in{0%{opacity:0;transform:translateY(10px) scale(.96)}100%{opacity:1;transform:none}}
+.niche-slot-anim{animation:niche-in .32s cubic-bezier(.34,1.56,.64,1) forwards;}
+.roas-anim{animation:roas-in .38s cubic-bezier(.34,1.56,.64,1) forwards;}
+/* SOCIAL BAR */
+.social-bar{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:16px 0;background:rgba(255,255,255,.015);position:relative;z-index:1;}
+.social-bar-inner{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;}
+.social-item{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);}
+.social-item-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+.social-sep{width:1px;height:14px;background:var(--border);}
+/* MOBILE */
+@media(max-width:900px){
+  .hero-b-top{grid-template-columns:1fr!important;}
+  .hero-b-left{border-right:none!important;border-bottom:1px solid var(--border);padding:60px 20px 36px!important;}
+  .hero-b-right{padding:36px 20px 60px!important;}
+  .stats-b-inner{grid-template-columns:1fr 1fr;}
+  .b-feat-grid{grid-template-columns:1fr;}
+  .b-pgrid{grid-template-columns:1fr;}
+  .b-aud-grid{grid-template-columns:1fr;}
+  .comp-b-inner{grid-template-columns:1fr;}
+  .b-ndata{grid-template-columns:1fr;}
+  .lp-container{padding:0 20px;}
+  .section-h{font-size:32px;}
+  .hero-b-h{font-size:clamp(28px,6vw,40px);}
+}
+@media(max-width:600px){
+  .lp-nav{padding:0 16px;}
+  .lp-nav-links{display:none;}
+  .stats-b-inner{grid-template-columns:1fr 1fr;}
+  .social-bar-inner{gap:16px;}
+  .hero-b-number{font-size:clamp(72px,20vw,120px)!important;}
+}
 `
 
 // ── DATA ─────────────────────────────────────────────────────────────────────
@@ -289,12 +322,13 @@ const BENCHMARKS = [
 export default function LandingPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeVar] = useState<'A' | 'B'>('B')
-  const [heroNiche, setHeroNiche] = useState(HERO_NICHES[0])
+  const [nicheIdx, setNicheIdx] = useState(0)
   const [activeBench, setActiveBench] = useState(BENCHMARKS[0])
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const termBodyRef = useRef<HTMLDivElement>(null)
   const termDoneRef = useRef(false)
   const animFrameRef = useRef<number>()
+  const heroNiche = HERO_NICHES[nicheIdx]
 
   // Particles
   useEffect(() => {
@@ -346,12 +380,27 @@ export default function LandingPage() {
     })
   }, [activeVar])
 
-  // Scroll fade
+  // Auto-cycle hero niches
+  useEffect(() => {
+    const t = setInterval(() => {
+      setNicheIdx(i => (i + 1) % HERO_NICHES.length)
+    }, 3000)
+    return () => clearInterval(t)
+  }, [])
+
+  // Scroll fade — também ativa elementos já visíveis no viewport
   useEffect(() => {
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('lp-visible');obs.unobserve(e.target)} })
-    }, { threshold: 0.12 })
-    document.querySelectorAll('.lp-fade').forEach(el => obs.observe(el))
+    }, { threshold: 0.08, rootMargin: '0px 0px -20px 0px' })
+    document.querySelectorAll('.lp-fade').forEach(el => {
+      const rect = (el as HTMLElement).getBoundingClientRect()
+      if (rect.top < window.innerHeight) {
+        el.classList.add('lp-visible')
+      } else {
+        obs.observe(el)
+      }
+    })
     return () => obs.disconnect()
   }, [activeVar])
 
@@ -536,13 +585,13 @@ export default function LandingPage() {
                 <div className="hero-b-left lp-fade">
                   <div className="tag-badge"><span className="tag-dot" />&nbsp;ELYON · IA ESPECIALIZADA POR NICHO</div>
                   <div className="hero-b-metric-label">ROAS MÉDIO CALCULADO</div>
-                  <div className="hero-b-number">{heroNiche.roas.toFixed(1)}×</div>
+                  <div className="hero-b-number roas-anim" key={`roas-${nicheIdx}`}>{heroNiche.roas.toFixed(1)}×</div>
                   <div className="hero-b-niche-label">nicho ativo:</div>
-                  <div className="niche-slot">{heroNiche.niche}</div>
+                  <div className="niche-slot niche-slot-anim" key={`niche-${nicheIdx}`}>{heroNiche.niche}</div>
                   <div className="niches-cloud">
                     {HERO_NICHES.map((n,i) => (
-                      <span key={i} className={`niche-tag${heroNiche.label===n.label?' active':''}`}
-                        onClick={() => setHeroNiche(n)}>{n.label}</span>
+                      <span key={i} className={`niche-tag${nicheIdx===i?' active':''}`}
+                        onClick={() => setNicheIdx(i)}>{n.label}</span>
                     ))}
                   </div>
                 </div>
@@ -562,6 +611,25 @@ export default function LandingPage() {
               </div>
             </div>
           </section>
+
+          {/* Social proof bar */}
+          <div className="social-bar">
+            <div className="lp-container">
+              <div className="social-bar-inner">
+                <div className="social-item"><span className="social-item-dot" />Meta Ads conectado</div>
+                <div className="social-sep" />
+                <div className="social-item"><span className="social-item-dot" />Google Ads conectado</div>
+                <div className="social-sep" />
+                <div className="social-item">🧠 NOUS IA contextual</div>
+                <div className="social-sep" />
+                <div className="social-item">📊 80+ nichos mapeados</div>
+                <div className="social-sep" />
+                <div className="social-item">⚡ Diagnóstico TOFU/MOFU/BOFU</div>
+                <div className="social-sep" />
+                <div className="social-item">🗂️ Histórico de campanhas</div>
+              </div>
+            </div>
+          </div>
 
           {/* Stats B */}
           <section className="stats-b">
