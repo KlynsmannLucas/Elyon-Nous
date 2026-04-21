@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useAppStore, type ClientData, type CampaignRecord } from '@/lib/store'
-import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
+import { getBenchmark, getBenchmarkSummary, getCreativeAngles, getSeasonalityContext, BENCHMARKS } from '@/lib/niche_benchmarks'
 
 interface Message {
   role: 'user' | 'nous'
@@ -107,6 +107,25 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
     if (benchSummary) {
       lines.push(`\n=== BENCHMARKS DO NICHO ===`)
       lines.push(benchSummary)
+    }
+
+    // Sazonalidade e ângulos criativos
+    if (clientData?.niche) {
+      const bench = getBenchmark(clientData.niche)
+      if (bench) {
+        const benchKey = Object.keys(BENCHMARKS).find((k) => BENCHMARKS[k] === bench) || 'outro'
+        const seasonCtx = getSeasonalityContext(benchKey)
+        lines.push(`\n=== SAZONALIDADE ATUAL ===`)
+        lines.push(`Mês atual: índice CPL ${seasonCtx.current.toFixed(2)} (${seasonCtx.interpretation}). Meses mais baratos: ${seasonCtx.valleyMonths.join(', ')}. Meses mais caros: ${seasonCtx.peakMonths.join(', ')}.`)
+
+        const angles = getCreativeAngles(clientData.niche)
+        if (angles) {
+          lines.push(`\n=== ÂNGULOS DE CRIATIVO ===`)
+          lines.push(`Saturados (evitar): ${angles.saturated.join(', ')}`)
+          lines.push(`Em alta (explorar): ${angles.trending.join(', ')}`)
+          lines.push(`Subexplorados (oportunidade): ${angles.underexplored.join(', ')}`)
+        }
+      }
     }
 
     if (strategy?.recommendation) lines.push(`\n=== ESTRATÉGIA GERADA ===\n${strategy.recommendation}`)

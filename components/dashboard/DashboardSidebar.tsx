@@ -6,7 +6,7 @@ import { useState } from 'react'
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
   | 'analise' | 'anuncios' | 'audiencias'
-  | 'performance' | 'acoes' | 'cenarios'
+  | 'performance' | 'acoes' | 'cenarios' | 'mercado'
 
 export const SIDEBAR_SECTIONS: {
   label: string
@@ -31,6 +31,7 @@ export const SIDEBAR_SECTIONS: {
   { label: 'Avançado', items: [
     { key: 'inteligencia', label: 'Inteligência',   icon: '🧠' },
     { key: 'cenarios',     label: 'Cenários',       icon: '📈' },
+    { key: 'mercado',      label: 'Mercado & Nicho', icon: '🌐' },
   ]},
 ]
 
