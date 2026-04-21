@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
-import { SetupWizard, type WizardImportData }    from '@/components/dashboard/SetupWizard'
+import { SetupWizard, type WizardImportData } from '@/components/dashboard/SetupWizard'
 import { TabOverview }     from '@/components/dashboard/TabOverview'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
@@ -15,257 +15,17 @@ import { TabPerformance }  from '@/components/dashboard/TabPerformance'
 import { TabDiagnostic }   from '@/components/dashboard/TabDiagnostic'
 import { TabAcoes }        from '@/components/dashboard/TabAcoes'
 import { TabErrorBoundary } from '@/components/dashboard/ErrorBoundary'
-import { TabConnections }       from '@/components/dashboard/TabConnections'
-import { TabAuditoria }         from '@/components/dashboard/TabAuditoria'
-import TabPipeline               from '@/components/dashboard/TabPipeline'
-import { TabMetaIntelligence }    from '@/components/dashboard/TabMetaIntelligence'
-import { TabGoogleIntelligence }  from '@/components/dashboard/TabGoogleIntelligence'
-import { NousChat }       from '@/components/dashboard/NousChat'
-import { getPlanLimits, hasActivePlan, UPGRADE_MESSAGES } from '@/lib/planUtils'
-
-type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'connections' | 'auditoria' | 'meta-intelligence' | 'google-intelligence' | 'acoes' | 'pipeline'
-
-const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: 'overview',            label: 'Overview',          icon: '🏠' },
-  { key: 'strategy',            label: 'Estratégia',        icon: '⚡' },
-  { key: 'diagnostic',          label: 'Diagnóstico',       icon: '🎯' },
-  { key: 'intelligence',        label: 'Inteligência',      icon: '🧠' },
-  { key: 'auditoria',           label: 'Auditoria',         icon: '🔍' },
-  { key: 'meta-intelligence',   label: 'Meta Ads IA',       icon: '📡' },
-  { key: 'google-intelligence', label: 'Google Ads IA',     icon: '🎯' },
-  { key: 'audiences',           label: 'Audiências',        icon: '👥' },
-  { key: 'growth',              label: 'Crescimento',       icon: '📈' },
-  { key: 'performance',         label: 'Performance',       icon: '📊' },
-  { key: 'acoes',               label: 'Plano de Ações',    icon: '✅' },
-  { key: 'connections',         label: 'Conexões',          icon: '🔗' },
-]
+import { TabAnalise }      from '@/components/dashboard/TabAnalise'
+import { TabAnuncios }     from '@/components/dashboard/TabAnuncios'
+import { NousChat }        from '@/components/dashboard/NousChat'
+import { DashboardSidebar, type TabKey } from '@/components/dashboard/DashboardSidebar'
+import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar'
+import { getPlanLimits, hasActivePlan } from '@/lib/planUtils'
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
-  individual:    { label: 'Individual',    color: '#38BDF8' },
-  profissional:  { label: 'Profissional',  color: '#F0B429' },
-  avancada:      { label: 'Avançada',      color: '#22C55E' },
-}
-
-const SIDEBAR_SECTIONS: { label: string; items: { key: TabKey; label: string; icon: string; badge?: string }[] }[] = [
-  { label: 'Principal', items: [
-    { key: 'overview',  label: 'Visão Geral', icon: '🏠', badge: 'LIVE' },
-    { key: 'strategy',  label: 'Estratégia',  icon: '⚡' },
-  ]},
-  { label: 'Diagnóstico', items: [
-    { key: 'diagnostic', label: 'Diagnóstico', icon: '🎯' },
-    { key: 'auditoria',  label: 'Auditoria',   icon: '🔍' },
-    { key: 'pipeline',   label: 'Pipeline 360°', icon: '🤖', badge: 'NEW' },
-  ]},
-  { label: 'Anúncios', items: [
-    { key: 'meta-intelligence',   label: 'Meta Ads IA',   icon: '📡' },
-    { key: 'google-intelligence', label: 'Google Ads IA', icon: '🎯' },
-    { key: 'audiences',           label: 'Audiências',    icon: '👥' },
-  ]},
-  { label: 'Resultados', items: [
-    { key: 'performance', label: 'Performance',    icon: '📊' },
-    { key: 'acoes',       label: 'Plano de Ações', icon: '✅' },
-  ]},
-  { label: 'Avançado', items: [
-    { key: 'intelligence', label: 'Inteligência', icon: '🧠' },
-    { key: 'growth',       label: 'Crescimento',  icon: '📈' },
-    { key: 'connections',  label: 'Conexões',     icon: '🔗' },
-  ]},
-]
-
-// ── Sidebar ────────────────────────────────────────────────────────────────────
-function Sidebar({ active, onChange, clientData, userPlan, user, onSignOut }: {
-  active: TabKey; onChange: (t: TabKey) => void
-  clientData: any; userPlan?: string; user: any; onSignOut: () => void
-}) {
-  const [portalLoading, setPortalLoading] = useState(false)
-  const plan = userPlan ? PLAN_LABELS[userPlan] : null
-  const userName = user?.firstName || user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'Usuário'
-  const avatarLetter = userName.charAt(0).toUpperCase()
-
-  const handlePortal = async () => {
-    setPortalLoading(true)
-    const res  = await fetch('/api/stripe/portal', { method: 'POST' })
-    const data = await res.json()
-    if (data.url) window.location.href = data.url
-    setPortalLoading(false)
-  }
-
-  const sidebarStyle: React.CSSProperties = {
-    width: '220px', flexShrink: 0, height: '100vh',
-    background: '#0C0C12',
-    borderRight: '1px solid rgba(255,255,255,0.05)',
-    display: 'flex', flexDirection: 'column',
-    overflowY: 'auto', overflowX: 'hidden',
-  }
-
-  const navItemStyle = (isActive: boolean): React.CSSProperties => ({
-    width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-    padding: '7px 8px', borderRadius: '8px', border: 'none',
-    background: isActive ? 'rgba(245,165,0,0.1)' : 'transparent',
-    boxShadow: isActive ? 'inset 0 0 0 1px rgba(245,165,0,0.18)' : 'none',
-    color: isActive ? '#F5A500' : 'rgba(255,255,255,0.42)',
-    fontSize: '13px', fontWeight: isActive ? 600 : 400,
-    cursor: 'pointer', textAlign: 'left', outline: 'none',
-    transition: 'all 0.12s',
-  })
-
-  return (
-    <aside style={sidebarStyle}>
-      {/* Logo */}
-      <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
-        <div style={{
-          fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1,
-          fontFamily: 'var(--font-syne)',
-          background: 'linear-gradient(135deg, #F5A500 0%, #FFD166 100%)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-        }}>ELYON</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px' }}>
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E', display: 'inline-block', animation: 'pulseDot 2s ease-in-out infinite' }} />
-          <span style={{ fontSize: '9px', color: '#22C55E', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>LIVE</span>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '8px', overflowY: 'auto' }}>
-        {SIDEBAR_SECTIONS.map((section) => (
-          <div key={section.label} style={{ marginBottom: '14px' }}>
-            <div style={{
-              fontSize: '9px', fontFamily: 'var(--font-mono)',
-              color: 'rgba(255,255,255,0.22)', letterSpacing: '0.12em',
-              textTransform: 'uppercase', padding: '0 8px', marginBottom: '3px',
-            }}>
-              {section.label}
-            </div>
-            {section.items.map((item) => {
-              const isActive = active === item.key
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => onChange(item.key)}
-                  style={navItemStyle(isActive)}
-                  onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' } }}
-                  onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.42)' } }}
-                >
-                  <span style={{ fontSize: '14px', flexShrink: 0 }}>{item.icon}</span>
-                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
-                  {item.badge && (
-                    <span style={{
-                      fontSize: '8px', fontFamily: 'var(--font-mono)', color: '#22C55E',
-                      background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
-                      borderRadius: '4px', padding: '1px 4px', letterSpacing: '0.06em', flexShrink: 0,
-                    }}>{item.badge}</span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        ))}
-      </nav>
-
-      {/* Client badge */}
-      {clientData && (
-        <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
-          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', marginBottom: '3px' }}>CLIENTE</div>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{clientData.clientName}</div>
-          <div style={{ fontSize: '11px', color: '#F5A500', opacity: 0.65, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{clientData.niche}</div>
-        </div>
-      )}
-
-      {/* User footer */}
-      <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <div style={{
-            width: '28px', height: '28px', borderRadius: '7px', flexShrink: 0,
-            background: 'linear-gradient(135deg, #F5A500, #FFD166)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '12px', fontWeight: 700, color: '#000',
-          }}>{avatarLetter}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</div>
-            {plan
-              ? <span style={{ fontSize: '9px', color: plan.color, fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}>{plan.label.toUpperCase()}</span>
-              : <span style={{ fontSize: '9px', color: '#64748B', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}>TRIAL</span>
-            }
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <a href="/perfil" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)', fontSize: '13px', textDecoration: 'none', transition: 'all 0.15s' }} title="Perfil">👤</a>
-          {plan
-            ? <button onClick={handlePortal} disabled={portalLoading} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: 'rgba(255,255,255,0.35)', fontSize: '13px', cursor: 'pointer' }} title="Assinatura">💳</button>
-            : <a href="/landing#pricing" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px', borderRadius: '6px', border: '1px solid rgba(245,165,0,0.2)', background: 'rgba(245,165,0,0.06)', color: '#F5A500', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }} title="Ver planos">⚡</a>
-          }
-          <button onClick={onSignOut} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: 'rgba(255,255,255,0.35)', cursor: 'pointer' }} title="Sair">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </aside>
-  )
-}
-
-// ── Topbar ─────────────────────────────────────────────────────────────────────
-function Topbar({ activeTab, clientData, onExport, onReset, onSave, pdfLoading, userPlan }: {
-  activeTab: TabKey; clientData: any
-  onExport: () => void; onReset: () => void; onSave: () => void
-  pdfLoading: boolean; userPlan?: string
-}) {
-  const [savedFlash, setSavedFlash] = useState(false)
-  const currentTab = TABS.find(t => t.key === activeTab)
-
-  const handleSave = () => {
-    onSave()
-    setSavedFlash(true)
-    setTimeout(() => setSavedFlash(false), 2000)
-  }
-
-  return (
-    <div style={{
-      height: '52px', flexShrink: 0,
-      borderBottom: '1px solid rgba(255,255,255,0.04)',
-      background: 'rgba(3,3,5,0.9)', backdropFilter: 'blur(12px)',
-      display: 'flex', alignItems: 'center', padding: '0 24px', gap: '12px',
-    }}>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.18)', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>DASHBOARD</span>
-        <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '11px' }}>/</span>
-        <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.65)', fontWeight: 500 }}>
-          {currentTab ? `${currentTab.icon} ${currentTab.label}` : ''}
-        </span>
-        {clientData?.niche && (
-          <>
-            <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '11px' }}>/</span>
-            <span style={{ fontSize: '11px', color: '#F5A500', opacity: 0.7 }}>{clientData.niche}</span>
-          </>
-        )}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-        <button onClick={handleSave} style={{
-          padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontSize: '11px', fontWeight: 500, transition: 'all 0.15s',
-          border: savedFlash ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.07)',
-          background: savedFlash ? 'rgba(34,197,94,0.08)' : 'transparent',
-          color: savedFlash ? '#22C55E' : 'rgba(255,255,255,0.38)',
-        }}>
-          {savedFlash ? '✓ Salvo' : '💾 Salvar'}
-        </button>
-        <button onClick={onReset} style={{
-          padding: '5px 10px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.06)',
-          background: 'transparent', color: 'rgba(255,255,255,0.28)', fontSize: '11px', cursor: 'pointer',
-        }}>
-          Trocar cliente
-        </button>
-        <button onClick={onExport} disabled={pdfLoading} style={{
-          padding: '5px 14px', borderRadius: '7px', border: 'none',
-          background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000',
-          fontSize: '11px', fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer',
-          opacity: pdfLoading ? 0.65 : 1,
-        }}>
-          {pdfLoading ? '⏳ Gerando...' : '↓ PDF'}
-        </button>
-      </div>
-    </div>
-  )
+  individual:   { label: 'Individual',   color: '#38BDF8' },
+  profissional: { label: 'Profissional', color: '#F0B429' },
+  avancada:     { label: 'Avançada',     color: '#22C55E' },
 }
 
 // ── Tela de geração ────────────────────────────────────────────────────────────
@@ -603,6 +363,7 @@ export default function DashboardPage() {
   }, [deleteSavedClient])
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
+
   const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
   const [genError, setGenError] = useState('')
 
@@ -705,7 +466,7 @@ export default function DashboardPage() {
           const auditJson = await auditRes.json()
           if (auditJson.success) {
             setAuditCache(clientData.clientName, auditJson.audit)
-            setActiveTab('auditoria')
+            setActiveTab('analise')
           }
         } catch {
           // Auditoria automática falhou — não bloqueia o fluxo principal
@@ -764,27 +525,6 @@ export default function DashboardPage() {
     setGenError('')
   }
 
-  function UpgradeGate({ feature }: { feature: keyof typeof UPGRADE_MESSAGES }) {
-    const msg = UPGRADE_MESSAGES[feature]
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="max-w-sm text-center">
-          <div className="text-4xl mb-4">🔒</div>
-          <h3 className="font-display text-xl font-bold text-white mb-2">{msg.title}</h3>
-          <p className="text-slate-400 text-sm mb-6">{msg.description}</p>
-          <div className="text-xs text-[#F0B429] mb-4 font-semibold">
-            Disponível no plano {msg.requiredPlan}+
-          </div>
-          <a href="/landing#pricing"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-black text-sm hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
-            ⚡ Fazer upgrade
-          </a>
-        </div>
-      </div>
-    )
-  }
-
   function renderTab() {
     const strategy = strategyData?.strategy || {}
     const analysis = strategyData?.analysis || {}
@@ -793,24 +533,19 @@ export default function DashboardPage() {
       <TabErrorBoundary tabName={name}>{node}</TabErrorBoundary>
     )
 
+    const goUpgrade = () => window.location.href = '/landing#pricing'
+
     switch (activeTab) {
-      case 'overview':     return wrap('Overview',     <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} />)
-      case 'strategy':     return wrap('Estratégia',   <TabStrategy strategy={strategy} analysis={analysis} />)
-      case 'diagnostic':   return wrap('Diagnóstico',  <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />)
-      case 'intelligence': return wrap('Inteligência', <TabIntelligence clientData={clientData} />)
-      case 'audiences':    return wrap('Audiências',   <TabAudiences niche={clientData?.niche} />)
-      case 'growth':       return wrap('Crescimento',  <TabGrowth analysis={analysis} clientData={clientData} />)
-      case 'performance':  return wrap('Performance',  <TabPerformance clientData={clientData} />)
-      case 'acoes':        return wrap('Plano de Ações', <TabAcoes clientData={clientData} strategyData={strategyData} />)
-      case 'meta-intelligence':    return wrap('Meta Ads IA',    <TabMetaIntelligence    onNavigateToConnections={() => setActiveTab('connections')} />)
-      case 'google-intelligence': return wrap('Google Ads IA', <TabGoogleIntelligence onNavigateToConnections={() => setActiveTab('connections')} />)
-      case 'connections':  return wrap('Conexões', planLimits.hasConnections
-        ? <TabConnections />
-        : <UpgradeGate feature="connections" />)
-      case 'auditoria':    return wrap('Auditoria', planLimits.hasAudit
-        ? <TabAuditoria clientData={clientData} />
-        : <UpgradeGate feature="audit" />)
-      case 'pipeline':     return wrap('Pipeline 360°', <TabPipeline clientData={clientData} />)
+      case 'overview':      return wrap('Overview',          <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} />)
+      case 'strategy':      return wrap('Estratégia',        <TabStrategy strategy={strategy} analysis={analysis} />)
+      case 'diagnostic':    return wrap('Diagnóstico',       <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />)
+      case 'analise':       return wrap('Análise Profunda',  <TabAnalise clientData={clientData} planHasAudit={planLimits.hasAudit} onUpgrade={goUpgrade} />)
+      case 'anuncios':      return wrap('Anúncios IA',       <TabAnuncios planHasConnections={planLimits.hasConnections} onUpgrade={goUpgrade} />)
+      case 'audiencias':    return wrap('Audiências',        <TabAudiences niche={clientData?.niche} />)
+      case 'performance':   return wrap('Performance',       <TabPerformance clientData={clientData} />)
+      case 'acoes':         return wrap('Plano de Ações',    <TabAcoes clientData={clientData} strategyData={strategyData} />)
+      case 'inteligencia':  return wrap('Inteligência',      <TabIntelligence clientData={clientData} />)
+      case 'cenarios':      return wrap('Cenários',          <TabGrowth analysis={analysis} clientData={clientData} />)
     }
   }
 
@@ -987,7 +722,7 @@ export default function DashboardPage() {
   // ── Dashboard completo ──
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#030305', overflow: 'hidden' }}>
-      <Sidebar
+      <DashboardSidebar
         active={activeTab}
         onChange={setActiveTab}
         clientData={clientData}
@@ -996,14 +731,13 @@ export default function DashboardPage() {
         onSignOut={() => signOut({ redirectUrl: '/sign-in' })}
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <Topbar
+        <DashboardTopbar
           activeTab={activeTab}
           clientData={clientData}
           onExport={handleExportPDF}
           onReset={handleReset}
           onSave={handleSaveClient}
           pdfLoading={pdfLoading}
-          userPlan={userPlan}
         />
         <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', paddingBottom: inTrial && !hasActivePlan(userPlan) ? '72px' : '40px' }}>
           <div key={activeTab} className="animate-fade-up">
