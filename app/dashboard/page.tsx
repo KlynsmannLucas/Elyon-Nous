@@ -540,7 +540,7 @@ export default function DashboardPage() {
       case 'strategy':      return wrap('Estratégia',        <TabStrategy strategy={strategy} analysis={analysis} />)
       case 'diagnostic':    return wrap('Diagnóstico',       <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />)
       case 'analise':       return wrap('Análise Profunda',  <TabAnalise clientData={clientData} planHasAudit={planLimits.hasAudit} onUpgrade={goUpgrade} />)
-      case 'anuncios':      return wrap('Anúncios IA',       <TabAnuncios planHasConnections={planLimits.hasConnections} onUpgrade={goUpgrade} />)
+      case 'anuncios':      return wrap('Anúncios IA',       <TabAnuncios planHasConnections={planLimits.hasConnections} onUpgrade={goUpgrade} clientData={clientData} />)
       case 'audiencias':    return wrap('Audiências',        <TabAudiences niche={clientData?.niche} />)
       case 'performance':   return wrap('Performance',       <TabPerformance clientData={clientData} />)
       case 'acoes':         return wrap('Plano de Ações',    <TabAcoes clientData={clientData} strategyData={strategyData} />)

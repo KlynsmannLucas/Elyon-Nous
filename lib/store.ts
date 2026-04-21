@@ -60,6 +60,29 @@ export interface ClientData {
   conversionRate?: number                  // taxa de conversão lead → venda em % (ex: 10 = 10%)
 }
 
+export interface CreativeVariant {
+  headline: string
+  primaryText: string
+  hook: string
+  cta: string
+  creativeType: 'image' | 'video' | 'carousel' | 'outro'
+  impressions: number
+  clicks: number
+  conversions: number
+  spend: number
+}
+
+export interface CreativeTest {
+  id: string
+  name: string
+  channel: 'Meta Ads' | 'Google Ads'
+  status: 'running' | 'winner_a' | 'winner_b' | 'paused'
+  variantA: CreativeVariant
+  variantB: CreativeVariant
+  notes: string
+  createdAt: string
+}
+
 export interface AuditEntry {
   id: string
   audit: any
@@ -122,6 +145,12 @@ interface AppStore {
   actionPlanCache: Record<string, any[]>
   setActionPlanCache: (clientName: string, items: any[]) => void
   updateActionStatus: (clientName: string, id: string, status: string) => void
+
+  // Testes A/B de criativos
+  creativeTests: CreativeTest[]
+  addCreativeTest: (test: Omit<CreativeTest, 'id' | 'createdAt'>) => void
+  updateCreativeTest: (id: string, updates: Partial<CreativeTest>) => void
+  deleteCreativeTest: (id: string) => void
 
   // Rate limiting: timestamps das gerações de estratégia (últimas 1h)
   strategyTimestamps: number[]
@@ -265,6 +294,18 @@ export const useAppStore = create<AppStore>()(
           },
         })),
 
+      creativeTests: [],
+      addCreativeTest: (test) => {
+        const entry: CreativeTest = { ...test, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+        set((s) => ({ creativeTests: [entry, ...s.creativeTests] }))
+      },
+      updateCreativeTest: (id, updates) => {
+        set((s) => ({ creativeTests: s.creativeTests.map((t) => t.id === id ? { ...t, ...updates } : t) }))
+      },
+      deleteCreativeTest: (id) => {
+        set((s) => ({ creativeTests: s.creativeTests.filter((t) => t.id !== id) }))
+      },
+
       strategyTimestamps: [],
       recordStrategyGeneration: () => {
         const now = Date.now()
@@ -296,6 +337,7 @@ export const useAppStore = create<AppStore>()(
         strategyTimestamps:  state.strategyTimestamps,
         auditCache:          state.auditCache,
         actionPlanCache:     state.actionPlanCache,
+        creativeTests:       state.creativeTests,
       }),
     }
   )
