@@ -420,8 +420,8 @@ export default function LandingPage() {
     return () => obs.disconnect()
   }, [activeVar])
 
-  const BAD = ['Consultor caro que fala muito e entrega pouco','Budget queimado em canal errado para o seu nicho','Sem visão do funil — TOFU, MOFU e BOFU no achismo','Decisão baseada em feeling — sem benchmark real','Campanhas passadas esquecidas, erros repetidos']
-  const GOOD = ['Head de Growth IA especializado no seu nicho — 24h','Canal certo + budget certo, com dados reais do mercado','Diagnóstico TOFU/MOFU/BOFU — onde está o gargalo','CPL e ROAS reais das suas campanhas Meta e Google','Histórico de campanhas alimentando decisões futuras']
+  const BAD = ['Consultor caro que fala muito e entrega pouco','Budget queimado em canal errado para o seu nicho','Sem visão do funil — TOFU, MOFU e BOFU no achismo','Decisão baseada em feeling — sem benchmark real','Campanhas passadas esquecidas, erros repetidos','ROAS break-even calculado no achismo ou ignorado']
+  const GOOD = ['Pipeline 360°: 5 agentes IA analisam tudo em paralelo','Canal certo + budget certo, com dados reais do mercado','Diagnóstico TOFU/MOFU/BOFU em 11 dimensões','ROAS break-even real calculado com seu ticket e margem','Histórico de campanhas + benchmark do nicho na mesma tela','NOUS responde com contexto completo do cliente']
 
   return (
     <>
@@ -433,12 +433,13 @@ export default function LandingPage() {
         <Link href="/landing" className="lp-logo">ELYON</Link>
         <div className="lp-nav-links">
           <a href="#como-funciona">Como funciona</a>
-          <a href="#nichos">Nichos</a>
           <a href="#features">Recursos</a>
+          <a href="#nichos">Nichos</a>
+          <a href="#precos">Preços</a>
         </div>
         <div className="lp-nav-actions">
           <Link href="/sign-in" className="lp-ghost-link">Entrar</Link>
-          <Link href="/sign-up" className="lp-nav-cta">Começar grátis →</Link>
+          <Link href="/sign-up" className="lp-nav-cta">Iniciar Pipeline grátis →</Link>
         </div>
       </nav>
 
@@ -596,15 +597,15 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="hero-b-right lp-fade lp-d1">
-                  <h1 className="hero-b-h">Esse é o número real<br /><em>do seu mercado.</em><br />Qual é o seu?</h1>
-                  <p className="hero-b-sub">O ELYON calcula CPL, ROAS e projeção de receita com dados do seu nicho específico — não de uma média genérica. Em 2 minutos.</p>
+                  <h1 className="hero-b-h">5 agentes IA analisam<br /><em>o seu negócio.</em><br />Em 3 minutos.</h1>
+                  <p className="hero-b-sub">O ELYON roda um Pipeline 360° com Auditor, Analista, Estrategista, Copywriter e Report — tudo com dados reais do seu nicho, budget e campanhas. Sem achismo.</p>
                   <div style={{display:'flex',gap:14,alignItems:'center',flexWrap:'wrap',marginBottom:24}}>
-                    <Link href="/sign-up" className="btn-p">Ver os dados do meu nicho →</Link>
+                    <Link href="/sign-up" className="btn-p">Iniciar análise grátis →</Link>
                     <Link href="/sign-in" className="btn-s">Já tenho conta</Link>
                   </div>
                   <div className="trust-row">
-                    <div className="trust-item"><span className="trust-check">✓</span>Gratuito para começar</div>
-                    <div className="trust-item"><span className="trust-check">✓</span>2 minutos</div>
+                    <div className="trust-item"><span className="trust-check">✓</span>Grátis para começar</div>
+                    <div className="trust-item"><span className="trust-check">✓</span>3 minutos</div>
                     <div className="trust-item"><span className="trust-check">✓</span>Sem cartão</div>
                   </div>
                 </div>
@@ -616,17 +617,17 @@ export default function LandingPage() {
           <div className="social-bar">
             <div className="lp-container">
               <div className="social-bar-inner">
-                <div className="social-item"><span className="social-item-dot" />Meta Ads conectado</div>
+                <div className="social-item"><span className="social-item-dot" />Meta Ads ao vivo</div>
                 <div className="social-sep" />
-                <div className="social-item"><span className="social-item-dot" />Google Ads conectado</div>
+                <div className="social-item"><span className="social-item-dot" />Google Ads ao vivo</div>
                 <div className="social-sep" />
-                <div className="social-item">🧠 NOUS IA contextual</div>
+                <div className="social-item">🤖 Pipeline 360° — 5 agentes IA</div>
                 <div className="social-sep" />
-                <div className="social-item">📊 80+ nichos mapeados</div>
+                <div className="social-item">🧠 NOUS com contexto completo</div>
                 <div className="social-sep" />
-                <div className="social-item">⚡ Diagnóstico TOFU/MOFU/BOFU</div>
+                <div className="social-item">📊 80+ nichos com benchmarks reais</div>
                 <div className="social-sep" />
-                <div className="social-item">🗂️ Histórico de campanhas</div>
+                <div className="social-item">💰 ROAS break-even calculado</div>
               </div>
             </div>
           </div>
@@ -635,9 +636,9 @@ export default function LandingPage() {
           <section className="stats-b">
             <div className="lp-container">
               <div className="stats-b-inner">
-                {[{v:'80',suf:'+',label:'Nichos com dados reais mapeados',sub:'↑ 12 novos este mês'},{v:'4',suf:'×',dec:'1',label:'ROAS médio calculado por cliente',sub:'vs. 1.8× sem estratégia'},{v:'90',suf:'d',label:'Plano de ação para executar',sub:'Pronto em 2 minutos'},{v:'2',suf:'min',label:'Para análise estratégica completa',sub:'Sem reunião, sem espera'}].map((s,i)=>(
+                {[{v:'80',suf:'+',label:'Nichos com benchmarks reais de CPL e ROAS',sub:'↑ 12 novos este mês'},{v:'5',suf:'',label:'Agentes IA no Pipeline 360° trabalhando juntos',sub:'Auditor · Analista · Estrategista · Copy · Report'},{v:'11',suf:'',label:'Dimensões de análise na Auditoria Profunda',sub:'Estrutura · Criativos · Financeiro · Escala…'},{v:'3',suf:'min',label:'Para análise 360° completa com IA',sub:'Sem reunião, sem achismo, sem espera'}].map((s,i)=>(
                   <div key={i} className={`stat-b lp-fade lp-d${i}`}>
-                    <div className="stat-b-val"><span className="lp-counter" data-target={s.v} data-dec={s.dec||'0'}>0</span>{s.suf}</div>
+                    <div className="stat-b-val"><span className="lp-counter" data-target={s.v} data-dec={'0'}>0</span>{s.suf}</div>
                     <div className="stat-b-label">{s.label}</div>
                     <div className="stat-b-sub">{s.sub}</div>
                   </div>
@@ -653,9 +654,9 @@ export default function LandingPage() {
               <h2 className="section-h lp-fade">Inteligência de mercado.<br /><em>Sem complexidade.</em></h2>
               <div className="timeline">
                 {[
-                  {n:'01',h:'Informe seu nicho e budget',p:'80+ nichos mapeados. O ELYON já conhece os benchmarks de CPL, ROAS e funil do seu mercado antes de você conectar qualquer conta.',tag:'Em 30 segundos'},
-                  {n:'02',h:'IA diagnostica o funil',p:'TOFU, MOFU e BOFU analisados com dados reais. Identifica onde o seu dinheiro está sendo desperdiçado — com precisão de nicho.',tag:'Diagnóstico em 90 segundos'},
-                  {n:'03',h:'Plano de ação na mão',p:'Canal, budget, next steps e projeção de receita — tudo documentado e executável. Sem reunião, sem achismo, sem espera.',tag:'Resultado em 2 minutos'},
+                  {n:'01',h:'Configure nicho, budget e financeiro',p:'80+ nichos mapeados. Informe ticket médio, margem bruta e taxa de fechamento — o ELYON calcula seu ROAS break-even real e CPL máximo lucrativo automaticamente.',tag:'Em 2 minutos'},
+                  {n:'02',h:'Pipeline 360°: 5 agentes IA em paralelo',p:'Auditor analisa estrutura e desperdiços. Analista cruza dados. Estrategista define o plano. Copywriter cria os ângulos. Report entrega o diagnóstico completo — tudo de uma vez.',tag:'3–5 minutos de análise'},
+                  {n:'03',h:'Dashboard com inteligência contínua',p:'9 abas de diagnóstico: Visão Geral ao vivo, Estratégia, Auditoria Profunda (11 dimensões), Anúncios IA, Performance, Cenários, Ações e NOUS — sua analista estratégica contextual 24h.',tag:'Resultado imediato'},
                 ].map((t,i)=>(
                   <div key={i} className={`tl-item lp-fade lp-d${i}`}>
                     <div className="tl-num">{t.n}</div>
@@ -691,51 +692,89 @@ export default function LandingPage() {
           {/* Features B */}
           <section style={{padding:'80px 0',position:'relative',zIndex:1}} id="features">
             <div className="lp-container">
-              <div className="section-eyebrow lp-fade">Tudo que você precisa</div>
-              <h2 className="section-h lp-fade">Uma plataforma.<br /><em>Inteligência completa.</em></h2>
+              <div className="section-eyebrow lp-fade">9 abas. Uma plataforma.</div>
+              <h2 className="section-h lp-fade">Inteligência completa.<br /><em>Sem complexidade.</em></h2>
               <p style={{fontSize:16,color:'var(--sub)',lineHeight:1.75,maxWidth:520,marginBottom:0}} className="lp-fade">Cada recurso foi construído para eliminar achismo e colocar dados reais na sua tomada de decisão.</p>
               <div className="b-feat-grid">
+
+                {/* Pipeline 360° — destaque */}
+                <div className="b-feat lp-fade" style={{gridColumn:'span 2',background:'linear-gradient(135deg,rgba(240,180,41,.05),rgba(167,139,250,.04))',borderColor:'rgba(240,180,41,.25)'}}>
+                  <div style={{display:'flex',alignItems:'flex-start',gap:20}}>
+                    <div>
+                      <div className="b-feat-iw">🤖</div>
+                    </div>
+                    <div style={{flex:1}}>
+                      <div className="b-feat-lbl">PIPELINE 360°</div>
+                      <div className="b-feat-h">5 agentes IA trabalhando em paralelo</div>
+                      <p className="b-feat-p">Cada agente é um especialista: <strong style={{color:'var(--text)'}}>Auditor</strong> detecta desperdícios e gaps de estrutura. <strong style={{color:'var(--text)'}}>Analista</strong> cruza CPL, ROAS e benchmarks. <strong style={{color:'var(--text)'}}>Estrategista</strong> define prioridades de escala. <strong style={{color:'var(--text)'}}>Copywriter</strong> cria ângulos e hooks. <strong style={{color:'var(--text)'}}>Report</strong> entrega o diagnóstico executivo. Tudo em 3–5 minutos.</p>
+                      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
+                        {['🔍 Auditor','📊 Analista','⚡ Estrategista','✍️ Copywriter','📋 Report'].map((a,i)=>(
+                          <span key={i} style={{padding:'4px 12px',borderRadius:999,fontFamily:'var(--f-mono)',fontSize:10,fontWeight:600,background:'rgba(167,139,250,.08)',border:'1px solid rgba(167,139,250,.2)',color:'var(--purple)'}}>{a}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="b-feat lp-fade">
+                  <div className="b-feat-iw">🔍</div>
+                  <div className="b-feat-lbl">ANÁLISE PROFUNDA</div>
+                  <div className="b-feat-h">Auditoria em 11 dimensões</div>
+                  <p className="b-feat-p">Estrutura de campanhas, tracking, criativos, audiências, escala, financeiro, riscos, oportunidades e plano de ação — em uma análise completa com upload de CSV ou via Pipeline IA.</p>
+                  <div className="funnel-b" style={{gap:4}}>
+                    {['Estrutura','Criativos','Financeiro','Escala','Riscos'].map((d,i)=>(
+                      <div key={i} className={`funnel-b-p${i===2?' mid':''}`} style={{padding:'5px 4px'}}>
+                        <div className="fb-lbl" style={{fontSize:7.5}}>{d}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="b-feat lp-fade lp-d1">
                   <div className="b-feat-iw">🧠</div>
                   <div className="b-feat-lbl">NOUS</div>
-                  <div className="b-feat-h">IA contextual por nicho</div>
-                  <p className="b-feat-p">Chat inteligente que conhece seu cliente, seu nicho, seu budget e suas campanhas. Não dá respostas genéricas — responde com dados reais do seu negócio.</p>
+                  <div className="b-feat-h">IA com contexto completo</div>
+                  <p className="b-feat-p">Conhece ticket médio, margem, ROAS break-even, histórico de campanhas, benchmark do nicho e último audit. Não dá respostas genéricas — responde com os dados reais do seu cliente.</p>
                   <div className="b-feat-demo">
-                    <div style={{fontFamily:'var(--f-mono)',fontSize:9,fontWeight:700,color:'var(--gold)',marginBottom:5}}>🧠 NOUS · Clínica Odontológica · R$3k/mês</div>
-                    "Seu CPL de <strong>R$82</strong> está dentro do benchmark (<span style={{color:'var(--gold)',fontWeight:600}}>R$45–95</span>). Recomendo escalar Meta em 20% e pausar Google Display."
+                    <div style={{fontFamily:'var(--f-mono)',fontSize:9,fontWeight:700,color:'var(--gold)',marginBottom:5}}>🧠 NOUS · Clínica Estética · Ticket R$1.200 · Margem 45%</div>
+                    "Seu CPL máximo lucrativo é <strong>R$54</strong>. Atual de <strong>R$38</strong> está ótimo — recomendo escalar Meta em 25%."
                   </div>
                 </div>
+
                 <div className="b-feat lp-fade lp-d1">
-                  <div className="b-feat-iw">🔗</div>
-                  <div className="b-feat-lbl">CONEXÕES</div>
-                  <div className="b-feat-h">Meta Ads + Google Ads reais</div>
-                  <p className="b-feat-p">Conecte suas contas via OAuth e veja CPL, ROAS, leads e investimento real das suas campanhas — diretamente no dashboard.</p>
-                  <div className="b-feat-badges">
-                    <div className="b-fbadge"><span style={{width:8,height:8,borderRadius:'50%',background:'#1877F2',flexShrink:0,display:'inline-block'}} />Meta Ads <span style={{color:'var(--green)',fontSize:11,marginLeft:4}}>Disponível</span></div>
-                    <div className="b-fbadge"><span style={{width:8,height:8,borderRadius:'50%',background:'#4285F4',flexShrink:0,display:'inline-block'}} />Google Ads <span style={{color:'var(--green)',fontSize:11,marginLeft:4}}>Disponível</span></div>
-                  </div>
-                </div>
-                <div className="b-feat lp-fade lp-d1">
-                  <div className="b-feat-iw">⚡</div>
-                  <div className="b-feat-lbl">HEAD OF GROWTH</div>
-                  <div className="b-feat-h">Diagnóstico Estratégico</div>
-                  <p className="b-feat-p">Identifica onde está o gargalo do seu funil. Diagnóstico de desperdícios, bloqueios de crescimento e o que está travando sua escala.</p>
-                  <div className="funnel-b">
-                    <div className="funnel-b-p"><div className="fb-lbl">TOFU</div><div className="fb-name">Atração</div></div>
-                    <div className="funnel-b-p mid"><div className="fb-lbl" style={{color:'var(--gold)'}}>MOFU</div><div className="fb-name">Engajamento</div></div>
-                    <div className="funnel-b-p"><div className="fb-lbl">BOFU</div><div className="fb-name">Conversão</div></div>
-                  </div>
-                </div>
-                <div className="b-feat lp-fade lp-d2">
-                  <div className="b-feat-iw">🗂️</div>
-                  <div className="b-feat-lbl">HISTÓRICO</div>
-                  <div className="b-feat-h">Memória de campanhas</div>
-                  <p className="b-feat-p">Registre o que funcionou e o que falhou em cada campanha. O ELYON usa esse histórico para gerar estratégias mais precisas.</p>
+                  <div className="b-feat-iw">💰</div>
+                  <div className="b-feat-lbl">FINANCEIRO</div>
+                  <div className="b-feat-h">ROAS break-even real</div>
+                  <p className="b-feat-p">Informe ticket médio, margem bruta e taxa de fechamento. O ELYON calcula o ROAS break-even exato, CPL máximo lucrativo e LTV estimado — sem planilha, em tempo real.</p>
                   <div className="camp-b">
-                    <div className="camp-b-i"><span className="camp-b-n">Meta Ads · Jan 2025</span><span className="camp-b-r" style={{color:'var(--green)'}}>CPL R$68 · Vencedora ↑</span></div>
-                    <div className="camp-b-i"><span className="camp-b-n">Google Search · Dez 2024</span><span className="camp-b-r" style={{color:'var(--red)'}}>CPL R$142 · Perdedora ↓</span></div>
+                    <div className="camp-b-i"><span className="camp-b-n">ROAS break-even</span><span className="camp-b-r" style={{color:'var(--gold)'}}>2.22× calculado</span></div>
+                    <div className="camp-b-i"><span className="camp-b-n">CPL máximo lucrativo</span><span className="camp-b-r" style={{color:'var(--green)'}}>R$54 / lead</span></div>
+                    <div className="camp-b-i"><span className="camp-b-n">LTV estimado</span><span className="camp-b-r" style={{color:'var(--purple)'}}>R$24k recorrente</span></div>
                   </div>
                 </div>
+
+                <div className="b-feat lp-fade lp-d2">
+                  <div className="b-feat-iw">📡</div>
+                  <div className="b-feat-lbl">ANÚNCIOS AO VIVO</div>
+                  <div className="b-feat-h">Meta Ads + Google Ads reais</div>
+                  <p className="b-feat-p">Conecte via OAuth. Veja CPL, ROAS, leads e investimento real de cada campanha com análise de IA — tudo em uma aba com sub-tabs para Meta, Google e Conexões.</p>
+                  <div className="b-feat-badges">
+                    <div className="b-fbadge"><span style={{width:8,height:8,borderRadius:'50%',background:'#1877F2',flexShrink:0,display:'inline-block'}} />Meta Ads <span style={{color:'var(--green)',fontSize:11,marginLeft:4}}>conectado</span></div>
+                    <div className="b-fbadge"><span style={{width:8,height:8,borderRadius:'50%',background:'#4285F4',flexShrink:0,display:'inline-block'}} />Google Ads <span style={{color:'var(--green)',fontSize:11,marginLeft:4}}>conectado</span></div>
+                  </div>
+                </div>
+
+                <div className="b-feat lp-fade lp-d2">
+                  <div className="b-feat-iw">📈</div>
+                  <div className="b-feat-lbl">PERFORMANCE + CENÁRIOS</div>
+                  <div className="b-feat-h">Trends reais + simulador what-if</div>
+                  <p className="b-feat-p">Gráficos de tendência de CPL, Leads, Revenue e ROAS ao longo do tempo. Mais simulador de cenários (conservador / recomendado / agressivo) com pacing de budget em tempo real.</p>
+                  <div className="camp-b">
+                    <div className="camp-b-i"><span className="camp-b-n">Meta Ads · Mar 2025</span><span className="camp-b-r" style={{color:'var(--green)'}}>CPL R$68 · Vencedora ↑</span></div>
+                    <div className="camp-b-i"><span className="camp-b-n">Google Search · Jan 2025</span><span className="camp-b-r" style={{color:'var(--red)'}}>CPL R$142 · Perdedora ↓</span></div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </section>
@@ -785,9 +824,9 @@ export default function LandingPage() {
               </div>
               <div className="b-pgrid">
                 {[
-                  {lbl:'🔄 Recorrência base',name:'Individual',desc:'Para donos de negócio e profissionais que querem direção contínua baseada em dados reais.',price:'197',plan:'individual',pop:false,feats:['Estratégia atualizada mensalmente','Benchmarks por nicho','NOUS IA contextual','Histórico de campanhas','Conexão Meta Ads']},
-                  {lbl:'🚀 Mais popular',name:'Profissional',desc:'Para gestores de tráfego e consultores com capacidade estratégica elevada e múltiplos clientes.',price:'497',plan:'profissional',pop:true,feats:['Tudo do Individual','Estratégias avançadas e múltiplos cenários','Diagnóstico como oferta para clientes','Conexão Meta + Google Ads','Suporte prioritário']},
-                  {lbl:'💣 Empresas e agências',name:'Avançada',desc:'Para agências e empresas que querem escalar atendimento com inteligência estratégica de alto nível.',price:'1.497',plan:'avancada',pop:false,feats:['Tudo do Profissional','Múltiplas contas e negócios','Comparação de mercado e performance','Leitura avançada de dados','Geração contínua de estratégias']},
+                  {lbl:'🔄 Para começar',name:'Individual',desc:'Para donos de negócio e profissionais que querem direção contínua baseada em dados reais.',price:'197',plan:'individual',pop:false,feats:['Estratégia por IA com benchmarks do nicho','NOUS com contexto completo do cliente','ROAS break-even + CPL máximo calculados','Histórico de campanhas + trends','Cenários de budget (conservador/recomendado/agressivo)']},
+                  {lbl:'🚀 Mais popular',name:'Profissional',desc:'Para gestores de tráfego e consultores com múltiplos clientes e capacidade estratégica elevada.',price:'497',plan:'profissional',pop:true,feats:['Tudo do Individual','Pipeline 360° — 5 agentes IA','Análise Profunda (11 dimensões)','Anúncios ao vivo: Meta Ads + Google Ads','Plano de Ações priorizado por IA']},
+                  {lbl:'💣 Agências e empresas',name:'Avançada',desc:'Para agências e empresas que querem escalar atendimento com inteligência estratégica de alto nível.',price:'1.497',plan:'avancada',pop:false,feats:['Tudo do Profissional','Clientes ilimitados','Inteligência de mercado senior por nicho','Auditoria completa com upload CSV/XLSX','Geração contínua sem limite de estratégias']},
                 ].map((p,i)=>(
                   <div key={i} className={`b-pcard lp-fade lp-d${i}${p.pop?' pop':''}`}>
                     {p.pop && <div className="b-pop-badge">★ Mais popular</div>}
@@ -850,9 +889,9 @@ export default function LandingPage() {
               </div>
               <div className="b-aud-grid">
                 {[
-                  {ico:'🏢',who:'Agências de marketing',h:'Gerencie múltiplos clientes',p:'Benchmarks reais por nicho. Conecte as contas de anúncio deles e tenha visão completa de CPL e ROAS em tempo real.',plan:'→ Plano Profissional ou Avançada'},
-                  {ico:'👤',who:'Gestores de tráfego',h:'Saiba o CPL certo do nicho',p:'Saiba exatamente qual CPL aceitar, qual ROAS esperar e quais criativos convertem. NOUS responde com dados reais do cliente.',plan:'→ Plano Individual ou Profissional'},
-                  {ico:'🏬',who:'Donos de negócio',h:'Veja se seu marketing funciona',p:'Veja se seu marketing está acima ou abaixo do benchmark. Conecte Meta e Google Ads e entenda onde está perdendo dinheiro.',plan:'→ Diagnóstico → Plano Individual'},
+                  {ico:'🏢',who:'Agências de marketing',h:'Escale sem contratar analistas',p:'Pipeline 360° roda análise completa de cada cliente em minutos. Entregue diagnósticos com 11 dimensões, plano de ação e estratégia — sem horas de planilha.',plan:'→ Plano Avançada'},
+                  {ico:'👤',who:'Gestores de tráfego',h:'Prove valor com dados reais',p:'ROAS break-even calculado, CPL máximo por cliente, NOUS com contexto completo. Saiba exatamente o que falar pro cliente e o que escalar primeiro.',plan:'→ Plano Profissional'},
+                  {ico:'🏬',who:'Donos de negócio',h:'Pare de perder dinheiro no escuro',p:'Veja se seu CPL está acima ou abaixo do benchmark do seu nicho. Pipeline 360° identifica em 3 minutos onde cada real está sendo desperdiçado.',plan:'→ Plano Individual'},
                 ].map((a,i)=>(
                   <div key={i} className={`b-aud-card lp-fade lp-d${i}`}>
                     <span className="b-aud-ico">{a.ico}</span>
@@ -869,14 +908,14 @@ export default function LandingPage() {
           {/* CTA B */}
           <section className="cta-b">
             <div className="lp-container">
-              <h2 className="cta-b-h lp-fade"><span>Quanto você está</span><br /><em>perdendo</em><br /><span>sem benchmark?</span></h2>
-              <p className="cta-b-sub lp-fade">Em 2 minutos você sabe o CPL certo, o ROAS esperado e onde colocar cada real do budget.</p>
+              <h2 className="cta-b-h lp-fade"><span>5 agentes analisam</span><br /><em>seu negócio</em><br /><span>agora mesmo.</span></h2>
+              <p className="cta-b-sub lp-fade">Configure em 2 minutos. O Pipeline 360° entrega diagnóstico completo — ROAS break-even, CPL máximo, estratégia e plano de ação — sem reunião, sem achismo.</p>
               <div style={{position:'relative',zIndex:1,display:'flex',gap:14,justifyContent:'center',alignItems:'center',marginBottom:28}} className="lp-fade">
-                <Link href="/sign-up" className="btn-p lg">Fazer diagnóstico grátis →</Link>
+                <Link href="/sign-up" className="btn-p lg">Iniciar Pipeline 360° grátis →</Link>
               </div>
               <div className="trust-row lp-fade" style={{justifyContent:'center',marginTop:16}}>
                 <div className="trust-item"><span className="trust-check">✓</span>Sem cartão de crédito</div>
-                <div className="trust-item"><span className="trust-check">✓</span>Resultado em 2 minutos</div>
+                <div className="trust-item"><span className="trust-check">✓</span>Diagnóstico em 3 minutos</div>
                 <div className="trust-item"><span className="trust-check">✓</span>80+ nichos cobertos</div>
               </div>
             </div>
@@ -893,9 +932,10 @@ export default function LandingPage() {
               <a href="#como-funciona">Como funciona</a>
               <a href="#features">Recursos</a>
               <a href="#nichos">Nichos</a>
+              <a href="#precos">Preços</a>
               <Link href="/sign-in">Entrar</Link>
             </div>
-            <span style={{fontSize:13,color:'var(--muted)'}}>© 2026 ELYON · Head of Growth com IA · Brasil</span>
+            <span style={{fontSize:13,color:'var(--muted)'}}>© 2026 ELYON · Pipeline 360° com IA · Brasil</span>
           </div>
         </div>
       </footer>
