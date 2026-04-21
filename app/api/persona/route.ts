@@ -41,8 +41,9 @@ DADOS DO CLIENTE IDEAL (preenchidos no cadastro):
 Crie uma persona detalhada e realista baseada nesses dados. A persona deve ser específica para o mercado brasileiro e útil para um ${roleLabel}.
 
 ${isGestor ? `IMPORTANTE: Como o usuário é Gestor de Tráfego, inclua OBRIGATORIAMENTE:
-- facebookInterests: lista de 8-10 interesses específicos do Facebook/Instagram Ads para segmentar essa persona
-- Seja específico: não "fitness" mas "Academia Smart Fit", não "beleza" mas "Sephora Brasil"` : ''}
+- facebookInterests: lista de 8-10 interesses específicos do Facebook/Instagram Ads (ex: marcas, páginas, comportamentos — não categorias genéricas)
+- googleAdsKeywords: lista de 10-15 palavras-chave de intenção de compra para Google Ads, mix de broad/exact, em português, com modificadores (ex: "móveis planejados Curitiba", "orçamento cozinha planejada", "+marcenaria +curitiba")
+- Seja hiper-específico: não "fitness" mas "Academia Smart Fit", não "beleza" mas "Sephora Brasil"` : ''}
 
 Retorne APENAS um JSON válido, sem texto antes ou depois, com exatamente esta estrutura:
 {
@@ -58,6 +59,7 @@ Retorne APENAS um JSON válido, sem texto antes ou depois, com exatamente esta e
   "buyingBehavior": "descrição de 2-3 frases sobre como essa persona toma decisões de compra",
   "strategySummary": "resumo de 3-4 frases da melhor estratégia para converter essa persona para o papel de ${roleLabel}",
   ${isGestor ? '"facebookInterests": ["interesse 1 específico", "interesse 2", "interesse 3", "interesse 4", "interesse 5", "interesse 6", "interesse 7", "interesse 8"],' : ''}
+  ${isGestor ? '"googleAdsKeywords": ["palavra-chave 1", "palavra-chave 2", "palavra-chave 3", "palavra-chave 4", "palavra-chave 5", "palavra-chave 6", "palavra-chave 7", "palavra-chave 8", "palavra-chave 9", "palavra-chave 10"],' : ''}
   "contentAngles": ["ângulo de conteúdo 1 que ressoa com essa persona", "ângulo 2", "ângulo 3"]
 }`
 

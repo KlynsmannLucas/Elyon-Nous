@@ -29,18 +29,36 @@ async function callLLMJson<T>(anthropic: Anthropic, prompt: string, maxTokens: n
   const msg = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: maxTokens,
+    system: 'Você é um especialista em marketing digital. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois. O JSON deve estar sempre fechado e bem formado.',
     messages: [{ role: 'user', content: prompt }],
   })
   const block = msg.content[0]
   if (block.type !== 'text') throw new Error('LLM retornou conteúdo não-texto')
   let str = block.text.trim()
+
+  // Strip markdown fences
   if (str.startsWith('```')) {
     str = str.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
   }
+  // Strip any leading text before first { or [
+  const firstBrace = str.search(/[\[{]/)
+  if (firstBrace > 0) str = str.slice(firstBrace)
+
   try { return JSON.parse(str) as T }
   catch {
-    const cut = Math.max(str.lastIndexOf('}'), str.lastIndexOf(']'))
-    if (cut > 50) { try { return JSON.parse(str.slice(0, cut + 1)) as T } catch {} }
+    // Try to find a complete JSON object/array
+    const objMatch = str.match(/(\{[\s\S]*\})/)
+    if (objMatch) { try { return JSON.parse(objMatch[1]) as T } catch {} }
+    const arrMatch = str.match(/(\[[\s\S]*\])/)
+    if (arrMatch) { try { return JSON.parse(arrMatch[1]) as T } catch {} }
+    // Last resort: truncate at last complete object/array
+    const cutObj = str.lastIndexOf('}')
+    const cutArr = str.lastIndexOf(']')
+    const cut = Math.max(cutObj, cutArr)
+    if (cut > 50) {
+      const truncated = str.slice(0, cut + 1)
+      try { return JSON.parse(truncated) as T } catch {}
+    }
     throw new Error('JSON inválido na resposta do agente')
   }
 }
@@ -165,7 +183,7 @@ ${benchmarkText ? `\nBENCHMARK (${niche}):\n${benchmarkText}` : ''}
 JSON:
 {"score_conta":<0-100>,"grade":"<A+|A|A-|B+|B|B-|C+|C|D>","resumo_executivo":"<2-3 frases>","diagnostico":["<1>","<2>","<3>"],"erros_criticos":["<erro com nome campanha>"],"gargalos":[{"rank":1,"titulo":"<gargalo>","descricao":"<métricas>","impacto":"<R$ ou %>"}],"oportunidades":[{"titulo":"<oportunidade>","descricao":"<como>","potencial":"<resultado>"}],"plano_acao":{"curto":[{"acao":"<7d>","como":"<passos>","impacto":"<resultado>"}],"medio":[{"acao":"<30d>","como":"<execução>","impacto":"<resultado>"}],"longo":[{"acao":"<90d>","como":"<estratégia>","impacto":"<transformação>"}]}}`
 
-  const result = await callLLMJson<any>(anthropic, prompt, 5000)
+  const result = await callLLMJson<any>(anthropic, prompt, 8000)
   return { agent: 'auditor', ...result, real_metrics: { totalSpend: Math.round(totalSpend), totalLeads: Math.round(totalLeads), avgCPL: totalLeads > 0 ? Math.round(totalSpend/totalLeads) : null, campaignCount: allCampaigns.length }, generated_at: new Date().toISOString(), source: 'ai' }
 }
 
@@ -198,7 +216,7 @@ ${benchmarkText ? `\nBENCHMARK:\n${benchmarkText}` : ''}
 JSON (preencha TODAS as chaves):
 {"insights":["<insight com %>","<insight 2>","<insight 3>"],"anomalias":[{"titulo":"<anomalia>","descricao":"<dado>","impacto":"<R$/%>"}],"segmentos_vencedores":[{"segmento":"<canal>","motivo":"<com dados>","metrica":"<CPL/CVR/ROAS>"}],"segmentos_perdedores":[{"segmento":"<canal>","motivo":"<com dados>","metrica":"<CPL/CVR/ROAS>"}],"recomendacoes":["<ação 1>","<ação 2>","<ação 3>"],"health_score":<0-100>,"grade":"<A+|A|B+|B|C>","executive_summary":"<2-3 frases>","saude_financeira":{"break_even_roas":${breakEvenROAS},"cpl_maximo_lucrativo":${maxCPL},"ltv_estimado":${ltv},"cac_payback_meses":<num>,"ltv_cac_ratio":${ltvCacRatio},"sustentabilidade":"<sustentavel|fragil|insustentavel>","interpretacao":"<significado>"},"matriz_risco":[{"rank":1,"risco":"<risco>","probabilidade":"<alta|media|baixa>","impacto":"<critico|alto|medio|baixo>","mitigacao":"<ação>"},{"rank":2,"risco":"<risco>","probabilidade":"<alta|media|baixa>","impacto":"<critico|alto|medio|baixo>","mitigacao":"<ação>"},{"rank":3,"risco":"<risco>","probabilidade":"<alta|media|baixa>","impacto":"<critico|alto|medio|baixo>","mitigacao":"<ação>"}],"prontidao_para_escalar":{"score":<0-100>,"pode_escalar_agora":<bool>,"prerequisitos_faltando":["<pré-req>"],"quando_escalar":"<condição>","projecao_escala":{"budget_2x":${(budget||0)*2},"leads_projetados":<num>,"receita_projetada":<num>}},"diagnostico_funil":{"etapas":[{"etapa":"Tráfego → Clique","status":"<saudavel|problema|nao_auditado>","observacao":"<CTR>"},{"etapa":"Clique → Lead","status":"<saudavel|problema|nao_auditado>","observacao":"<CPL>"},{"etapa":"Lead → Atendimento","status":"<saudavel|problema|nao_auditado>","observacao":"<SLA>"},{"etapa":"Atendimento → Venda","status":"<saudavel|problema|nao_auditado>","observacao":"<CVR>"}],"gargalo_principal":"<trafego|pos-clique|atendimento|ambos>","impacto_financeiro":"<R$/%>"},"recomendacao_principal":{"titulo":"<ação transformadora>","descricao":"<por que supera as outras>","acao_semana_1":"<7d>","acao_mes_1":"<30d>","acao_trimestre":"<90d>"},"inteligencia":[{"tipo":"oportunidade_mercado","icone":"🎯","titulo":"<oportunidade>","categoria":"Mercado","categoriaColor":"#F0B429","insight":"<insight>","dados":"<dados>","acao_concreta":"<ação>","potencial":"<resultado>"},{"tipo":"audiencia_avancada","icone":"👥","titulo":"<segmento>","categoria":"Audiência","categoriaColor":"#22C55E","insight":"<insight>","dados":"<dados>","acao_concreta":"<ação>","potencial":"<resultado>"},{"tipo":"alocacao_orcamento","icone":"💰","titulo":"<redistribuição>","categoria":"Orçamento","categoriaColor":"#38BDF8","insight":"<insight>","dados":"<dados>","acao_concreta":"<ação>","potencial":"<resultado>"},{"tipo":"analise_competitiva","icone":"🔍","titulo":"<competição>","categoria":"Competição","categoriaColor":"#A78BFA","insight":"<insight>","dados":"<dados>","acao_concreta":"<ação>","potencial":"<resultado>"},{"tipo":"escala_inteligente","icone":"📈","titulo":"<escala>","categoria":"Escala","categoriaColor":"#FB923C","insight":"<insight>","dados":"<dados>","acao_concreta":"<ação>","potencial":"<resultado>"},{"tipo":"criativo_estrategico","icone":"🎨","titulo":"<criativo>","categoria":"Criativo","categoriaColor":"#EC4899","insight":"<insight>","dados":"<dados>","acao_concreta":"<ação>","potencial":"<resultado>"}],"benchmark_comparativo":{"cpl_atual":${currentCPL||0},"cpl_benchmark":<num>,"cpl_status":"<excelente|bom|atencao|critico>","roas_break_even":${breakEvenROAS},"roas_bom_nicho":<num>,"melhores_canais":["<canal>"],"insights_nicho":["<insight>"]}}`
 
-  const result = await callLLMJson<any>(anthropic, prompt, 7000)
+  const result = await callLLMJson<any>(anthropic, prompt, 10000)
   return { agent: 'data_analyst', ...result, generated_at: new Date().toISOString(), source: 'ai' }
 }
 

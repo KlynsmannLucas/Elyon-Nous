@@ -314,7 +314,7 @@ export default function DashboardPage() {
     savedClients, setSavedClients, saveCurrentClient, loadSavedClient, deleteSavedClient,
     campaignHistory,
     recordStrategyGeneration, getStrategyCountLastHour,
-    setAuditCache,
+    setAuditCache, auditCache, actionPlanCache,
   } = useAppStore()
 
   // ── Sincronização com banco de dados ──────────────────────────────────────────
@@ -508,9 +508,15 @@ export default function DashboardPage() {
     setPdfLoading(true)
     try {
       const { generatePDF } = await import('@/components/pdf/RelatorioPDF')
+      const key = clientData?.clientName || ''
+      const auditHistory = auditCache[key]
+      const latestAudit  = Array.isArray(auditHistory) ? auditHistory[0]?.audit : auditHistory
+      const actions = actionPlanCache[key] || []
       await generatePDF({
         clientData: clientData ?? null,
-        strategy: strategyData?.strategy || {},
+        strategy:    strategyData?.strategy || {},
+        auditData:   latestAudit ?? null,
+        actionItems: actions,
       })
     } catch (e) {
       console.error('Erro PDF:', e)

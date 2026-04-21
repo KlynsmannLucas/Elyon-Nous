@@ -81,6 +81,7 @@ export interface GeneratedPersona {
   buyingBehavior: string
   strategySummary: string
   facebookInterests?: string[]
+  googleAdsKeywords?: string[]
   contentAngles?: string[]
   role: string
   generatedAt: string

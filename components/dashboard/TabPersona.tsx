@@ -122,13 +122,24 @@ function PersonaCard({ persona }: { persona: GeneratedPersona }) {
         </div>
       )}
 
-      {/* Interesses Facebook Ads (só para gestor) */}
+      {/* Interesses Facebook/Instagram Ads */}
       {persona.facebookInterests && persona.facebookInterests.length > 0 && (
         <div className="rounded-2xl p-4" style={{ background: 'rgba(56,189,248,0.04)', border: '1px solid rgba(56,189,248,0.2)' }}>
           <div className="text-xs font-bold text-sky-400 uppercase tracking-wider mb-2">📡 Interesses para Facebook/Instagram Ads</div>
-          <p className="text-[11px] text-slate-500 mb-2">Copie esses interesses diretamente no Gerenciador de Anúncios → Segmentação Detalhada</p>
+          <p className="text-[11px] text-slate-500 mb-2">Copie no Gerenciador de Anúncios → Segmentação Detalhada</p>
           <div className="flex flex-wrap">
             {persona.facebookInterests.map((i, idx) => <Tag key={idx} text={i} color="#38BDF8" />)}
+          </div>
+        </div>
+      )}
+
+      {/* Palavras-chave Google Ads */}
+      {persona.googleAdsKeywords && persona.googleAdsKeywords.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.2)' }}>
+          <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">🔍 Palavras-chave para Google Ads</div>
+          <p className="text-[11px] text-slate-500 mb-2">Use no Planejador de Palavras-chave ou cole direto numa campanha de Pesquisa</p>
+          <div className="flex flex-wrap">
+            {persona.googleAdsKeywords.map((k, idx) => <Tag key={idx} text={k} color="#34D399" />)}
           </div>
         </div>
       )}

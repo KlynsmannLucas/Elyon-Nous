@@ -17,6 +17,8 @@ import type { ClientData } from '@/lib/store'
 interface PDFData {
   clientData: ClientData | null
   strategy: Record<string, any>
+  auditData?: any        // from auditCache (Meta Intelligence or Pipeline report)
+  actionItems?: any[]   // from actionPlanCache
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
@@ -237,57 +239,98 @@ function PageCover({ clientName, niche, budget }: { clientName: string; niche: s
   )
 }
 
-// ── PÁGINA 2 — Perfil de Audiência ────────────────────────────────────────────
-function PageAudience({ niche }: { niche: string }) {
-  const content = getNicheContent(niche)
-  const aud = content.audience
+// ── PÁGINA 2 — Diagnóstico da Conta ──────────────────────────────────────────
+function PageDiagnostico({ auditData, clientName, niche }: { auditData: any; clientName: string; niche: string }) {
+  const intel = auditData?._intelligenceData
+  const rm    = auditData?._realMetrics
+  const score = intel?.score ?? auditData?.score_conta ?? auditData?.health_score ?? null
+  const grade = intel?.scoreGrade ?? auditData?.grade ?? null
+  const totals = intel?.totals ?? {}
+  const gradeCol = !grade ? '#64748B'
+    : grade.startsWith('A') ? '#22C55E'
+    : grade.startsWith('B') ? '#F0B429'
+    : '#FF4D4D'
 
-  const metrics = [
-    { label: 'Idade',              value: aud.age,      icon: '👤' },
-    { label: 'Gênero',             value: aud.gender,   icon: '⚤'  },
-    { label: 'Renda',              value: aud.income,   icon: '💰' },
-    { label: 'Localização',        value: aud.location, icon: '📍' },
-    { label: 'Tempo até comprar',  value: aud.buyTime,  icon: '⏱'  },
-  ]
+  const fmt = (n: number) => n >= 1000 ? `R$${(n/1000).toFixed(1)}k` : `R$${n}`
+
+  const kpis = rm ? [
+    { label: 'Investido 30d', value: fmt(rm.totalSpend || 0),      color: '#F0B429' },
+    { label: 'Leads',         value: (rm.totalLeads || 0).toLocaleString('pt-BR'), color: '#38BDF8' },
+    { label: 'CPL Médio',     value: rm.avgCPL ? `R$${rm.avgCPL}` : '—',       color: '#22C55E' },
+    { label: 'CTR Médio',     value: totals.avgCTR ? `${totals.avgCTR}%` : '—', color: '#A78BFA' },
+  ] : []
+
+  // Problemas (crítico e warning)
+  const problems: string[] = [
+    ...(intel?.globalRecs || []).filter((r: any) => r.type === 'critical' || r.type === 'warning').map((r: any) => `${r.title}: ${r.description}`),
+    ...(auditData?.erros_criticos || []),
+    ...(auditData?.diagnostico || []).slice(0, 3),
+  ].slice(0, 6)
+
+  // O que está funcionando (oportunidades)
+  const wins: string[] = [
+    ...(intel?.globalRecs || []).filter((r: any) => r.type === 'opportunity').map((r: any) => `${r.title}: ${r.description}`),
+    ...(auditData?.oportunidades || []).map((o: any) => `${o.titulo}: ${o.descricao || o.potencial}`),
+  ].slice(0, 4)
+
+  // Sumário executivo
+  const summary = auditData?.sumario_executivo
+    || auditData?.executive_summary
+    || auditData?.resumo_executivo
+    || 'Análise baseada nos dados reais da conta de anúncios.'
 
   return (
     <Page size="A4" style={styles.page}>
-      <PageHeader title="Perfil de Audiência" page={2} total={4} />
+      <PageHeader title="Diagnóstico" page={2} total={4} />
 
-      <Text style={styles.h2}>Perfil de Audiência</Text>
+      <Text style={styles.h2}>Diagnóstico da Conta — {clientName}</Text>
       <Text style={{ ...styles.body, marginBottom: 16 }}>
-        Dados baseados em campanhas reais no nicho {niche || 'analisado'}.
+        {niche} · Análise dos últimos 30 dias com dados reais das contas conectadas
       </Text>
 
-      <View style={{ ...styles.row, marginBottom: 20 }}>
-        {metrics.map((m) => (
-          <View key={m.label} style={styles.kpiCard}>
-            <Text style={{ fontSize: 14, marginBottom: 4 }}>{m.icon}</Text>
-            <Text style={styles.kpiLabel}>{m.label}</Text>
-            <Text style={{ ...styles.kpiValue, fontSize: 10, color: '#F0B429' }}>{m.value}</Text>
+      {/* Score + KPIs */}
+      <View style={{ ...styles.row, marginBottom: 16 }}>
+        {score !== null && (
+          <View style={{ ...styles.kpiCard, flex: 0.6, justifyContent: 'center' }}>
+            <Text style={styles.kpiLabel}>Score de Saúde</Text>
+            <Text style={{ fontSize: 32, color: gradeCol, fontFamily: 'Helvetica-Bold', marginVertical: 4 }}>
+              {grade || score}
+            </Text>
+            <Text style={{ fontSize: 9, color: gradeCol }}>{score}/100</Text>
+          </View>
+        )}
+        {kpis.map((k) => (
+          <View key={k.label} style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>{k.label}</Text>
+            <Text style={{ ...styles.kpiValue, color: k.color, fontSize: 14 }}>{k.value}</Text>
           </View>
         ))}
       </View>
 
+      {/* Resumo executivo */}
+      <View style={{ ...styles.card, borderColor: 'rgba(240,180,41,0.3)', marginBottom: 14 }}>
+        <Text style={styles.h3}>Resumo Executivo</Text>
+        <Text style={styles.body}>{summary}</Text>
+      </View>
+
+      {/* O que está errado vs certo */}
       <View style={styles.row}>
         <View style={styles.col}>
-          <View style={{ ...styles.card, borderColor: 'rgba(255,77,77,0.3)' }}>
-            <Text style={{ ...styles.h3, color: '#FF4D4D' }}>Dores</Text>
-            {aud.pains.map((p, i) => <BulletItem key={i} text={p} />)}
-          </View>
-          <View style={{ ...styles.card, borderColor: 'rgba(240,180,41,0.3)' }}>
-            <Text style={{ ...styles.h3, color: '#F0B429' }}>Hooks</Text>
-            {aud.hooks.map((h, i) => <BulletItem key={i} text={h} />)}
+          <View style={{ ...styles.card, borderColor: 'rgba(255,77,77,0.35)' }}>
+            <Text style={{ ...styles.h3, color: '#FF4D4D' }}>Problemas Identificados</Text>
+            {problems.length > 0
+              ? problems.map((p, i) => <BulletItem key={i} text={p} />)
+              : <Text style={styles.body}>Nenhum problema crítico identificado.</Text>
+            }
           </View>
         </View>
         <View style={styles.col}>
-          <View style={{ ...styles.card, borderColor: 'rgba(34,197,94,0.3)' }}>
-            <Text style={{ ...styles.h3, color: '#22C55E' }}>Por que compram</Text>
-            {aud.motivations.map((m, i) => <BulletItem key={i} text={m} />)}
-          </View>
-          <View style={{ ...styles.card, borderColor: 'rgba(245,158,11,0.3)' }}>
-            <Text style={{ ...styles.h3, color: '#F59E0B' }}>Objeções</Text>
-            {aud.objections.map((o, i) => <BulletItem key={i} text={o} />)}
+          <View style={{ ...styles.card, borderColor: 'rgba(34,197,94,0.35)' }}>
+            <Text style={{ ...styles.h3, color: '#22C55E' }}>O que Está Funcionando</Text>
+            {wins.length > 0
+              ? wins.map((w, i) => <BulletItem key={i} text={w} />)
+              : <Text style={styles.body}>Execute a análise de conta para ver oportunidades.</Text>
+            }
           </View>
         </View>
       </View>
@@ -394,80 +437,79 @@ function PageStrategy({
   )
 }
 
-// ── PÁGINA 4 — Plano de Ação ──────────────────────────────────────────────────
+// ── PÁGINA 4 — Plano de Ação (45 dias) ───────────────────────────────────────
 function PageActionPlan({
-  strategy, clientName, niche,
-}: { strategy: Record<string, any>; clientName: string; niche: string }) {
-  const keyActions: string[] = strategy.key_actions?.slice(0, 5) || []
-  const plan90 = strategy.plan_90_days || []
-  const month1 = plan90[0]
+  strategy, actionItems, clientName, niche,
+}: { strategy: Record<string, any>; actionItems: any[]; clientName: string; niche: string }) {
+  const PRIORIDADE_COLOR: Record<string, string> = {
+    critica: '#FF4D4D', alta: '#F0B429', media: '#38BDF8', baixa: '#22C55E',
+  }
+  const PRAZO_DAYS: Record<string, number> = {
+    'Imediato': 0, '7 dias': 7, '30 dias': 30, '45 dias': 45, '90 dias': 90,
+  }
 
-  const diagnosis = strategy.growth_diagnosis
-  const funnelHealth = diagnosis?.funnel_health
+  // Sort by priority then deadline
+  const priorityOrder: Record<string, number> = { critica: 0, alta: 1, media: 2, baixa: 3 }
+  const sorted = [...actionItems].sort((a, b) => {
+    const pDiff = (priorityOrder[a.prioridade] ?? 9) - (priorityOrder[b.prioridade] ?? 9)
+    if (pDiff !== 0) return pDiff
+    return (PRAZO_DAYS[a.prazo] ?? 99) - (PRAZO_DAYS[b.prazo] ?? 99)
+  }).slice(0, 10)
+
+  // Fallback to strategy key_actions if no real actions
+  const fallbackActions: string[] = strategy.key_actions?.slice(0, 8) || []
 
   return (
     <Page size="A4" style={styles.page}>
-      <PageHeader title="Plano de Ação" page={4} total={4} />
+      <PageHeader title="Plano de Ações" page={4} total={4} />
 
-      <Text style={styles.h2}>Plano de Ação — {clientName}</Text>
-      <Text style={{ ...styles.body, marginBottom: 20 }}>
-        Diagnóstico e ações prioritárias para crescimento no nicho {niche}.
+      <Text style={styles.h2}>Plano de Ações — {clientName}</Text>
+      <Text style={{ ...styles.body, marginBottom: 16 }}>
+        Ações priorizadas por impacto real · Nicho {niche}
       </Text>
 
-      {/* Saúde do Funil */}
-      {funnelHealth && (
+      {sorted.length > 0 ? (
         <>
-          <Text style={styles.h3}>Saúde do Funil</Text>
-          <View style={{ ...styles.row, marginBottom: 16 }}>
-            {(['tofu', 'mofu', 'bofu'] as const).map((stage) => {
-              const s = funnelHealth[stage]
-              if (!s) return null
-              const statusColor = s.status === 'ok' ? '#22C55E' : s.status === 'atenção' ? '#F0B429' : '#FF4D4D'
-              return (
-                <View key={stage} style={{ ...styles.kpiCard, flex: 1 }}>
-                  <Text style={{ fontSize: 10, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>{stage.toUpperCase()}</Text>
-                  <Text style={{ fontSize: 10, color: statusColor, fontFamily: 'Helvetica-Bold', marginBottom: 6 }}>
-                    {s.status?.toUpperCase()}
+          <View style={{ ...styles.tableHeader, marginBottom: 6 }}>
+            <Text style={{ ...styles.tableHeaderCell, flex: 0.4 }}>Prior.</Text>
+            <Text style={{ ...styles.tableHeaderCell, flex: 1.8 }}>Ação</Text>
+            <Text style={{ ...styles.tableHeaderCell, flex: 0.9 }}>Prazo</Text>
+            <Text style={{ ...styles.tableHeaderCell, flex: 1.2 }}>Impacto</Text>
+          </View>
+          {sorted.map((item, i) => {
+            const col = PRIORIDADE_COLOR[item.prioridade] || '#64748B'
+            return (
+              <View key={i} style={{ ...styles.tableRow, alignItems: 'flex-start' }}>
+                <View style={{ flex: 0.4, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: col,
+                    borderWidth: 1, borderColor: `${col}40`, borderRadius: 4,
+                    paddingLeft: 3, paddingRight: 3, paddingTop: 1, paddingBottom: 1 }}>
+                    {(item.prioridade || '').toUpperCase().slice(0, 4)}
                   </Text>
-                  <Text style={{ fontSize: 8, color: '#94A3B8', textAlign: 'center', lineHeight: 1.4 }}>{s.action}</Text>
                 </View>
-              )
-            })}
-          </View>
-        </>
-      )}
-
-      {/* Ações prioritárias */}
-      {keyActions.length > 0 && (
-        <>
-          <Text style={styles.h3}>Ações Prioritárias</Text>
-          <View style={{ ...styles.card, marginBottom: 16 }}>
-            {keyActions.map((a, i) => (
-              <BulletItem key={i} text={`${i + 1}. ${a}`} />
-            ))}
-          </View>
-        </>
-      )}
-
-      {/* Mês 1 do plano 90 dias */}
-      {month1 && (
-        <>
-          <Text style={styles.h3}>Mês 1 — {month1.goal}</Text>
-          <View style={styles.row}>
-            {(['week_1', 'week_2', 'week_3', 'week_4'] as const).map((wk, wi) => (
-              <View key={wk} style={{ flex: 1, backgroundColor: '#111114', borderRadius: 8, padding: 8, borderWidth: 1, borderColor: '#2A2A30' }}>
-                <Text style={{ fontSize: 8, color: '#F0B429', fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>
-                  SEM {wi + 1}
-                </Text>
-                {(month1[wk] || []).map((a: string, i: number) => (
-                  <Text key={i} style={{ fontSize: 7.5, color: '#94A3B8', marginBottom: 3, lineHeight: 1.4 }}>
-                    • {a}
+                <View style={{ flex: 1.8 }}>
+                  <Text style={{ fontSize: 9, color: '#FFFFFF', fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>
+                    {item.titulo}
                   </Text>
-                ))}
+                  <Text style={{ fontSize: 8, color: '#94A3B8', lineHeight: 1.4 }}>
+                    {(item.descricao || '').slice(0, 120)}{item.descricao?.length > 120 ? '...' : ''}
+                  </Text>
+                </View>
+                <Text style={{ ...styles.tableCell, flex: 0.9, fontSize: 8, color: '#F0B429' }}>
+                  {item.prazo || '—'}
+                </Text>
+                <Text style={{ ...styles.tableCell, flex: 1.2, fontSize: 8, color: '#22C55E' }}>
+                  {(item.impacto || '—').slice(0, 60)}
+                </Text>
               </View>
-            ))}
-          </View>
+            )
+          })}
         </>
+      ) : (
+        <View style={styles.card}>
+          <Text style={styles.h3}>Ações Recomendadas</Text>
+          {fallbackActions.map((a, i) => <BulletItem key={i} text={`${i + 1}. ${a}`} />)}
+        </View>
       )}
 
       <View style={{ position: 'absolute', bottom: 40, left: 40, right: 40 }}>
@@ -486,13 +528,14 @@ function RelatorioPDF({ data }: { data: PDFData }) {
   const niche      = data.clientData?.niche || ''
   const budget     = data.clientData?.budget || 0
   const strategy   = data.strategy || {}
+  const actionItems = data.actionItems || []
 
   return (
     <Document>
       <PageCover clientName={clientName} niche={niche} budget={budget} />
-      <PageAudience niche={niche} />
+      <PageDiagnostico auditData={data.auditData} clientName={clientName} niche={niche} />
       <PageStrategy strategy={strategy} niche={niche} budget={budget} />
-      <PageActionPlan strategy={strategy} clientName={clientName} niche={niche} />
+      <PageActionPlan strategy={strategy} actionItems={actionItems} clientName={clientName} niche={niche} />
     </Document>
   )
 }
@@ -505,7 +548,7 @@ export async function generatePDF(data: PDFData): Promise<void> {
   const url  = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `elyon-${clientName.toLowerCase().replace(/\s+/g, '-')}-${date}.pdf`
+  a.download = `elyon-auditoria-${clientName.toLowerCase().replace(/\s+/g, '-')}-${date}.pdf`
   a.click()
   URL.revokeObjectURL(url)
 }
