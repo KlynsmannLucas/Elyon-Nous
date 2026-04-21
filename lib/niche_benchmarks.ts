@@ -32,16 +32,40 @@ export interface NicheProjection {
   revenueMonth: number
   revenueMin: number
   revenueMax: number
-  roas: number         // ROAS primeira venda (aparece no painel de anúncios)
-  roasLtv: number      // ROAS considerando LTV — referência para o benchmark
+  roas: number
+  roasLtv: number
   ltv: number
   budgetStatus: 'abaixo' | 'mínimo' | 'ideal'
   budgetRecommended: number
   roasStatus: 'excelente' | 'bom' | 'atenção'
-  roasIsLtvBased: boolean   // true quando roas_good só é alcançável via LTV
-  recommendation: string    // texto contextual gerado localmente (sem API)
+  roasIsLtvBased: boolean
+  recommendation: string
   chartData: { month: string; projetado: number; meta: number }[]
   funnelData: { label: string; value: number; pct: number; color: string }[]
+  // Inteligência avançada
+  seasonalityIndex: number        // multiplicador do mês atual (1.0 = baseline)
+  seasonalityLabel: string        // 'CPL 20% abaixo da média — bom momento para escalar'
+  seasonalityTrend: 'subindo' | 'descendo' | 'estável'
+  adjustedCPLAvg: number         // CPL ajustado por sazonalidade + tamanho de mercado
+  citySizeTier: 'capital' | 'grande' | 'medio' | 'pequeno' | 'online'
+  citySizeModifier: number
+  citySizeLabel: string
+}
+
+export interface CreativeAngles {
+  saturated: string[]
+  trending: string[]
+  underexplored: string[]
+}
+
+export interface CampaignMaturityStage {
+  stage: 'aprendizado' | 'otimizacao' | 'estabilizacao' | 'fadiga'
+  label: string
+  weekRange: string
+  cplMultiplier: number
+  color: string
+  advice: string
+  progress: number
 }
 
 const BENCHMARKS: Record<string, NicheBenchmark> = {
@@ -915,6 +939,31 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
       'Parcerias com hotéis, pousadas e restaurantes criam receita B2B recorrente',
     ],
   },
+  lava_jato: {
+    name: 'Lava Jato / Auto Detailing',
+    cpl_min: 12, cpl_max: 40,
+    cpl_by_channel: {
+      'Meta Ads':       'R$12–28',
+      'Instagram':      'R$10–25',
+      'Google Search':  'R$18–38',
+      'WhatsApp Ads':   'R$10–22',
+    },
+    cvr_lead_to_sale: 0.42,
+    avg_ticket: 180,
+    ltv_multiplier: 6.5,
+    best_channels: ['Meta Ads', 'Instagram', 'Google Search'],
+    budget_floor: 600,
+    budget_ideal: 2000,
+    kpi_thresholds: { cpl_good: 18, cpl_bad: 35, roas_good: 3.0, cvr_good: 0.45 },
+    seasonality: ['Dez', 'Jan'],
+    insights: [
+      'Cliente médio volta a cada 3–4 semanas — LTV 6× o ticket inicial é conservador',
+      'Vídeo antes/depois de 15s no Instagram Reels tem CPL 40% abaixo de imagem estática',
+      'Pacote fidelidade (ex: 4 lavagens por R$X) aumenta ticket médio em 65% e churn zero',
+      'Chuva e temporada chuvosa (Nov–Mar no Sudeste) criam urgência natural nos criativos',
+      'Segmentação por raio de 5–8 km + renda B/C converte melhor que segmentação por interesse',
+    ],
+  },
   outro: {
     name: 'Outro / Geral',
     cpl_min: 30, cpl_max: 120,
@@ -942,14 +991,32 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
 // ── Keyword map para matching ─────────────────────────────────────────────────
 
 const KEY_MAP: Record<string, string> = {
-  // ── Frases compostas primeiro (mais específicas) ──────────────────────────
-  'móveis planejados': 'moveis_planejados',
-  'moveis planejados': 'moveis_planejados',
-  'loja de móveis':    'loja_moveis',
-  'loja de moveis':    'loja_moveis',
-  'loja moveis':       'loja_moveis',
-  'loja de decoração': 'loja_moveis',
-  'home decor':        'loja_moveis',
+  // ── Frases compostas (mais longas primeiro — evitam falsos positivos) ──────
+  'estética automotiva':  'lava_jato',
+  'estetica automotiva':  'lava_jato',
+  'hotel para pet':       'pet',
+  'lava jato':            'lava_jato',
+  'lavajato':             'lava_jato',
+  'auto detailing':       'lava_jato',
+  'detailing':            'lava_jato',
+  'higienização interna': 'lava_jato',
+  'higienizacao interna': 'lava_jato',
+  'aulas particulares':   'educacao',
+  'aula particular':      'educacao',
+  'home care':            'saude',
+  'terapias alternativas':'psicologia',
+  'pintura residencial':  'construcao',
+  'pintura predial':      'construcao',
+  'funilaria':            'automotivo',
+  'despachante':          'outro',
+  'despacho':             'outro',
+  'móveis planejados':    'moveis_planejados',
+  'moveis planejados':    'moveis_planejados',
+  'loja de móveis':       'loja_moveis',
+  'loja de moveis':       'loja_moveis',
+  'loja moveis':          'loja_moveis',
+  'loja de decoração':    'loja_moveis',
+  'home decor':           'loja_moveis',
 
   // ── Financeiro ────────────────────────────────────────────────────────────
   financeiro: 'financeiro', crédito: 'financeiro', credito: 'financeiro',
@@ -958,9 +1025,18 @@ const KEY_MAP: Record<string, string> = {
   // ── Automotivo ────────────────────────────────────────────────────────────
   automotivo: 'automotivo', oficina: 'automotivo', concessionária: 'automotivo', concessionaria: 'automotivo',
   mecânica: 'automotivo', mecanica: 'automotivo', carro: 'automotivo', veículo: 'automotivo', veiculo: 'automotivo',
+  borracharia: 'automotivo', borracheiro: 'automotivo', guincho: 'automotivo',
+  autopeças: 'automotivo', autopecas: 'automotivo', insulfilm: 'automotivo', blindagem: 'automotivo',
+
+  // ── Lava Jato ─────────────────────────────────────────────────────────────
+  polimento: 'lava_jato', ceramica: 'lava_jato', enceramento: 'lava_jato',
 
   // ── Barbearia ─────────────────────────────────────────────────────────────
   barbearia: 'barbearia', barbeiro: 'barbearia', barber: 'barbearia',
+
+  // ── Beleza (complementares) ───────────────────────────────────────────────
+  cabeleireiro: 'beleza', cabeleireira: 'beleza',
+  sobrancelha: 'beleza', micropigmentação: 'beleza', micropigmentacao: 'beleza',
 
   // ── Fisioterapia ──────────────────────────────────────────────────────────
   fisioterapia: 'fisioterapia', fisioterapeuta: 'fisioterapia', reabilitação: 'fisioterapia', reabilitacao: 'fisioterapia',
@@ -972,6 +1048,10 @@ const KEY_MAP: Record<string, string> = {
   'serviços residenciais': 'servicos_residenciais', 'servicos residenciais': 'servicos_residenciais',
   limpeza: 'servicos_residenciais', jardinagem: 'servicos_residenciais', dedetização: 'servicos_residenciais',
   dedetizacao: 'servicos_residenciais', diarista: 'servicos_residenciais', faxina: 'servicos_residenciais',
+  eletricista: 'servicos_residenciais', elétrica: 'servicos_residenciais', eletrica: 'servicos_residenciais',
+  encanador: 'servicos_residenciais', encanamento: 'servicos_residenciais', hidráulica: 'servicos_residenciais', hidraulica: 'servicos_residenciais',
+  serralheria: 'servicos_residenciais', serralheiro: 'servicos_residenciais',
+  vidraçaria: 'servicos_residenciais', vidracaria: 'servicos_residenciais',
 
   // ── Arquitetura / Design ──────────────────────────────────────────────────
   'design de interiores': 'arquitetura_design', 'interiores': 'arquitetura_design',
@@ -1005,6 +1085,7 @@ const KEY_MAP: Record<string, string> = {
 
   // ── Saúde ─────────────────────────────────────────────────────────────────
   'saúde': 'saude', saude: 'saude', clínica: 'saude', clinica: 'saude', hospital: 'saude', médico: 'saude', medico: 'saude',
+  laboratório: 'saude', laboratorio: 'saude', exames: 'saude', diagnóstico: 'saude', diagnostico: 'saude',
 
   // ── Odontologia ───────────────────────────────────────────────────────────
   odontolog: 'odontologia', dentista: 'odontologia', clareamento: 'odontologia',
@@ -1013,6 +1094,7 @@ const KEY_MAP: Record<string, string> = {
   // ── Educação ──────────────────────────────────────────────────────────────
   'educaç': 'educacao', educac: 'educacao', curso: 'educacao',
   escola: 'educacao', faculdade: 'educacao', ensino: 'educacao', treinamento: 'educacao',
+  aula: 'educacao', professor: 'educacao', reforço: 'educacao', reforco: 'educacao',
 
   // ── Imobiliário ───────────────────────────────────────────────────────────
   'imóvel': 'imobiliario', imovel: 'imobiliario', imobili: 'imobiliario',
@@ -1040,6 +1122,7 @@ const KEY_MAP: Record<string, string> = {
 
   // ── Pet ───────────────────────────────────────────────────────────────────
   pet: 'pet', 'veterinário': 'pet', veterinario: 'pet', petshop: 'pet',
+  adestramento: 'pet', adestrador: 'pet', veterinária: 'pet', veterinaria: 'pet',
 
   // ── Turismo ───────────────────────────────────────────────────────────────
   turismo: 'turismo', viagem: 'turismo', hotel: 'turismo', pousada: 'turismo', pacote: 'turismo',
@@ -1047,6 +1130,7 @@ const KEY_MAP: Record<string, string> = {
   // ── Restaurante ───────────────────────────────────────────────────────────
   restaurante: 'restaurante', food: 'restaurante', comida: 'restaurante',
   lanchonete: 'restaurante', pizzaria: 'restaurante', hamburger: 'restaurante', hamburguer: 'restaurante',
+  marmita: 'restaurante', marmitaria: 'restaurante', delivery: 'restaurante', refeição: 'restaurante', refeicao: 'restaurante',
 
   // ── Consultoria ───────────────────────────────────────────────────────────
   consultoria: 'consultoria', coach: 'consultoria', mentor: 'consultoria',
@@ -1060,6 +1144,7 @@ const KEY_MAP: Record<string, string> = {
 
   // ── Moda ──────────────────────────────────────────────────────────────────
   moda: 'moda', 'vestuário': 'moda', vestuario: 'moda', roupas: 'moda', roupa: 'moda',
+  costureira: 'moda', alfaiataria: 'moda', costura: 'moda', calçados: 'moda', calcados: 'moda',
 
   // ── Psicologia ────────────────────────────────────────────────────────────
   'psicolog': 'psicologia', terapia: 'psicologia', terapeuta: 'psicologia',
@@ -1070,6 +1155,7 @@ const KEY_MAP: Record<string, string> = {
   // ── Eventos ───────────────────────────────────────────────────────────────
   eventos: 'eventos', evento: 'eventos', festa: 'eventos', casamento: 'eventos',
   formatura: 'eventos', show: 'eventos',
+  buffet: 'eventos', entretenimento: 'eventos', animação: 'eventos', animacao: 'eventos',
 
   // ── Móveis Planejados ─────────────────────────────────────────────────────
   marcenaria: 'moveis_planejados', planejados: 'moveis_planejados', marceneiro: 'moveis_planejados',
@@ -1078,10 +1164,363 @@ const KEY_MAP: Record<string, string> = {
   // ── E-commerce genérico (lojas sem niche específico) ─────────────────────
   ecommerce: 'ecommerce', 'e-commerce': 'ecommerce', marketplace: 'ecommerce',
   varejo: 'ecommerce', produto: 'ecommerce',
+  papelaria: 'ecommerce', gráfica: 'ecommerce', grafica: 'ecommerce', impressão: 'ecommerce', impressao: 'ecommerce',
   loja: 'ecommerce',   // fallback genérico para "loja" sem modificador específico
 
   // ── Outro ─────────────────────────────────────────────────────────────────
   outro: 'outro',
+}
+
+// ── Sazonalidade mensal por nicho ─────────────────────────────────────────────
+// Índice 1.0 = CPL base · >1.0 = mês mais caro (alta demanda/concorrência)
+// Ordem: [Jan, Fev, Mar, Abr, Mai, Jun, Jul, Ago, Set, Out, Nov, Dez]
+const SEASONALITY_INDEXES: Record<string, number[]> = {
+  financeiro:          [1.40, 1.00, 0.85, 0.80, 0.85, 0.90, 1.30, 0.95, 0.85, 0.90, 0.95, 1.00],
+  saude:               [1.35, 1.05, 0.90, 0.80, 0.85, 0.80, 0.85, 0.90, 1.25, 1.05, 0.95, 1.00],
+  odontologia:         [1.25, 1.10, 1.20, 0.85, 0.80, 0.75, 0.80, 0.85, 0.90, 1.00, 1.10, 1.35],
+  educacao:            [1.45, 1.10, 0.85, 0.80, 0.85, 0.80, 0.85, 1.40, 0.90, 0.85, 0.85, 0.85],
+  imobiliario:         [0.90, 0.95, 1.30, 1.10, 1.00, 0.85, 0.80, 0.90, 1.35, 1.15, 1.00, 0.90],
+  ecommerce:           [1.00, 0.85, 0.80, 0.80, 0.90, 0.85, 0.85, 0.90, 0.95, 1.15, 1.50, 1.45],
+  loja_moveis:         [1.30, 1.25, 0.90, 0.80, 0.85, 0.80, 0.85, 0.85, 0.90, 1.20, 1.30, 1.05],
+  juridico:            [0.90, 0.95, 1.30, 1.10, 1.00, 0.85, 0.80, 0.90, 1.00, 1.25, 1.05, 0.90],
+  contabilidade:       [1.35, 1.00, 1.40, 1.20, 0.85, 0.80, 0.80, 0.85, 0.85, 0.90, 0.90, 0.90],
+  beleza:              [0.90, 0.90, 0.95, 1.00, 1.35, 1.00, 0.85, 0.85, 0.90, 1.00, 1.10, 1.30],
+  fitness:             [1.50, 1.10, 0.85, 0.80, 0.85, 0.80, 0.85, 1.25, 1.30, 1.10, 1.00, 0.90],
+  tecnologia:          [0.90, 0.90, 1.20, 1.00, 0.95, 0.85, 0.80, 0.85, 1.20, 1.05, 1.00, 0.90],
+  pet:                 [0.95, 0.90, 0.90, 0.90, 1.00, 1.20, 0.90, 0.85, 0.90, 0.95, 1.00, 1.30],
+  turismo:             [1.30, 1.20, 1.00, 0.85, 0.85, 1.25, 1.35, 0.90, 0.85, 0.90, 0.95, 1.00],
+  restaurante:         [0.90, 0.90, 0.95, 0.95, 1.00, 1.20, 0.90, 0.85, 0.90, 0.95, 1.05, 1.30],
+  consultoria:         [1.30, 0.95, 1.00, 0.90, 0.85, 0.80, 0.80, 0.90, 1.25, 1.05, 0.95, 0.85],
+  marketing_agencia:   [1.35, 1.00, 0.95, 0.90, 0.85, 0.80, 0.80, 0.90, 1.20, 1.10, 1.00, 0.95],
+  construcao:          [0.90, 0.95, 1.25, 1.10, 1.00, 0.85, 0.80, 0.85, 0.95, 1.25, 1.10, 0.85],
+  moda:                [1.25, 0.95, 0.85, 0.80, 0.85, 0.80, 0.80, 0.90, 0.95, 1.10, 1.45, 1.30],
+  psicologia:          [1.40, 1.10, 0.90, 0.85, 0.90, 0.85, 0.85, 1.25, 1.10, 0.95, 0.90, 0.95],
+  nutricao:            [1.55, 1.15, 0.90, 0.85, 1.20, 0.90, 0.85, 0.90, 0.95, 0.95, 0.95, 0.90],
+  eventos:             [0.85, 0.90, 0.95, 1.00, 1.00, 1.00, 0.90, 0.90, 0.95, 1.05, 1.30, 1.40],
+  moveis_planejados:   [1.30, 1.25, 0.95, 0.80, 0.85, 0.80, 0.85, 1.15, 1.25, 1.00, 1.20, 0.90],
+  automotivo:          [1.35, 1.05, 0.90, 0.85, 0.85, 0.85, 1.25, 0.90, 0.85, 0.90, 0.95, 0.95],
+  barbearia:           [0.95, 0.95, 0.90, 0.90, 0.95, 1.15, 0.90, 0.85, 0.90, 0.95, 1.00, 1.30],
+  fisioterapia:        [1.30, 1.05, 0.90, 0.85, 0.85, 0.85, 0.85, 1.20, 1.10, 0.95, 0.90, 0.95],
+  farmacia:            [1.25, 1.05, 0.90, 0.85, 0.85, 1.30, 1.20, 1.00, 0.90, 0.90, 0.95, 1.00],
+  servicos_residenciais:[1.25, 1.00, 0.90, 0.85, 0.90, 0.90, 0.85, 0.85, 0.90, 1.20, 1.10, 1.00],
+  arquitetura_design:  [1.30, 1.20, 1.00, 0.85, 0.85, 0.80, 0.80, 0.85, 0.95, 1.25, 1.10, 0.90],
+  fotografia_video:    [0.85, 0.85, 0.90, 0.90, 0.95, 0.90, 0.85, 0.85, 0.90, 1.05, 1.35, 1.45],
+  seguranca_privada:   [1.25, 0.95, 0.90, 0.85, 0.85, 0.85, 0.85, 0.90, 0.90, 1.25, 1.05, 0.90],
+  padaria_cafeteria:   [0.95, 0.90, 0.90, 0.90, 0.95, 1.20, 0.95, 0.90, 0.90, 0.95, 1.00, 1.30],
+  depilacao:           [0.85, 0.85, 0.85, 0.85, 0.90, 0.85, 0.80, 0.85, 0.95, 1.35, 1.50, 1.20],
+  harmonizacao:        [0.90, 0.90, 1.20, 0.90, 0.85, 0.85, 0.85, 0.90, 0.95, 1.05, 1.30, 1.40],
+  autoescola:          [1.40, 1.10, 0.90, 0.85, 0.85, 0.85, 1.25, 1.00, 0.85, 0.85, 0.90, 0.90],
+  lavanderia:          [1.20, 1.00, 0.90, 0.90, 0.95, 1.25, 1.15, 0.95, 0.90, 0.90, 0.95, 1.00],
+  lava_jato:           [1.20, 1.15, 1.10, 0.90, 0.80, 0.75, 0.75, 0.80, 0.90, 0.95, 1.10, 1.35],
+  outro:               [1.05, 0.95, 0.95, 0.90, 0.90, 0.90, 0.95, 0.95, 1.00, 1.05, 1.05, 1.00],
+}
+
+// ── Ângulos criativos por nicho ───────────────────────────────────────────────
+const CREATIVE_ANGLES_DATA: Record<string, CreativeAngles> = {
+  financeiro: {
+    saturated:     ['promessa de renda passiva rápida', 'aprovação garantida de crédito', 'juros zero sem contexto'],
+    trending:      ['educação financeira em 60s', 'comparativo real de parcelas', 'transparência total sem asteriscos'],
+    underexplored: ['simulação interativa de crédito', 'história real de recuperação de dívida', 'previdência privada vs poupança explicada'],
+  },
+  saude: {
+    saturated:     ['antes/depois genérico', '"melhor clínica da cidade"', 'desconto % em consulta'],
+    trending:      ['bastidores do atendimento', 'depoimento em vídeo específico com dado real', 'FAQ de procedimento em 60s'],
+    underexplored: ['dia a dia do especialista', 'saúde preventiva vs curativa', 'comparação honesta de tratamentos'],
+  },
+  odontologia: {
+    saturated:     ['antes/depois de clareamento genérico', 'sorriso perfeito sem contexto', 'preço do tratamento'],
+    trending:      ['processo do tratamento passo a passo', 'resultado em número específico de sessões', 'tour da clínica com apresentação da equipe'],
+    underexplored: ['objeções comuns respondidas (dói? quanto tempo?)', 'saúde bucal preventiva para crianças', 'impacto da saúde bucal na autoestima'],
+  },
+  educacao: {
+    saturated:     ['certificado + salário alto genérico', 'formação em X dias', 'depoimento de aluno sem especificidade'],
+    trending:      ['aula gratuita como isca', 'taxa de empregabilidade real com números', 'aluno mostrando projeto prático'],
+    underexplored: ['metodologia diferenciada explicada', 'comunidade de alunos como benefício', 'parceria com empresa para emprego direto'],
+  },
+  imobiliario: {
+    saturated:     ['imóvel dos sonhos genérico', 'financiamento facilitado sem detalhe', 'tour virtual básico'],
+    trending:      ['localização com dados reais de valorização %', 'comparativo custo aluguel vs compra', 'tour 360° com dados de infraestrutura do bairro'],
+    underexplored: ['história de família comprando primeiro imóvel', 'desmistificar financiamento CEF passo a passo', 'bairros em valorização antecipada'],
+  },
+  ecommerce: {
+    saturated:     ['desconto %', 'frete grátis sem urgência', 'promoção relâmpago sem gatilho real'],
+    trending:      ['unboxing e experiência de entrega', 'UGC — clientes usando o produto no dia a dia', 'comparativo honesto com concorrente'],
+    underexplored: ['por trás da fabricação do produto', 'sustentabilidade e impacto ambiental', 'personalização do produto como experiência'],
+  },
+  loja_moveis: {
+    saturated:     ['renderização 3D genérica sem cliente', 'promoção sem prazo definido', 'foto de catálogo'],
+    trending:      ['antes/depois de ambiente real com cliente', 'tour do showroom com especialista', 'cliente contando experiência de compra'],
+    underexplored: ['dicas de decoração para pequenos espaços', 'processo da marcenaria até entrega', 'aproveitamento de espaços difíceis'],
+  },
+  juridico: {
+    saturated:     ['"advocacia de resultado"', '"melhor advogado" sem comprovação', 'garantia de ganhar causa'],
+    trending:      ['educacional sobre direito específico (trabalhista, previdenciário)', 'FAQ de casos comuns em 60s', 'desmistificar o processo judicial'],
+    underexplored: ['consultoria prévia gratuita curta', 'estatísticas reais de casos por área', 'direitos que as pessoas desconhecem'],
+  },
+  contabilidade: {
+    saturated:     ['economia de impostos genérica', '"contador especialista" sem prova', 'prazo de declaração IRPF'],
+    trending:      ['quanto você perde sem contabilidade em R$', 'simulação real de economia tributária', 'impacto da reforma tributária no seu setor'],
+    underexplored: ['planejamento sucessório para PMEs', 'contabilidade específica por segmento (MEI, e-commerce)', 'como abrir empresa em 5 passos'],
+  },
+  beleza: {
+    saturated:     ['antes/depois básico', 'promoção de pacote genérico', 'foto de portfólio sem contexto'],
+    trending:      ['processo ao vivo em Reels', 'resultado mantido semanas depois', 'tutorial curto de autocuidado em casa'],
+    underexplored: ['bastidores da clínica (humanização)', 'cuidado preventivo vs corretivo', 'clientes voltando e mostrando resultado'],
+  },
+  fitness: {
+    saturated:     ['antes/depois de transformação corporal', 'resolução de ano novo', 'promoção de matrícula genérica'],
+    trending:      ['dia a dia real de treino sem perfeição', 'resultado de aluno com método e prazo específico', 'funcional curto adaptável'],
+    underexplored: ['saúde mental + exercício físico', 'treino adaptado para iniciantes sem tempo', 'fitness para 40+ (mercado crescente)'],
+  },
+  tecnologia: {
+    saturated:     ['lista de funcionalidades técnicas', 'demo genérica sem contexto', 'preço vs concorrente isolado'],
+    trending:      ['caso de uso real com resultado mensurável', 'integração com ferramentas que o cliente já usa', 'tempo economizado em horas/semana'],
+    underexplored: ['problema resolvido antes/depois', 'onboarding em 2 minutos para testar', 'depoimento de decisor (CEO/CFO) específico'],
+  },
+  pet: {
+    saturated:     ['pets fofos genéricos', 'desconto em banho e tosa', 'foto de animal sem contexto'],
+    trending:      ['vídeo de pet no atendimento (reação)', 'tutorial de cuidados em casa', 'antes/depois de grooming'],
+    underexplored: ['saúde preventiva de pets (vacinação, check-up)', 'nutrição pet personalizada por raça', 'serviço de coleta e entrega domiciliar'],
+  },
+  turismo: {
+    saturated:     ['foto de destino editorial genérica', 'promoção de pacote sem data', 'paisagem profissional sem pessoa'],
+    trending:      ['vídeo de experiência real de viajante', 'comparativo de destinos por budget', 'data específica com urgência de vagas'],
+    underexplored: ['bastidores da agência e curadoria', 'mapa de itinerário personalizado', 'destinos nacionais premium underrated'],
+  },
+  restaurante: {
+    saturated:     ['foto de prato profissional sem contexto', 'promoção de combo genérico', 'happy hour sem diferencial'],
+    trending:      ['processo de preparo ao vivo', 'história por trás do prato (ingrediente, receita)', 'cliente fazendo review espontâneo'],
+    underexplored: ['ingredientes locais e sazonais', 'chef contando a história do cardápio', 'experiência gastronômica completa (não só comida)'],
+  },
+  consultoria: {
+    saturated:     ['case study com números inflados', '"especialista reconhecido"', 'webinar genérico sem entrega clara'],
+    trending:      ['diagnóstico ao vivo em 5 minutos', 'resultado específico com tempo de implementação', 'problema → solução em 30 segundos'],
+    underexplored: ['erro comum do setor que custa R$X/mês', 'comparativo antes/depois de empresa cliente real', 'bastidores do processo de consultoria'],
+  },
+  marketing_agencia: {
+    saturated:     ['"aumentamos X% o faturamento" sem contexto', 'portfólio de marcas grandes', 'número de campanhas gerenciadas'],
+    trending:      ['processo transparente de gestão mês a mês', 'resultado específico de cliente pequeno', 'especialização em 1-2 nichos'],
+    underexplored: ['campanha que falhou e o que aprendemos', 'ROI comparativo de canais por setor', 'gestão de crise de reputação online'],
+  },
+  construcao: {
+    saturated:     ['obra concluída sem contexto', 'preço de m² genérico', '"empresa mais barata da região"'],
+    trending:      ['acompanhamento de obra ao vivo (stories)', 'antes/depois com cliente contando história', 'custo real documentado de uma reforma'],
+    underexplored: ['erros comuns de reforma que geram prejuízo', 'manutenção preventiva que economiza', 'como escolher material com custo-benefício'],
+  },
+  moda: {
+    saturated:     ['foto de produto em fundo branco', 'desconto %', 'nova coleção sem contexto'],
+    trending:      ['UGC — clientes usando a peça no dia a dia', 'vídeo de styling com múltiplos looks', 'haul espontâneo no TikTok'],
+    underexplored: ['por trás da produção da peça', 'lookbook por tipo de corpo', 'moda circular / segunda mão'],
+  },
+  psicologia: {
+    saturated:     ['"cuide da sua saúde mental" genérico', 'foto clínica formal', 'terapeuta em pose profissional'],
+    trending:      ['conteúdo educativo sobre tema específico de saúde mental', 'desmistificar terapia (custo, como funciona)', 'FAQ sobre transtornos comuns sem estigma'],
+    underexplored: ['diferença entre tipos de terapia explicada', 'terapia online para iniciantes', 'mindfulness e autocompaixão em práticas curtas'],
+  },
+  nutricao: {
+    saturated:     ['antes/depois de peso (restrições regulatórias)', 'dieta restritiva', '"alimento proibido"'],
+    trending:      ['receita rápida e saudável em 60s', 'desmistificar mito alimentar com dado', 'cardápio semanal acessível e completo'],
+    underexplored: ['nutrição para performance (não só estética)', 'alimentação para condição específica (diabetes, hipertensão)', 'compras no mercado com nutricionista'],
+  },
+  eventos: {
+    saturated:     ['foto de evento genérica', 'data e preço sem gancho', 'lineup sem contexto'],
+    trending:      ['bastidores da organização', 'depoimento de participante de edição anterior', 'countdown com urgência real de ingressos'],
+    underexplored: ['impacto do evento na carreira/vida do participante', 'momento específico de transformação', 'comunidade gerada pós-evento'],
+  },
+  moveis_planejados: {
+    saturated:     ['renderização 3D sem cliente real', 'showroom vazio', 'preço de cozinha genérica'],
+    trending:      ['projeto real com cliente contando a história', 'tour pelo apartamento entregue', 'processo da medição até a instalação'],
+    underexplored: ['aproveitamento de espaços pequenos com planejados', 'móveis planejados vs prontos — comparativo honesto', 'erro comum em projetos que gera retrabalho e custo extra'],
+  },
+  automotivo: {
+    saturated:     ['foto do carro limpo sem contexto', 'promoção de revisão genérica', '"mecânica de confiança"'],
+    trending:      ['antes/depois de funilaria ou estética', 'diagnóstico ao vivo de problema', 'cliente no delivery do carro revisado'],
+    underexplored: ['dicas de manutenção preventiva em 60s', 'custo de NÃO fazer manutenção (o que quebra)', 'comparativo serviço bom vs ruim'],
+  },
+  barbearia: {
+    saturated:     ['foto de corte com filtro', 'barbeiro posando com cliente', 'promoção de corte + barba'],
+    trending:      ['time-lapse de transformação completa', 'ASMR de barba sendo feita', 'tutorial de finalização em casa'],
+    underexplored: ['história do barbeiro e tradição do ofício', 'cuidados masculinos além do corte', 'barbearia como espaço de comunidade masculina'],
+  },
+  fisioterapia: {
+    saturated:     ['"alívio de dor rápido"', 'exercício genérico sem contexto', '"clínica especializada" sem prova'],
+    trending:      ['exercício curto para dor específica (lombar, ombro)', 'explicação de diagnóstico comum', 'antes/depois de tratamento com prazo real'],
+    underexplored: ['fisioterapia preventiva vs corretiva', 'ergonomia para home office (crescente)', 'fisioterapia pediátrica / geriátrica'],
+  },
+  farmacia: {
+    saturated:     ['desconto em medicamentos (ANVISA restringe)', 'foto de produto isolado', '"genérico igual ao original"'],
+    trending:      ['dicas de saúde preventiva por estação', 'dermocosméticos com resenha real', 'programa de fidelidade com benefício concreto'],
+    underexplored: ['saúde em cada fase da vida', 'fitoterapia e suplementos naturais', 'delivery rápido como diferencial vs grandes redes'],
+  },
+  servicos_residenciais: {
+    saturated:     ['"empresa de confiança"', 'foto de equipamento profissional', 'promoção de primeira limpeza'],
+    trending:      ['antes/depois de ambiente tratado', 'processo ao vivo de limpeza profunda', 'cliente mostrando resultado em casa'],
+    underexplored: ['produtos ecológicos e não tóxicos', 'garantia de satisfação com política detalhada', 'agendamento via app como diferencial'],
+  },
+  arquitetura_design: {
+    saturated:     ['renderização editorial de alto padrão', 'foto de portfólio sem cliente', '"premiado e renomado"'],
+    trending:      ['processo do projeto do zero à entrega', 'cliente contando transformação do espaço', 'antes/depois com quem mora lá'],
+    underexplored: ['design funcional para espaços pequenos', 'arquitetura biofílica (tendência global)', 'reformas sem derrubar paredes'],
+  },
+  fotografia_video: {
+    saturated:     ['portfólio em slideshow genérico', 'foto de casamento sem contexto', '"fotógrafo profissional"'],
+    trending:      ['making-of e bastidores do ensaio', 'processo criativo em timelapse', 'depoimento emocional do cliente'],
+    underexplored: ['vídeo corporativo curto e impactante', 'fotografia de família em locação urbana', 'fotografia documental de negócios/marca'],
+  },
+  seguranca_privada: {
+    saturated:     ['"segurança 24h" genérico', 'foto de câmera e alarme', 'preço de monitoramento sem contexto'],
+    trending:      ['caso real de crime evitado pelo monitoramento', 'instalação documentada passo a passo', 'central de monitoramento ao vivo'],
+    underexplored: ['segurança específica por segmento (escola, condomínio)', 'análise de risco gratuita como isca', 'IA em câmeras — nova geração de segurança'],
+  },
+  padaria_cafeteria: {
+    saturated:     ['foto de pão na vitrine', 'promoção de café da manhã', 'cardápio em foto genérica'],
+    trending:      ['processo de fabricação ao vivo', 'barista mostrando preparo de drink especial', 'reels de produto sendo embalado/finalizado'],
+    underexplored: ['história da receita tradicional familiar', 'sazonalidade de produtos especiais (Páscoa, Natal)', 'programa de fidelidade gamificado'],
+  },
+  depilacao: {
+    saturated:     ['"sem dor"', 'mulher satisfeita genérica', 'desconto % em pacote de sessões'],
+    trending:      ['processo de laser explicado em 60s', 'resultado real com número de sessões necessárias', 'FAQ sobre dor, contraindicações e cuidados'],
+    underexplored: ['depilação masculina (mercado em crescimento)', 'skin care pós-depilação como diferencial', 'pacote + indicação com benefício concreto'],
+  },
+  harmonizacao: {
+    saturated:     ['antes/depois (restrição CFM/CFO)', '"naturalidade em primeiro lugar"', 'promoção de procedimento'],
+    trending:      ['médico explicando técnica e segurança', 'FAQ sobre medos e mitos do procedimento', 'educacional sobre o que muda com harmonização'],
+    underexplored: ['harmonização para homens (mercado crescente)', 'rejuvenescimento não cirúrgico explicado', 'cuidados pós-procedimento com dicas práticas'],
+  },
+  autoescola: {
+    saturated:     ['aprovação garantida', 'foto de aluno na aula', '"melhor autoescola da cidade"'],
+    trending:      ['simulado de prova ao vivo', 'dicas de trânsito em 60s', 'depoimento de aprovado na primeira tentativa'],
+    underexplored: ['CNH por categoria específica (moto, carreta, ônibus)', 'aulas online de legislação como diferencial', 'plano parcelado sem juros detalhado'],
+  },
+  lavanderia: {
+    saturated:     ['roupa limpa foto genérica', 'desconto de primeira lavagem', '"qualidade e cuidado"'],
+    trending:      ['antes/depois de peça difícil (tapete, edredom)', 'processo de remoção de mancha ao vivo', 'coleta e entrega como diferencial prático'],
+    underexplored: ['lavanderia para empresas/hotéis (B2B)', 'cuidado de peças delicadas (lã, seda, jeans premium)', 'assinatura mensal com desconto'],
+  },
+  lava_jato: {
+    saturated:     ['"lavagem completa por R$X"', 'foto estática de carro molhado', '"qualidade e rapidez"'],
+    trending:      ['vídeo antes/depois em Reels (15s)', 'pacote fidelidade mensal', 'higienização interna completa com processo visível'],
+    underexplored: ['lavagem ecológica/a seco (sem água)', 'atendimento domiciliar / drive-thru', 'proteção de pintura e ceramização para iniciantes'],
+  },
+  outro: {
+    saturated:     ['promoção genérica', 'foto sem contexto', '"empresa de confiança"'],
+    trending:      ['prova social específica com resultado mensurável', 'processo de atendimento transparente', 'FAQ das objeções mais comuns'],
+    underexplored: ['história da empresa / fundador', 'impacto local e na comunidade', 'comparativo honesto com alternativas'],
+  },
+}
+
+// ── City size detection ───────────────────────────────────────────────────────
+const CAPITALS = ['são paulo', 'rio de janeiro', 'belo horizonte', 'brasília', 'brasilia',
+  'fortaleza', 'recife', 'salvador', 'curitiba', 'manaus', 'porto alegre', 'goiânia', 'goiania',
+  'belém', 'belem', 'guarulhos', 'campinas', 'são luís', 'sao luis', 'maceió', 'maceio']
+const LARGE_CITIES = ['natal', 'teresina', 'campo grande', 'joão pessoa', 'joao pessoa',
+  'aracaju', 'cuiabá', 'cuiaba', 'macapá', 'macapa', 'porto velho', 'rio branco', 'palmas',
+  'ribeirão preto', 'ribeirao preto', 'uberlândia', 'uberlandia', 'contagem', 'juiz de fora',
+  'sorocaba', 'joinville', 'feira de santana', 'caxias do sul', 'são bernardo', 'sao bernardo',
+  'santo andré', 'santo andre', 'osasco', 'são josé dos campos', 'sao jose dos campos',
+  'londrina', 'maringá', 'maringa', 'niterói', 'niteroi', 'florianópolis', 'florianopolis']
+const INDICATORS_SMALL = ['interior', 'zona rural', 'município', 'municipio', 'vila', 'distrito']
+
+export function detectCitySize(city?: string): 'capital' | 'grande' | 'medio' | 'pequeno' | 'online' {
+  if (!city) return 'capital'
+  const c = city.toLowerCase()
+  if (INDICATORS_SMALL.some(i => c.includes(i))) return 'pequeno'
+  if (CAPITALS.some(i => c.includes(i))) return 'capital'
+  if (LARGE_CITIES.some(i => c.includes(i))) return 'grande'
+  // Heurística: se tem " - SP", " - RJ" etc e não é capital conhecida → medio
+  if (/- (SP|RJ|MG|RS|PR|BA|SC|GO|PE|CE|MA|PA|MT|MS|ES|PI|RN|AL|PB|SE|AM|TO|RO|AC|AP|RR)/i.test(c)) return 'medio'
+  return 'medio'
+}
+
+const CITY_SIZE_MODIFIERS: Record<string, { modifier: number; label: string }> = {
+  capital:  { modifier: 1.00, label: 'Capital / Grande metrópole' },
+  grande:   { modifier: 0.78, label: 'Cidade grande (500k–2M hab.)' },
+  medio:    { modifier: 0.62, label: 'Cidade média (100k–500k hab.)' },
+  pequeno:  { modifier: 0.48, label: 'Cidade pequena (<100k hab.) — audiência limitante' },
+  online:   { modifier: 0.90, label: 'Negócio online — alcance nacional' },
+}
+
+function getCitySizeInfo(city?: string) {
+  const tier = detectCitySize(city)
+  return { tier, ...CITY_SIZE_MODIFIERS[tier] }
+}
+
+// ── Curva de maturidade de campanha ──────────────────────────────────────────
+export function getCampaignMaturityStage(weeksActive: number): CampaignMaturityStage {
+  if (weeksActive <= 2) return {
+    stage: 'aprendizado', label: 'Fase de Aprendizado', weekRange: 'Semana 1–2',
+    cplMultiplier: 1.70, color: '#F59E0B', progress: 15,
+    advice: 'CPL naturalmente alto enquanto o algoritmo aprende. Não pause nem altere campanhas. Resultado real aparece na semana 3.',
+  }
+  if (weeksActive <= 6) return {
+    stage: 'otimizacao', label: 'Fase de Otimização', weekRange: 'Semana 3–6',
+    cplMultiplier: 0.82, color: '#22C55E', progress: 45,
+    advice: 'Melhor janela de performance. CPL 18% abaixo do benchmark. Momento ideal para escalar budget em até 20%/semana.',
+  }
+  if (weeksActive <= 14) return {
+    stage: 'estabilizacao', label: 'Fase de Estabilização', weekRange: 'Semana 7–14',
+    cplMultiplier: 1.00, color: '#38BDF8', progress: 70,
+    advice: 'Performance estável. Prepare novos criativos para evitar fadiga. Teste novas audiências mantendo o que funciona.',
+  }
+  return {
+    stage: 'fadiga', label: 'Fadiga de Criativo', weekRange: `Semana ${weeksActive}+`,
+    cplMultiplier: 1.35, color: '#FF4D4D', progress: 95,
+    advice: 'CPL subindo = audiência saturada com esse criativo. Troque pelo menos 2 peças criativas agora. Considere novo ângulo ou formato.',
+  }
+}
+
+// ── Contexto de sazonalidade ──────────────────────────────────────────────────
+const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+export function getSeasonalityContext(benchKey: string, monthOverride?: number) {
+  const idx = SEASONALITY_INDEXES[benchKey] || SEASONALITY_INDEXES['outro']
+  const month = monthOverride ?? new Date().getMonth() // 0-based
+  const current = idx[month]
+  const next = idx[(month + 1) % 12]
+
+  const trend: 'subindo' | 'descendo' | 'estável' =
+    next > current + 0.05 ? 'subindo' :
+    next < current - 0.05 ? 'descendo' : 'estável'
+
+  const pct = Math.round(Math.abs(1 - current) * 100)
+  const cheaper = current < 1.0
+
+  const interpretation = current >= 1.20
+    ? `🔴 Pico de mercado — CPL ${Math.round((current - 1) * 100)}% acima da média. Mês de alta concorrência.`
+    : current >= 1.05
+    ? `🟡 Mês levemente mais caro — CPL ${Math.round((current - 1) * 100)}% acima. Monitore frequência de anúncios.`
+    : current <= 0.82
+    ? `🟢 Ótimo momento — CPL ${pct}% abaixo da média histórica. Ideal para escalar budget.`
+    : current <= 0.92
+    ? `🟢 Mês favorável — CPL ${pct}% abaixo da média. Boa janela para testes e escala.`
+    : '⚪ CPL dentro da média histórica para este mês.'
+
+  const peakMonths = idx.map((v, i) => ({ v, i })).filter(x => x.v >= 1.15).map(x => MONTH_SHORT[x.i])
+  const valleyMonths = idx.map((v, i) => ({ v, i })).filter(x => x.v <= 0.82).map(x => MONTH_SHORT[x.i])
+
+  const chartData = idx.map((v, i) => ({
+    month: MONTH_SHORT[i],
+    index: v,
+    isCurrent: i === month,
+    isPeak: v >= 1.15,
+    isValley: v <= 0.82,
+  }))
+
+  return { current, currentMonth: MONTH_NAMES[month], trend, interpretation, peakMonths, valleyMonths, chartData, cheaper }
+}
+
+// ── Ângulos criativos públicos ────────────────────────────────────────────────
+export function getCreativeAngles(nicheRaw: string): CreativeAngles | null {
+  const bench = getBenchmark(nicheRaw)
+  if (!bench) return null
+  const key = Object.keys(BENCHMARKS).find(k => BENCHMARKS[k] === bench)
+  return key ? (CREATIVE_ANGLES_DATA[key] || CREATIVE_ANGLES_DATA['outro']) : null
+}
+
+export function getSeasonalityIndex(benchKey: string): number[] {
+  return SEASONALITY_INDEXES[benchKey] || SEASONALITY_INDEXES['outro']
 }
 
 // ── Funções públicas ──────────────────────────────────────────────────────────
@@ -1107,12 +1546,18 @@ export function getBenchmark(nicheRaw: string): NicheBenchmark | null {
  * Calcula projeções de KPIs com base no benchmark do nicho e budget informado.
  * Retorna dados para KPI cards, gráfico de projeção e funil.
  */
-export function computeNicheProjection(bench: NicheBenchmark, budget: number): NicheProjection {
-  const cplAvg = (bench.cpl_min + bench.cpl_max) / 2
+export function computeNicheProjection(bench: NicheBenchmark, budget: number, city?: string, benchKey?: string): NicheProjection {
+  // ── Inteligência de sazonalidade e mercado ────────────────────────────────
+  const key = benchKey ?? (Object.keys(BENCHMARKS).find(k => BENCHMARKS[k] === bench) || 'outro')
+  const seasonCtx   = getSeasonalityContext(key)
+  const cityInfo    = getCitySizeInfo(city)
+  const combinedMod = seasonCtx.current * cityInfo.modifier
+  const cplAvg      = (bench.cpl_min + bench.cpl_max) / 2
+  const adjustedCPLAvg = Math.round(cplAvg * combinedMod)
 
-  const leadsMin  = Math.round(budget / bench.cpl_max)
-  const leadsMax  = Math.round(budget / bench.cpl_min)
-  const leadsMonth = Math.round(budget / cplAvg)
+  const leadsMin  = Math.round(budget / (bench.cpl_max * combinedMod))
+  const leadsMax  = Math.round(budget / (bench.cpl_min * combinedMod))
+  const leadsMonth = Math.round(budget / adjustedCPLAvg)
 
   const salesMonth   = Math.round(leadsMonth * bench.cvr_lead_to_sale)
   const revenueMonth = salesMonth * bench.avg_ticket
@@ -1122,7 +1567,6 @@ export function computeNicheProjection(bench: NicheBenchmark, budget: number): N
   const ltv     = bench.avg_ticket * bench.ltv_multiplier
   const roasLtv = +(roas * bench.ltv_multiplier).toFixed(1)
 
-  // roas_good dos benchmarks é sempre baseado em LTV para negócios recorrentes
   const roasForComparison = bench.ltv_multiplier >= 3 ? roasLtv : roas
   const roasIsLtvBased    = bench.ltv_multiplier >= 3
 
@@ -1134,9 +1578,7 @@ export function computeNicheProjection(bench: NicheBenchmark, budget: number): N
     roasForComparison >= bench.kpi_thresholds.roas_good * 1.1 ? 'excelente' :
     roasForComparison >= bench.kpi_thresholds.roas_good * 0.75 ? 'bom' : 'atenção'
 
-  // ── Texto de recomendação contextual gerado localmente (sem API) ──────────────
-  const budgetK    = (budget / 1000).toFixed(budget % 1000 === 0 ? 0 : 1)
-  const cplFmt     = `R$${Math.round(cplAvg)}`
+  const cplFmt     = `R$${adjustedCPLAvg}`
   const topChannel = bench.best_channels[0] || 'Meta Ads'
   const channel2   = bench.best_channels[1] || 'Google'
 
@@ -1193,6 +1635,14 @@ export function computeNicheProjection(bench: NicheBenchmark, budget: number): N
     recommendation,
     chartData,
     funnelData,
+    // Inteligência avançada
+    seasonalityIndex:   seasonCtx.current,
+    seasonalityLabel:   seasonCtx.interpretation,
+    seasonalityTrend:   seasonCtx.trend,
+    adjustedCPLAvg,
+    citySizeTier:       cityInfo.tier,
+    citySizeModifier:   cityInfo.modifier,
+    citySizeLabel:      cityInfo.label,
   }
 }
 
@@ -1200,18 +1650,24 @@ export function computeNicheProjection(bench: NicheBenchmark, budget: number): N
 export function getBenchmarkSummary(nicheRaw: string): string {
   const b = getBenchmark(nicheRaw)
   if (!b) return ''
+  const angles = getCreativeAngles(nicheRaw)
+  const key = Object.keys(BENCHMARKS).find(k => BENCHMARKS[k] === b) || 'outro'
+  const seasonCtx = getSeasonalityContext(key)
+
   return `
 BENCHMARK REAL — ${b.name} (Brasil 2024–2025):
-- CPL médio: R$${b.cpl_min}–${b.cpl_max}
+- CPL médio: R$${b.cpl_min}–${b.cpl_max} | CPL ajustado sazonalmente: depende do mês (atual: índice ${seasonCtx.current.toFixed(2)})
 - CPL por canal: ${Object.entries(b.cpl_by_channel).map(([k, v]) => `${k}: ${v}`).join(' | ')}
 - Taxa de conversão lead→venda: ${(b.cvr_lead_to_sale * 100).toFixed(0)}%
-- Ticket médio: R$${b.avg_ticket.toLocaleString('pt-BR')}
-- LTV (multiplicador): ${b.ltv_multiplier}× o ticket
+- Ticket médio: R$${b.avg_ticket.toLocaleString('pt-BR')} | LTV: ${b.ltv_multiplier}× o ticket
 - Melhores canais: ${b.best_channels.join(', ')}
-- Budget mínimo: R$${b.budget_floor.toLocaleString('pt-BR')}/mês | Budget ideal: R$${b.budget_ideal.toLocaleString('pt-BR')}/mês
+- Budget mínimo: R$${b.budget_floor.toLocaleString('pt-BR')}/mês | Ideal: R$${b.budget_ideal.toLocaleString('pt-BR')}/mês
 - ROAS bom: ≥ ${b.kpi_thresholds.roas_good}×
-- Picos de mercado: ${b.seasonality.join(', ')}
-- Insights: ${b.insights.join(' | ')}
+- Sazonalidade: ${seasonCtx.peakMonths.length ? `picos em ${seasonCtx.peakMonths.join('/')}` : 'demanda estável'} | ${seasonCtx.valleyMonths.length ? `vales em ${seasonCtx.valleyMonths.join('/')}` : ''}
+- Insights: ${b.insights.join(' | ')}${angles ? `
+- Criativos SATURADOS (evitar): ${angles.saturated.join(' | ')}
+- Criativos em ALTA (testar): ${angles.trending.join(' | ')}
+- Criativos SUBEXPLORADOS (oportunidade): ${angles.underexplored.join(' | ')}` : ''}
   `.trim()
 }
 
