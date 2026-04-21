@@ -79,24 +79,47 @@ function BudgetStatusBadge({ status, budget, recommended }: {
 }
 
 // ── Pacing de Budget ─────────────────────────────────────────────────────────
+// spend = 30-day rolling API spend; budget = monthly wizard config
 function BudgetPacing({ spend, budget }: { spend: number; budget: number }) {
   const today = new Date()
   const day = today.getDate()
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
-  const monthPct  = Math.round((day / daysInMonth) * 100)
-  const spendPct  = budget > 0 ? Math.round((spend / budget) * 100) : 0
-  const diff      = spendPct - monthPct
-  const status    = diff > 12 ? 'adiantado' : diff < -15 ? 'atrasado' : 'no_ritmo'
-  const color     = status === 'no_ritmo' ? '#22C55E' : status === 'adiantado' ? '#F0B429' : '#FF4D4D'
-  const label     = status === 'no_ritmo' ? '✓ No ritmo' : status === 'adiantado' ? '▲ Adiantado' : '▼ Atrasado'
-  const desc      = status === 'no_ritmo'
+  const monthPct = Math.round((day / daysInMonth) * 100)
+
+  // Normalize 30-day rolling to this-calendar-month estimate
+  const dailyRate          = spend / 30
+  const estimatedThisMonth = Math.round(dailyRate * day)
+  const projectedFullMonth = Math.round(dailyRate * daysInMonth)
+
+  const fmt = (v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v.toLocaleString('pt-BR')}`
+
+  const spendPct = budget > 0 ? Math.round((estimatedThisMonth / budget) * 100) : 0
+  const diff     = spendPct - monthPct
+
+  // Budget mismatch: projected month > 2× configured budget
+  const budgetMismatch = projectedFullMonth > budget * 2
+
+  const status = budgetMismatch ? 'mismatch'
+    : diff > 12  ? 'adiantado'
+    : diff < -15 ? 'atrasado'
+    : 'no_ritmo'
+
+  const color = status === 'no_ritmo'  ? '#22C55E'
+    : status === 'adiantado' ? '#F0B429'
+    : '#FF4D4D'
+
+  const label = status === 'mismatch'  ? '⚠ Budget desatualizado'
+    : status === 'no_ritmo'  ? '✓ No ritmo'
+    : status === 'adiantado' ? '▲ Adiantado'
+    : '▼ Atrasado'
+
+  const desc = status === 'mismatch'
+    ? `Investimento real (${fmt(projectedFullMonth)}/mês estimado) supera o budget configurado (${fmt(budget)}/mês). Atualize o budget do cliente para uma análise correta.`
+    : status === 'no_ritmo'
     ? `${Math.abs(diff)}% ${diff >= 0 ? 'acima' : 'abaixo'} do esperado para o dia ${day} — saudável`
     : status === 'adiantado'
     ? `Gastando ${diff}% mais rápido que o previsto — monitore CPL e frequência`
     : `${Math.abs(diff)}% abaixo do ritmo — verifique campanhas pausadas ou com baixo entrega`
-  const projected = day > 0 ? Math.round((spend / day) * daysInMonth) : null
-  const remaining = Math.max(budget - spend, 0)
-  const fmt = (v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v.toLocaleString('pt-BR')}`
 
   return (
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 animate-fade-up">
@@ -109,7 +132,7 @@ function BudgetPacing({ spend, budget }: { spend: number; budget: number }) {
           style={{ color, background: `${color}15`, border: `1px solid ${color}30` }}>{label}</span>
       </div>
 
-      {/* Barra dupla: mês elapsed vs spend */}
+      {/* Barra dupla: mês elapsed vs spend estimado */}
       <div className="mb-4 space-y-2">
         <div>
           <div className="flex justify-between text-[10px] text-slate-600 mb-1">
@@ -121,7 +144,8 @@ function BudgetPacing({ spend, budget }: { spend: number; budget: number }) {
         </div>
         <div>
           <div className="flex justify-between text-[10px] text-slate-600 mb-1">
-            <span>Budget consumido</span><span>{spendPct}%</span>
+            <span>Budget estimado consumido (mês atual)</span>
+            <span>{Math.min(spendPct, 999)}%</span>
           </div>
           <div className="h-2 bg-[#1E1E24] rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all duration-700"
@@ -132,20 +156,20 @@ function BudgetPacing({ spend, budget }: { spend: number; budget: number }) {
 
       <div className="grid grid-cols-3 gap-3 mb-3">
         <div>
-          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Gasto até hoje</div>
-          <div className="font-display text-lg font-bold text-[#F0B429]">{fmt(spend)}</div>
-          <div className="text-[10px] text-slate-600">{spendPct}% do budget</div>
+          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Taxa diária</div>
+          <div className="font-display text-lg font-bold text-[#F0B429]">{fmt(Math.round(dailyRate))}/dia</div>
+          <div className="text-[10px] text-slate-600">média últimos 30d</div>
         </div>
         <div>
-          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Saldo restante</div>
-          <div className="font-display text-lg font-bold text-slate-300">{fmt(remaining)}</div>
-          <div className="text-[10px] text-slate-600">{100 - spendPct}% disponível</div>
+          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Estimado este mês</div>
+          <div className="font-display text-lg font-bold text-slate-300">{fmt(estimatedThisMonth)}</div>
+          <div className="text-[10px] text-slate-600">até dia {day}</div>
         </div>
         <div>
           <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Projeção fim mês</div>
           <div className="font-display text-lg font-bold"
-            style={{ color: projected ? (projected > budget * 1.1 ? '#FF4D4D' : projected < budget * 0.88 ? '#F0B429' : '#22C55E') : '#64748B' }}>
-            {projected ? fmt(projected) : '—'}
+            style={{ color: projectedFullMonth > budget * 1.1 ? '#FF4D4D' : projectedFullMonth < budget * 0.88 ? '#F0B429' : '#22C55E' }}>
+            {fmt(projectedFullMonth)}
           </div>
           <div className="text-[10px] text-slate-600">no ritmo atual</div>
         </div>
@@ -154,6 +178,10 @@ function BudgetPacing({ spend, budget }: { spend: number; budget: number }) {
       <div className="text-[11px] rounded-lg px-3 py-2"
         style={{ background: `${color}08`, border: `1px solid ${color}18`, color }}>
         {desc}
+      </div>
+
+      <div className="mt-2 text-[10px] text-slate-600 text-center">
+        Baseado em média dos últimos 30 dias · Budget configurado: {fmt(budget)}/mês
       </div>
     </div>
   )

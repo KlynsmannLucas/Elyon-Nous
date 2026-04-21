@@ -41,7 +41,12 @@ export function TabAcoes({ clientData, strategyData }: Props) {
 
   const key     = clientData?.clientName || ''
   const actions = actionPlanCache[key] || []
-  const audit   = auditCache[key] || null
+
+  // Extract latest audit object (handles both old array format and direct object)
+  const auditHistory  = auditCache[key]
+  const latestAudit   = Array.isArray(auditHistory) ? auditHistory[0]?.audit : auditHistory
+  // Meta Intelligence data saved by TabMetaIntelligence
+  const metaIntelData = latestAudit?._intelligenceData || null
 
   const stats = {
     total:       actions.length,
@@ -59,7 +64,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
       const res = await fetch('/api/action-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientData, strategyData, auditData: audit }),
+        body: JSON.stringify({ clientData, strategyData, auditData: latestAudit, metaIntelData }),
       })
       const json = await res.json()
       if (!json.success) throw new Error(json.error)
@@ -153,7 +158,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
       <div className="flex gap-2 flex-wrap">
         {[
           { label: 'Estratégia',  ok: !!strategyData,  icon: '⚡' },
-          { label: 'Auditoria',   ok: !!audit,          icon: '🔍' },
+          { label: 'Auditoria',   ok: !!(latestAudit || metaIntelData),  icon: '🔍' },
           { label: 'Dados cliente', ok: !!clientData,   icon: '👤' },
         ].map(({ label, ok, icon }) => (
           <span key={label} className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full"
@@ -161,9 +166,9 @@ export function TabAcoes({ clientData, strategyData }: Props) {
             {icon} {label} {ok ? '✓' : '—'}
           </span>
         ))}
-        {!audit && (
+        {!latestAudit && !metaIntelData && (
           <span className="text-[11px] text-[#F0B429] flex items-center gap-1">
-            ⚠ Execute a auditoria para ações mais precisas
+            ⚠ Execute a análise Meta Ads para ações mais precisas
           </span>
         )}
       </div>

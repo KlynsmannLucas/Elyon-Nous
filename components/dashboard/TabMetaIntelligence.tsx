@@ -1,7 +1,7 @@
 // components/dashboard/TabMetaIntelligence.tsx — Sprint 1: Meta Ad Intelligence ao vivo
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 
 type LearningPhase = 'learning' | 'learning_limited' | 'stable' | 'inactive'
@@ -244,14 +244,33 @@ interface Props {
   onNavigateToConnections?: () => void
 }
 
+type StatusFilter = 'all' | 'active' | 'paused' | 'issues'
+
 export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
-  const { connectedAccounts } = useAppStore()
+  const { connectedAccounts, auditCache, setAuditCache, clientData: storeClientData } = useAppStore()
   const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
 
-  const [data,    setData]    = useState<IntelligenceData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
-  const [fetched, setFetched] = useState(false)
+  const [data,         setData]         = useState<IntelligenceData | null>(null)
+  const [loading,      setLoading]      = useState(false)
+  const [error,        setError]        = useState('')
+  const [fetched,      setFetched]      = useState(false)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+
+  // Cache key: prefer client name so Visão Geral picks up _realMetrics
+  const cacheKey = storeClientData?.clientName || metaAccount?.accountName || metaAccount?.accountId || ''
+
+  // Restore last analysis from persistent cache on mount
+  useEffect(() => {
+    if (!fetched && cacheKey) {
+      const history = auditCache[cacheKey]
+      const latest  = Array.isArray(history) ? history[0]?.audit : null
+      if (latest?._intelligenceData) {
+        setData(latest._intelligenceData as IntelligenceData)
+        setFetched(true)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheKey])
 
   const fetchIntelligence = async () => {
     if (!metaAccount?.accessToken || !metaAccount?.accountId) return
@@ -270,6 +289,24 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
       if (!json.success) throw new Error(json.error)
       setData(json)
       setFetched(true)
+
+      // Persist to store — feeds Visão Geral _realMetrics + saves full data for next session
+      if (cacheKey) {
+        setAuditCache(cacheKey, {
+          _intelligenceData: json,
+          _realMetrics: {
+            totalSpend:    json.totals.spend,
+            totalLeads:    json.totals.leads,
+            totalRevenue:  json.totals.revenue,
+            avgCPL:        json.totals.cpl > 0 ? json.totals.cpl : null,
+            avgROAS:       json.totals.roas > 0 ? json.totals.roas : null,
+            avgCTR:        json.totals.avgCTR,
+            campaignCount: json.totals.totalCampaigns,
+            dataSource:    'Meta Ads (ao vivo)',
+          },
+          generated_at: new Date().toISOString(),
+        })
+      }
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -491,21 +528,61 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
           )}
 
           {/* Tabela de campanhas */}
-          {data.campaigns.length > 0 && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-[#2A2A30] flex items-center justify-between">
-                <h3 className="font-display font-bold text-white flex items-center gap-2">
-                  <span>📋</span> Campanhas
-                </h3>
-                <span className="text-xs text-slate-500">Clique para expandir detalhes e recomendações</span>
+          {data.campaigns.length > 0 && (() => {
+            const filtered = data.campaigns
+              .filter(c => {
+                if (statusFilter === 'active')  return c.status !== 'PAUSED' && c.spend30 > 0
+                if (statusFilter === 'paused')  return c.status === 'PAUSED' || c.spend30 === 0
+                if (statusFilter === 'issues')  return c.issues.length > 0
+                return true
+              })
+              .sort((a, b) => b.spend30 - a.spend30)
+
+            const countActive = data.campaigns.filter(c => c.status !== 'PAUSED' && c.spend30 > 0).length
+            const countPaused = data.campaigns.filter(c => c.status === 'PAUSED' || c.spend30 === 0).length
+            const countIssues = data.campaigns.filter(c => c.issues.length > 0).length
+
+            return (
+              <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#2A2A30]">
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <h3 className="font-display font-bold text-white flex items-center gap-2">
+                      <span>📋</span> Campanhas
+                    </h3>
+                    <span className="text-xs text-slate-500">{filtered.length} de {data.campaigns.length} campanhas</span>
+                  </div>
+                  {/* Filter chips */}
+                  <div className="flex gap-2 flex-wrap">
+                    {([
+                      { key: 'all',    label: `Todas (${data.campaigns.length})`,  color: '#64748B' },
+                      { key: 'active', label: `Ativas (${countActive})`,           color: '#22C55E' },
+                      { key: 'paused', label: `Pausadas (${countPaused})`,         color: '#94A3B8' },
+                      { key: 'issues', label: `Com problemas (${countIssues})`,    color: '#FF4D4D' },
+                    ] as { key: StatusFilter; label: string; color: string }[]).map(f => (
+                      <button
+                        key={f.key}
+                        onClick={() => setStatusFilter(f.key)}
+                        className="text-[11px] font-semibold px-3 py-1 rounded-full transition-all"
+                        style={{
+                          color:      statusFilter === f.key ? '#0D0D10' : f.color,
+                          background: statusFilter === f.key ? f.color : `${f.color}12`,
+                          border:     `1px solid ${f.color}40`,
+                        }}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  {filtered.length > 0
+                    ? filtered.map(c => <CampaignRow key={c.id} campaign={c} />)
+                    : <div className="px-5 py-8 text-center text-sm text-slate-600">Nenhuma campanha neste filtro.</div>
+                  }
+                </div>
               </div>
-              <div>
-                {data.campaigns
-                  .sort((a, b) => b.spend30 - a.spend30)
-                  .map(c => <CampaignRow key={c.id} campaign={c} />)}
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           {data.campaigns.length === 0 && (
             <div className="text-center py-8 text-slate-600 text-sm">
