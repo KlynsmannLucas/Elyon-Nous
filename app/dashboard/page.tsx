@@ -17,12 +17,13 @@ import { TabAcoes }        from '@/components/dashboard/TabAcoes'
 import { TabErrorBoundary } from '@/components/dashboard/ErrorBoundary'
 import { TabConnections }       from '@/components/dashboard/TabConnections'
 import { TabAuditoria }         from '@/components/dashboard/TabAuditoria'
+import TabPipeline               from '@/components/dashboard/TabPipeline'
 import { TabMetaIntelligence }    from '@/components/dashboard/TabMetaIntelligence'
 import { TabGoogleIntelligence }  from '@/components/dashboard/TabGoogleIntelligence'
 import { NousChat }       from '@/components/dashboard/NousChat'
 import { getPlanLimits, hasActivePlan, UPGRADE_MESSAGES } from '@/lib/planUtils'
 
-type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'connections' | 'auditoria' | 'meta-intelligence' | 'google-intelligence' | 'acoes'
+type TabKey = 'overview' | 'strategy' | 'intelligence' | 'audiences' | 'growth' | 'performance' | 'diagnostic' | 'connections' | 'auditoria' | 'meta-intelligence' | 'google-intelligence' | 'acoes' | 'pipeline'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'overview',            label: 'Overview',          icon: '🏠' },
@@ -53,6 +54,7 @@ const SIDEBAR_SECTIONS: { label: string; items: { key: TabKey; label: string; ic
   { label: 'Diagnóstico', items: [
     { key: 'diagnostic', label: 'Diagnóstico', icon: '🎯' },
     { key: 'auditoria',  label: 'Auditoria',   icon: '🔍' },
+    { key: 'pipeline',   label: 'Pipeline 360°', icon: '🤖', badge: 'NEW' },
   ]},
   { label: 'Anúncios', items: [
     { key: 'meta-intelligence',   label: 'Meta Ads IA',   icon: '📡' },
@@ -808,6 +810,7 @@ export default function DashboardPage() {
       case 'auditoria':    return wrap('Auditoria', planLimits.hasAudit
         ? <TabAuditoria clientData={clientData} />
         : <UpgradeGate feature="audit" />)
+      case 'pipeline':     return wrap('Pipeline 360°', <TabPipeline clientData={clientData} />)
     }
   }
 
