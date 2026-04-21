@@ -1,6 +1,53 @@
 // app/api/ads-data/meta/route.ts — Busca campanhas reais do Meta Ads
 import { NextRequest, NextResponse } from 'next/server'
 
+// Tipos de ação considerados como "lead" em ordem de prioridade
+const LEAD_ACTION_TYPES = [
+  'lead',
+  'onsite_conversion.lead_grouped',
+]
+// WhatsApp / mensagens — contados separadamente como conversas
+const WHATSAPP_ACTION_TYPES = [
+  'onsite_conversion.messaging_conversation_started_7d',
+  'messaging_first_reply',
+  'onsite_conversion.messaging_first_reply',
+  'onsite_conversion.total_messaging_connection',
+]
+
+function extractActions(actions: any[], types: string[]): number {
+  return (actions || [])
+    .filter((a: any) => types.includes(a.action_type))
+    .reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0)
+}
+
+async function fetchAllInsights(accountId: string, accessToken: string): Promise<any[]> {
+  const insightFields = [
+    'campaign_id', 'campaign_name', 'spend', 'impressions', 'clicks',
+    'actions', 'reach', 'frequency',
+  ].join(',')
+
+  let url: string | null =
+    `https://graph.facebook.com/v19.0/act_${accountId}/insights?` +
+    `fields=${insightFields}` +
+    `&date_preset=last_30d` +
+    `&level=campaign` +
+    `&limit=50` +
+    `&access_token=${accessToken}`
+
+  const allRows: any[] = []
+
+  // Segue paginação até buscar todas as campanhas
+  while (url) {
+    const res: Response = await fetch(url, { signal: AbortSignal.timeout(20000) })
+    const data: any = await res.json()
+    if (data.error) throw new Error(data.error.message)
+    allRows.push(...(data.data || []))
+    url = data.paging?.next || null
+  }
+
+  return allRows
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { accessToken, accountId } = await req.json()
@@ -8,56 +55,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Token ou Account ID não fornecido.' }, { status: 400 })
     }
 
-    const insightFields = [
-      'campaign_id', 'campaign_name', 'spend', 'impressions', 'clicks',
-      'actions', 'reach', 'frequency',
-    ].join(',')
-
-    // Busca insights dos últimos 30 dias
-    const url = `https://graph.facebook.com/v19.0/act_${accountId}/insights?` +
-      `fields=${insightFields}` +
-      `&date_preset=last_30d` +
-      `&level=campaign` +
-      `&limit=20` +
-      `&access_token=${accessToken}`
-
-    const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
-    const data = await res.json()
-
-    if (data.error) {
-      return NextResponse.json({ success: false, error: data.error.message }, { status: 400 })
-    }
+    const rows = await fetchAllInsights(accountId, accessToken)
 
     // Busca status das campanhas separadamente
-    const campaignIds = (data.data || []).map((c: any) => c.campaign_id).filter(Boolean)
+    const campaignIds = rows.map((c: any) => c.campaign_id).filter(Boolean)
     const statusMap: Record<string, string> = {}
     if (campaignIds.length > 0) {
-      const statusRes = await fetch(
-        `https://graph.facebook.com/v19.0/?ids=${campaignIds.join(',')}&fields=id,status&access_token=${accessToken}`,
-        { signal: AbortSignal.timeout(10000) }
+      // Faz em lotes de 50 para evitar URL muito longa
+      const chunks = Array.from({ length: Math.ceil(campaignIds.length / 50) }, (_, i) =>
+        campaignIds.slice(i * 50, (i + 1) * 50)
       )
-      const statusData = await statusRes.json()
-      if (!statusData.error) {
-        for (const [id, val] of Object.entries(statusData as Record<string, any>)) {
-          statusMap[id] = val.status || 'ACTIVE'
+      for (const chunk of chunks) {
+        const statusRes = await fetch(
+          `https://graph.facebook.com/v19.0/?ids=${chunk.join(',')}&fields=id,status&access_token=${accessToken}`,
+          { signal: AbortSignal.timeout(10000) }
+        )
+        const statusData = await statusRes.json()
+        if (!statusData.error) {
+          for (const [id, val] of Object.entries(statusData as Record<string, any>)) {
+            statusMap[id] = (val as any).status || 'ACTIVE'
+          }
         }
       }
     }
 
-    // Normaliza os dados para o formato da plataforma
-    const campaigns = (data.data || []).map((c: any) => {
-      const spend = parseFloat(c.spend || '0')
-      const clicks = parseInt(c.clicks || '0')
+    const campaigns = rows.map((c: any) => {
+      const spend       = parseFloat(c.spend || '0')
+      const clicks      = parseInt(c.clicks || '0')
       const impressions = parseInt(c.impressions || '0')
+      const frequency   = +parseFloat(c.frequency || '0').toFixed(2)
 
-      // Extrai leads da ação de geração de leads
-      const leadAction = c.actions?.find((a: any) =>
-        a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead_grouped'
-      )
-      const leads = leadAction ? parseInt(leadAction.value) : 0
+      // Leads via formulário (lead form)
+      const leadFormLeads = extractActions(c.actions, LEAD_ACTION_TYPES)
+      // Conversas WhatsApp
+      const whatsappLeads = extractActions(c.actions, WHATSAPP_ACTION_TYPES)
+      // Total efetivo: formulários + WhatsApp (ambos são conversões reais para o negócio)
+      const leads = leadFormLeads + whatsappLeads
+
       const cpl = leads > 0 ? +(spend / leads).toFixed(2) : 0
 
-      // Extrai valor de conversão para ROAS
       const purchaseAction = c.actions?.find((a: any) =>
         a.action_type === 'purchase' || a.action_type === 'omni_purchase'
       )
@@ -65,23 +101,20 @@ export async function POST(req: NextRequest) {
       const roas = spend > 0 && revenue > 0 ? +(revenue / spend).toFixed(2) : 0
 
       return {
-        id: c.campaign_id || c.ad_id || Math.random().toString(),
+        id: c.campaign_id || Math.random().toString(),
         name: c.campaign_name,
         status: statusMap[c.campaign_id] || 'ACTIVE',
-        spend,
-        impressions,
-        clicks,
+        spend, impressions, clicks, frequency,
         ctr: impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0,
         leads,
-        cpl,
-        revenue,
-        roas,
-        platform: 'meta',
+        leadFormLeads,
+        whatsappLeads,
+        cpl, revenue, roas,
+        platform: 'meta' as const,
       }
     })
 
-    // Totais agregados
-    const totals = campaigns.reduce((acc: any, c: any) => ({
+    const totals = campaigns.reduce((acc, c) => ({
       spend:       acc.spend + c.spend,
       impressions: acc.impressions + c.impressions,
       clicks:      acc.clicks + c.clicks,
@@ -89,11 +122,14 @@ export async function POST(req: NextRequest) {
       revenue:     acc.revenue + c.revenue,
     }), { spend: 0, impressions: 0, clicks: 0, leads: 0, revenue: 0 })
 
-    totals.cpl  = totals.leads > 0  ? +(totals.spend / totals.leads).toFixed(2) : 0
-    totals.roas = totals.spend > 0 && totals.revenue > 0 ? +(totals.revenue / totals.spend).toFixed(2) : 0
-    totals.ctr  = totals.impressions > 0 ? +((totals.clicks / totals.impressions) * 100).toFixed(2) : 0
+    const extTotals = {
+      ...totals,
+      cpl:  totals.leads > 0 ? +(totals.spend / totals.leads).toFixed(2) : 0,
+      roas: totals.spend > 0 && totals.revenue > 0 ? +(totals.revenue / totals.spend).toFixed(2) : 0,
+      ctr:  totals.impressions > 0 ? +((totals.clicks / totals.impressions) * 100).toFixed(2) : 0,
+    }
 
-    return NextResponse.json({ success: true, campaigns, totals, platform: 'meta' })
+    return NextResponse.json({ success: true, campaigns, totals: extTotals, platform: 'meta' })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }

@@ -102,21 +102,31 @@ export async function POST(req: NextRequest) {
       const clicks        = parseInt(row.clicks || '0')
       const impressions   = parseInt(row.impressions || '0')
       const reach         = parseInt(row.reach || '0')
-      const frequency     = parseFloat(row.frequency || '0')
+      const frequency     = +parseFloat(row.frequency || '0').toFixed(2)
 
-      const leads30    = extractConversions(row.actions, ['lead', 'onsite_conversion.lead_grouped'])
+      const formLeads30 = extractConversions(row.actions, ['lead', 'onsite_conversion.lead_grouped'])
       const purchases30 = extractConversions(row.actions, ['purchase', 'omni_purchase'])
-      const revenue30  = extractRevenue(row.actions, ['purchase', 'omni_purchase'])
-      const messages30 = extractConversions(row.actions, [
+      const revenue30   = extractRevenue(row.actions, ['purchase', 'omni_purchase'])
+      const messages30  = extractConversions(row.actions, [
         'onsite_conversion.messaging_conversation_started_7d',
         'messaging_first_reply',
         'onsite_conversion.messaging_first_reply',
+        'onsite_conversion.total_messaging_connection',
       ])
+      // Leads efetivos: formulários + conversas WhatsApp (ambos são conversões reais)
+      const leads30 = formLeads30 + messages30
       const videoViews30 = extractConversions(row.actions, ['video_view', 'video_thruplay_watched_actions'])
 
       const row7        = ins7Map[row.campaign_id] || {}
       const spend7      = parseFloat(row7.spend || '0')
-      const leads7      = extractConversions(row7.actions, ['lead', 'onsite_conversion.lead_grouped'])
+      const formLeads7  = extractConversions(row7.actions, ['lead', 'onsite_conversion.lead_grouped'])
+      const messages7   = extractConversions(row7.actions, [
+        'onsite_conversion.messaging_conversation_started_7d',
+        'messaging_first_reply',
+        'onsite_conversion.messaging_first_reply',
+        'onsite_conversion.total_messaging_connection',
+      ])
+      const leads7      = formLeads7 + messages7
       const purchases7  = extractConversions(row7.actions, ['purchase', 'omni_purchase'])
       const conversions7 = leads7 + purchases7
 
@@ -146,7 +156,7 @@ export async function POST(req: NextRequest) {
       const issues: string[] = []
       if (ctr30 < 0.5 && spend30 > 200)                        issues.push('CTR crítico (<0.5%)')
       if (frequency > 4 && spend30 > 200)                      issues.push('Fadiga de criativo (frequência >4×)')
-      if (spend30 > 500 && leads30 === 0 && revenue30 === 0)   issues.push('Sem conversões registradas')
+      if (spend30 > 500 && leads30 === 0 && revenue30 === 0 && messages30 === 0) issues.push('Sem conversões registradas')
       if (learningPhase === 'learning_limited')                  issues.push('Aprendizado limitado')
       if (roas30 > 0 && roas30 < 1)                            issues.push('ROAS negativo (<1×)')
       if (cpl30 > 500 && leads30 > 0)                          issues.push('CPL muito alto (>R$500)')
@@ -158,7 +168,7 @@ export async function POST(req: NextRequest) {
       if (ctr30 < 0.5 && spend30 > 100)        recommendations.push('Troque os criativos — CTR baixo indica anúncio pouco relevante')
       if (frequency > 4)                        recommendations.push('Renove os criativos ou expanda a audiência para reduzir saturação')
       if (roas30 > 0 && roas30 < 1.5)          recommendations.push('ROAS abaixo do break-even — revise a estrutura ou lance uma campanha de remarketing')
-      if (messages30 > 0 && messages30 > leads30 * 2) recommendations.push('Muitas mensagens no WhatsApp — configure automação de atendimento para converter mais')
+      if (messages30 > 0 && formLeads30 === 0) recommendations.push('WhatsApp como conversão principal — configure automação de atendimento (ex: ManyChat) para qualificar e escalar sem aumentar equipe')
       if (cpm30 > 80 && ctr30 < 1)             recommendations.push('CPM alto com CTR baixo — otimize o ângulo criativo ou reduza a audiência')
       if (reach > 0 && frequency < 1.5 && spend30 > 200) recommendations.push('Frequência muito baixa — aumente o orçamento ou reduza a janela de remarketing')
 
@@ -247,7 +257,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const wasteC = campaigns.filter(c => c.spend30 > 300 && c.leads30 === 0 && c.revenue30 === 0)
+    const wasteC = campaigns.filter(c => c.spend30 > 300 && c.leads30 === 0 && c.revenue30 === 0 && c.messages30 === 0)
     if (wasteC.length > 0) {
       const wasted = wasteC.reduce((s, c) => s + c.spend30, 0)
       globalRecs.push({
@@ -305,7 +315,7 @@ export async function POST(req: NextRequest) {
         revenue:         totalRevenue,
         messages:        totalMessages,
         roas:            totalSpend > 0 && totalRevenue > 0 ? +(totalRevenue / totalSpend).toFixed(2) : 0,
-        cpl:             totalLeads > 0 ? +(totalSpend / totalLeads).toFixed(2) : 0,
+        cpl:             totalLeads > 0 ? +(totalSpend / totalLeads).toFixed(2) : totalMessages > 0 ? +(totalSpend / totalMessages).toFixed(2) : 0,
         avgCTR:          +avgCTR.toFixed(2),
         avgFrequency:    +avgFrequency.toFixed(1),
         activeCampaigns: activeCampaigns.length,

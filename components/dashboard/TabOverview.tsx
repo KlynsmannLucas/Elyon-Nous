@@ -213,12 +213,12 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
           color: '#22C55E',
         },
         {
-          label: rm.avgROAS ? 'ROAS Real' : 'CPL Real',
-          value: rm.avgROAS ? `${rm.avgROAS}×` : `R$${rm.avgCPL}`,
+          label: rm.avgROAS ? 'ROAS Real' : 'CTR Médio',
+          value: rm.avgROAS ? `${rm.avgROAS}×` : rm.avgCTR ? `${rm.avgCTR}%` : '—',
           sub: rm.avgROAS
             ? bench ? `Meta nicho: ${bench.kpi_thresholds.roas_good}×` : 'Dados de conversão'
-            : bench ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}` : 'CPL médio real',
-          color: rm.avgROAS ? roasColor : cplColor,
+            : 'Cliques / Impressões',
+          color: rm.avgROAS ? roasColor : '#A78BFA',
         },
         {
           label: 'CPL Real',
@@ -346,27 +346,6 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         ))}
       </div>
 
-      {/* Métricas reais da auditoria — CTR, total investido, total leads */}
-      {hasRealData && rm && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: 'Investimento total',  value: `R$${rm.totalSpend >= 1000 ? (rm.totalSpend/1000).toFixed(1)+'k' : rm.totalSpend}`, color: '#F0B429' },
-            { label: 'Total de leads',      value: rm.totalLeads.toLocaleString('pt-BR'), color: '#22C55E' },
-            { label: 'CPL real',            value: rm.avgCPL ? `R$${rm.avgCPL}` : '—', color: rm.avgCPL && bench ? (rm.avgCPL <= bench.cpl_max ? '#22C55E' : '#FF4D4D') : '#64748B' },
-            { label: rm.avgROAS ? 'ROAS real' : 'CTR médio', value: rm.avgROAS ? `${rm.avgROAS}×` : rm.avgCTR ? `${rm.avgCTR}%` : '—', color: '#A78BFA' },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-3 text-center">
-              <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{label}</div>
-              <div className="font-display text-lg font-bold" style={{ color }}>{value}</div>
-              {bench && label === 'CPL real' && rm.avgCPL && (
-                <div className="text-[10px] mt-0.5" style={{ color: rm.avgCPL <= bench.cpl_max ? '#22C55E' : '#FF4D4D' }}>
-                  {rm.avgCPL <= bench.cpl_min ? '↓ Abaixo benchmark' : rm.avgCPL <= bench.cpl_max ? '~ Dentro benchmark' : '↑ Acima benchmark'}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Pacing de budget — só quando há dados reais e budget configurado */}
       {hasRealData && rm && budget > 0 && (
