@@ -8,14 +8,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Token ou Account ID não fornecido.' }, { status: 400 })
     }
 
-    const fields = [
-      'campaign_name', 'status', 'spend', 'impressions', 'clicks',
-      'actions', 'cost_per_action_type', 'reach', 'frequency',
+    const insightFields = [
+      'campaign_id', 'campaign_name', 'spend', 'impressions', 'clicks',
+      'actions', 'reach', 'frequency',
     ].join(',')
 
     // Busca insights dos últimos 30 dias
     const url = `https://graph.facebook.com/v19.0/act_${accountId}/insights?` +
-      `fields=${fields}` +
+      `fields=${insightFields}` +
       `&date_preset=last_30d` +
       `&level=campaign` +
       `&limit=20` +
@@ -26,6 +26,22 @@ export async function POST(req: NextRequest) {
 
     if (data.error) {
       return NextResponse.json({ success: false, error: data.error.message }, { status: 400 })
+    }
+
+    // Busca status das campanhas separadamente
+    const campaignIds = (data.data || []).map((c: any) => c.campaign_id).filter(Boolean)
+    const statusMap: Record<string, string> = {}
+    if (campaignIds.length > 0) {
+      const statusRes = await fetch(
+        `https://graph.facebook.com/v19.0/?ids=${campaignIds.join(',')}&fields=id,status&access_token=${accessToken}`,
+        { signal: AbortSignal.timeout(10000) }
+      )
+      const statusData = await statusRes.json()
+      if (!statusData.error) {
+        for (const [id, val] of Object.entries(statusData as Record<string, any>)) {
+          statusMap[id] = val.status || 'ACTIVE'
+        }
+      }
     }
 
     // Normaliza os dados para o formato da plataforma
@@ -51,7 +67,7 @@ export async function POST(req: NextRequest) {
       return {
         id: c.campaign_id || c.ad_id || Math.random().toString(),
         name: c.campaign_name,
-        status: c.status || 'ACTIVE',
+        status: statusMap[c.campaign_id] || 'ACTIVE',
         spend,
         impressions,
         clicks,
