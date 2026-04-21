@@ -2,7 +2,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import type { ClientData, CampaignRecord } from '@/lib/store'
+import { useAppStore, type ClientData, type CampaignRecord } from '@/lib/store'
+import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 
 interface Message {
   role: 'user' | 'nous'
@@ -26,6 +27,7 @@ const QUICK_PROMPTS = [
 ]
 
 export function NousChat({ clientData, strategy, campaignHistory }: Props) {
+  const auditCache = useAppStore((s) => s.auditCache)
   const [open, setOpen]       = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput]     = useState('')
@@ -40,7 +42,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
       const name  = clientData?.clientName || 'cliente'
       setMessages([{
         role: 'nous',
-        content: `Olá! Sou a **NOUS**, sua analista estratégica especializada em **${niche}**.\n\nEstou com acesso aos dados de ${name}: budget, benchmarks do nicho${campaignHistory.length > 0 ? `, histórico de ${campaignHistory.length} campanhas` : ''} e estratégia gerada.\n\nMe pergunte qualquer coisa — diagnóstico, criativos, canais, budget, conversão. Sou direta e baseio tudo em dados.`,
+        content: `Olá! Sou a **NOUS**, sua analista estratégica especializada em **${niche}**.\n\nTenho acesso completo aos dados de **${name}**: budget, unit economics, benchmarks reais do nicho${campaignHistory.length > 0 ? `, ${campaignHistory.length} campanhas históricas` : ''}${auditCache[name] ? ', última auditoria' : ''} e estratégia gerada.\n\nMe pergunte qualquer coisa — diagnóstico, criativos, canais, ROAS break-even, CPL máximo. Sou direta e baseio tudo em dados.`,
         ts: Date.now(),
       }])
     }
@@ -57,22 +59,71 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
   const buildContext = () => {
     const lines: string[] = []
     if (clientData) {
+      lines.push(`=== DADOS DO CLIENTE ===`)
       lines.push(`Cliente: ${clientData.clientName}`)
       lines.push(`Nicho: ${clientData.niche}`)
-      lines.push(`Budget: R$${clientData.budget.toLocaleString('pt-BR')}/mês`)
-      lines.push(`Faturamento: R$${clientData.monthlyRevenue.toLocaleString('pt-BR')}/mês`)
+      lines.push(`Budget mensal: R$${clientData.budget.toLocaleString('pt-BR')}`)
+      lines.push(`Faturamento mensal: R$${clientData.monthlyRevenue.toLocaleString('pt-BR')}`)
       lines.push(`Objetivo: ${clientData.objective}`)
       if (clientData.city) lines.push(`Cidade: ${clientData.city}`)
       if (clientData.currentCPL) lines.push(`CPL atual: R$${clientData.currentCPL}`)
       if (clientData.mainChallenge) lines.push(`Maior desafio: ${clientData.mainChallenge}`)
       if (clientData.currentLeadSource) lines.push(`Origem de leads: ${clientData.currentLeadSource}`)
+
+      // Unit economics
+      const hasUnitEcon = clientData.ticketPrice || clientData.grossMargin || clientData.conversionRate
+      if (hasUnitEcon) {
+        lines.push(`\n=== UNIT ECONOMICS ===`)
+        if (clientData.ticketPrice) lines.push(`Ticket médio: R$${clientData.ticketPrice.toLocaleString('pt-BR')}`)
+        if (clientData.grossMargin) lines.push(`Margem bruta: ${clientData.grossMargin}%`)
+        if (clientData.conversionRate) lines.push(`Taxa de fechamento: ${clientData.conversionRate}%`)
+        lines.push(`Modelo: ${clientData.isRecurring ? 'Recorrente/Assinatura' : 'Venda única'}`)
+        // Derived metrics
+        if (clientData.ticketPrice && clientData.grossMargin && clientData.conversionRate) {
+          const ticket = clientData.ticketPrice
+          const margin = clientData.grossMargin / 100
+          const cvr    = clientData.conversionRate / 100
+          const breakEvenROAS = margin > 0 ? (1 / margin).toFixed(2) : null
+          const maxCPL = cvr > 0 ? Math.round(ticket * margin * cvr) : null
+          const ltv = clientData.isRecurring ? Math.round(ticket / 0.05) : ticket
+          if (breakEvenROAS) lines.push(`ROAS break-even calculado: ${breakEvenROAS}×`)
+          if (maxCPL) lines.push(`CPL máximo lucrativo: R$${maxCPL}`)
+          lines.push(`LTV estimado: R$${ltv.toLocaleString('pt-BR')}`)
+        }
+      }
     }
-    if (strategy?.recommendation) lines.push(`\nRecomendação estratégica atual: ${strategy.recommendation}`)
+
+    // Benchmark do nicho
+    const benchSummary = clientData?.niche ? getBenchmarkSummary(clientData.niche) : null
+    if (benchSummary) {
+      lines.push(`\n=== BENCHMARKS DO NICHO ===`)
+      lines.push(benchSummary)
+    }
+
+    if (strategy?.recommendation) lines.push(`\n=== ESTRATÉGIA GERADA ===\n${strategy.recommendation}`)
     if (strategy?.growth_diagnosis?.main_problem) lines.push(`Problema principal identificado: ${strategy.growth_diagnosis.main_problem}`)
+
+    // Último audit
+    const clientName = clientData?.clientName
+    const audits = clientName ? auditCache[clientName] : undefined
+    if (audits && audits.length > 0) {
+      const latest = audits[0]
+      const audit = latest.audit as any
+      lines.push(`\n=== ÚLTIMA AUDITORIA ===`)
+      if (audit?.score) lines.push(`Score geral: ${audit.score}/100`)
+      if (audit?.diagnosis) lines.push(`Diagnóstico: ${audit.diagnosis}`)
+      if (audit?.top_issues?.length) {
+        lines.push(`Principais problemas: ${audit.top_issues.slice(0, 3).join('; ')}`)
+      }
+      if (audit?.quick_wins?.length) {
+        lines.push(`Quick wins: ${audit.quick_wins.slice(0, 3).join('; ')}`)
+      }
+    }
+
     if (campaignHistory.length > 0) {
-      lines.push(`\nHistórico de campanhas (${campaignHistory.length}):`)
+      lines.push(`\n=== HISTÓRICO DE CAMPANHAS (${campaignHistory.length}) ===`)
       campaignHistory.slice(0, 5).forEach((c) => {
-        lines.push(`- ${c.channel} (${c.period}): CPL R$${c.cplReal}, ${c.leads} leads, resultado: ${c.outcome}. Funcionou: ${c.whatWorked || 'n/a'}. Falhou: ${c.whatFailed || 'n/a'}`)
+        lines.push(`- ${c.channel} (${c.period}): CPL R$${c.cplReal}, ${c.leads} leads, ${c.outcome}. OK: ${c.whatWorked || 'n/a'}. Falhou: ${c.whatFailed || 'n/a'}`)
       })
     }
     return lines.join('\n')

@@ -102,7 +102,7 @@ const OBJECTIVES = [
   { value: 'retencao', label: 'Reter e fidelizar clientes',            icon: '❤️' },
 ]
 
-const TOTAL_STEPS = 7
+const TOTAL_STEPS = 8
 
 export interface WizardImportData {
   platform: 'meta' | 'google' | 'unknown'
@@ -170,7 +170,8 @@ export function SetupWizard({ onComplete }: Props) {
     if (step === 2) return true
     if (step === 3) return form.products.trim().length > 3
     if (step === 4) return Number(form.budget) >= 500
-    if (step === 5) return true // import é opcional
+    if (step === 5) return true // unit economics opcional
+    if (step === 6) return true // import é opcional
     return true
   }
 
@@ -635,91 +636,173 @@ export function SetupWizard({ onComplete }: Props) {
               </div>
             </div>
 
-            {/* Unit economics — ROAS break-even e CAC payback */}
-            <div className="pt-2 border-t border-[#1E1E24]">
-              <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">
-                Unit economics (opcional · estratégia muito mais precisa)
-              </p>
-              <p className="text-[10px] text-slate-700 mb-3">
-                Com esses dados calculamos ROAS break-even real, CAC payback e LTV do cliente.
-              </p>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                  <label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 block">Ticket médio (R$)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">R$</span>
-                    <input type="number" className={inputClass()} style={{ paddingLeft: '2rem', fontSize: '0.875rem' }}
-                      placeholder={bench ? String(bench.avg_ticket) : '2000'}
-                      value={form.ticketPrice}
-                      onChange={(e) => update('ticketPrice', e.target.value)} />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 block">Margem bruta (%)</label>
-                  <div className="relative">
-                    <input type="number" className={inputClass()} style={{ paddingRight: '2rem', fontSize: '0.875rem' }}
-                      placeholder="40" min="1" max="100"
-                      value={form.grossMargin}
-                      onChange={(e) => update('grossMargin', e.target.value)} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">%</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 block">Conversão lead→venda (%)</label>
-                  <div className="relative">
-                    <input type="number" className={inputClass()} style={{ paddingRight: '2rem', fontSize: '0.875rem' }}
-                      placeholder={bench ? String(Math.round((bench.cvr_lead_to_sale || 0.1) * 100)) : '10'} min="0.1" max="100"
-                      value={form.conversionRate}
-                      onChange={(e) => update('conversionRate', e.target.value)} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">%</span>
-                  </div>
-                </div>
-                <div className="flex flex-col justify-center">
-                  <label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 block">Produto recorrente?</label>
-                  <button
-                    type="button"
-                    onClick={() => setForm(f => ({ ...f, isRecurring: !f.isRecurring }))}
-                    className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
-                    style={form.isRecurring
-                      ? { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.4)', color: '#22C55E' }
-                      : { background: '#111114', border: '1px solid #2A2A30', color: '#64748B' }
-                    }
-                  >
-                    {form.isRecurring ? '✓ Sim (assinatura/recorrente)' : 'Não (venda única)'}
-                  </button>
-                </div>
-              </div>
-              {/* Preview do ROAS break-even em tempo real */}
-              {form.ticketPrice && form.grossMargin && form.conversionRate && (() => {
-                const ticket = Number(form.ticketPrice)
-                const margin = Number(form.grossMargin) / 100
-                const cvr    = Number(form.conversionRate) / 100
-                const breakEvenROAS = margin > 0 ? (1 / margin).toFixed(2) : '—'
-                const maxCPL = cvr > 0 ? (ticket * margin * cvr).toFixed(0) : '—'
-                return (
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    {[
-                      { label: 'ROAS break-even', val: `${breakEvenROAS}×`, tip: 'ROAS mínimo para não ter prejuízo' },
-                      { label: 'CPL máximo lucrativo', val: `R$${maxCPL}`, tip: 'CPL acima disso você perde dinheiro' },
-                    ].map(({ label, val, tip }) => (
-                      <div key={label} className="bg-[#16161A] rounded-xl p-2.5 border border-[#2A2A30]">
-                        <div className="text-[9px] text-slate-500 mb-0.5">{label}</div>
-                        <div className="text-sm font-bold text-[#F0B429]">{val}</div>
-                        <div className="text-[9px] text-slate-600">{tip}</div>
-                      </div>
-                    ))}
-                  </div>
-                )
-              })()}
-            </div>
           </div>
         )}
 
-        {/* ── Step 5: Import de CSV (opcional) ── */}
+        {/* ── Step 5: Unit Economics / Financeiro ── */}
         {step === 5 && (
           <div className="animate-fade-up">
             <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
-              Passo 6 de {TOTAL_STEPS} · Opcional
+              Passo 6 de {TOTAL_STEPS}
+            </p>
+            <h2 className="font-display text-3xl font-bold text-white mb-2">
+              Financeiro do negócio
+            </h2>
+            <p className="text-slate-500 text-sm mb-2">
+              Com esses dados calculamos seu <strong className="text-white">ROAS break-even real</strong>, CPL máximo lucrativo e retorno sobre investimento.
+            </p>
+            {bench && (
+              <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl text-xs"
+                style={{ background: 'rgba(240,180,41,0.06)', border: '1px solid rgba(240,180,41,0.2)' }}>
+                <span className="text-[#F0B429]">💡</span>
+                <span className="text-slate-400">Benchmark {bench.name}: ticket típico ~R${bench.avg_ticket.toLocaleString('pt-BR')} · CVR ~{(bench.cvr_lead_to_sale * 100).toFixed(0)}%</span>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
+                  Ticket médio por venda / cliente
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">R$</span>
+                  <input type="number" className={inputClass()} style={{ paddingLeft: '2.5rem', fontSize: '1.125rem' }}
+                    placeholder={bench ? String(bench.avg_ticket) : '2000'}
+                    value={form.ticketPrice}
+                    onChange={(e) => update('ticketPrice', e.target.value)} />
+                </div>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {[500, 1000, 2000, 5000, 10000, 20000].map((v) => (
+                    <button key={v} type="button" onClick={() => update('ticketPrice', String(v))}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                      style={{
+                        background: form.ticketPrice === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
+                        border: form.ticketPrice === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
+                        color: form.ticketPrice === String(v) ? '#F0B429' : '#64748B',
+                      }}>
+                      R${v >= 1000 ? `${v / 1000}k` : v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
+                    Margem bruta
+                  </label>
+                  <div className="relative">
+                    <input type="number" className={inputClass()} style={{ paddingRight: '2rem', fontSize: '1.125rem' }}
+                      placeholder="40" min="1" max="100"
+                      value={form.grossMargin}
+                      onChange={(e) => update('grossMargin', e.target.value)} />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">%</span>
+                  </div>
+                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                    {[20, 30, 40, 50, 60, 70].map((v) => (
+                      <button key={v} type="button" onClick={() => update('grossMargin', String(v))}
+                        className="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
+                        style={{
+                          background: form.grossMargin === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
+                          border: form.grossMargin === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
+                          color: form.grossMargin === String(v) ? '#F0B429' : '#64748B',
+                        }}>{v}%</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
+                    Taxa de fechamento
+                  </label>
+                  <div className="relative">
+                    <input type="number" className={inputClass()} style={{ paddingRight: '2rem', fontSize: '1.125rem' }}
+                      placeholder={bench ? String(Math.round((bench.cvr_lead_to_sale || 0.1) * 100)) : '10'} min="1" max="100"
+                      value={form.conversionRate}
+                      onChange={(e) => update('conversionRate', e.target.value)} />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">%</span>
+                  </div>
+                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                    {[5, 10, 15, 20, 30, 50].map((v) => (
+                      <button key={v} type="button" onClick={() => update('conversionRate', String(v))}
+                        className="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
+                        style={{
+                          background: form.conversionRate === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
+                          border: form.conversionRate === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
+                          color: form.conversionRate === String(v) ? '#F0B429' : '#64748B',
+                        }}>{v}%</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
+                  Modelo de receita
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { val: false, label: 'Venda única', sub: 'Cada cliente compra uma vez', icon: '🛒' },
+                    { val: true,  label: 'Recorrente / Assinatura', sub: 'Cliente paga mensalmente', icon: '🔄' },
+                  ].map((opt) => (
+                    <button key={String(opt.val)} type="button"
+                      onClick={() => setForm(f => ({ ...f, isRecurring: opt.val }))}
+                      className="py-3 px-3 rounded-xl text-left transition-all"
+                      style={form.isRecurring === opt.val
+                        ? { background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.45)', color: '#F0B429' }
+                        : { background: '#111114', border: '1px solid #2A2A30', color: '#64748B' }
+                      }>
+                      <div className="text-lg mb-1">{opt.icon}</div>
+                      <div className="text-xs font-semibold">{opt.label}</div>
+                      <div className="text-[10px] opacity-70 mt-0.5">{opt.sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Break-even calculator em tempo real */}
+            {form.ticketPrice && form.grossMargin && form.conversionRate && (() => {
+              const ticket = Number(form.ticketPrice)
+              const margin = Number(form.grossMargin) / 100
+              const cvr    = Number(form.conversionRate) / 100
+              const breakEvenROAS = margin > 0 ? (1 / margin).toFixed(2) : '—'
+              const maxCPL = cvr > 0 ? (ticket * margin * cvr).toFixed(0) : '—'
+              const ltv = form.isRecurring ? (ticket / 0.05).toFixed(0) : ticket.toFixed(0)
+              return (
+                <div className="mt-5 p-4 rounded-2xl" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.2)' }}>
+                  <p className="text-xs text-[#F0B429] font-bold mb-3">📊 Seus números calculados em tempo real</p>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <div className="text-lg font-bold text-[#F0B429]">{breakEvenROAS}×</div>
+                      <div className="text-[10px] text-slate-500">ROAS break-even</div>
+                      <div className="text-[9px] text-slate-700">mínimo sem prejuízo</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-[#22C55E]">R${maxCPL}</div>
+                      <div className="text-[10px] text-slate-500">CPL máximo</div>
+                      <div className="text-[9px] text-slate-700">acima = prejuízo</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-[#A78BFA]">R${Number(ltv).toLocaleString('pt-BR')}</div>
+                      <div className="text-[10px] text-slate-500">LTV estimado</div>
+                      <div className="text-[9px] text-slate-700">{form.isRecurring ? 'churn 5%' : 'venda única'}</div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            <p className="text-[10px] text-slate-600 mt-4 text-center">
+              Pode pular — mas com esses dados a estratégia fica muito mais precisa.
+            </p>
+          </div>
+        )}
+
+        {/* ── Step 6: Import de CSV (opcional) ── */}
+        {step === 6 && (
+          <div className="animate-fade-up">
+            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+              Passo 7 de {TOTAL_STEPS} · Opcional
             </p>
             <h2 className="font-display text-3xl font-bold text-white mb-2">
               Importar dados de campanhas
@@ -832,11 +915,11 @@ export function SetupWizard({ onComplete }: Props) {
           </div>
         )}
 
-        {/* ── Step 6: Objetivo + Gerar ── */}
-        {step === 6 && (
+        {/* ── Step 7: Objetivo + Gerar ── */}
+        {step === 7 && (
           <div className="animate-fade-up">
             <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
-              Passo 7 de {TOTAL_STEPS} · Último passo
+              Passo 8 de {TOTAL_STEPS} · Último passo
             </p>
             <h2 className="font-display text-3xl font-bold text-white mb-2">
               Objetivo principal?
@@ -900,7 +983,7 @@ export function SetupWizard({ onComplete }: Props) {
           >
             ← Voltar
           </button>
-          {step < 6 && (
+          {step < 7 && (
             <button
               onClick={() => setWizardStep(step + 1)}
               disabled={!canNext()}
@@ -911,7 +994,7 @@ export function SetupWizard({ onComplete }: Props) {
                 color: '#F0B429',
               }}
             >
-              {step === 5 && importedFiles.length === 0 ? 'Pular →' : 'Próximo →'}
+              {step === 6 && importedFiles.length === 0 ? 'Pular →' : 'Próximo →'}
             </button>
           )}
         </div>
