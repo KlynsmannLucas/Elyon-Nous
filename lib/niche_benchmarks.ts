@@ -1646,6 +1646,40 @@ export function computeNicheProjection(bench: NicheBenchmark, budget: number, ci
   }
 }
 
+// ── Benchmarks de funil por etapa ────────────────────────────────────────────
+export interface FunnelBenchmarks {
+  cpl_good: number
+  cpl_bad: number
+  ctr_meta: number
+  ctr_google: number
+  lp_cvr_meta: number
+  lp_cvr_google: number
+  qualification_rate: number
+  closing_rate: number
+  response_max_hours: number
+  roas_good: number
+}
+
+export function getFunnelBenchmarks(benchKey: string): FunnelBenchmarks {
+  const bench = BENCHMARKS[benchKey] || BENCHMARKS['outro']
+  const isHighTicket  = ['imobiliario','juridico','financeiro','tecnologia','construcao','moveis_planejados','arquitetura_design','consultoria','marketing_agencia','eventos'].includes(benchKey)
+  const isLocalService = ['barbearia','beleza','depilacao','harmonizacao','fisioterapia','lava_jato','lavanderia','autoescola','servicos_residenciais','padaria_cafeteria','restaurante','automotivo','pet'].includes(benchKey)
+  const isMedical     = ['saude','odontologia','psicologia','nutricao','farmacia','fisioterapia'].includes(benchKey)
+
+  return {
+    cpl_good:           bench.kpi_thresholds.cpl_good,
+    cpl_bad:            bench.kpi_thresholds.cpl_bad,
+    ctr_meta:           isHighTicket ? 0.8  : isLocalService ? 2.2 : isMedical ? 1.5 : 1.2,
+    ctr_google:         isHighTicket ? 3.5  : isLocalService ? 5.5 : isMedical ? 5.0 : 4.0,
+    lp_cvr_meta:        isHighTicket ? 4.0  : isLocalService ? 14.0 : isMedical ? 10.0 : 8.0,
+    lp_cvr_google:      isHighTicket ? 6.0  : isLocalService ? 18.0 : isMedical ? 14.0 : 12.0,
+    qualification_rate: isHighTicket ? 30.0 : isLocalService ? 68.0 : isMedical ? 50.0 : 45.0,
+    closing_rate:       bench.cvr_lead_to_sale * 100,
+    response_max_hours: isHighTicket ? 4    : isLocalService ? 1    : isMedical ? 2    : 2,
+    roas_good:          bench.kpi_thresholds.roas_good,
+  }
+}
+
 /** Formata benchmark como texto para injetar em prompts de IA */
 export function getBenchmarkSummary(nicheRaw: string): string {
   const b = getBenchmark(nicheRaw)

@@ -83,6 +83,22 @@ export interface CreativeTest {
   createdAt: string
 }
 
+export interface FunnelEntry {
+  id: string
+  clientName: string
+  period: string
+  channel: string
+  investment: number
+  impressions: number
+  clicks: number
+  leads: number
+  qualifiedLeads: number
+  sales: number
+  avgTicket: number
+  avgResponseHours: number
+  createdAt: string
+}
+
 export interface AuditEntry {
   id: string
   audit: any
@@ -151,6 +167,11 @@ interface AppStore {
   addCreativeTest: (test: Omit<CreativeTest, 'id' | 'createdAt'>) => void
   updateCreativeTest: (id: string, updates: Partial<CreativeTest>) => void
   deleteCreativeTest: (id: string) => void
+
+  // Diagnóstico de funil
+  funnelEntries: FunnelEntry[]
+  addFunnelEntry: (entry: Omit<FunnelEntry, 'id' | 'createdAt'>) => void
+  deleteFunnelEntry: (id: string) => void
 
   // Rate limiting: timestamps das gerações de estratégia (últimas 1h)
   strategyTimestamps: number[]
@@ -306,6 +327,15 @@ export const useAppStore = create<AppStore>()(
         set((s) => ({ creativeTests: s.creativeTests.filter((t) => t.id !== id) }))
       },
 
+      funnelEntries: [],
+      addFunnelEntry: (entry) => {
+        const full: FunnelEntry = { ...entry, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+        set((s) => ({ funnelEntries: [full, ...s.funnelEntries] }))
+      },
+      deleteFunnelEntry: (id) => {
+        set((s) => ({ funnelEntries: s.funnelEntries.filter((e) => e.id !== id) }))
+      },
+
       strategyTimestamps: [],
       recordStrategyGeneration: () => {
         const now = Date.now()
@@ -338,6 +368,7 @@ export const useAppStore = create<AppStore>()(
         auditCache:          state.auditCache,
         actionPlanCache:     state.actionPlanCache,
         creativeTests:       state.creativeTests,
+        funnelEntries:       state.funnelEntries,
       }),
     }
   )
