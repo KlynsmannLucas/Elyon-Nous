@@ -18,11 +18,13 @@ export async function GET(req: NextRequest) {
     let accountId   = ''
     let accountName = ''
 
+    const appOrigin = new URL(req.url).origin
+
     // ── META ────────────────────────────────────────────────────────────────────
     if (platform === 'meta') {
       const clientId     = process.env.META_APP_ID!
       const clientSecret = process.env.META_APP_SECRET!
-      const redirectUri  = `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/callback`
+      const redirectUri  = `${appOrigin}/api/oauth/callback`
 
       const tokenRes = await fetch(
         `https://graph.facebook.com/v19.0/oauth/access_token?` +
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
     if (platform === 'google') {
       const clientId     = process.env.GOOGLE_CLIENT_ID!
       const clientSecret = process.env.GOOGLE_CLIENT_SECRET!
-      const redirectUri  = `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/callback`
+      const redirectUri  = `${appOrigin}/api/oauth/callback`
 
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',

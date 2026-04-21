@@ -19,6 +19,8 @@ import { TabAnalise }      from '@/components/dashboard/TabAnalise'
 import { TabAnuncios }     from '@/components/dashboard/TabAnuncios'
 import { TabMarketIntel }  from '@/components/dashboard/TabMarketIntel'
 import { TabFunil }        from '@/components/dashboard/TabFunil'
+import { TabPersona }      from '@/components/dashboard/TabPersona'
+import { TabConteudo }     from '@/components/dashboard/TabConteudo'
 import { NousChat }        from '@/components/dashboard/NousChat'
 import { DashboardSidebar, type TabKey } from '@/components/dashboard/DashboardSidebar'
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar'
@@ -550,6 +552,8 @@ export default function DashboardPage() {
       case 'cenarios':      return wrap('Cenários',          <TabGrowth analysis={analysis} clientData={clientData} />)
       case 'mercado':       return wrap('Mercado & Nicho',   <TabMarketIntel clientData={clientData} />)
       case 'funil':         return wrap('Gargalo do Funil',  <TabFunil clientData={clientData} />)
+      case 'persona':       return wrap('Persona IA',        <TabPersona clientData={clientData} />)
+      case 'conteudo':      return wrap('Criador de Conteúdo', <TabConteudo clientData={clientData} />)
     }
   }
 

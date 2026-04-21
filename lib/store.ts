@@ -58,6 +58,32 @@ export interface ClientData {
   isRecurring?: boolean                    // produto recorrente (assinatura, mensalidade)?
   avgChurnMonthly?: number                 // churn mensal em % (ex: 5 = 5%/mês) — só se recorrente
   conversionRate?: number                  // taxa de conversão lead → venda em % (ex: 10 = 10%)
+  // Persona do cliente ideal — coletada no wizard
+  targetAge?: string                       // faixa etária predominante
+  targetGender?: string                    // gênero predominante
+  mainPains?: string                       // principais dores (texto livre)
+  mainObjection?: string                   // principal objeção de compra
+  onlineChannels?: string[]                // onde passa o tempo online
+  targetIncome?: string                    // renda mensal aproximada
+  awarenessStage?: string                  // nível de consciência do público
+}
+
+export interface GeneratedPersona {
+  name: string
+  age: string
+  profession: string
+  income: string
+  pains: string[]
+  desires: string[]
+  fears: string[]
+  objections: string[]
+  favoriteChannels: string[]
+  buyingBehavior: string
+  strategySummary: string
+  facebookInterests?: string[]
+  contentAngles?: string[]
+  role: string
+  generatedAt: string
 }
 
 export interface CreativeVariant {
@@ -172,6 +198,10 @@ interface AppStore {
   funnelEntries: FunnelEntry[]
   addFunnelEntry: (entry: Omit<FunnelEntry, 'id' | 'createdAt'>) => void
   deleteFunnelEntry: (id: string) => void
+
+  // Persona gerada por IA
+  generatedPersona: GeneratedPersona | null
+  setGeneratedPersona: (persona: GeneratedPersona | null) => void
 
   // Rate limiting: timestamps das gerações de estratégia (últimas 1h)
   strategyTimestamps: number[]
@@ -336,6 +366,9 @@ export const useAppStore = create<AppStore>()(
         set((s) => ({ funnelEntries: s.funnelEntries.filter((e) => e.id !== id) }))
       },
 
+      generatedPersona: null,
+      setGeneratedPersona: (persona) => set({ generatedPersona: persona }),
+
       strategyTimestamps: [],
       recordStrategyGeneration: () => {
         const now = Date.now()
@@ -369,6 +402,7 @@ export const useAppStore = create<AppStore>()(
         actionPlanCache:     state.actionPlanCache,
         creativeTests:       state.creativeTests,
         funnelEntries:       state.funnelEntries,
+        generatedPersona:    state.generatedPersona,
       }),
     }
   )

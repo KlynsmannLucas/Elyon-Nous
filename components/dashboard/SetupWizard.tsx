@@ -102,7 +102,7 @@ const OBJECTIVES = [
   { value: 'retencao', label: 'Reter e fidelizar clientes',            icon: '❤️' },
 ]
 
-const TOTAL_STEPS = 8
+const TOTAL_STEPS = 9
 
 export interface WizardImportData {
   platform: 'meta' | 'google' | 'unknown'
@@ -165,6 +165,14 @@ export function SetupWizard({ onComplete }: Props) {
     grossMargin:        '',
     isRecurring:        false,
     conversionRate:     '',
+    // Persona do cliente ideal
+    targetAge:          '',
+    targetGender:       '',
+    mainPains:          '',
+    mainObjection:      '',
+    onlineChannels:     [] as string[],
+    targetIncome:       '',
+    awarenessStage:     '',
   })
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
@@ -193,6 +201,7 @@ export function SetupWizard({ onComplete }: Props) {
     if (step === 4) return Number(form.budget) >= 500
     if (step === 5) return true // unit economics opcional
     if (step === 6) return true // import é opcional
+    if (step === 7) return true // persona é opcional
     return true
   }
 
@@ -242,6 +251,13 @@ export function SetupWizard({ onComplete }: Props) {
         grossMargin:       form.grossMargin ? Number(form.grossMargin) : undefined,
         isRecurring:       form.isRecurring || undefined,
         conversionRate:    form.conversionRate ? Number(form.conversionRate) : undefined,
+        targetAge:         form.targetAge || undefined,
+        targetGender:      form.targetGender || undefined,
+        mainPains:         form.mainPains || undefined,
+        mainObjection:     form.mainObjection || undefined,
+        onlineChannels:    form.onlineChannels.length > 0 ? form.onlineChannels : undefined,
+        targetIncome:      form.targetIncome || undefined,
+        awarenessStage:    form.awarenessStage || undefined,
       }
       setClientData(clientData)
       onComplete(importedFiles.length > 0 ? importedFiles : undefined)
@@ -948,11 +964,140 @@ export function SetupWizard({ onComplete }: Props) {
           </div>
         )}
 
-        {/* ── Step 7: Objetivo + Gerar ── */}
+        {/* ── Step 7: Cliente Ideal / Persona ── */}
         {step === 7 && (
           <div className="animate-fade-up">
             <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
-              Passo 8 de {TOTAL_STEPS} · Último passo
+              Passo 8 de {TOTAL_STEPS} · Opcional
+            </p>
+            <h2 className="font-display text-3xl font-bold text-white mb-2">
+              Quem é o cliente ideal?
+            </h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Essas informações vão gerar a persona do seu cliente e personalizar toda a estratégia de comunicação.
+            </p>
+
+            {/* Faixa etária */}
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-slate-400 mb-2">Faixa etária predominante</label>
+              <div className="flex flex-wrap gap-2">
+                {['18–24', '25–34', '35–44', '45–54', '55+', 'Variado'].map((age) => (
+                  <button key={age} type="button"
+                    onClick={() => setForm((f) => ({ ...f, targetAge: f.targetAge === age ? '' : age }))}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    style={{
+                      background: form.targetAge === age ? 'rgba(240,180,41,0.12)' : '#111114',
+                      border: form.targetAge === age ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
+                      color: form.targetAge === age ? '#F0B429' : '#94A3B8',
+                    }}>
+                    {age}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Gênero */}
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-slate-400 mb-2">Gênero predominante</label>
+              <div className="flex gap-2">
+                {['Majoritariamente feminino', 'Majoritariamente masculino', 'Equilibrado'].map((g) => (
+                  <button key={g} type="button"
+                    onClick={() => setForm((f) => ({ ...f, targetGender: f.targetGender === g ? '' : g }))}
+                    className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all"
+                    style={{
+                      background: form.targetGender === g ? 'rgba(240,180,41,0.12)' : '#111114',
+                      border: form.targetGender === g ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
+                      color: form.targetGender === g ? '#F0B429' : '#94A3B8',
+                    }}>
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Renda */}
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-slate-400 mb-2">Renda mensal aproximada</label>
+              <div className="flex flex-wrap gap-2">
+                {['Até R$2k', 'R$2k–5k', 'R$5k–10k', 'R$10k–20k', 'Acima de R$20k', 'Variada'].map((inc) => (
+                  <button key={inc} type="button"
+                    onClick={() => setForm((f) => ({ ...f, targetIncome: f.targetIncome === inc ? '' : inc }))}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    style={{
+                      background: form.targetIncome === inc ? 'rgba(240,180,41,0.12)' : '#111114',
+                      border: form.targetIncome === inc ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
+                      color: form.targetIncome === inc ? '#F0B429' : '#94A3B8',
+                    }}>
+                    {inc}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Canais online */}
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-slate-400 mb-2">Onde passa o tempo online? <span className="text-slate-600">(múltiplos)</span></label>
+              <div className="flex flex-wrap gap-2">
+                {['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google', 'LinkedIn', 'WhatsApp', 'Twitter/X', 'Pinterest'].map((ch) => {
+                  const active = form.onlineChannels.includes(ch)
+                  return (
+                    <button key={ch} type="button"
+                      onClick={() => setForm((f) => ({
+                        ...f,
+                        onlineChannels: active ? f.onlineChannels.filter((c) => c !== ch) : [...f.onlineChannels, ch],
+                      }))}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                      style={{
+                        background: active ? 'rgba(240,180,41,0.12)' : '#111114',
+                        border: active ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
+                        color: active ? '#F0B429' : '#94A3B8',
+                      }}>
+                      {ch}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Dores */}
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                Qual a maior dor ou problema que você resolve?
+              </label>
+              <textarea
+                value={form.mainPains}
+                onChange={(e) => setForm((f) => ({ ...f, mainPains: e.target.value }))}
+                placeholder="Ex: Meu cliente sofre com falta de tempo para cuidar da saúde e quer resultados rápidos sem sair de casa..."
+                rows={2}
+                className="w-full bg-[#111114] border border-[#2A2A30] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 resize-none outline-none focus:border-[#F0B429]/40"
+              />
+            </div>
+
+            {/* Objeção */}
+            <div className="mb-2">
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                Qual a principal objeção de compra?
+              </label>
+              <input
+                type="text"
+                value={form.mainObjection}
+                onChange={(e) => setForm((f) => ({ ...f, mainObjection: e.target.value }))}
+                placeholder="Ex: 'Não tenho dinheiro agora' / 'Vou pensar' / 'Já tentei outras coisas'"
+                className="w-full bg-[#111114] border border-[#2A2A30] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 outline-none focus:border-[#F0B429]/40"
+              />
+            </div>
+
+            <div className="text-center text-xs text-slate-600 pt-3">
+              Todos os campos são opcionais — quanto mais você preencher, mais precisa será a persona gerada.
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 8: Objetivo + Gerar ── */}
+        {step === 8 && (
+          <div className="animate-fade-up">
+            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+              Passo 9 de {TOTAL_STEPS} · Último passo
             </p>
             <h2 className="font-display text-3xl font-bold text-white mb-2">
               Objetivo principal?
@@ -1016,7 +1161,7 @@ export function SetupWizard({ onComplete }: Props) {
           >
             ← Voltar
           </button>
-          {step < 7 && (
+          {step < 8 && (
             <button
               onClick={() => setWizardStep(step + 1)}
               disabled={!canNext()}
@@ -1027,7 +1172,7 @@ export function SetupWizard({ onComplete }: Props) {
                 color: '#F0B429',
               }}
             >
-              {step === 6 && importedFiles.length === 0 ? 'Pular →' : 'Próximo →'}
+              {(step === 6 && importedFiles.length === 0) || step === 7 ? 'Pular →' : 'Próximo →'}
             </button>
           )}
         </div>
