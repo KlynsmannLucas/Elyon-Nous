@@ -91,6 +91,7 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
     whatWorked: '',
     whatFailed: '',
     notes: '',
+    salesCycle: '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -123,7 +124,9 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
       outcome: form.outcome,
       whatWorked: form.whatWorked,
       whatFailed: form.whatFailed,
-      notes: form.notes,
+      notes: form.salesCycle
+        ? `${form.notes}${form.notes ? ' | ' : ''}Prazo fechamento: ${form.salesCycle}`
+        : form.notes,
     })
     setTimeout(() => { setSaving(false); onClose() }, 300)
   }
@@ -260,6 +263,17 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
               placeholder="Ex: CPL subiu na 3ª semana, CBO instável..."
               value={form.whatFailed} onChange={e => u('whatFailed', e.target.value)} />
           </div>
+        </div>
+
+        {/* Prazo de fechamento — útil para imobiliária, móveis, jurídico */}
+        <div>
+          <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">
+            Prazo médio de fechamento
+            <span className="ml-1 normal-case text-slate-700">(opcional · imobiliária, móveis, jurídico)</span>
+          </label>
+          <input type="text" className={inputCls}
+            placeholder="Ex: 30 dias, 2 meses, 90 dias..."
+            value={form.salesCycle} onChange={e => u('salesCycle', e.target.value)} />
         </div>
 
         {/* Botão salvar */}

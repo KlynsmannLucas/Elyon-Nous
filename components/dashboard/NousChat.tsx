@@ -93,6 +93,15 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
       }
     }
 
+    // Budget constraint
+    if (clientData?.budget) {
+      if (clientData.budget < 2000) {
+        lines.push(`\n⚠️ RESTRIÇÃO DE BUDGET: R$${clientData.budget}/mês — recomendar APENAS canal único e campanha de conversão direta. Não sugerir brand awareness, dual-channel ou testes extensos.`)
+      } else if (clientData.budget < 5000) {
+        lines.push(`\nNOTA BUDGET: R$${clientData.budget}/mês — budget moderado. Priorizar 1 canal principal. Dual-channel somente se ambos tiverem histórico positivo comprovado.`)
+      }
+    }
+
     // Benchmark do nicho
     const benchSummary = clientData?.niche ? getBenchmarkSummary(clientData.niche) : null
     if (benchSummary) {

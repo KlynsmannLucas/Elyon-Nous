@@ -123,6 +123,27 @@ function inputClass(focused = false) {
   }`
 }
 
+function Tip({ text }: { text: string }) {
+  const [show, setShow] = useState(false)
+  return (
+    <span className="relative inline-block align-middle ml-1">
+      <button
+        type="button"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        className="w-4 h-4 rounded-full text-[9px] font-bold inline-flex items-center justify-center cursor-help"
+        style={{ background: 'rgba(255,255,255,0.06)', color: '#64748B', border: '1px solid #2A2A30' }}
+      >?</button>
+      {show && (
+        <div className="absolute bottom-6 left-0 z-50 w-52 text-[11px] leading-relaxed pointer-events-none"
+          style={{ background: '#1E1E24', border: '1px solid #3A3A42', borderRadius: '8px', padding: '8px 10px', color: '#CBD5E1', whiteSpace: 'normal' }}>
+          {text}
+        </div>
+      )}
+    </span>
+  )
+}
+
 export function SetupWizard({ onComplete }: Props) {
   const { setClientData, setWizardStep, wizardStep } = useAppStore()
 
@@ -595,7 +616,8 @@ export function SetupWizard({ onComplete }: Props) {
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-slate-400 uppercase tracking-wider mb-1.5 block">
-                    CPL atual (custo por lead que está pagando)
+                    CPL atual (custo por lead)
+                    <Tip text="CPL = Custo Por Lead. Quanto você paga para conseguir cada contato interessado no seu produto/serviço." />
                   </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">R$</span>
@@ -663,6 +685,7 @@ export function SetupWizard({ onComplete }: Props) {
               <div>
                 <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
                   Ticket médio por venda / cliente
+                  <Tip text="Valor que o cliente paga. Se tiver múltiplos serviços, use o valor do principal ou a média ponderada." />
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">R$</span>
@@ -684,12 +707,18 @@ export function SetupWizard({ onComplete }: Props) {
                     </button>
                   ))}
                 </div>
+                {nicheConf && nicheConf.fields.length > 1 && (
+                  <p className="text-[10px] text-slate-600 mt-1.5">
+                    Multi-serviços? Use o ticket do serviço principal ou a média ponderada dos que mais anuncia.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
                     Margem bruta
+                    <Tip text="Do que entra de receita, quanto fica após pagar custo direto (material, mão de obra). Ex: 40% → para cada R$100 vendido, R$40 é seu lucro bruto." />
                   </label>
                   <div className="relative">
                     <input type="number" className={inputClass()} style={{ paddingRight: '2rem', fontSize: '1.125rem' }}
@@ -713,6 +742,7 @@ export function SetupWizard({ onComplete }: Props) {
                 <div>
                   <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
                     Taxa de fechamento
+                    <Tip text="CVR: de cada 100 leads gerados, quantos viram clientes pagantes. Ex: 10% = 10 de 100 leads fecham negócio." />
                   </label>
                   <div className="relative">
                     <input type="number" className={inputClass()} style={{ paddingRight: '2rem', fontSize: '1.125rem' }}
@@ -775,19 +805,22 @@ export function SetupWizard({ onComplete }: Props) {
                     <div>
                       <div className="text-lg font-bold text-[#F0B429]">{breakEvenROAS}×</div>
                       <div className="text-[10px] text-slate-500">ROAS break-even</div>
-                      <div className="text-[9px] text-slate-700">mínimo sem prejuízo</div>
+                      <div className="text-[9px] text-slate-700">retorno mínimo s/ prejuízo</div>
                     </div>
                     <div>
                       <div className="text-lg font-bold text-[#22C55E]">R${maxCPL}</div>
                       <div className="text-[10px] text-slate-500">CPL máximo</div>
-                      <div className="text-[9px] text-slate-700">acima = prejuízo</div>
+                      <div className="text-[9px] text-slate-700">acima disso = prejuízo</div>
                     </div>
                     <div>
                       <div className="text-lg font-bold text-[#A78BFA]">R${Number(ltv).toLocaleString('pt-BR')}</div>
                       <div className="text-[10px] text-slate-500">LTV estimado</div>
-                      <div className="text-[9px] text-slate-700">{form.isRecurring ? 'churn 5%' : 'venda única'}</div>
+                      <div className="text-[9px] text-slate-700">{form.isRecurring ? 'valor vitalício (churn 5%)' : 'venda única'}</div>
                     </div>
                   </div>
+                  <p className="text-[10px] text-slate-600 mt-3 text-center">
+                    ROAS = retorno sobre investimento em anúncios · CPL = custo por lead · LTV = valor total do cliente
+                  </p>
                 </div>
               )
             })()}

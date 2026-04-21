@@ -12,11 +12,40 @@ interface Props {
   onUpgrade: () => void
 }
 
+const SENSITIVE_KEYWORDS = [
+  'odontolog', 'clínica', 'médic', 'fisioterapia', 'psicolog', 'nutricion',
+  'farmácia', 'laboratório', 'veterinári', 'estética', 'harmonização', 'home care',
+  'advocacia', 'juríd', 'financeiro', 'crédito',
+]
+
+function isSensitiveNiche(niche?: string) {
+  if (!niche) return false
+  const n = niche.toLowerCase()
+  return SENSITIVE_KEYWORDS.some((k) => n.includes(k))
+}
+
 export function TabAnalise({ clientData, planHasAudit, onUpgrade }: Props) {
   const [mode, setMode] = useState<'auditoria' | 'pipeline'>('auditoria')
+  const sensitive = isSensitiveNiche(clientData?.niche)
 
   return (
     <div>
+      {/* Alerta de conformidade para nichos sensíveis */}
+      {sensitive && (
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl mb-5"
+          style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.22)' }}>
+          <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
+          <div>
+            <div className="text-xs font-semibold mb-0.5" style={{ color: '#F0B429' }}>
+              Nicho com restrições de copy nos anúncios
+            </div>
+            <div className="text-xs text-slate-400 leading-relaxed">
+              Meta e Google têm políticas específicas para <strong className="text-slate-300">{clientData?.niche}</strong>. Evite termos como "cura", "garantia de resultado" ou promessas de saúde/jurídico. Pergunte à <strong className="text-slate-300">NOUS</strong> por ângulos de copy aprovados para esse nicho.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toggle de modo */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex rounded-xl p-1 gap-1" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
