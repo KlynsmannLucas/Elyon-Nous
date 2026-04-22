@@ -762,6 +762,8 @@ export default function DashboardPage() {
   }
 
   // ── Dashboard completo ──
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#030305', overflow: 'hidden' }}>
       <DashboardSidebar
@@ -771,6 +773,8 @@ export default function DashboardPage() {
         userPlan={userPlan}
         user={user}
         onSignOut={() => signOut({ redirectUrl: '/sign-in' })}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(v => !v)}
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <DashboardTopbar
@@ -780,6 +784,8 @@ export default function DashboardPage() {
           onReset={handleReset}
           onSave={handleSaveClient}
           pdfLoading={pdfLoading}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={() => setSidebarCollapsed(v => !v)}
         />
         <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', paddingBottom: inTrial && !hasActivePlan(userPlan) ? '72px' : '40px' }}>
           <div key={activeTab} className="animate-fade-up">

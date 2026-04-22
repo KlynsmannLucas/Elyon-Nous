@@ -2,32 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Scrollbar customizada */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: #030305;
-}
-::-webkit-scrollbar-thumb {
-  background: #2A2A30;
-  border-radius: 99px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3A3A42;
-}
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: #030305; }
+::-webkit-scrollbar-thumb  { background: #2A2A30; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #3A3A42; }
 
-/* Seleção de texto */
-::selection {
-  background: rgba(240, 180, 41, 0.25);
-  color: #FFD166;
-}
+/* ── Text selection ──────────────────────────────────────────────────────── */
+::selection { background: rgba(240,180,41,0.25); color: #FFD166; }
 
-/* Base */
-html {
-  scroll-behavior: smooth;
-}
+/* ── Base ────────────────────────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
 
 body {
   background-color: #030305;
@@ -40,39 +25,109 @@ body {
   background-size: 44px 44px;
 }
 
-/* Utilitários de animação */
-.animate-fade-in {
-  animation: fadeIn 0.5s ease forwards;
+/* ── Focus ring ──────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid rgba(245,165,0,0.5);
+  outline-offset: 2px;
 }
 
-.animate-fade-up {
-  animation: fadeUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
+/* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Delay helpers */
-.delay-100 { animation-delay: 0.1s; }
-.delay-200 { animation-delay: 0.2s; }
-.delay-300 { animation-delay: 0.3s; }
-.delay-400 { animation-delay: 0.4s; }
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 
-/* Card base */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Animation classes ───────────────────────────────────────────────────── */
+.animate-fade-in    { animation: fadeIn      0.4s ease                          forwards; }
+.animate-fade-up    { animation: fadeUp      0.5s cubic-bezier(0.34,1.4,0.64,1) forwards; }
+.animate-slide-in   { animation: slideInLeft 0.22s ease                         forwards; }
+.animate-scale-in   { animation: scaleIn     0.18s ease                         forwards; }
+.animate-spin-slow  { animation: spinSlow    2s linear infinite; }
+
+/* ── Delay helpers ───────────────────────────────────────────────────────── */
+.delay-50  { animation-delay: 0.05s; }
+.delay-100 { animation-delay: 0.1s;  }
+.delay-150 { animation-delay: 0.15s; }
+.delay-200 { animation-delay: 0.2s;  }
+.delay-300 { animation-delay: 0.3s;  }
+.delay-400 { animation-delay: 0.4s;  }
+.delay-500 { animation-delay: 0.5s;  }
+.delay-600 { animation-delay: 0.6s;  }
+.delay-700 { animation-delay: 0.7s;  }
+
+/* ── Skeleton / shimmer ──────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #111118 25%, #1c1c26 50%, #111118 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: 8px;
+}
+
+/* ── Card base ───────────────────────────────────────────────────────────── */
 .card {
   background: #0C0C12;
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.card:hover {
+  border-color: rgba(255,255,255,0.1);
 }
 
-/* Gradient text */
+/* ── Interactive card ────────────────────────────────────────────────────── */
+.card-interactive {
+  background: #0C0C12;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  cursor: pointer;
+}
+.card-interactive:hover {
+  border-color: rgba(255,255,255,0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+
+/* ── Hover lift ──────────────────────────────────────────────────────────── */
+.hover-lift {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+/* ── Gold utilities ──────────────────────────────────────────────────────── */
 .text-gold-gradient {
   background: linear-gradient(135deg, #F0B429 0%, #FFD166 100%);
   -webkit-background-clip: text;
@@ -80,7 +135,50 @@ body {
   background-clip: text;
 }
 
-/* Glow effect */
-.gold-glow {
-  box-shadow: 0 0 24px rgba(240, 180, 41, 0.2);
+.gold-glow   { box-shadow: 0 0 24px rgba(240,180,41,0.2); }
+.gold-glow-sm{ box-shadow: 0 0 12px rgba(240,180,41,0.15); }
+
+/* ── Sidebar transition ──────────────────────────────────────────────────── */
+.sidebar-transition {
+  transition: width 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Tooltip (via title, enhanced) ──────────────────────────────────────── */
+/* Native title is used — no additional CSS needed */
+
+/* ── Glass surface ───────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(12,12,18,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ── Status dot ──────────────────────────────────────────────────────────── */
+.status-dot-live {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #22C55E;
+  display: inline-block;
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+/* ── Input base ──────────────────────────────────────────────────────────── */
+.input-base {
+  background: #111118;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  color: #E2E8F0;
+  font-size: 13px;
+  padding: 8px 12px;
+  transition: border-color 0.15s;
+  outline: none;
+}
+.input-base:focus {
+  border-color: rgba(245,165,0,0.4);
 }
