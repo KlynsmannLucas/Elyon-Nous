@@ -20,7 +20,11 @@ function extractActions(actions: any[], types: string[]): number {
     .reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0)
 }
 
-async function fetchAllInsights(accountId: string, accessToken: string): Promise<any[]> {
+function dateStr(d: Date): string {
+  return d.toISOString().split('T')[0]
+}
+
+async function fetchAllInsights(accountId: string, accessToken: string, timeParam: string): Promise<any[]> {
   const insightFields = [
     'campaign_id', 'campaign_name', 'spend', 'impressions', 'clicks',
     'actions', 'reach', 'frequency',
@@ -29,14 +33,13 @@ async function fetchAllInsights(accountId: string, accessToken: string): Promise
   let url: string | null =
     `https://graph.facebook.com/v19.0/act_${accountId}/insights?` +
     `fields=${insightFields}` +
-    `&date_preset=last_30d` +
+    `&${timeParam}` +
     `&level=campaign` +
     `&limit=50` +
     `&access_token=${accessToken}`
 
   const allRows: any[] = []
 
-  // Segue paginação até buscar todas as campanhas
   while (url) {
     const res: Response = await fetch(url, { signal: AbortSignal.timeout(20000) })
     const data: any = await res.json()
@@ -55,7 +58,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Token ou Account ID não fornecido.' }, { status: 400 })
     }
 
-    const rows = await fetchAllInsights(accountId, accessToken)
+    const today = new Date()
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const sixtyDaysAgo = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000)
+    const currentTimeParam = 'date_preset=last_30d'
+    const prevTimeParam = `time_range=${encodeURIComponent(JSON.stringify({ since: dateStr(sixtyDaysAgo), until: dateStr(thirtyDaysAgo) }))}`
+
+    const [rows, prevRows] = await Promise.all([
+      fetchAllInsights(accountId, accessToken, currentTimeParam),
+      fetchAllInsights(accountId, accessToken, prevTimeParam),
+    ])
 
     // Busca status das campanhas separadamente
     const campaignIds = rows.map((c: any) => c.campaign_id).filter(Boolean)
@@ -129,7 +141,30 @@ export async function POST(req: NextRequest) {
       ctr:  totals.impressions > 0 ? +((totals.clicks / totals.impressions) * 100).toFixed(2) : 0,
     }
 
-    return NextResponse.json({ success: true, campaigns, totals: extTotals, platform: 'meta' })
+    // Previous period totals for MoM comparison
+    const prevTotals = prevRows.reduce((acc, c) => {
+      const spend  = parseFloat(c.spend || '0')
+      const leads  = extractActions(c.actions, LEAD_ACTION_TYPES) + extractActions(c.actions, WHATSAPP_ACTION_TYPES)
+      const clicks = parseInt(c.clicks || '0')
+      return { spend: acc.spend + spend, leads: acc.leads + leads, clicks: acc.clicks + clicks }
+    }, { spend: 0, leads: 0, clicks: 0 })
+
+    const delta = (curr: number, prev: number) =>
+      prev > 0 ? +((curr - prev) / prev * 100).toFixed(1) : null
+
+    const previousTotals = {
+      ...prevTotals,
+      cpl: prevTotals.leads > 0 ? +(prevTotals.spend / prevTotals.leads).toFixed(2) : 0,
+      spendDelta:  delta(totals.spend,  prevTotals.spend),
+      leadsDelta:  delta(totals.leads,  prevTotals.leads),
+      clicksDelta: delta(totals.clicks, prevTotals.clicks),
+      cplDelta:    delta(
+        totals.leads > 0 ? totals.spend / totals.leads : 0,
+        prevTotals.leads > 0 ? prevTotals.spend / prevTotals.leads : 0
+      ),
+    }
+
+    return NextResponse.json({ success: true, campaigns, totals: extTotals, previousTotals, platform: 'meta' })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }

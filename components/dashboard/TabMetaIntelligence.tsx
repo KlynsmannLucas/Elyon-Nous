@@ -18,6 +18,7 @@ interface Campaign {
   messages30: number; videoViews30: number
   spend7: number; conversions7: number
   learningPhase: LearningPhase
+  age: 'new' | 'growing' | 'established' | 'veteran'; ageDays: number
   issues: string[]; recommendations: string[]
 }
 
@@ -33,11 +34,18 @@ interface Totals {
   activeCampaigns: number; learningCampaigns: number; totalCampaigns: number
 }
 
+interface PreviousTotals {
+  spend: number; leads: number; cpl: number
+  spendDelta: number | null; leadsDelta: number | null; cplDelta: number | null
+}
+
 interface IntelligenceData {
   score: number; scoreGrade: string
   campaigns: Campaign[]
   byObjective: Record<string, ObjGroup>
   totals: Totals
+  previousTotals?: PreviousTotals
+  freqThreshold?: number
   globalRecs: Array<{ type: RecType; title: string; description: string }>
 }
 
@@ -52,6 +60,22 @@ function scoreColor(score: number) {
   if (score >= 65) return '#F0B429'
   if (score >= 50) return '#FB923C'
   return '#FF4D4D'
+}
+
+function AgeBadge({ age, days }: { age: Campaign['age']; days: number }) {
+  const map = {
+    new:         { label: 'Nova',       color: '#38BDF8', bg: 'rgba(56,189,248,0.1)' },
+    growing:     { label: 'Crescendo',  color: '#A78BFA', bg: 'rgba(167,139,250,0.1)' },
+    established: { label: 'Madura',     color: '#22C55E', bg: 'rgba(34,197,94,0.1)' },
+    veteran:     { label: 'Veterana',   color: '#F0B429', bg: 'rgba(240,180,41,0.1)' },
+  }
+  const s = map[age]
+  return (
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" title={`${days >= 0 ? days + ' dias' : ''}`}
+      style={{ color: s.color, background: s.bg, border: `1px solid ${s.color}30` }}>
+      {s.label}{days >= 0 ? ` (${days}d)` : ''}
+    </span>
+  )
 }
 
 function LearningBadge({ phase }: { phase: LearningPhase }) {
@@ -149,7 +173,7 @@ function ObjectiveCard({ group, objective }: { group: ObjGroup; objective: strin
   )
 }
 
-function CampaignRow({ campaign }: { campaign: Campaign }) {
+function CampaignRow({ campaign, freqLimit }: { campaign: Campaign; freqLimit: number }) {
   const [open, setOpen] = useState(false)
   const hasIssues = campaign.issues.length > 0
 
@@ -164,6 +188,7 @@ function CampaignRow({ campaign }: { campaign: Campaign }) {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-semibold text-white truncate max-w-[200px]">{campaign.name}</span>
               <LearningBadge phase={campaign.learningPhase} />
+              <AgeBadge age={campaign.age ?? 'established'} days={campaign.ageDays ?? -1} />
               {hasIssues && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                   style={{ background: 'rgba(255,77,77,0.1)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>
@@ -178,7 +203,7 @@ function CampaignRow({ campaign }: { campaign: Campaign }) {
               {campaign.roas30   > 0 && <span>ROAS: <strong className="text-[#22C55E]">{campaign.roas30}×</strong></span>}
               <span>CTR: <strong className={campaign.ctr30 < 0.5 ? 'text-red-400' : 'text-slate-300'}>{campaign.ctr30}%</strong></span>
               {campaign.frequency > 0 && (
-                <span>Freq: <strong className={campaign.frequency > 4 ? 'text-orange-400' : 'text-slate-300'}>{campaign.frequency}×</strong></span>
+                <span>Freq: <strong className={campaign.frequency > freqLimit ? 'text-orange-400' : 'text-slate-300'}>{campaign.frequency}×</strong></span>
               )}
             </div>
           </div>
@@ -283,6 +308,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
         body: JSON.stringify({
           accessToken: metaAccount.accessToken,
           accountId:   metaAccount.accountId,
+          niche:       storeClientData?.niche || '',
         }),
       })
       const json = await res.json()
@@ -294,6 +320,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
       if (cacheKey) {
         setAuditCache(cacheKey, {
           _intelligenceData: json,
+          _previousTotals:   json.previousTotals,
           _realMetrics: {
             totalSpend:    json.totals.spend,
             totalLeads:    json.totals.leads,
@@ -413,31 +440,53 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
               </div>
               <div className="text-xs text-slate-500">{data.score}/100</div>
             </div>
-            {/* KPIs */}
-            {[
-              { label: 'Investido 30d',  value: fmt(data.totals.spend),                       color: '#F0B429' },
-              { label: 'Leads',          value: data.totals.leads > 0 ? String(data.totals.leads) : '—', color: '#38BDF8' },
-              { label: 'ROAS',           value: data.totals.roas > 0 ? `${data.totals.roas}×` : '—', color: '#22C55E' },
-              { label: 'CTR Médio',      value: `${data.totals.avgCTR}%`,
-                color: data.totals.avgCTR < 0.5 ? '#FF4D4D' : data.totals.avgCTR >= 1.5 ? '#22C55E' : '#F0B429' },
-            ].map((kpi) => (
-              <div key={kpi.label} className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 flex flex-col justify-between">
-                <div className="text-[10px] text-slate-600 uppercase tracking-wider">{kpi.label}</div>
-                <div className="font-display text-2xl font-bold mt-2" style={{ color: kpi.color }}>{kpi.value}</div>
-                {kpi.label === 'Investido 30d' && data.totals.activeCampaigns > 0 && (
-                  <div className="text-[10px] text-slate-600 mt-1">{data.totals.activeCampaigns} ativa{data.totals.activeCampaigns !== 1 ? 's' : ''}</div>
-                )}
-                {kpi.label === 'ROAS' && data.totals.revenue > 0 && (
-                  <div className="text-[10px] text-slate-600 mt-1">Receita: {fmt(data.totals.revenue)}</div>
-                )}
-                {kpi.label === 'Leads' && data.totals.cpl > 0 && (
-                  <div className="text-[10px] text-slate-600 mt-1">CPL: R${data.totals.cpl}</div>
-                )}
-                {kpi.label === 'CTR Médio' && (
-                  <div className="text-[10px] text-slate-600 mt-1">Freq: {data.totals.avgFrequency}×</div>
-                )}
-              </div>
-            ))}
+            {/* KPIs com MoM delta */}
+            {(() => {
+              const prev = data.previousTotals
+              const DeltaBadge = ({ delta, invertColor }: { delta: number | null | undefined; invertColor?: boolean }) => {
+                if (delta == null) return null
+                const positive = invertColor ? delta < 0 : delta > 0
+                const color = positive ? '#22C55E' : '#FF4D4D'
+                return (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1"
+                    style={{ color, background: `${color}18` }}>
+                    {delta > 0 ? '↑' : '↓'}{Math.abs(delta).toFixed(1)}%
+                  </span>
+                )
+              }
+              return [
+                {
+                  label: 'Investido 30d', value: fmt(data.totals.spend), color: '#F0B429',
+                  delta: prev?.spendDelta, invertColor: false,
+                  sub: data.totals.activeCampaigns > 0 ? `${data.totals.activeCampaigns} ativa${data.totals.activeCampaigns !== 1 ? 's' : ''}` : undefined,
+                },
+                {
+                  label: 'Leads', value: data.totals.leads > 0 ? String(data.totals.leads) : '—', color: '#38BDF8',
+                  delta: prev?.leadsDelta, invertColor: false,
+                  sub: data.totals.cpl > 0 ? `CPL: R$${data.totals.cpl}` : undefined,
+                },
+                {
+                  label: 'ROAS', value: data.totals.roas > 0 ? `${data.totals.roas}×` : '—', color: '#22C55E',
+                  delta: null, invertColor: false,
+                  sub: data.totals.revenue > 0 ? `Receita: ${fmt(data.totals.revenue)}` : undefined,
+                },
+                {
+                  label: 'CTR Médio', value: `${data.totals.avgCTR}%`,
+                  color: data.totals.avgCTR < 0.5 ? '#FF4D4D' : data.totals.avgCTR >= 1.5 ? '#22C55E' : '#F0B429',
+                  delta: null, invertColor: false,
+                  sub: `Freq: ${data.totals.avgFrequency}×`,
+                },
+              ].map((kpi) => (
+                <div key={kpi.label} className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 flex flex-col justify-between">
+                  <div className="text-[10px] text-slate-600 uppercase tracking-wider">{kpi.label}</div>
+                  <div className="flex items-end gap-1 mt-2">
+                    <div className="font-display text-2xl font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
+                    <DeltaBadge delta={kpi.delta} invertColor={kpi.invertColor} />
+                  </div>
+                  {kpi.sub && <div className="text-[10px] text-slate-600 mt-1">{kpi.sub}</div>}
+                </div>
+              ))
+            })()}
           </div>
 
           {/* Fase de aprendizado + recomendações globais */}
@@ -576,7 +625,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
                 </div>
                 <div>
                   {filtered.length > 0
-                    ? filtered.map(c => <CampaignRow key={c.id} campaign={c} />)
+                    ? filtered.map(c => <CampaignRow key={c.id} campaign={c} freqLimit={data.freqThreshold ?? 4} />)
                     : <div className="px-5 py-8 text-center text-sm text-slate-600">Nenhuma campanha neste filtro.</div>
                   }
                 </div>

@@ -437,6 +437,20 @@ export default function DashboardPage() {
       if (!json) throw new Error('Resposta vazia do servidor.')
       if (!json.success) throw new Error(json.error)
 
+      // Save previous strategy version to audit cache before overwriting
+      const prevStrategy = useAppStore.getState().strategyData
+      if (prevStrategy && clientData?.clientName) {
+        const existingHistory = useAppStore.getState().auditCache[clientData.clientName]
+        const existingLatest = Array.isArray(existingHistory) ? existingHistory[0]?.audit : null
+        setAuditCache(clientData.clientName, {
+          ...(existingLatest || {}),
+          _strategyHistory: [
+            { strategy: prevStrategy, savedAt: prevStrategy.generatedAt || new Date().toISOString() },
+            ...((existingLatest?._strategyHistory || []).slice(0, 4)),
+          ],
+        })
+      }
+
       setStrategyData({
         analysis: json.strategy,
         strategy: json.strategy,
@@ -504,7 +518,7 @@ export default function DashboardPage() {
 
   const [pdfLoading, setPdfLoading] = useState(false)
 
-  const handleExportPDF = useCallback(async () => {
+  const handleExportPDF = useCallback(async (mode: 'executive' | 'full' = 'full') => {
     setPdfLoading(true)
     try {
       const { generatePDF } = await import('@/components/pdf/RelatorioPDF')
@@ -517,14 +531,14 @@ export default function DashboardPage() {
         strategy:    strategyData?.strategy || {},
         auditData:   latestAudit ?? null,
         actionItems: actions,
-      })
+      }, mode)
     } catch (e) {
       console.error('Erro PDF:', e)
       alert('Não foi possível gerar o PDF. Tente novamente.')
     } finally {
       setPdfLoading(false)
     }
-  }, [clientData, strategyData])
+  }, [clientData, strategyData, auditCache, actionPlanCache])
 
   const handleReset = () => {
     clearAll()

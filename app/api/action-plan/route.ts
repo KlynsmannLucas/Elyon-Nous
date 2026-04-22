@@ -100,6 +100,7 @@ Gere entre 8 e 15 ações concretas, priorizadas, sem repetição e sem genéric
 CITE campanhas, valores e métricas REAIS dos dados acima (ex: "Pausar campanha X que gastou R$Y sem conversão", "Renovar criativos nas campanhas com freq >4×").
 Agrupe em prioridades reais: crítico (bloqueia resultado agora), alto (impacto imediato), médio (escala), baixo (otimização futura).
 Cada ação deve ter impacto estimado em % ou R$ com base nos números reais informados.
+Para "responsavel": Gestor = ações técnicas de tráfego; Copy = redação de textos/criativos; Designer = produção visual; Cliente = ações que dependem do cliente (ex: atender leads, fornecer material).
 
 Responda APENAS com JSON válido (array), sem markdown:
 [
@@ -110,7 +111,8 @@ Responda APENAS com JSON válido (array), sem markdown:
     "descricao": "<o que fazer e por quê — com dados reais se disponíveis>",
     "como": "<passo a passo resumido de execução>",
     "impacto": "<resultado esperado em % ou R$>",
-    "prazo": "Imediato" | "7 dias" | "30 dias" | "90 dias"
+    "prazo": "Imediato" | "7 dias" | "30 dias" | "90 dias",
+    "responsavel": "Gestor" | "Copy" | "Designer" | "Cliente"
   }
 ]`
 

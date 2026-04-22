@@ -25,6 +25,8 @@ const OBJECTIVE_LABELS: Record<string, string> = {
 type LearningPhase = 'learning' | 'learning_limited' | 'stable' | 'inactive'
 type RecType = 'critical' | 'warning' | 'opportunity'
 
+type CampaignAge = 'new' | 'growing' | 'established' | 'veteran'
+
 type CampaignResult = {
   id: string; name: string; objective: string; objectiveLabel: string; status: string
   spend30: number; impressions: number; clicks: number; reach: number; frequency: number
@@ -34,6 +36,7 @@ type CampaignResult = {
   messages30: number; videoViews30: number
   spend7: number; conversions7: number
   learningPhase: LearningPhase
+  age: CampaignAge; ageDays: number
   issues: string[]; recommendations: string[]
 }
 
@@ -49,19 +52,61 @@ function extractRevenue(actions: any[], types: string[]): number {
     .reduce((s: number, a: any) => s + parseFloat(a.value || '0'), 0)
 }
 
+// Frequency fatigue threshold by niche — higher for broad audiences, lower for narrow
+const NICHE_FREQ_THRESHOLD: Record<string, number> = {
+  'E-commerce':        5,
+  'Varejo':            5,
+  'Infoproduto':       3,
+  'Curso Online':      3,
+  'Clínica / Saúde':  3.5,
+  'Imóveis':           3,
+  'Advocacia':         3,
+  'Restaurante':       4,
+  'SaaS / Tech':       4,
+  'Serviços Locais':   3.5,
+}
+
+function freqThreshold(niche: string): number {
+  for (const [key, val] of Object.entries(NICHE_FREQ_THRESHOLD)) {
+    if (niche.toLowerCase().includes(key.toLowerCase())) return val
+  }
+  return 4 // default
+}
+
+function dateStr(d: Date): string {
+  return d.toISOString().split('T')[0]
+}
+
+function campaignAge(createdTime: string | undefined): 'new' | 'growing' | 'established' | 'veteran' {
+  if (!createdTime) return 'established'
+  const days = (Date.now() - new Date(createdTime).getTime()) / (1000 * 60 * 60 * 24)
+  if (days < 14)  return 'new'
+  if (days < 45)  return 'growing'
+  if (days < 180) return 'established'
+  return 'veteran'
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { accessToken, accountId } = await req.json()
+    const { accessToken, accountId, niche = '' } = await req.json()
     if (!accessToken || !accountId) {
       return NextResponse.json({ success: false, error: 'Token ou Account ID não fornecido.' }, { status: 400 })
     }
+
+    const freqLimit = freqThreshold(niche)
 
     const baseUrl = `https://graph.facebook.com/v19.0`
     const act     = `act_${accountId}`
     const token   = encodeURIComponent(accessToken)
 
-    // ── 3 chamadas paralelas ──────────────────────────────────────────────────
-    const [campaignsRes, ins30Res, ins7Res] = await Promise.all([
+    // Previous period: 30-60 days ago
+    const today         = new Date()
+    const thirtyAgo     = new Date(today.getTime() - 30 * 86400000)
+    const sixtyAgo      = new Date(today.getTime() - 60 * 86400000)
+    const prevRange     = encodeURIComponent(JSON.stringify({ since: dateStr(sixtyAgo), until: dateStr(thirtyAgo) }))
+
+    // ── 4 chamadas paralelas ──────────────────────────────────────────────────
+    const [campaignsRes, ins30Res, ins7Res, insPrevRes] = await Promise.all([
       fetch(
         `${baseUrl}/${act}/campaigns?fields=id,name,objective,effective_status,created_time,daily_budget,lifetime_budget&limit=50&status=["ACTIVE","PAUSED"]&access_token=${token}`,
         { signal: AbortSignal.timeout(15000) }
@@ -74,10 +119,14 @@ export async function POST(req: NextRequest) {
         `${baseUrl}/${act}/insights?fields=campaign_id,spend,actions&date_preset=last_7d&level=campaign&limit=50&access_token=${token}`,
         { signal: AbortSignal.timeout(15000) }
       ),
+      fetch(
+        `${baseUrl}/${act}/insights?fields=campaign_id,spend,actions&time_range=${prevRange}&level=campaign&limit=50&access_token=${token}`,
+        { signal: AbortSignal.timeout(15000) }
+      ),
     ])
 
-    const [campaignsData, ins30Data, ins7Data] = await Promise.all([
-      campaignsRes.json(), ins30Res.json(), ins7Res.json(),
+    const [campaignsData, ins30Data, ins7Data, insPrevData] = await Promise.all([
+      campaignsRes.json(), ins30Res.json(), ins7Res.json(), insPrevRes.json(),
     ])
 
     if (campaignsData.error) {
@@ -93,6 +142,9 @@ export async function POST(req: NextRequest) {
 
     const ins7Map: Record<string, any> = {}
     for (const c of (ins7Data.data || [])) ins7Map[c.campaign_id] = c
+
+    const insPrevMap: Record<string, any> = {}
+    for (const c of (insPrevData.data || [])) insPrevMap[c.campaign_id] = c
 
     // ── Processa cada campanha ───────────────────────────────────────────────
     const campaigns: CampaignResult[] = (ins30Data.data || []).map((row: any): CampaignResult => {
@@ -139,6 +191,10 @@ export async function POST(req: NextRequest) {
       const objective = meta.objective || 'UNKNOWN'
       const isConversionObj = ['OUTCOME_LEADS','OUTCOME_SALES','LEAD_GENERATION','CONVERSIONS'].includes(objective)
       const status = meta.effective_status || 'ACTIVE'
+      const age    = campaignAge(meta.created_time)
+      const ageDays = meta.created_time
+        ? Math.floor((Date.now() - new Date(meta.created_time).getTime()) / 86400000)
+        : -1
 
       // ── Fase de aprendizado ───────────────────────────────────────────────
       let learningPhase: LearningPhase = 'stable'
@@ -155,7 +211,7 @@ export async function POST(req: NextRequest) {
       // ── Problemas ─────────────────────────────────────────────────────────
       const issues: string[] = []
       if (ctr30 < 0.5 && spend30 > 200)                        issues.push('CTR crítico (<0.5%)')
-      if (frequency > 4 && spend30 > 200)                      issues.push('Fadiga de criativo (frequência >4×)')
+      if (frequency > freqLimit && spend30 > 200)               issues.push(`Fadiga de criativo (frequência >${freqLimit}×)`)
       if (spend30 > 500 && leads30 === 0 && revenue30 === 0 && messages30 === 0) issues.push('Sem conversões registradas')
       if (learningPhase === 'learning_limited')                  issues.push('Aprendizado limitado')
       if (roas30 > 0 && roas30 < 1)                            issues.push('ROAS negativo (<1×)')
@@ -166,11 +222,12 @@ export async function POST(req: NextRequest) {
       if (learningPhase === 'learning')         recommendations.push('Não edite a campanha nos próximos dias — deixe o algoritmo aprender')
       if (learningPhase === 'learning_limited') recommendations.push('Aumente o orçamento ou amplie a segmentação para superar o aprendizado limitado')
       if (ctr30 < 0.5 && spend30 > 100)        recommendations.push('Troque os criativos — CTR baixo indica anúncio pouco relevante')
-      if (frequency > 4)                        recommendations.push('Renove os criativos ou expanda a audiência para reduzir saturação')
+      if (frequency > freqLimit)                recommendations.push(`Renove os criativos ou expanda a audiência para reduzir saturação (limite para este nicho: ${freqLimit}×)`)
       if (roas30 > 0 && roas30 < 1.5)          recommendations.push('ROAS abaixo do break-even — revise a estrutura ou lance uma campanha de remarketing')
       if (messages30 > 0 && formLeads30 === 0) recommendations.push('WhatsApp como conversão principal — configure automação de atendimento (ex: ManyChat) para qualificar e escalar sem aumentar equipe')
       if (cpm30 > 80 && ctr30 < 1)             recommendations.push('CPM alto com CTR baixo — otimize o ângulo criativo ou reduza a audiência')
       if (reach > 0 && frequency < 1.5 && spend30 > 200) recommendations.push('Frequência muito baixa — aumente o orçamento ou reduza a janela de remarketing')
+      if (age === 'new')                        recommendations.push('Campanha nova (<14 dias) — aguarde estabilização antes de avaliar performance')
 
       return {
         id:            row.campaign_id,
@@ -185,6 +242,7 @@ export async function POST(req: NextRequest) {
         messages30, videoViews30,
         spend7,   conversions7,
         learningPhase,
+        age, ageDays,
         issues,
         recommendations,
       }
@@ -267,11 +325,11 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const highFreqC = campaigns.filter(c => c.frequency > 4 && c.spend30 > 200)
+    const highFreqC = campaigns.filter(c => c.frequency > freqLimit && c.spend30 > 200)
     if (highFreqC.length > 0) {
       globalRecs.push({
         type: 'warning',
-        title: `${highFreqC.length} campanha(s) com frequência acima de 4×`,
+        title: `${highFreqC.length} campanha(s) com frequência acima de ${freqLimit}×`,
         description: 'Audiência saturada reduz CTR e eleva CPL. Renove criativos ou expanda o público-alvo.',
       })
     }
@@ -303,6 +361,20 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // ── Previous period totals (30–60 days ago) ──────────────────────────────
+    const prevSpend  = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseFloat(c.spend || '0'), 0)
+    const prevLeads  = Object.values(insPrevMap).reduce((s: number, c: any) => {
+      const forms = extractConversions(c.actions, ['lead', 'onsite_conversion.lead_grouped'])
+      const msgs  = extractConversions(c.actions, [
+        'onsite_conversion.messaging_conversation_started_7d',
+        'messaging_first_reply', 'onsite_conversion.messaging_first_reply',
+        'onsite_conversion.total_messaging_connection',
+      ])
+      return s + forms + msgs
+    }, 0)
+    const prevCpl    = prevLeads > 0 ? +(prevSpend / prevLeads).toFixed(2) : 0
+    const pctDelta   = (curr: number, prev: number) => prev > 0 ? +((curr - prev) / prev * 100).toFixed(1) : null
+
     return NextResponse.json({
       success: true,
       score,
@@ -322,6 +394,18 @@ export async function POST(req: NextRequest) {
         learningCampaigns: learningCampaigns.length,
         totalCampaigns:  campaigns.length,
       },
+      previousTotals: {
+        spend:      +prevSpend.toFixed(2),
+        leads:      prevLeads,
+        cpl:        prevCpl,
+        spendDelta: pctDelta(totalSpend, prevSpend),
+        leadsDelta: pctDelta(totalLeads, prevLeads),
+        cplDelta:   pctDelta(
+          totalLeads > 0 ? totalSpend / totalLeads : 0,
+          prevCpl,
+        ),
+      },
+      freqThreshold: freqLimit,
       globalRecs,
     })
   } catch (error: any) {

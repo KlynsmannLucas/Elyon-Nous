@@ -19,6 +19,7 @@ interface PDFData {
   strategy: Record<string, any>
   auditData?: any        // from auditCache (Meta Intelligence or Pipeline report)
   actionItems?: any[]   // from actionPlanCache
+  mode?: 'executive' | 'full'
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
@@ -523,12 +524,128 @@ function PageActionPlan({
 }
 
 // ── Documento PDF completo ────────────────────────────────────────────────────
+// ── MODO EXECUTIVO — Resumo em 1 página ────────────────────────────────────────
+function ExecutivePage({ data }: { data: PDFData }) {
+  const clientName  = data.clientData?.clientName || 'Cliente'
+  const niche       = data.clientData?.niche || ''
+  const budget      = data.clientData?.budget || 0
+  const audit       = data.auditData
+  const rm          = audit?._realMetrics
+  const strat       = data.strategy || {}
+  const topActions  = (data.actionItems || []).filter((a: any) => a.prioridade === 'critica').slice(0, 3)
+  const date        = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+
+  const kpis = rm ? [
+    { label: 'Investimento 30d', value: rm.totalSpend >= 1000 ? `R$${(rm.totalSpend / 1000).toFixed(1)}k` : `R$${rm.totalSpend}` },
+    { label: 'Leads', value: String(rm.totalLeads) },
+    { label: 'CPL Médio', value: rm.avgCPL ? `R$${rm.avgCPL}` : '—' },
+    { label: 'ROAS', value: rm.avgROAS ? `${rm.avgROAS}×` : '—' },
+  ] : []
+
+  const channels = strat.priority_ranking?.slice(0, 3) || []
+
+  return (
+    <Page size="A4" style={styles.page}>
+      {/* Header */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+        <Text style={{ fontSize: 14, color: '#F0B429', fontFamily: 'Helvetica-Bold', letterSpacing: 3 }}>ELYON NOUS</Text>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={{ fontSize: 9, color: '#64748B' }}>Resumo Executivo — {clientName}</Text>
+          <Text style={{ fontSize: 8, color: '#475569' }}>{niche} · {date}</Text>
+        </View>
+      </View>
+
+      {/* Score + KPIs */}
+      {(audit?.score || kpis.length > 0) && (
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+          {audit?.score && (
+            <View style={[styles.kpiCard, { backgroundColor: '#111114', borderColor: '#F0B42930', flex: 1.2 }]}>
+              <Text style={[styles.kpiValue, { fontSize: 28, color: audit.score >= 75 ? '#22C55E' : audit.score >= 55 ? '#F0B429' : '#FF4D4D' }]}>
+                {audit.score}
+              </Text>
+              <Text style={styles.kpiLabel}>Score da conta</Text>
+              <Text style={{ fontSize: 8, color: '#64748B', marginTop: 2 }}>{audit.scoreGrade} · Elyon Score</Text>
+            </View>
+          )}
+          {kpis.map((k) => (
+            <View key={k.label} style={styles.kpiCard}>
+              <Text style={styles.kpiValue}>{k.value}</Text>
+              <Text style={styles.kpiLabel}>{k.label}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Budget */}
+      <View style={[styles.card, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }]}>
+        <Text style={{ fontSize: 9, color: '#94A3B8' }}>Budget mensal configurado</Text>
+        <Text style={{ fontSize: 11, color: '#F0B429', fontFamily: 'Helvetica-Bold' }}>
+          R${budget.toLocaleString('pt-BR')}/mês
+        </Text>
+      </View>
+
+      {/* Canais estratégicos */}
+      {channels.length > 0 && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={styles.h3}>Canais Estratégicos</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {channels.map((ch: any, i: number) => (
+              <View key={i} style={[styles.kpiCard, { backgroundColor: '#0F1A2A' }]}>
+                <Text style={{ fontSize: 9, color: '#38BDF8', fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>{ch.channel}</Text>
+                {ch.leads_min && <Text style={{ fontSize: 8, color: '#64748B' }}>{ch.leads_min}–{ch.leads_max} leads</Text>}
+                {ch.cpl_avg && <Text style={{ fontSize: 8, color: '#94A3B8' }}>CPL ~R${Math.round(ch.cpl_avg)}</Text>}
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Top ações críticas */}
+      {topActions.length > 0 && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={styles.h3}>Ações Prioritárias</Text>
+          {topActions.map((a: any, i: number) => (
+            <View key={i} style={[styles.card, { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 6, borderLeftWidth: 3, borderLeftColor: '#FF4D4D' }]}>
+              <View>
+                <Text style={{ fontSize: 9, color: '#FFFFFF', fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>{a.titulo}</Text>
+                <Text style={{ fontSize: 8, color: '#94A3B8' }}>{a.descricao?.slice(0, 120)}{(a.descricao?.length || 0) > 120 ? '...' : ''}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Problemas globais */}
+      {audit?._intelligenceData?.globalRecs?.filter((r: any) => r.type === 'critical').slice(0, 2).map((rec: any, i: number) => (
+        <View key={i} style={[styles.card, { borderLeftWidth: 3, borderLeftColor: '#FF4D4D', marginBottom: 6 }]}>
+          <Text style={{ fontSize: 9, color: '#FF4D4D', fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>{rec.title}</Text>
+          <Text style={{ fontSize: 8, color: '#94A3B8' }}>{rec.description?.slice(0, 150)}</Text>
+        </View>
+      ))}
+
+      {/* Footer */}
+      <View style={{ position: 'absolute', bottom: 30, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 7, color: '#1E1E24' }}>Elyon Nous — Relatório Executivo</Text>
+        <Text style={{ fontSize: 7, color: '#1E1E24' }}>Confidencial</Text>
+      </View>
+    </Page>
+  )
+}
+
 function RelatorioPDF({ data }: { data: PDFData }) {
-  const clientName = data.clientData?.clientName || 'Cliente'
-  const niche      = data.clientData?.niche || ''
-  const budget     = data.clientData?.budget || 0
-  const strategy   = data.strategy || {}
+  const clientName  = data.clientData?.clientName || 'Cliente'
+  const niche       = data.clientData?.niche || ''
+  const budget      = data.clientData?.budget || 0
+  const strategy    = data.strategy || {}
   const actionItems = data.actionItems || []
+
+  if (data.mode === 'executive') {
+    return (
+      <Document>
+        <ExecutivePage data={data} />
+      </Document>
+    )
+  }
 
   return (
     <Document>
@@ -541,14 +658,14 @@ function RelatorioPDF({ data }: { data: PDFData }) {
 }
 
 // ── Função exportada para abrir PDF em nova aba ───────────────────────────────
-export async function generatePDF(data: PDFData): Promise<void> {
+export async function generatePDF(data: PDFData, mode: 'executive' | 'full' = 'full'): Promise<void> {
   const clientName = data.clientData?.clientName || 'relatorio'
   const date = new Date().toISOString().split('T')[0]
-  const blob = await pdf(<RelatorioPDF data={data} />).toBlob()
+  const blob = await pdf(<RelatorioPDF data={{ ...data, mode }} />).toBlob()
   const url  = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `elyon-auditoria-${clientName.toLowerCase().replace(/\s+/g, '-')}-${date}.pdf`
+  a.download = `elyon-${mode === 'executive' ? 'executivo' : 'auditoria'}-${clientName.toLowerCase().replace(/\s+/g, '-')}-${date}.pdf`
   a.click()
   URL.revokeObjectURL(url)
 }

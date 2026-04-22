@@ -8,7 +8,7 @@ import { SIDEBAR_SECTIONS } from './DashboardSidebar'
 interface Props {
   activeTab: TabKey
   clientData: any
-  onExport: () => void
+  onExport: (mode?: 'executive' | 'full') => void
   onReset: () => void
   onSave: () => void
   pdfLoading: boolean
@@ -16,6 +16,7 @@ interface Props {
 
 export function DashboardTopbar({ activeTab, clientData, onExport, onReset, onSave, pdfLoading }: Props) {
   const [savedFlash, setSavedFlash] = useState(false)
+  const [pdfMenuOpen, setPdfMenuOpen] = useState(false)
 
   const allItems = SIDEBAR_SECTIONS.flatMap((s) => s.items)
   const currentTab = allItems.find((t) => t.key === activeTab)
@@ -61,14 +62,45 @@ export function DashboardTopbar({ activeTab, clientData, onExport, onReset, onSa
         }}>
           Trocar cliente
         </button>
-        <button onClick={onExport} disabled={pdfLoading} style={{
-          padding: '5px 14px', borderRadius: '7px', border: 'none',
-          background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000',
-          fontSize: '11px', fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer',
-          opacity: pdfLoading ? 0.65 : 1,
-        }}>
-          {pdfLoading ? '⏳ Gerando...' : '↓ PDF'}
-        </button>
+        <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', borderRadius: '7px', overflow: 'hidden', border: 'none', background: 'linear-gradient(135deg, #F5A500, #FFD166)' }}>
+            <button onClick={() => onExport('full')} disabled={pdfLoading} style={{
+              padding: '5px 12px', background: 'transparent', border: 'none', color: '#000',
+              fontSize: '11px', fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer',
+              opacity: pdfLoading ? 0.65 : 1, borderRight: '1px solid rgba(0,0,0,0.15)',
+            }}>
+              {pdfLoading ? '⏳ Gerando...' : '↓ PDF'}
+            </button>
+            <button onClick={() => setPdfMenuOpen(v => !v)} disabled={pdfLoading} style={{
+              padding: '5px 7px', background: 'transparent', border: 'none', color: '#000',
+              fontSize: '10px', fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer',
+              opacity: pdfLoading ? 0.65 : 1,
+            }}>▾</button>
+          </div>
+          {pdfMenuOpen && (
+            <div style={{
+              position: 'absolute', right: 0, top: '110%', zIndex: 50,
+              background: '#16161A', border: '1px solid #2A2A30', borderRadius: '10px',
+              padding: '6px', minWidth: '160px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            }}>
+              {[
+                { label: '📄 Relatório completo', mode: 'full' as const },
+                { label: '⚡ Resumo executivo', mode: 'executive' as const },
+              ].map(({ label, mode }) => (
+                <button key={mode} onClick={() => { onExport(mode); setPdfMenuOpen(false) }} style={{
+                  display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left',
+                  background: 'transparent', border: 'none', color: '#CBD5E1', fontSize: '11px',
+                  cursor: 'pointer', borderRadius: '6px',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#1E1E24')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

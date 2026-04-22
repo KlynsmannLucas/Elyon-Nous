@@ -205,6 +205,9 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
     avgCPL: number | null; avgROAS: number | null; avgCTR: number | null
     campaignCount: number; dataSource: string
   } | undefined
+  const prevTotals = latestAudit?._previousTotals as {
+    spendDelta: number | null; leadsDelta: number | null; cplDelta: number | null
+  } | undefined
 
   // Tem dados reais úteis quando há spend E leads reais
   const hasRealData = !!(rm && rm.totalSpend > 0 && rm.totalLeads > 0)
@@ -233,12 +236,14 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
             : `R$${rm.totalSpend}`,
           sub: `${rm.campaignCount} campanhas · fonte: ${rm.dataSource}`,
           color: '#F0B429',
+          trend: prevTotals?.spendDelta ?? undefined,
         },
         {
           label: 'Leads Reais',
           value: rm.totalLeads.toLocaleString('pt-BR'),
           sub: bench ? `Benchmark CPL: R$${bench.cpl_min}–${bench.cpl_max}` : 'Dados da auditoria',
           color: '#22C55E',
+          trend: prevTotals?.leadsDelta ?? undefined,
         },
         {
           label: rm.avgROAS ? 'ROAS Real' : 'CTR Médio',
@@ -247,12 +252,14 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
             ? bench ? `Meta nicho: ${bench.kpi_thresholds.roas_good}×` : 'Dados de conversão'
             : 'Cliques / Impressões',
           color: rm.avgROAS ? roasColor : '#A78BFA',
+          trend: undefined,
         },
         {
           label: 'CPL Real',
           value: rm.avgCPL ? `R$${rm.avgCPL}` : '—',
           sub: bench ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}` : 'CPL médio da conta',
           color: cplColor,
+          trend: prevTotals?.cplDelta != null ? -prevTotals.cplDelta : undefined,
         },
       ]
     }

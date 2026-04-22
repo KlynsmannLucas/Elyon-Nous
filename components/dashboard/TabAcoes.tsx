@@ -32,6 +32,20 @@ const CATEGORIA_ICON: Record<string, string> = {
   Funil:      '🔀', Escala:    '📈', Estrutura:  '🏗️', Orçamento: '💰',
 }
 
+const RESPONSAVEL_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+  Gestor:    { label: 'Gestor',    color: '#38BDF8', bg: 'rgba(56,189,248,0.08)',   icon: '📡' },
+  Copy:      { label: 'Copy',      color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', icon: '✏️' },
+  Designer:  { label: 'Designer',  color: '#FB923C', bg: 'rgba(251,146,60,0.08)',  icon: '🎨' },
+  Cliente:   { label: 'Cliente',   color: '#22C55E', bg: 'rgba(34,197,94,0.08)',   icon: '🏢' },
+}
+
+function prazoToDate(prazo: string, generatedAt?: string): string {
+  const base = generatedAt ? new Date(generatedAt) : new Date()
+  const days = prazo === 'Imediato' ? 1 : prazo === '7 dias' ? 7 : prazo === '30 dias' ? 30 : 90
+  const d = new Date(base.getTime() + days * 86400000)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+}
+
 export function TabAcoes({ clientData, strategyData }: Props) {
   const { auditCache, actionPlanCache, setActionPlanCache, updateActionStatus } = useAppStore()
   const [loading, setLoading] = useState(false)
@@ -39,8 +53,9 @@ export function TabAcoes({ clientData, strategyData }: Props) {
   const [filtro,  setFiltro]  = useState<Filtro>('todas')
   const [expanded, setExpanded] = useState<string | null>(null)
 
-  const key     = clientData?.clientName || ''
-  const actions = actionPlanCache[key] || []
+  const key            = clientData?.clientName || ''
+  const actions        = actionPlanCache[key] || []
+  const planGeneratedAt = actions[0]?.id ? new Date(parseInt(String(actions[0].id).split('_')[0])).toISOString() : undefined
 
   // Extract latest audit object (handles both old array format and direct object)
   const auditHistory  = auditCache[key]
@@ -295,7 +310,18 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                   style={{ background: 'rgba(100,116,139,0.1)', color: sCfg.color, border: `1px solid ${sCfg.color}30` }}>
                                   {sCfg.label}
                                 </span>
-                                <span className="text-[10px] text-slate-600">⏱ {item.prazo}</span>
+                                <span className="text-[10px] text-slate-600">
+                                  ⏱ {prazoToDate(item.prazo, planGeneratedAt)} ({item.prazo})
+                                </span>
+                                {item.responsavel && (() => {
+                                  const r = RESPONSAVEL_CONFIG[item.responsavel] || { label: item.responsavel, color: '#64748B', bg: 'rgba(100,116,139,0.08)', icon: '👤' }
+                                  return (
+                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                                      style={{ color: r.color, background: r.bg, border: `1px solid ${r.color}30` }}>
+                                      {r.icon} {r.label}
+                                    </span>
+                                  )
+                                })()}
                               </div>
                               <div className="text-sm font-semibold text-white mt-1 leading-snug"
                                 style={{ textDecoration: item.status === 'concluida' ? 'line-through' : 'none', opacity: item.status === 'concluida' ? 0.5 : 1 }}>
