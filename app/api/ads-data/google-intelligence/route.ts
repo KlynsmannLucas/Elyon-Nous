@@ -95,6 +95,17 @@ export async function POST(req: NextRequest) {
       }
     )
 
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      const isDevTokenMissing = !process.env.GOOGLE_ADS_DEVELOPER_TOKEN
+      return NextResponse.json({
+        success: false,
+        error: isDevTokenMissing
+          ? 'GOOGLE_ADS_DEVELOPER_TOKEN não configurado no servidor. Configure em Vercel → Settings → Environment Variables.'
+          : `Google Ads API retornou resposta inválida (HTTP ${res.status}). Verifique se o Customer ID ${cleanId} está correto e se o token OAuth ainda é válido.`,
+      }, { status: 400 })
+    }
+
     const data = await res.json()
 
     if (data.error || !res.ok) {

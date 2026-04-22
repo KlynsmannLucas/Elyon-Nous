@@ -964,6 +964,31 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
       'Segmentação por raio de 5–8 km + renda B/C converte melhor que segmentação por interesse',
     ],
   },
+  auditoria: {
+    name: 'Auditoria / Compliance / Riscos',
+    cpl_min: 150, cpl_max: 600,
+    cpl_by_channel: {
+      'LinkedIn':      'R$180–500',
+      'Google Search': 'R$150–450',
+      'E-mail Mkt':    'R$120–350',
+      'YouTube':       'R$200–600',
+    },
+    cvr_lead_to_sale: 0.10,
+    avg_ticket: 18000,
+    ltv_multiplier: 5.0,
+    best_channels: ['LinkedIn', 'Google Search', 'E-mail Mkt'],
+    budget_floor: 5000,
+    budget_ideal: 15000,
+    kpi_thresholds: { cpl_good: 280, cpl_bad: 500, roas_good: 4.0, cvr_good: 0.12 },
+    seasonality: ['Jan', 'Mar'],
+    insights: [
+      'CFC/CRC regulam publicidade — foco em conteúdo técnico e autoridade, sem promessas de resultado',
+      'Empresas obrigadas por lei (CVM, BACEN, seguradoras) são os leads mais quentes — segmente por setor',
+      'Ciclo de venda longo (60–120 dias): LinkedIn + e-mail nurturing com conteúdo regulatório é essencial',
+      'Relatórios e benchmarks de mercado como iscas digitais convertem 4× mais que pitch direto',
+      'Depoimento de CFO ou Comitê de Auditoria é o gatilho de conversão mais poderoso neste nicho',
+    ],
+  },
   outro: {
     name: 'Outro / Geral',
     cpl_min: 30, cpl_max: 120,
@@ -1167,6 +1192,14 @@ const KEY_MAP: Record<string, string> = {
   papelaria: 'ecommerce', gráfica: 'ecommerce', grafica: 'ecommerce', impressão: 'ecommerce', impressao: 'ecommerce',
   loja: 'ecommerce',   // fallback genérico para "loja" sem modificador específico
 
+  // ── Auditoria / Compliance ────────────────────────────────────────────────
+  auditoria: 'auditoria', auditor: 'auditoria', compliance: 'auditoria',
+  'gestão de riscos': 'auditoria', 'gestao de riscos': 'auditoria',
+  'controle interno': 'auditoria', 'controles internos': 'auditoria',
+  sox: 'auditoria', 'due diligence': 'auditoria', 'due diligência': 'auditoria',
+  'governança': 'auditoria', governanca: 'auditoria',
+  lgpd: 'auditoria', iso: 'auditoria',
+
   // ── Outro ─────────────────────────────────────────────────────────────────
   outro: 'outro',
 }
@@ -1212,6 +1245,7 @@ const SEASONALITY_INDEXES: Record<string, number[]> = {
   autoescola:          [1.40, 1.10, 0.90, 0.85, 0.85, 0.85, 1.25, 1.00, 0.85, 0.85, 0.90, 0.90],
   lavanderia:          [1.20, 1.00, 0.90, 0.90, 0.95, 1.25, 1.15, 0.95, 0.90, 0.90, 0.95, 1.00],
   lava_jato:           [1.20, 1.15, 1.10, 0.90, 0.80, 0.75, 0.75, 0.80, 0.90, 0.95, 1.10, 1.35],
+  auditoria:           [1.35, 1.20, 1.40, 1.25, 0.85, 0.75, 0.70, 0.80, 0.90, 0.95, 1.05, 1.35],
   outro:               [1.05, 0.95, 0.95, 0.90, 0.90, 0.90, 0.95, 0.95, 1.00, 1.05, 1.05, 1.00],
 }
 
@@ -1401,6 +1435,11 @@ const CREATIVE_ANGLES_DATA: Record<string, CreativeAngles> = {
     saturated:     ['"lavagem completa por R$X"', 'foto estática de carro molhado', '"qualidade e rapidez"'],
     trending:      ['vídeo antes/depois em Reels (15s)', 'pacote fidelidade mensal', 'higienização interna completa com processo visível'],
     underexplored: ['lavagem ecológica/a seco (sem água)', 'atendimento domiciliar / drive-thru', 'proteção de pintura e ceramização para iniciantes'],
+  },
+  auditoria: {
+    saturated:     ['"auditoria independente e especializada"', 'lista de certificações sem contexto', 'preço de relatório sem âncora de valor'],
+    trending:      ['impacto regulatório em linguagem do C-Level', 'caso real de risco evitado por auditoria', 'radar de mudanças normativas (CVM, BACEN, LGPD)'],
+    underexplored: ['diagnóstico gratuito de conformidade como isca', 'diferença entre auditoria interna vs externa explicada', 'ROI financeiro de uma auditoria de processos'],
   },
   outro: {
     saturated:     ['promoção genérica', 'foto sem contexto', '"empresa de confiança"'],

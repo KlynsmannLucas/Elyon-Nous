@@ -336,6 +336,10 @@ export default function DashboardPage() {
           if (Object.keys(restored).length > 0) {
             useAppStore.setState((s) => ({ auditCache: { ...s.auditCache, ...restored } }))
           }
+          // Incognito fix: if no active client in store, auto-load the most recent one
+          if (!useAppStore.getState().clientData && clients[0]) {
+            useAppStore.getState().loadSavedClient(clients[0].id)
+          }
         }
       })
       .catch(() => {}) // falha silenciosa — localStorage continua funcionando
