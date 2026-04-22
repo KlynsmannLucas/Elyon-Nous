@@ -27,6 +27,67 @@ function buildFallbackAudit(
 
   const grade = score >= 85 ? 'A' : score >= 72 ? 'B+' : score >= 58 ? 'B' : score >= 45 ? 'C+' : 'C'
 
+  // ── Inferências de estrutura a partir dos dados reais ──────────────────────
+  const metaCamps = allCampaigns.filter(c => c.platform !== 'google')
+  const googleCamps = allCampaigns.filter(c => c.platform === 'google')
+
+  // Pixel: se há leads registrados via API, pixel está funcionando
+  const metaLeads = (metaTotals?.leads || 0) + metaCamps.reduce((s, c) => s + (c.leads || 0), 0)
+  const metaSpend  = metaTotals?.spend || metaCamps.reduce((s, c) => s + (c.spend || 0), 0)
+  const pixelOk: boolean | null =
+    metaLeads > 0 ? true :
+    metaSpend > 500 && metaLeads === 0 ? false :
+    null
+
+  // Eventos duplicados: ROAS impossível (>20×) sugere valor de conversão inflado
+  const avgROAS = metaTotals?.roas || (metaCamps.length > 0
+    ? metaCamps.reduce((s, c) => s + (c.roas || 0), 0) / metaCamps.filter(c => c.roas > 0).length
+    : 0)
+  const eventosDuplicados: boolean | null = avgROAS > 20 ? true : null
+
+  // Estrutura do funil: analisa nomes das campanhas
+  const tofKw = /\b(tof|tofu|topo|cold|frio|prospe[çc]|prospect|awareness|alcance|aquisic)/i
+  const mofKw = /\b(mof|mofu|morno|meio|consider|warm|engajamento)/i
+  const bofKw = /\b(bof|bofu|quente|hot|remar|retar|remarketing|retargeting|conv|compra|oferta)/i
+  const hasTof = metaCamps.some(c => tofKw.test(c.name || ''))
+  const hasMof = metaCamps.some(c => mofKw.test(c.name || ''))
+  const hasBof = metaCamps.some(c => bofKw.test(c.name || ''))
+  const funnelTiers = [hasTof && 'TOF', hasMof && 'MOF', hasBof && 'BOF'].filter(Boolean)
+
+  let organizacaoFunil: string
+  if (metaCamps.length === 0) {
+    organizacaoFunil = 'Sem dados de campanhas disponíveis.'
+  } else if (funnelTiers.length >= 2) {
+    organizacaoFunil = `Estrutura de funil detectada com camadas ${funnelTiers.join('+')} nos nomes das campanhas. Confirmar separação de públicos por temperatura.`
+  } else if (funnelTiers.length === 1) {
+    organizacaoFunil = `Apenas campanhas de ${funnelTiers[0]} detectadas — ausência de estrutura completa de funil (TOF→MOF→BOF). Recomendado criar camadas de consideração e remarketing.`
+  } else {
+    organizacaoFunil = `${metaCamps.length} campanhas sem nomenclatura de funil. Padronizar com prefixos TOF/MOF/BOF para facilitar otimização e diagnóstico.`
+  }
+
+  const hasBofCamps = metaCamps.some(c => bofKw.test(c.name || ''))
+  const separacaoPublicos = hasBofCamps
+    ? 'Presença de campanhas de remarketing/BOF detectada. Confirmar audiências frio, morno e quente no Gerenciador de Anúncios.'
+    : 'Sem campanhas de remarketing identificadas pelos nomes. Criar audiências separadas: visitantes 7d, 30d e leads sem conversão.'
+
+  // Campanhas com desperdício crítico (gasto > 10% do total, zero leads)
+  const wasteCamps = metaCamps.filter(c => (c.spend || 0) > totalSpend * 0.1 && (c.leads || 0) === 0)
+  const highFreqCamps = metaCamps.filter(c => (c.frequency || 0) > 4)
+
+  const metaErros: string[] = []
+  if (realCPL > bench.cpl_max) metaErros.push(`CPL médio R$${realCPL} acima do benchmark — revisar estrutura de segmentação`)
+  wasteCamps.forEach(c => metaErros.push(`"${c.name}" — R$${Math.round(c.spend).toLocaleString('pt-BR')} gastos sem conversão`))
+  highFreqCamps.forEach(c => metaErros.push(`"${c.name}" — frequência ${c.frequency?.toFixed(1)}× (público saturado)`))
+
+  const trackingProblemas: string[] = []
+  if (pixelOk === false) trackingProblemas.push('Pixel com problema: gasto registrado mas zero leads via API — verificar evento de conversão no Events Manager')
+  if (eventosDuplicados) trackingProblemas.push('ROAS extremamente alto — possível duplicidade de eventos de conversão. Auditar no Events Manager.')
+  if (trackingProblemas.length === 0) {
+    trackingProblemas.push(pixelOk === true
+      ? 'Pixel registrando conversões corretamente. Validar se o evento otimizado corresponde ao lead real (não apenas PageView).'
+      : 'Auditoria completa requer acesso ao Events Manager para validar eventos e API de Conversões.')
+  }
+
   return {
     health_score: score,
     grade,
@@ -37,20 +98,24 @@ function buildFallbackAudit(
       desalinhamentos: realCPL > bench.cpl_max
         ? [`CPL ${Math.round(cplDiff)}% acima do benchmark do nicho — sinaliza desalinhamento entre criativo, audiência ou oferta`]
         : [`Performance dentro do benchmark do nicho ${niche}`],
-      riscos: ['Dependência de um único canal de aquisição', 'Tracking não auditado — pode haver sub-registro de conversões'],
+      riscos: ['Dependência de um único canal de aquisição', pixelOk === false ? 'Pixel com problema detectado — conversões podem estar sub-registradas' : 'Validar tracking antes de escalar investimento'],
     },
 
     estrutura_campanhas: {
-      meta: metaTotals ? {
-        resumo: `${allCampaigns.filter(c => c.platform !== 'google').length} campanhas no Meta Ads`,
-        organizacao_funil: 'Estrutura não auditada — necessário acesso ao Gerenciador de Anúncios',
-        separacao_publicos: 'Não verificado via export. Conferir separação frio/morno/quente nas campanhas.',
-        tipos_campanha: 'Dados de campanha disponíveis no export.',
-        erros: realCPL > bench.cpl_max ? [`CPL médio R$${realCPL} acima do benchmark — revisar estrutura`] : [],
+      meta: metaTotals || metaCamps.length > 0 ? {
+        resumo: `${metaCamps.length || metaTotals?.campaignCount || '?'} campanhas no Meta Ads analisadas via API`,
+        organizacao_funil: organizacaoFunil,
+        separacao_publicos: separacaoPublicos,
+        tipos_campanha: metaCamps.length > 0
+          ? `Campanhas: ${metaCamps.slice(0, 3).map(c => `"${c.name}"`).join(', ')}${metaCamps.length > 3 ? ` e mais ${metaCamps.length - 3}` : ''}.`
+          : 'Dados de campanha disponíveis via API.',
+        erros: metaErros,
       } : null,
-      google: googleTotals ? {
-        resumo: `${allCampaigns.filter(c => c.platform === 'google').length} campanhas no Google Ads`,
-        organizacao: 'Estrutura disponível via export de campanhas.',
+      google: googleTotals || googleCamps.length > 0 ? {
+        resumo: `${googleCamps.length || '?'} campanhas no Google Ads`,
+        organizacao: googleCamps.length > 0
+          ? `Campanhas detectadas: ${googleCamps.slice(0,3).map(c => `"${c.name}"`).join(', ')}.`
+          : 'Estrutura disponível via export de campanhas.',
         palavras_chave_estrutura: 'Verificar separação de campanhas por intenção de compra.',
         tipos_campanha: 'Conferir uso correto de Search vs PMAX vs Display.',
         erros: [],
@@ -58,20 +123,22 @@ function buildFallbackAudit(
     },
 
     tracking: {
-      meta: metaTotals ? {
-        pixel_ok: null,
-        api_conversoes: null,
-        eventos_duplicados: null,
-        problemas: ['Auditoria de pixel requer acesso ao Events Manager — não verificável via export'],
+      meta: metaTotals || metaCamps.length > 0 ? {
+        pixel_ok: pixelOk,
+        api_conversoes: metaLeads > 0 ? true : null,
+        eventos_duplicados: eventosDuplicados,
+        problemas: trackingProblemas,
       } : null,
-      google: googleTotals ? {
-        conversoes_confiaveis: null,
+      google: googleTotals || googleCamps.length > 0 ? {
+        conversoes_confiaveis: (googleTotals?.leads || 0) > 0 ? true : null,
         importacao_correta: null,
         problema_vaidade: null,
         problemas: ['Verificar importação de conversões GA4 vs tag direta — conferir no Google Ads'],
       } : null,
-      prioridade_maxima: false,
-      alerta: 'Audite o tracking manualmente — é a base de toda otimização. Sem tracking correto, todo o restante é suposição.',
+      prioridade_maxima: pixelOk === false || eventosDuplicados === true,
+      alerta: pixelOk === false
+        ? 'CRÍTICO: Pixel registrando gasto sem conversões — otimização do algoritmo está comprometida. Corrija o evento de conversão antes de continuar investindo.'
+        : 'Audite o tracking manualmente — é a base de toda otimização. Sem tracking correto, todo o restante é suposição.',
     },
 
     performance: {

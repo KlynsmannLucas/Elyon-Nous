@@ -21,11 +21,13 @@ export async function fetchRealtimeBenchmarks(
   const location = city ? ` ${city} Brasil` : ' Brasil'
   const year = new Date().getFullYear()
 
-  // 3 queries focadas — CPL, ROAS e tendências do nicho
+  // 5 queries focadas — CPL por canal, ROAS, tendências e biblioteca de anúncios
   const queries = [
-    `CPL custo por lead ${niche}${location} ${year} Meta Ads Google Ads benchmark`,
-    `ROAS retorno sobre investimento ${niche}${location} ${year} marketing digital`,
-    `tendências marketing digital ${niche}${location} ${year} melhores canais estratégia`,
+    `CPL custo por lead ${niche}${location} ${year} Facebook Ads Instagram Meta Ads benchmark real`,
+    `CPL custo por lead ${niche}${location} ${year} Google Ads Search Shopping PMAX benchmark`,
+    `CPL custo por lead ${niche}${location} ${year} TikTok LinkedIn YouTube Pinterest benchmark`,
+    `ROAS retorno sobre investimento ${niche}${location} ${year} resultados reais gestores`,
+    `tendências criativos anúncios ${niche}${location} ${year} melhores formatos que convertem`,
   ]
 
   try {
@@ -37,16 +39,18 @@ export async function fetchRealtimeBenchmarks(
 
     results.forEach((result, i) => {
       if (result.status === 'fulfilled' && result.value) {
-        const label = i === 0 ? 'CPL e Benchmarks de Custo'
-          : i === 1 ? 'ROAS e Retorno sobre Investimento'
-          : 'Tendências e Melhores Canais'
+        const label = i === 0 ? 'CPL Meta Ads (Facebook/Instagram) — Dados Reais'
+          : i === 1 ? 'CPL Google Ads (Search/PMAX) — Dados Reais'
+          : i === 2 ? 'CPL TikTok/LinkedIn/YouTube — Dados Reais'
+          : i === 3 ? 'ROAS e Retorno sobre Investimento — Dados Reais'
+          : 'Criativos e Formatos que Convertem'
         sections.push(`[${label}]\n${result.value}`)
       }
     })
 
     if (sections.length === 0) return ''
 
-    return `\nDADOS DE MERCADO EM TEMPO REAL (fonte: busca web ${year}):\n${sections.join('\n\n')}\n\nUSE esses dados para calibrar CPL, ROAS e canais recomendados. Priorize dados reais sobre benchmarks estáticos quando houver conflito.`
+    return `\nDADOS DE MERCADO EM TEMPO REAL — CPL POR CANAL (fonte: busca web ${year}):\n${sections.join('\n\n')}\n\nCRÍTICO: Use esses dados de CPL real por canal para preencher os campos "cpl_min", "cpl_max" e "cpl_avg" de cada canal em "priority_ranking". Substitua benchmarks estáticos por esses dados reais quando disponíveis. Se um canal não tiver dados, use o benchmark interno como fallback.`
 
   } catch {
     return ''

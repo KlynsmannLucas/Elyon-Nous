@@ -7,6 +7,13 @@ import type { ClientData, ClientAsset } from '@/lib/store'
 
 interface Props { clientData: ClientData | null }
 
+interface CopyVariant {
+  headline: string
+  primaryText: string
+  cta: string
+  angle: string
+}
+
 const ASSET_TYPES: Array<{ key: ClientAsset['type']; label: string; icon: string; desc: string }> = [
   { key: 'logo',      label: 'Logo',             icon: '🏷️', desc: 'Logotipo da marca (PNG/SVG com fundo transparente)' },
   { key: 'product',   label: 'Produto',           icon: '📦', desc: 'Foto do produto ou serviço' },
@@ -28,12 +35,51 @@ function formatSize(kb: number) {
 }
 
 export function TabAssets({ clientData }: Props) {
-  const { clientAssets, addClientAsset, removeClientAsset } = useAppStore()
-  const [selectedType, setSelectedType] = useState<ClientAsset['type']>('logo')
-  const [dragOver,     setDragOver]     = useState(false)
-  const [uploading,    setUploading]    = useState(false)
-  const [filterType,   setFilterType]   = useState<ClientAsset['type'] | 'all'>('all')
+  const { clientAssets, addClientAsset, removeClientAsset, generatedPersona } = useAppStore()
+  const [selectedType,  setSelectedType]  = useState<ClientAsset['type']>('logo')
+  const [dragOver,      setDragOver]      = useState(false)
+  const [uploading,     setUploading]     = useState(false)
+  const [filterType,    setFilterType]    = useState<ClientAsset['type'] | 'all'>('all')
+  const [activeAssetId, setActiveAssetId] = useState<string | null>(null)
+  const [generating,    setGenerating]    = useState(false)
+  const [variants,      setVariants]      = useState<CopyVariant[]>([])
+  const [copyError,     setCopyError]     = useState('')
+  const [copied,        setCopied]        = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const generateCopy = async (asset: ClientAsset) => {
+    if (!clientData) return
+    setActiveAssetId(asset.id)
+    setGenerating(true)
+    setCopyError('')
+    setVariants([])
+    try {
+      const res = await fetch('/api/assets/generate-copy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientData,
+          assetType: asset.type,
+          assetName: asset.name,
+          persona: generatedPersona,
+          platform: 'meta',
+        }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error)
+      setVariants(data.variants || [])
+    } catch (e: any) {
+      setCopyError(e.message)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(id)
+    setTimeout(() => setCopied(null), 1500)
+  }
 
   const key    = clientData?.clientName || ''
   const assets = (clientAssets[key] || []).filter(a => filterType === 'all' || a.type === filterType)
@@ -158,20 +204,18 @@ export function TabAssets({ clientData }: Props) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {assets.map((asset) => (
               <div key={asset.id} className="rounded-2xl overflow-hidden group relative"
-                style={{ background: '#111114', border: '1px solid #2A2A30' }}>
+                style={{ background: '#111114', border: `1px solid ${activeAssetId === asset.id ? '#F0B42940' : '#2A2A30'}` }}>
                 {/* Preview */}
-                <div className="relative aspect-square bg-[#0A0A0B] flex items-center justify-center overflow-hidden">
+                <div className="relative aspect-video bg-[#0A0A0B] flex items-center justify-center overflow-hidden">
                   <img src={asset.dataUrl} alt={asset.name}
                     className="object-contain w-full h-full p-2" />
-                  {/* Type badge */}
                   <span className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded"
                     style={{ background: `${TYPE_COLOR[asset.type]}20`, color: TYPE_COLOR[asset.type], border: `1px solid ${TYPE_COLOR[asset.type]}30` }}>
                     {ASSET_TYPES.find(t => t.key === asset.type)?.icon} {asset.type}
                   </span>
-                  {/* Delete on hover */}
                   <button
                     onClick={() => removeClientAsset(key, asset.id)}
                     className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
@@ -179,14 +223,106 @@ export function TabAssets({ clientData }: Props) {
                     ✕
                   </button>
                 </div>
-                {/* Info */}
+                {/* Info + generate button */}
                 <div className="p-3">
-                  <div className="text-xs text-white font-medium truncate">{asset.name}</div>
-                  <div className="text-[10px] text-slate-600 mt-0.5">{formatSize(asset.sizeKb)}</div>
+                  <div className="text-xs text-white font-medium truncate mb-1">{asset.name}</div>
+                  <div className="text-[10px] text-slate-600 mb-2">{formatSize(asset.sizeKb)}</div>
+                  <button
+                    onClick={() => generateCopy(asset)}
+                    disabled={generating && activeAssetId === asset.id}
+                    className="w-full py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}>
+                    {generating && activeAssetId === asset.id ? '⏳ Gerando...' : '⚡ Gerar Copy com IA'}
+                  </button>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Copy generation results */}
+          {activeAssetId && (variants.length > 0 || generating || copyError) && (
+            <div className="rounded-2xl p-5" style={{ background: '#0D0D10', border: '1px solid #F0B42930' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display font-bold text-white text-sm flex items-center gap-2">
+                  <span>⚡</span> Copy gerada com IA
+                  <span className="text-[10px] text-slate-500 font-normal">— pronta para usar no Meta Ads</span>
+                </h3>
+                <button onClick={() => { setActiveAssetId(null); setVariants([]) }}
+                  className="text-slate-600 hover:text-slate-400 text-xs">fechar ×</button>
+              </div>
+
+              {copyError && (
+                <div className="text-red-400 text-xs bg-red-900/20 rounded-xl px-4 py-3">{copyError}</div>
+              )}
+
+              {generating && (
+                <div className="flex items-center gap-3 text-slate-400 text-sm py-4">
+                  <span className="animate-pulse">⚡</span>
+                  Analisando o asset e gerando 3 variações de copy específicas para {clientData?.niche}...
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {variants.map((v, i) => {
+                  const angleColors: Record<string, string> = {
+                    dor: '#FF4D4D', aspiração: '#38BDF8', 'prova social': '#22C55E',
+                    urgência: '#F0B429', oferta: '#A78BFA',
+                  }
+                  const ac = angleColors[v.angle] || '#64748B'
+                  return (
+                    <div key={i} className="rounded-xl p-4" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: `${ac}15`, color: ac, border: `1px solid ${ac}30` }}>
+                          {v.angle}
+                        </span>
+                        <span className="text-[10px] text-slate-600">Variação {i + 1}</span>
+                      </div>
+                      <div className="space-y-2">
+                        {/* Headline */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="text-[10px] text-slate-500 uppercase mb-0.5">Headline</div>
+                            <div className="text-sm font-bold text-white">{v.headline}</div>
+                          </div>
+                          <button onClick={() => copyToClipboard(v.headline, `h-${i}`)}
+                            className="text-[10px] px-2 py-1 rounded-lg flex-shrink-0 transition-all"
+                            style={{ background: copied === `h-${i}` ? '#22C55E20' : '#2A2A30', color: copied === `h-${i}` ? '#22C55E' : '#64748B' }}>
+                            {copied === `h-${i}` ? '✓' : 'Copiar'}
+                          </button>
+                        </div>
+                        {/* Primary text */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="text-[10px] text-slate-500 uppercase mb-0.5">Texto Principal</div>
+                            <div className="text-xs text-slate-300 leading-relaxed">{v.primaryText}</div>
+                          </div>
+                          <button onClick={() => copyToClipboard(v.primaryText, `p-${i}`)}
+                            className="text-[10px] px-2 py-1 rounded-lg flex-shrink-0 transition-all"
+                            style={{ background: copied === `p-${i}` ? '#22C55E20' : '#2A2A30', color: copied === `p-${i}` ? '#22C55E' : '#64748B' }}>
+                            {copied === `p-${i}` ? '✓' : 'Copiar'}
+                          </button>
+                        </div>
+                        {/* CTA */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <span className="text-[10px] text-slate-500 uppercase">CTA:</span>
+                          <span className="text-[11px] font-bold px-3 py-1 rounded-full"
+                            style={{ background: '#F0B42915', color: '#F0B429', border: '1px solid #F0B42930' }}>
+                            {v.cta}
+                          </span>
+                          <button onClick={() => copyToClipboard(`${v.headline}\n\n${v.primaryText}\n\nCTA: ${v.cta}`, `all-${i}`)}
+                            className="ml-auto text-[10px] px-2 py-1 rounded-lg transition-all"
+                            style={{ background: copied === `all-${i}` ? '#22C55E20' : '#2A2A30', color: copied === `all-${i}` ? '#22C55E' : '#64748B' }}>
+                            {copied === `all-${i}` ? '✓ Copiado!' : 'Copiar tudo'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -195,17 +331,15 @@ export function TabAssets({ clientData }: Props) {
         <div className="rounded-2xl p-12 text-center" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
           <div className="text-4xl mb-4 opacity-30">🖼️</div>
           <div className="text-slate-500 text-sm">Nenhum asset enviado ainda.</div>
-          <div className="text-slate-600 text-xs mt-1">Envie logo e imagens para usar na geração de criativos.</div>
+          <div className="text-slate-600 text-xs mt-1">Envie logo, fotos de produto ou criativos para gerar copy com IA.</div>
         </div>
       )}
 
-      {/* Tip: Meta Ad Library */}
       <div className="rounded-xl px-4 py-3 text-xs text-slate-500"
-        style={{ background: 'rgba(56,189,248,0.04)', border: '1px solid rgba(56,189,248,0.1)' }}>
-        <span className="text-sky-400 font-semibold">💡 Como usar:</span>{' '}
-        Com seus assets salvos, a IA usa essas imagens como referência ao gerar briefs de criativo e
-        sugestões de anúncio no Meta Ads — o sistema pesquisa automaticamente na
-        Biblioteca de Anúncios do Meta o que está performando melhor no seu nicho.
+        style={{ background: 'rgba(240,180,41,0.04)', border: '1px solid rgba(240,180,41,0.1)' }}>
+        <span className="text-yellow-400 font-semibold">⚡ Como funciona:</span>{' '}
+        Clique em "Gerar Copy com IA" em qualquer imagem. A IA cria 3 variações de headline + texto + CTA
+        específicas para o nicho {clientData?.niche} — prontas para colar no Meta Ads. Gere a Persona IA primeiro para resultados ainda mais precisos.
       </div>
     </div>
   )

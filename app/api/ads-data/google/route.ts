@@ -36,19 +36,30 @@ export async function POST(req: NextRequest) {
       LIMIT 20
     `.trim()
 
+    const cleanId = String(accountId).replace(/-/g, '')
+
     const res = await fetch(
-      `https://googleads.googleapis.com/v18/customers/${accountId}/googleAds:search`,
+      `https://googleads.googleapis.com/v18/customers/${cleanId}/googleAds:search`,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'developer-token': developerToken,
-          'Content-Type': 'application/json',
+          'Authorization':      `Bearer ${accessToken}`,
+          'developer-token':    developerToken,
+          'login-customer-id':  cleanId,
+          'Content-Type':       'application/json',
         },
         body: JSON.stringify({ query }),
         signal: AbortSignal.timeout(15000),
       }
     )
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      return NextResponse.json({
+        success: false,
+        error: `Google Ads API (HTTP ${res.status}): Customer ID ${cleanId} inválido ou sem acesso. Verifique o ID (10 dígitos sem traços) e se o token OAuth pertence à conta correta.`,
+      }, { status: 400 })
+    }
 
     const data = await res.json()
 

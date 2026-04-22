@@ -317,6 +317,7 @@ export default function DashboardPage() {
     campaignHistory,
     recordStrategyGeneration, getStrategyCountLastHour,
     setAuditCache, auditCache, actionPlanCache,
+    generatedPersona, connectedAccounts,
   } = useAppStore()
 
   // ── Sincronização com banco de dados ──────────────────────────────────────────
@@ -417,7 +418,13 @@ export default function DashboardPage() {
       const res = await fetch('/api/strategy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...clientData, campaignHistory }),
+        body: JSON.stringify({
+          ...clientData,
+          campaignHistory,
+          recentAudit: clientData ? auditCache[clientData.clientName]?.[0]?.audit ?? null : null,
+          persona: generatedPersona,
+          metaAccessToken: connectedAccounts.find(a => a.platform === 'meta')?.accessToken ?? null,
+        }),
         signal: controller.signal,
       })
       clearTimeout(timeout)

@@ -90,9 +90,10 @@ export async function POST(req: NextRequest) {
       {
         method: 'POST',
         headers: {
-          'Authorization':   `Bearer ${accessToken}`,
-          'developer-token': developerToken,
-          'Content-Type':    'application/json',
+          'Authorization':      `Bearer ${accessToken}`,
+          'developer-token':    developerToken,
+          'login-customer-id':  cleanId,
+          'Content-Type':       'application/json',
         },
         body:   JSON.stringify({ query }),
         signal: AbortSignal.timeout(20000),
@@ -101,12 +102,11 @@ export async function POST(req: NextRequest) {
 
     const contentType = res.headers.get('content-type') || ''
     if (!contentType.includes('application/json')) {
-      const isDevTokenMissing = !process.env.GOOGLE_ADS_DEVELOPER_TOKEN
+      let bodyHint = ''
+      try { bodyHint = (await res.text()).slice(0, 200) } catch {}
       return NextResponse.json({
         success: false,
-        error: isDevTokenMissing
-          ? 'GOOGLE_ADS_DEVELOPER_TOKEN não configurado no servidor. Configure em Vercel → Settings → Environment Variables.'
-          : `Google Ads API retornou resposta inválida (HTTP ${res.status}). Verifique se o Customer ID ${cleanId} está correto e se o token OAuth ainda é válido.`,
+        error: `Google Ads API (HTTP ${res.status}): Customer ID ${cleanId} não encontrado ou sem acesso. Verifique se o ID está correto (sem traços, 10 dígitos). Se você usa uma conta gerenciadora (MCC), certifique-se que o OAuth foi feito com a conta que TEM acesso direto a essa conta. ${bodyHint ? `Detalhe: ${bodyHint}` : ''}`.trim(),
       }, { status: 400 })
     }
 

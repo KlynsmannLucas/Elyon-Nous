@@ -267,6 +267,8 @@ async function runStrategy(body: any) {
     campaignHistory,
     // Unit economics
     ticketPrice, grossMargin, isRecurring, conversionRate,
+    // Dados enriquecidos (passados opcionalmente pelo dashboard)
+    recentAudit, persona, metaAccessToken,
   } = body
 
   const bench         = getBenchmark(niche)
@@ -345,6 +347,25 @@ ${campaignHistory.map((c: any) => `
   Obs: ${c.notes || '—'}`).join('\n')}
 
 USE ESSES DADOS REAIS para calibrar CPL esperado, identificar canais a priorizar ou evitar, e personalizar o diagnóstico de crescimento. Não ignore o histórico.` : ''}
+${recentAudit?._realMetrics ? `
+=== DADOS REAIS DA CONTA META ADS (últimos 30 dias) ===
+- Investimento real: R$${recentAudit._realMetrics.totalSpend?.toLocaleString('pt-BR') || '0'}
+- Leads reais: ${recentAudit._realMetrics.totalLeads || 0}
+- CPL real: ${recentAudit._realMetrics.avgCPL ? `R$${recentAudit._realMetrics.avgCPL}` : 'não calculado'}
+- ROAS real: ${recentAudit._realMetrics.avgROAS ? `${recentAudit._realMetrics.avgROAS}×` : 'não calculado'}
+- CTR médio: ${recentAudit._realMetrics.avgCTR ? `${recentAudit._realMetrics.avgCTR}%` : 'não disponível'}
+- Campanhas ativas: ${recentAudit._realMetrics.campaignCount || 0}
+CRÍTICO: Esses são os dados REAIS da conta do cliente. Use-os como baseline para diagnóstico e metas — não use estimativas quando há dados reais disponíveis.` : ''}
+${persona ? `
+=== PERSONA DO CLIENTE IDEAL (gerada por IA) ===
+- Nome: ${persona.name} · Idade: ${persona.age}
+- Profissão: ${persona.profession} · Renda: ${persona.income}
+- Principais dores: ${persona.pains?.slice(0,3).join('; ')}
+- Desejos: ${persona.desires?.slice(0,2).join('; ')}
+- Canais favoritos: ${persona.favoriteChannels?.join(', ')}
+- Interesses Facebook Ads: ${persona.facebookInterests?.slice(0,5).join(', ') || 'não mapeados'}
+- Keywords Google: ${persona.googleAdsKeywords?.slice(0,5).join(', ') || 'não mapeadas'}
+USE esta persona para calibrar segmentação nos canais, ângulos criativos e linguagem das recomendações.` : ''}
 
 ${benchmarkSection ? `BENCHMARKS INTERNOS DO SISTEMA:\n${benchmarkSection}` : ''}
 ${realtimeData || ''}

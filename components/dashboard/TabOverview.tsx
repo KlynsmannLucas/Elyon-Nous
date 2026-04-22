@@ -117,7 +117,9 @@ function BudgetStatusBadge({ status, budget, recommended }: {
 
 // ── Pacing de Budget ─────────────────────────────────────────────────────────
 // spend = 30-day rolling API spend; budget = monthly wizard config
-function BudgetPacing({ spend, budget }: { spend: number; budget: number }) {
+function BudgetPacing({ spend, budget, onUpdateBudget }: { spend: number; budget: number; onUpdateBudget?: (v: number) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
   const today = new Date()
   const day = today.getDate()
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
@@ -217,8 +219,45 @@ function BudgetPacing({ spend, budget }: { spend: number; budget: number }) {
         {desc}
       </div>
 
-      <div className="mt-2 text-[10px] text-slate-600 text-center">
+      <div className="mt-2 text-[10px] text-slate-600 text-center flex items-center justify-center gap-2">
         Baseado em média dos últimos 30 dias · Budget configurado: {fmt(budget)}/mês
+        {onUpdateBudget && (
+          editing ? (
+            <span className="flex items-center gap-1">
+              <span className="text-slate-500">R$</span>
+              <input
+                autoFocus
+                type="number"
+                min={0}
+                defaultValue={budget}
+                onChange={e => setDraft(e.target.value)}
+                className="w-24 bg-[#1E1E24] border border-[#3A3A44] rounded px-1.5 py-0.5 text-[11px] text-white outline-none focus:border-[#6C63FF]"
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    const v = parseInt(draft, 10)
+                    if (!isNaN(v) && v > 0) onUpdateBudget(v)
+                    setEditing(false)
+                  }
+                  if (e.key === 'Escape') setEditing(false)
+                }}
+              />
+              <button
+                className="text-[#22C55E] hover:text-green-400 font-bold"
+                onClick={() => {
+                  const v = parseInt(draft, 10)
+                  if (!isNaN(v) && v > 0) onUpdateBudget(v)
+                  setEditing(false)
+                }}
+              >✓</button>
+              <button className="text-slate-500 hover:text-white" onClick={() => setEditing(false)}>✕</button>
+            </span>
+          ) : (
+            <button
+              className="text-[10px] text-[#6C63FF] hover:text-purple-400 underline underline-offset-2"
+              onClick={() => { setDraft(String(budget)); setEditing(true) }}
+            >Atualizar budget</button>
+          )
+        )}
       </div>
     </div>
   )
@@ -235,6 +274,14 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
   const strategyData      = useAppStore(s => s.strategyData)
   const competitorStore   = useAppStore(s => s.competitors)
   const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const setClientData     = useAppStore(s => s.setClientData)
+  const saveCurrentClient = useAppStore(s => s.saveCurrentClient)
+
+  const handleUpdateBudget = (newBudget: number) => {
+    if (!clientData) return
+    setClientData({ ...clientData, budget: newBudget })
+    saveCurrentClient()
+  }
   const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
 
   const key = clientData?.clientName || ''
@@ -495,7 +542,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
 
       {/* Pacing de budget — só quando há dados reais e budget configurado */}
       {hasRealData && rm && budget > 0 && (
-        <BudgetPacing spend={rm.totalSpend} budget={budget} />
+        <BudgetPacing spend={rm.totalSpend} budget={budget} onUpdateBudget={handleUpdateBudget} />
       )}
 
       {/* Métricas adicionais do nicho */}
