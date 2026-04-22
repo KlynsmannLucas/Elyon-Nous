@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { clientData, role } = await req.json()
@@ -72,15 +72,27 @@ Retorne APENAS um JSON válido, sem texto antes ou depois, com exatamente esta e
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1500,
+      max_tokens: 4096,
+      system: 'Você é um estrategista de marketing digital brasileiro. Responda APENAS com JSON válido e completo, sem texto antes ou depois, sem markdown, sem ```.',
       messages: [{ role: 'user', content: prompt }],
     })
 
     const text = (response.content[0] as any).text?.trim() || ''
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('JSON não encontrado na resposta')
 
-    const persona = JSON.parse(jsonMatch[0])
+    // Try direct parse first, then extract JSON object
+    let persona: any
+    try {
+      persona = JSON.parse(text)
+    } catch {
+      const jsonMatch = text.match(/(\{[\s\S]*\})/)
+      if (!jsonMatch) throw new Error('Resposta inválida da IA — tente novamente.')
+      try {
+        persona = JSON.parse(jsonMatch[1])
+      } catch {
+        throw new Error('JSON malformado na resposta — tente novamente.')
+      }
+    }
+
     return NextResponse.json({ success: true, persona })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

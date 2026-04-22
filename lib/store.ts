@@ -68,6 +68,16 @@ export interface ClientData {
   awarenessStage?: string                  // nível de consciência do público
 }
 
+export interface ClientAsset {
+  id: string
+  type: 'logo' | 'product' | 'lifestyle' | 'banner' | 'other'
+  name: string
+  dataUrl: string        // base64 data URL
+  mimeType: string
+  sizeKb: number
+  uploadedAt: string
+}
+
 export interface GeneratedPersona {
   name: string
   age: string
@@ -199,6 +209,11 @@ interface AppStore {
   funnelEntries: FunnelEntry[]
   addFunnelEntry: (entry: Omit<FunnelEntry, 'id' | 'createdAt'>) => void
   deleteFunnelEntry: (id: string) => void
+
+  // Assets da empresa (logo, imagens) por cliente
+  clientAssets: Record<string, ClientAsset[]>
+  addClientAsset: (clientName: string, asset: Omit<ClientAsset, 'id' | 'uploadedAt'>) => void
+  removeClientAsset: (clientName: string, id: string) => void
 
   // Persona gerada por IA
   generatedPersona: GeneratedPersona | null
@@ -367,6 +382,15 @@ export const useAppStore = create<AppStore>()(
         set((s) => ({ funnelEntries: s.funnelEntries.filter((e) => e.id !== id) }))
       },
 
+      clientAssets: {},
+      addClientAsset: (clientName, asset) => {
+        const full: ClientAsset = { ...asset, id: crypto.randomUUID(), uploadedAt: new Date().toISOString() }
+        set((s) => ({ clientAssets: { ...s.clientAssets, [clientName]: [...(s.clientAssets[clientName] || []), full] } }))
+      },
+      removeClientAsset: (clientName, id) => {
+        set((s) => ({ clientAssets: { ...s.clientAssets, [clientName]: (s.clientAssets[clientName] || []).filter((a) => a.id !== id) } }))
+      },
+
       generatedPersona: null,
       setGeneratedPersona: (persona) => set({ generatedPersona: persona }),
 
@@ -404,6 +428,7 @@ export const useAppStore = create<AppStore>()(
         creativeTests:       state.creativeTests,
         funnelEntries:       state.funnelEntries,
         generatedPersona:    state.generatedPersona,
+        clientAssets:        state.clientAssets,
       }),
     }
   )

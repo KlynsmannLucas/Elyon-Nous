@@ -7,7 +7,7 @@ export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
   | 'analise' | 'anuncios' | 'audiencias'
   | 'performance' | 'acoes' | 'cenarios' | 'mercado' | 'funil'
-  | 'persona' | 'conteudo'
+  | 'persona' | 'conteudo' | 'assets'
 
 export const SIDEBAR_SECTIONS: {
   label: string
@@ -31,8 +31,9 @@ export const SIDEBAR_SECTIONS: {
     { key: 'acoes',        label: 'Plano de Ações', icon: '✅' },
   ]},
   { label: 'Criativo', items: [
-    { key: 'persona',      label: 'Persona IA',     icon: '👤' },
+    { key: 'persona',      label: 'Persona IA',          icon: '👤' },
     { key: 'conteudo',     label: 'Criador de Conteúdo', icon: '✨' },
+    { key: 'assets',       label: 'Assets da Empresa',   icon: '🖼️' },
   ]},
   { label: 'Avançado', items: [
     { key: 'inteligencia', label: 'Inteligência',   icon: '🧠' },

@@ -260,13 +260,16 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
   const { connectedAccounts } = useAppStore()
   const googleAccount = connectedAccounts.find(a => a.platform === 'google')
 
-  const [data,    setData]    = useState<IntelligenceData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
-  const [fetched, setFetched] = useState(false)
+  const [data,          setData]          = useState<IntelligenceData | null>(null)
+  const [loading,       setLoading]       = useState(false)
+  const [error,         setError]         = useState('')
+  const [fetched,       setFetched]       = useState(false)
+  const [manualAccId,   setManualAccId]   = useState('')
+
+  const resolvedAccountId = googleAccount?.accountId || manualAccId.trim().replace(/-/g, '')
 
   const fetchIntelligence = async () => {
-    if (!googleAccount?.accessToken || !googleAccount?.accountId) return
+    if (!googleAccount?.accessToken || !resolvedAccountId) return
     setLoading(true)
     setError('')
     try {
@@ -275,7 +278,7 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken: googleAccount.accessToken,
-          accountId:   googleAccount.accountId,
+          accountId:   resolvedAccountId,
         }),
       })
       const json = await res.json()
@@ -350,8 +353,36 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
         </div>
       )}
 
+      {/* Customer ID manual — só mostra se não veio do OAuth */}
+      {!googleAccount.accountId && (
+        <div className="rounded-2xl p-5" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.2)' }}>
+          <div className="text-sm font-semibold text-[#F0B429] mb-1">⚠ Customer ID não detectado automaticamente</div>
+          <p className="text-xs text-slate-500 mb-3">
+            Insira seu Customer ID do Google Ads (formato: 123-456-7890 ou 1234567890).
+            Encontre em: Google Ads → canto superior direito → número da conta.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={manualAccId}
+              onChange={e => setManualAccId(e.target.value)}
+              placeholder="ex: 123-456-7890"
+              className="flex-1 bg-[#111114] border border-[#2A2A30] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#F0B429]"
+            />
+            <button
+              onClick={fetchIntelligence}
+              disabled={loading || !manualAccId.trim()}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg, #4285F4, #1a6ae8)', color: '#fff' }}
+            >
+              {loading ? 'Analisando...' : 'Analisar'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Estado inicial */}
-      {!fetched && !loading && (
+      {!fetched && !loading && googleAccount.accountId && (
         <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-10 text-center">
           <div className="text-4xl mb-4">🎯</div>
           <h3 className="font-display text-lg font-bold text-white mb-2">Pronto para analisar</h3>

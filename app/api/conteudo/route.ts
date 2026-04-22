@@ -11,11 +11,32 @@ const PLATFORM_GUIDE: Record<string, string> = {
   email:     'E-mail marketing — assunto irresistível, copy focado em um único CTA, personalização',
 }
 
+async function fetchAdLibraryContext(accessToken: string, niche: string, theme: string): Promise<string> {
+  try {
+    const res = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/meta-ad-library`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken, searchTerms: `${niche} ${theme}`.slice(0, 80), niche }),
+      signal: AbortSignal.timeout(6000),
+    })
+    const data = await res.json()
+    if (!data.success || !data.ads?.length) return ''
+    const examples = data.ads
+      .filter((a: any) => a.body)
+      .slice(0, 3)
+      .map((a: any, i: number) => `Exemplo ${i + 1} (${a.page || 'anunciante'}): "${a.body.slice(0, 200)}"${a.title ? ` | Título: "${a.title}"` : ''}`)
+      .join('\n')
+    return examples ? `\nREFERÊNCIAS REAIS DA BIBLIOTECA DE ANÚNCIOS DO META (nicho ${niche}):\n${examples}\nUse como inspiração de tom e estrutura — crie algo DIFERENTE e melhor.\n` : ''
+  } catch {
+    return ''
+  }
+}
+
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { clientData, persona, platform, theme, role } = await req.json()
+  const { clientData, persona, platform, theme, role, metaAccessToken } = await req.json()
   if (!clientData || !platform || !theme) {
     return NextResponse.json({ error: 'Dados insuficientes' }, { status: 400 })
   }
@@ -59,22 +80,35 @@ Retorne APENAS um JSON válido com esta estrutura:
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'API key não configurada' }, { status: 500 })
 
+  // Pesquisa na Biblioteca de Anúncios do Meta em paralelo (silenciosa — só enriquece o prompt)
+  const adLibCtx = metaAccessToken
+    ? await fetchAdLibraryContext(metaAccessToken, clientData.niche, theme)
+    : ''
+
+  const enrichedPrompt = adLibCtx ? prompt.replace(
+    'Crie 3 ideias de conteúdo distintas',
+    `${adLibCtx}\nCrie 3 ideias de conteúdo distintas`
+  ) : prompt
+
   try {
     const { default: Anthropic } = await import('@anthropic-ai/sdk')
     const anthropic = new Anthropic({ apiKey })
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 3000,
+      system: 'Você é um especialista em marketing de conteúdo digital brasileiro. Responda APENAS com JSON válido, sem markdown.',
+      messages: [{ role: 'user', content: enrichedPrompt }],
     })
 
     const text = (response.content[0] as any).text?.trim() || ''
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('JSON não encontrado na resposta')
-
-    const result = JSON.parse(jsonMatch[0])
-    return NextResponse.json({ success: true, posts: result.posts })
+    let result: any
+    try { result = JSON.parse(text) } catch {
+      const m = text.match(/(\{[\s\S]*\})/)
+      if (!m) throw new Error('JSON inválido na resposta — tente novamente.')
+      result = JSON.parse(m[1])
+    }
+    return NextResponse.json({ success: true, posts: result.posts, usedAdLibrary: !!adLibCtx })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

@@ -132,7 +132,9 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
 }
 
 export function TabConteudo({ clientData }: Props) {
-  const generatedPersona = useAppStore(s => s.generatedPersona)
+  const generatedPersona  = useAppStore(s => s.generatedPersona)
+  const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const metaAccount       = connectedAccounts.find(a => a.platform === 'meta')
   const [platform, setPlatform]   = useState('instagram')
   const [theme, setTheme]         = useState('')
   const [posts, setPosts]         = useState<Post[]>([])
@@ -153,6 +155,7 @@ export function TabConteudo({ clientData }: Props) {
           platform,
           theme: theme.trim(),
           role: generatedPersona?.role || 'social',
+          metaAccessToken: metaAccount?.accessToken,
         }),
       })
       const data = await res.json()
