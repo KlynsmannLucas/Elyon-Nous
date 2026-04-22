@@ -1,5 +1,6 @@
 // app/api/ads-data/meta/route.ts — Busca campanhas reais do Meta Ads
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 // Tipos de ação considerados como "lead" em ordem de prioridade
 const LEAD_ACTION_TYPES = [
@@ -42,6 +43,8 @@ async function fetchAllInsights(accountId: string, accessToken: string, timePara
 
   while (url) {
     const res: Response = await fetch(url, { signal: AbortSignal.timeout(20000) })
+    const ct = res.headers.get('content-type') || ''
+    if (!ct.includes('application/json')) throw new Error(`Meta API retornou resposta inválida (HTTP ${res.status})`)
     const data: any = await res.json()
     if (data.error) throw new Error(data.error.message)
     allRows.push(...(data.data || []))
@@ -52,6 +55,9 @@ async function fetchAllInsights(accountId: string, accessToken: string, timePara
 }
 
 export async function POST(req: NextRequest) {
+  const { userId } = auth()
+  if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
+
   try {
     const { accessToken, accountId } = await req.json()
     if (!accessToken || !accountId) {

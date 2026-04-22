@@ -267,12 +267,15 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
     if (!metaAccount?.accessToken || !metaAccount?.accountId || !clientData) return
     const isStale = !lastAuditTime || Date.now() - lastAuditTime > 30 * 60 * 1000
     if (!isStale) return
+    const controller = new AbortController()
     fetch('/api/ads-data/meta', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accessToken: metaAccount.accessToken, accountId: metaAccount.accountId }),
+      signal: controller.signal,
     }).catch(() => {})
-  }, [metaAccount?.accountId, clientData?.clientName])
+    return () => controller.abort()
+  }, [metaAccount?.accountId, clientData?.clientName, lastAuditTime])
 
   const smartAlerts = useMemo<SmartAlert[]>(() => {
     const alerts: SmartAlert[] = []

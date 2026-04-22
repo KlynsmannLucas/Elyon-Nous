@@ -1,6 +1,7 @@
 // app/api/ads-data/google-intelligence/route.ts
 // Google Ads Intelligence — análise profunda de conta com regras + IA
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 const CAMPAIGN_TYPE_LABELS: Record<string, string> = {
   SEARCH:             'Pesquisa (Search)',
@@ -45,6 +46,9 @@ interface GoogleCampaign {
 type RecItem = { type: RecType; title: string; description: string }
 
 export async function POST(req: NextRequest) {
+  const { userId } = auth()
+  if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
+
   try {
     const { accessToken, accountId } = await req.json()
     if (!accessToken || !accountId) {

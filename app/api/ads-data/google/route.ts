@@ -1,7 +1,11 @@
 // app/api/ads-data/google/route.ts — Busca campanhas reais do Google Ads
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 export async function POST(req: NextRequest) {
+  const { userId } = auth()
+  if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
+
   try {
     const { accessToken, accountId } = await req.json()
     if (!accessToken || !accountId) {

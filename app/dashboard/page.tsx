@@ -376,6 +376,8 @@ export default function DashboardPage() {
 
   const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
   const [genError, setGenError] = useState('')
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState('')
 
   // Se há clientData e strategyData no store ao montar, vai direto pro dashboard
   // Caso contrário sempre cai no seletor (mesmo sem clientes salvos)
@@ -508,7 +510,7 @@ export default function DashboardPage() {
     if (clientData && strategyData) {
       persistSave()
     }
-  }, [strategyData])
+  }, [strategyData, clientData, persistSave])
 
   const handleSelectSaved = (id: string) => {
     const found = loadSavedClient(id)
@@ -585,30 +587,27 @@ export default function DashboardPage() {
     }
   }
 
+  const handleSync = async () => {
+    setSyncing(true)
+    setSyncMsg('')
+    try {
+      const res = await fetch('/api/stripe/sync', { method: 'POST' })
+      const data = await res.json()
+      if (data.success && data.plan) {
+        setSyncMsg(`Plano "${data.plan}" ativado! Recarregando...`)
+        setTimeout(() => window.location.reload(), 1500)
+      } else {
+        setSyncMsg(data.message || 'Nenhuma assinatura ativa encontrada.')
+      }
+    } catch {
+      setSyncMsg('Erro ao verificar. Tente novamente.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   // ── Sem acesso (trial expirado + sem plano): mostra paywall ──
   if (isLoaded && !hasAccess) {
-    const [syncing, setSyncing] = useState(false)
-    const [syncMsg, setSyncMsg] = useState('')
-
-    const handleSync = async () => {
-      setSyncing(true)
-      setSyncMsg('')
-      try {
-        const res = await fetch('/api/stripe/sync', { method: 'POST' })
-        const data = await res.json()
-        if (data.success && data.plan) {
-          setSyncMsg(`Plano "${data.plan}" ativado! Recarregando...`)
-          setTimeout(() => window.location.reload(), 1500)
-        } else {
-          setSyncMsg(data.message || 'Nenhuma assinatura ativa encontrada.')
-        }
-      } catch {
-        setSyncMsg('Erro ao verificar. Tente novamente.')
-      } finally {
-        setSyncing(false)
-      }
-    }
-
     return (
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">

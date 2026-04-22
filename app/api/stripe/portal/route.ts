@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { stripe } from '@/lib/stripe'
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const { userId } = await auth()
+    const { userId } = auth()
     if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const user = await currentUser()

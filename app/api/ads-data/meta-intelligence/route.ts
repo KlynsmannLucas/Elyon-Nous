@@ -1,6 +1,7 @@
-// app/api/ads-data/meta-intelligence/route.ts
+// app/api/ads-data/meta-intelligence/route.ts — análise profunda de conta Meta com IA de regras
 // Sprint 1: Meta Ad Intelligence — análise profunda de conta Meta com IA de regras
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 const OBJECTIVE_LABELS: Record<string, string> = {
   OUTCOME_LEADS:          'Geração de Leads',
@@ -87,6 +88,9 @@ function campaignAge(createdTime: string | undefined): 'new' | 'growing' | 'esta
 }
 
 export async function POST(req: NextRequest) {
+  const { userId } = auth()
+  if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
+
   try {
     const { accessToken, accountId, niche = '' } = await req.json()
     if (!accessToken || !accountId) {

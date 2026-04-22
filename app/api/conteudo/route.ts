@@ -13,7 +13,7 @@ const PLATFORM_GUIDE: Record<string, string> = {
 
 async function fetchAdLibraryContext(accessToken: string, niche: string, theme: string): Promise<string> {
   try {
-    const res = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/meta-ad-library`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/meta-ad-library`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accessToken, searchTerms: `${niche} ${theme}`.slice(0, 80), niche }),
