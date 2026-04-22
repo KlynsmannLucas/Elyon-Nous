@@ -78,6 +78,29 @@ export interface ClientAsset {
   uploadedAt: string
 }
 
+export interface CompetitorAd {
+  body: string
+  title?: string
+  page?: string
+}
+
+export interface Competitor {
+  id: string
+  name: string
+  notes?: string
+  analyzedAt?: string
+  ads?: CompetitorAd[]
+  analysis?: {
+    mainOffer: string
+    creativeAngles: string[]
+    ctas: string[]
+    positioning: string
+    weaknesses: string[]
+    differentiation: string
+    recommendations: string[]
+  }
+}
+
 export interface GeneratedPersona {
   name: string
   age: string
@@ -223,6 +246,12 @@ interface AppStore {
   strategyTimestamps: number[]
   recordStrategyGeneration: () => void
   getStrategyCountLastHour: () => number
+
+  // Concorrentes por cliente
+  competitors: Record<string, Competitor[]>
+  addCompetitor: (clientName: string, competitor: Omit<Competitor, 'id'>) => void
+  updateCompetitor: (clientName: string, id: string, updates: Partial<Competitor>) => void
+  removeCompetitor: (clientName: string, id: string) => void
 
   clearAll: () => void
 }
@@ -394,6 +423,35 @@ export const useAppStore = create<AppStore>()(
       generatedPersona: null,
       setGeneratedPersona: (persona) => set({ generatedPersona: persona }),
 
+      competitors: {},
+      addCompetitor: (clientName, competitor) => {
+        const full: Competitor = { ...competitor, id: crypto.randomUUID() }
+        set((s) => ({
+          competitors: {
+            ...s.competitors,
+            [clientName]: [full, ...(s.competitors[clientName] || [])],
+          },
+        }))
+      },
+      updateCompetitor: (clientName, id, updates) => {
+        set((s) => ({
+          competitors: {
+            ...s.competitors,
+            [clientName]: (s.competitors[clientName] || []).map((c) =>
+              c.id === id ? { ...c, ...updates } : c
+            ),
+          },
+        }))
+      },
+      removeCompetitor: (clientName, id) => {
+        set((s) => ({
+          competitors: {
+            ...s.competitors,
+            [clientName]: (s.competitors[clientName] || []).filter((c) => c.id !== id),
+          },
+        }))
+      },
+
       strategyTimestamps: [],
       recordStrategyGeneration: () => {
         const now = Date.now()
@@ -429,6 +487,7 @@ export const useAppStore = create<AppStore>()(
         funnelEntries:       state.funnelEntries,
         generatedPersona:    state.generatedPersona,
         clientAssets:        state.clientAssets,
+        competitors:         state.competitors,
       }),
     }
   )

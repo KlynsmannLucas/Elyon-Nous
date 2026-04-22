@@ -1,6 +1,7 @@
 // components/dashboard/TabOverview.tsx — Overview ao vivo com projeções por nicho
 'use client'
 
+import { useState, useEffect, useMemo } from 'react'
 import { StatCard } from './StatCard'
 import { RevenueChart } from './RevenueChart'
 import { FunnelChart } from './FunnelChart'
@@ -13,6 +14,42 @@ interface Props {
   strategy: Record<string, any>
   analysis: Record<string, any>
   clientData: ClientData | null
+}
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  const h = Math.floor(diff / 3600000)
+  const d = Math.floor(diff / 86400000)
+  if (d > 0) return `${d}d atrás`
+  if (h > 0) return `${h}h atrás`
+  if (m > 0) return `${m}min atrás`
+  return 'agora'
+}
+
+type AlertType = 'critical' | 'warning' | 'opportunity' | 'info'
+interface SmartAlert { type: AlertType; icon: string; title: string; description: string }
+
+const ALERT_STYLES: Record<AlertType, { color: string; bg: string; border: string }> = {
+  critical:    { color: '#FF4D4D', bg: 'rgba(255,77,77,0.06)',    border: 'rgba(255,77,77,0.2)' },
+  warning:     { color: '#F0B429', bg: 'rgba(240,180,41,0.06)',   border: 'rgba(240,180,41,0.2)' },
+  opportunity: { color: '#22C55E', bg: 'rgba(34,197,94,0.06)',    border: 'rgba(34,197,94,0.2)' },
+  info:        { color: '#38BDF8', bg: 'rgba(56,189,248,0.06)',   border: 'rgba(56,189,248,0.2)' },
+}
+
+function SmartAlertItem({ alert, onDismiss }: { alert: SmartAlert; onDismiss: () => void }) {
+  const s = ALERT_STYLES[alert.type]
+  return (
+    <div className="rounded-xl px-4 py-3 flex items-start gap-3 animate-fade-up"
+      style={{ background: s.bg, border: `1px solid ${s.border}` }}>
+      <span className="text-base flex-shrink-0 mt-0.5">{alert.icon}</span>
+      <div className="flex-1 min-w-0">
+        <div className="text-xs font-bold" style={{ color: s.color }}>{alert.title}</div>
+        <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{alert.description}</p>
+      </div>
+      <button onClick={onDismiss} className="text-slate-600 hover:text-slate-400 transition-colors flex-shrink-0 mt-0.5 text-xs">✕</button>
+    </div>
+  )
 }
 
 function DataSourceBadge({ source }: { source: 'real' | 'estimated' }) {
@@ -194,7 +231,12 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
   const proj   = bench && budget > 0 ? computeNicheProjection(bench, budget) : null
 
   // Dados reais da auditoria mais recente
-  const auditCache = useAppStore(s => s.auditCache)
+  const auditCache        = useAppStore(s => s.auditCache)
+  const strategyData      = useAppStore(s => s.strategyData)
+  const competitorStore   = useAppStore(s => s.competitors)
+  const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
+
   const key = clientData?.clientName || ''
   const auditHistory = auditCache[key]
   const latestAudit  = Array.isArray(auditHistory)
@@ -213,6 +255,63 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
   const hasRealData = !!(rm && rm.totalSpend > 0 && rm.totalLeads > 0)
 
   const hasAIStrategy = strategy && strategy.priority_ranking?.length > 0
+
+  // ── Sistema vivo ──────────────────────────────────────────────────────────────
+  const [dismissedAlerts, setDismissedAlerts] = useState<number[]>([])
+
+  const lastAuditTime = Array.isArray(auditHistory) && auditHistory[0]?.createdAt
+    ? new Date(auditHistory[0].createdAt).getTime() : null
+
+  // Auto-refresh silencioso: se Meta conectado e auditoria > 30 min, busca dados básicos
+  useEffect(() => {
+    if (!metaAccount?.accessToken || !metaAccount?.accountId || !clientData) return
+    const isStale = !lastAuditTime || Date.now() - lastAuditTime > 30 * 60 * 1000
+    if (!isStale) return
+    fetch('/api/ads-data/meta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken: metaAccount.accessToken, accountId: metaAccount.accountId }),
+    }).catch(() => {})
+  }, [metaAccount?.accountId, clientData?.clientName])
+
+  const smartAlerts = useMemo<SmartAlert[]>(() => {
+    const alerts: SmartAlert[] = []
+    if (rm?.avgCPL && bench?.kpi_thresholds.cpl_bad && rm.avgCPL > bench.kpi_thresholds.cpl_bad) {
+      alerts.push({ type: 'critical', icon: '🚨', title: `CPL acima do limite: R$${rm.avgCPL}`, description: `Benchmark do nicho indica CPL crítico acima de R$${bench.kpi_thresholds.cpl_bad}. Revise audiências, criativos e landing page.` })
+    }
+    if (strategyData?.generatedAt) {
+      const days = (Date.now() - new Date(strategyData.generatedAt).getTime()) / 86400000
+      if (days > 30) alerts.push({ type: 'warning', icon: '⚡', title: `Estratégia com ${Math.round(days)} dias`, description: 'Mercados competitivos mudam rápido. Gere uma nova estratégia com os dados mais recentes.' })
+    }
+    if (lastAuditTime && Date.now() - lastAuditTime > 7 * 86400000) {
+      alerts.push({ type: 'info', icon: '🔄', title: 'Auditoria há 7+ dias', description: 'Execute uma nova auditoria em Análise Profunda para ter CPL, ROAS e campanhas atualizados.' })
+    }
+    if (!metaAccount && !rm) {
+      alerts.push({ type: 'opportunity', icon: '🔗', title: 'Conecte sua conta de anúncios', description: 'Conecte Meta Ads ou Google Ads em Anúncios IA para substituir estimativas por dados reais.' })
+    }
+    return alerts
+  }, [rm, bench, strategyData, lastAuditTime, metaAccount])
+
+  const visibleAlerts = smartAlerts.filter((_, i) => !dismissedAlerts.includes(i))
+
+  const pulseItems = useMemo(() => {
+    const items: { icon: string; title: string; description: string; time: string; color: string }[] = []
+    if (strategyData?.generatedAt) {
+      items.push({ icon: '⚡', title: 'Estratégia gerada', description: `Plano para ${clientData?.clientName || 'cliente'}`, time: strategyData.generatedAt, color: '#F0B429' })
+    }
+    const latestEntry = Array.isArray(auditHistory) ? auditHistory[0] : null
+    if (latestEntry?.createdAt) {
+      items.push({ icon: '🔍', title: 'Auditoria realizada', description: 'Dados reais de campanhas sincronizados', time: latestEntry.createdAt, color: '#22C55E' })
+    }
+    for (const c of (competitorStore[key] || []).filter(c => c.analyzedAt)) {
+      items.push({ icon: '🎯', title: `Concorrente: ${c.name}`, description: 'Radar de inteligência competitiva atualizado', time: c.analyzedAt!, color: '#818CF8' })
+    }
+    const metaConn = connectedAccounts.find(a => a.platform === 'meta')
+    if (metaConn) items.push({ icon: '🔗', title: 'Meta Ads conectado', description: metaConn.accountName || 'Conta vinculada', time: metaConn.connectedAt, color: '#1877F2' })
+    const googleConn = connectedAccounts.find(a => a.platform === 'google')
+    if (googleConn) items.push({ icon: '🔗', title: 'Google Ads conectado', description: googleConn.accountName || 'Conta vinculada', time: googleConn.connectedAt, color: '#34A853' })
+    return items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5)
+  }, [strategyData, auditHistory, competitorStore, connectedAccounts, key, clientData])
 
   // KPIs: prioridade → dados reais da auditoria → IA → benchmark → mock
   const dataSource: 'real' | 'estimated' = hasRealData ? 'real' : 'estimated'
@@ -356,6 +455,15 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
           </span>
         )}
       </div>
+
+      {/* Smart Alerts — sistema ao vivo */}
+      {visibleAlerts.length > 0 && (
+        <div className="space-y-2">
+          {visibleAlerts.map((alert, i) => (
+            <SmartAlertItem key={i} alert={alert} onDismiss={() => setDismissedAlerts(p => [...p, smartAlerts.indexOf(alert)])} />
+          ))}
+        </div>
+      )}
 
       {/* Alerta de budget */}
       {proj && !hasRealData && (
@@ -592,6 +700,36 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
               <div key={i} className="flex items-start gap-2 text-sm text-slate-400">
                 <span className="text-[#F0B429] mt-0.5 flex-shrink-0">→</span>
                 {alert}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pulse Feed — Sistema ao Vivo */}
+      {pulseItems.length > 0 && (
+        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse flex-shrink-0" />
+            <div className="font-display font-bold text-white text-sm">Sistema ao Vivo</div>
+            {lastAuditTime && (
+              <span className="ml-auto text-[10px] text-slate-600">
+                última sync {timeAgo(new Date(lastAuditTime).toISOString())}
+              </span>
+            )}
+          </div>
+          <div className="space-y-3">
+            {pulseItems.map((item, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
+                  style={{ background: `${item.color}15`, border: `1px solid ${item.color}25` }}>
+                  {item.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-white leading-tight">{item.title}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">{item.description}</div>
+                </div>
+                <div className="text-[10px] text-slate-600 flex-shrink-0 mt-0.5">{timeAgo(item.time)}</div>
               </div>
             ))}
           </div>

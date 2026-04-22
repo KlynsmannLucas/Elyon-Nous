@@ -7,7 +7,7 @@ export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
   | 'analise' | 'anuncios' | 'audiencias'
   | 'performance' | 'acoes' | 'cenarios' | 'mercado' | 'funil'
-  | 'persona' | 'conteudo' | 'assets'
+  | 'persona' | 'conteudo' | 'assets' | 'concorrentes'
 
 export const SIDEBAR_SECTIONS: {
   label: string
@@ -34,6 +34,7 @@ export const SIDEBAR_SECTIONS: {
     { key: 'persona',      label: 'Persona IA',          icon: '👤' },
     { key: 'conteudo',     label: 'Criador de Conteúdo', icon: '✨' },
     { key: 'assets',       label: 'Assets da Empresa',   icon: '🖼️' },
+    { key: 'concorrentes', label: 'Radar de Concorrentes', icon: '🎯' },
   ]},
   { label: 'Avançado', items: [
     { key: 'inteligencia', label: 'Inteligência',   icon: '🧠' },
