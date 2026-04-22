@@ -454,6 +454,55 @@ CONTEXTO DO NICHO — PRESTADORES DE SERVIÇO LOCAL:
       retencao: 'Fidelizar clientes para recorrência/indicação',
     },
   },
+  {
+    key: 'auditoria',
+    label: 'Auditoria / Compliance / Riscos',
+    icon: '🔎',
+    title: 'empresa de auditoria, compliance e gestão de riscos',
+    analystRole: 'Analista especializado em marketing B2B para empresas de auditoria e compliance no Brasil',
+    fields: [
+      {
+        key: 'tipo_servico',
+        label: 'Tipo de serviço principal',
+        type: 'select',
+        options: ['Auditoria Independente (Externa)', 'Auditoria Interna', 'Compliance / LGPD', 'Gestão de Riscos', 'Controles Internos / SOX', 'Due Diligence', 'Governança Corporativa', 'Auditoria de TI / CISA', 'Múltiplos serviços'],
+        placeholder: '',
+      },
+      {
+        key: 'porte_cliente',
+        label: 'Porte dos clientes-alvo',
+        type: 'select',
+        options: ['Pequenas empresas (MEI/ME)', 'Médias empresas', 'Grandes empresas', 'Empresas listadas em bolsa (CVM)', 'Instituições financeiras (BACEN)', 'Setor público', 'Multinacionais'],
+        placeholder: '',
+      },
+      {
+        key: 'modelo_cobranca',
+        label: 'Modelo de cobrança',
+        type: 'select',
+        options: ['Por projeto (valor fixo)', 'Retainer mensal / anual', 'Por hora (time sheet)', 'Misto (projeto + retainer)'],
+        placeholder: '',
+      },
+    ],
+    promptContext: `
+CONTEXTO DO NICHO — AUDITORIA / COMPLIANCE / RISCOS:
+- Ciclo de venda longo (60–120 dias): decisão envolve CFO, CEO e Comitê de Auditoria
+- CFC/CRC regulam a publicidade — foco em conteúdo técnico e autoridade, sem promessas de resultado
+- LinkedIn é o canal principal: segmentação por cargo (CFO, Diretor Financeiro, Conselheiro)
+- Empresas obrigadas por lei (CVM, BACEN, seguradoras, planos de saúde) são os leads mais quentes
+- Conteúdo educativo regulatório (mudanças CVM, LGPD, reforma tributária) gera autoridade e leads orgânicos
+- Relatórios, e-books e benchmarks do setor como iscas digitais convertem 4× mais que pitch direto
+- Depoimento de CFO ou membro de Comitê de Auditoria é o maior gatilho de conversão
+- E-mail marketing para base segmentada por setor é mais eficiente que mídia paga neste nicho
+- LGPD, ESG e compliance de dados são as dores mais quentes em 2024–2025
+`,
+    productPlaceholder: 'Auditoria independente anual\nDiagnóstico de compliance LGPD\nGestão de riscos (retainer)\nDue diligence para M&A',
+    objectiveLabels: {
+      leads: 'Gerar reuniões com decisores (CFO/CEO)',
+      vendas: 'Converter propostas em contratos assinados',
+      brand: 'Construir autoridade técnica e credibilidade',
+      retencao: 'Renovar contratos anuais e ampliar escopo',
+    },
+  },
 ]
 
 // ── Lookup por keyword ─────────────────────────────────────────────────────────
@@ -492,6 +541,11 @@ const NICHE_KEYWORD_MAP: Record<string, string> = {
   'advocacia': 'servico_local', 'jurídico': 'servico_local', 'contabilidade': 'servico_local',
   'construção': 'servico_local', 'reforma': 'servico_local', 'arquitetura': 'servico_local',
   'fotografia': 'servico_local', 'consultoria': 'servico_local',
+
+  // Auditoria / Compliance
+  'auditoria / compliance': 'auditoria', 'auditoria': 'auditoria', 'compliance': 'auditoria',
+  'gestão de riscos': 'auditoria', 'controles internos': 'auditoria', 'sox': 'auditoria',
+  'due diligence': 'auditoria', 'governança': 'auditoria', 'lgpd': 'auditoria',
 }
 
 export function getNicheConfig(nicheRaw: string): NicheConfig | null {

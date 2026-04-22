@@ -74,8 +74,8 @@ const NICHE_GROUPS: { label: string; niches: string[] }[] = [
     niches: [
       'Contabilidade', 'Advocacia / Jurídico', 'Imobiliária / Corretor',
       'Agência de Marketing', 'Consultoria de Negócios', 'Financeiro / Crédito',
-      'Segurança Privada', 'Tecnologia / SaaS', 'Fotografia / Vídeo',
-      'Arquitetura / Design de Interiores',
+      'Auditoria / Compliance', 'Segurança Privada', 'Tecnologia / SaaS',
+      'Fotografia / Vídeo', 'Arquitetura / Design de Interiores',
     ],
   },
   {
