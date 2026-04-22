@@ -31,6 +31,11 @@ export async function GET(req: NextRequest) {
         `client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}` +
         `&client_secret=${clientSecret}&code=${code}`
       )
+      const metaContentType = tokenRes.headers.get('content-type') || ''
+      if (!metaContentType.includes('application/json') && !metaContentType.includes('text/javascript')) {
+        const text = await tokenRes.text()
+        throw new Error(`Resposta inesperada do Meta (${tokenRes.status}): ${text.slice(0, 200)}`)
+      }
       const tokenData = await tokenRes.json()
       if (tokenData.error) throw new Error(tokenData.error.message)
       accessToken = tokenData.access_token
@@ -60,24 +65,51 @@ export async function GET(req: NextRequest) {
           redirect_uri: redirectUri, grant_type: 'authorization_code',
         }),
       })
+
+      // Guard: parse JSON only if response is actually JSON
+      const tokenContentType = tokenRes.headers.get('content-type') || ''
+      if (!tokenContentType.includes('application/json') && !tokenContentType.includes('text/json')) {
+        const text = await tokenRes.text()
+        throw new Error(`Resposta inesperada do Google OAuth (${tokenRes.status}): ${text.slice(0, 200)}`)
+      }
       const tokenData = await tokenRes.json()
       if (tokenData.error) throw new Error(tokenData.error_description || tokenData.error)
       accessToken = tokenData.access_token
 
-      // Busca customer ID do Google Ads
-      const customerRes = await fetch(
-        'https://googleads.googleapis.com/v16/customers:listAccessibleCustomers',
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN!,
-          },
+      // Busca email do usuário para accountName (não depende do developer token)
+      try {
+        const userRes  = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+        })
+        const userData = await userRes.json()
+        accountName = userData.email || 'Google Ads'
+      } catch {
+        accountName = 'Google Ads'
+      }
+
+      // Tenta buscar customer ID do Google Ads — falha silenciosa se developer token ausente/inválido
+      const devToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN
+      if (devToken) {
+        try {
+          const customerRes = await fetch(
+            'https://googleads.googleapis.com/v18/customers:listAccessibleCustomers',
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'developer-token': devToken,
+              },
+            }
+          )
+          const customerContentType = customerRes.headers.get('content-type') || ''
+          if (customerContentType.includes('application/json') || customerContentType.includes('text/json')) {
+            const customerData = await customerRes.json()
+            if (customerData.resourceNames?.[0]) {
+              accountId = customerData.resourceNames[0].replace('customers/', '')
+            }
+          }
+        } catch {
+          // Não bloqueia o OAuth se o Google Ads API falhar
         }
-      )
-      const customerData = await customerRes.json()
-      if (customerData.resourceNames?.[0]) {
-        accountId   = customerData.resourceNames[0].replace('customers/', '')
-        accountName = `Google Ads — ${accountId}`
       }
     }
 

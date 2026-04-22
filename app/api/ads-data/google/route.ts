@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     `.trim()
 
     const res = await fetch(
-      `https://googleads.googleapis.com/v16/customers/${accountId}/googleAds:search`,
+      `https://googleads.googleapis.com/v18/customers/${accountId}/googleAds:search`,
       {
         method: 'POST',
         headers: {
