@@ -580,15 +580,15 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
           {data.campaigns.length > 0 && (() => {
             const filtered = data.campaigns
               .filter(c => {
-                if (statusFilter === 'active')  return c.status !== 'PAUSED' && c.spend30 > 0
-                if (statusFilter === 'paused')  return c.status === 'PAUSED' || c.spend30 === 0
+                if (statusFilter === 'active')  return c.status === 'ACTIVE' && c.spend30 > 0
+                if (statusFilter === 'paused')  return c.status !== 'ACTIVE' || c.spend30 === 0
                 if (statusFilter === 'issues')  return c.issues.length > 0
                 return true
               })
               .sort((a, b) => b.spend30 - a.spend30)
 
-            const countActive = data.campaigns.filter(c => c.status !== 'PAUSED' && c.spend30 > 0).length
-            const countPaused = data.campaigns.filter(c => c.status === 'PAUSED' || c.spend30 === 0).length
+            const countActive = data.campaigns.filter(c => c.status === 'ACTIVE' && c.spend30 > 0).length
+            const countPaused = data.campaigns.filter(c => c.status !== 'ACTIVE' || c.spend30 === 0).length
             const countIssues = data.campaigns.filter(c => c.issues.length > 0).length
 
             return (

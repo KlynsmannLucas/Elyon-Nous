@@ -194,8 +194,11 @@ interface AppStore {
   wizardStep: number
   setWizardStep: (step: number) => void
 
-  // Contas conectadas (Meta / Google)
+  // Contas conectadas (Meta / Google) — por cliente
+  // connectedAccounts: snapshot ativo do cliente atual (lido por todos os componentes)
+  // clientConnectedAccounts: mapa persistente keyed by clientName
   connectedAccounts: ConnectedAccount[]
+  clientConnectedAccounts: Record<string, ConnectedAccount[]>
   connectAccount: (account: ConnectedAccount) => void
   disconnectAccount: (platform: 'meta' | 'google') => void
 
@@ -238,8 +241,11 @@ interface AppStore {
   addClientAsset: (clientName: string, asset: Omit<ClientAsset, 'id' | 'uploadedAt'>) => void
   removeClientAsset: (clientName: string, id: string) => void
 
-  // Persona gerada por IA
+  // Persona gerada por IA — por cliente
+  // generatedPersona: snapshot ativo do cliente atual
+  // clientPersonas: mapa persistente keyed by clientName
   generatedPersona: GeneratedPersona | null
+  clientPersonas: Record<string, GeneratedPersona | null>
   setGeneratedPersona: (persona: GeneratedPersona | null) => void
 
   // Rate limiting: timestamps das gerações de estratégia (últimas 1h)
@@ -260,7 +266,15 @@ export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
       clientData: null,
-      setClientData: (data) => set({ clientData: data }),
+      setClientData: (data) => {
+        // Restore this client's connections and persona when switching
+        const s = get()
+        set({
+          clientData: data,
+          connectedAccounts: s.clientConnectedAccounts[data.clientName] || [],
+          generatedPersona:  s.clientPersonas[data.clientName] ?? null,
+        })
+      },
 
       strategyData: null,
       setStrategyData: (data) => set({ strategyData: data }),
@@ -272,20 +286,31 @@ export const useAppStore = create<AppStore>()(
       setWizardStep: (step) => set({ wizardStep: step }),
 
       connectedAccounts: [],
+      clientConnectedAccounts: {},
 
       connectAccount: (account) => {
-        set((s) => ({
-          connectedAccounts: [
-            ...s.connectedAccounts.filter((a) => a.platform !== account.platform),
+        const clientName = get().clientData?.clientName || '__global__'
+        set((s) => {
+          const updated = [
+            ...(s.clientConnectedAccounts[clientName] || []).filter((a) => a.platform !== account.platform),
             account,
-          ],
-        }))
+          ]
+          return {
+            connectedAccounts: updated,
+            clientConnectedAccounts: { ...s.clientConnectedAccounts, [clientName]: updated },
+          }
+        })
       },
 
       disconnectAccount: (platform) => {
-        set((s) => ({
-          connectedAccounts: s.connectedAccounts.filter((a) => a.platform !== platform),
-        }))
+        const clientName = get().clientData?.clientName || '__global__'
+        set((s) => {
+          const updated = (s.clientConnectedAccounts[clientName] || []).filter((a) => a.platform !== platform)
+          return {
+            connectedAccounts: updated,
+            clientConnectedAccounts: { ...s.clientConnectedAccounts, [clientName]: updated },
+          }
+        })
       },
 
       campaignHistory: [],
@@ -346,10 +371,16 @@ export const useAppStore = create<AppStore>()(
       },
 
       loadSavedClient: (id) => {
-        const { savedClients } = get()
+        const { savedClients, clientConnectedAccounts, clientPersonas } = get()
         const found = savedClients.find((s) => s.id === id)
         if (!found) return null
-        set({ clientData: found.clientData, strategyData: found.strategyData })
+        const name = found.clientData.clientName
+        set({
+          clientData:       found.clientData,
+          strategyData:     found.strategyData,
+          connectedAccounts: clientConnectedAccounts[name] || [],
+          generatedPersona:  clientPersonas[name] ?? null,
+        })
         return found
       },
 
@@ -421,7 +452,14 @@ export const useAppStore = create<AppStore>()(
       },
 
       generatedPersona: null,
-      setGeneratedPersona: (persona) => set({ generatedPersona: persona }),
+      clientPersonas: {},
+      setGeneratedPersona: (persona) => {
+        const clientName = get().clientData?.clientName || '__global__'
+        set((s) => ({
+          generatedPersona: persona,
+          clientPersonas: { ...s.clientPersonas, [clientName]: persona },
+        }))
+      },
 
       competitors: {},
       addCompetitor: (clientName, competitor) => {
@@ -470,6 +508,8 @@ export const useAppStore = create<AppStore>()(
         strategyData: null,
         isGenerating: false,
         wizardStep: 0,
+        connectedAccounts: [],
+        generatedPersona: null,
       }),
     }),
     {
@@ -479,15 +519,17 @@ export const useAppStore = create<AppStore>()(
         strategyData:        state.strategyData,
         savedClients:        state.savedClients,
         campaignHistory:     state.campaignHistory,
-        connectedAccounts:   state.connectedAccounts,
-        strategyTimestamps:  state.strategyTimestamps,
-        auditCache:          state.auditCache,
-        actionPlanCache:     state.actionPlanCache,
-        creativeTests:       state.creativeTests,
-        funnelEntries:       state.funnelEntries,
-        generatedPersona:    state.generatedPersona,
-        clientAssets:        state.clientAssets,
-        competitors:         state.competitors,
+        connectedAccounts:        state.connectedAccounts,
+        clientConnectedAccounts:  state.clientConnectedAccounts,
+        strategyTimestamps:       state.strategyTimestamps,
+        auditCache:               state.auditCache,
+        actionPlanCache:          state.actionPlanCache,
+        creativeTests:            state.creativeTests,
+        funnelEntries:            state.funnelEntries,
+        generatedPersona:         state.generatedPersona,
+        clientPersonas:           state.clientPersonas,
+        clientAssets:             state.clientAssets,
+        competitors:              state.competitors,
       }),
     }
   )
