@@ -374,6 +374,7 @@ export default function DashboardPage() {
   }, [deleteSavedClient])
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
   const [genError, setGenError] = useState('')
@@ -762,8 +763,6 @@ export default function DashboardPage() {
   }
 
   // ── Dashboard completo ──
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#030305', overflow: 'hidden' }}>
       <DashboardSidebar
