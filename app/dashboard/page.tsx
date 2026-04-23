@@ -85,6 +85,31 @@ function GeneratingScreen({ clientName, niche }: { clientName: string; niche: st
   )
 }
 
+// ── Score de saúde por cliente ─────────────────────────────────────────────────
+function getClientHealthScore(client: SavedClient, auditCache: Record<string, any>): {
+  score: number; label: string; color: string; dot: string
+} {
+  let score = 30
+  if (client.strategyData) {
+    score += 25
+    const ageMs = Date.now() - new Date(client.strategyData.generatedAt || client.savedAt).getTime()
+    if (ageMs < 30 * 24 * 3600000) score += 15
+  }
+  const cacheEntry = auditCache[client.clientData.clientName]
+  if (cacheEntry) {
+    score += 20
+    const latest = Array.isArray(cacheEntry) ? cacheEntry[0]?.audit : cacheEntry
+    if (latest?._realMetrics) score += 10
+    const alerts: any[] = latest?.alerts || []
+    const criticals = alerts.filter((a: any) => a.type === 'critical').length
+    score = Math.max(0, score - criticals * 5)
+  }
+  score = Math.min(100, score)
+  if (score >= 75) return { score, label: 'Saudável',  color: '#22C55E', dot: '🟢' }
+  if (score >= 45) return { score, label: 'Atenção',   color: '#F0B429', dot: '🟡' }
+  return              { score, label: 'Crítico',   color: '#FF4D4D', dot: '🔴' }
+}
+
 // ── Seletor de cliente salvo ───────────────────────────────────────────────────
 function ClientSelector({
   savedClients,
@@ -96,6 +121,7 @@ function ClientSelector({
   user,
   userPlan,
   onSignOut,
+  auditCache,
 }: {
   savedClients: SavedClient[]
   onSelect: (id: string) => void
@@ -106,6 +132,7 @@ function ClientSelector({
   user: any
   userPlan?: string
   onSignOut: () => void
+  auditCache: Record<string, any>
 }) {
   const getNicheIcon = (niche: string) => {
     const n = niche.toLowerCase()
@@ -241,12 +268,16 @@ function ClientSelector({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {sc.strategyData && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                          style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)' }}>
-                          Estratégia pronta
-                        </span>
-                      )}
+                      {(() => {
+                        const h = getClientHealthScore(sc, auditCache)
+                        return (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                            style={{ color: h.color, background: `${h.color}18`, border: `1px solid ${h.color}30` }}
+                            title={`Score ${h.score}/100`}>
+                            {h.dot} {h.label}
+                          </span>
+                        )
+                      })()}
                       <span className="text-[#F0B429] text-sm opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                     </div>
                   </button>
@@ -704,6 +735,7 @@ export default function DashboardPage() {
         user={user}
         userPlan={userPlan}
         onSignOut={() => signOut({ redirectUrl: '/sign-in' })}
+        auditCache={auditCache}
       />
     )
   }
