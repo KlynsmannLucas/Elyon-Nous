@@ -323,9 +323,24 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                   )
                                 })()}
                               </div>
-                              <div className="text-sm font-semibold text-white mt-1 leading-snug"
-                                style={{ textDecoration: item.status === 'concluida' ? 'line-through' : 'none', opacity: item.status === 'concluida' ? 0.5 : 1 }}>
-                                {item.titulo}
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <span className="text-sm font-semibold text-white leading-snug"
+                                  style={{ textDecoration: item.status === 'concluida' ? 'line-through' : 'none', opacity: item.status === 'concluida' ? 0.5 : 1 }}>
+                                  {item.titulo}
+                                </span>
+                                {item.impacto && (() => {
+                                  const imp = String(item.impacto).toLowerCase()
+                                  const high = imp.includes('alto') || imp.includes('crítico') || imp.includes('alta')
+                                  const mid  = imp.includes('médio') || imp.includes('media') || imp.includes('moderado')
+                                  const color = high ? '#22C55E' : mid ? '#F0B429' : '#64748B'
+                                  const label = high ? '💰 Alto' : mid ? '💰 Médio' : '💰 Baixo'
+                                  return (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                                      style={{ color, background: `${color}10`, border: `1px solid ${color}25` }}>
+                                      {label}
+                                    </span>
+                                  )
+                                })()}
                               </div>
                             </div>
 

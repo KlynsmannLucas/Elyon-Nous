@@ -54,9 +54,13 @@ function MetricCard({ label, value, sub, color, tip }: { label: string; value: s
 
 export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
   const { campaignHistory, auditCache } = useAppStore()
-  const [diagnostic, setDiagnostic] = useState<Record<string, any> | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [diagnostic,         setDiagnostic]         = useState<Record<string, any> | null>(null)
+  const [loading,            setLoading]             = useState(false)
+  const [error,              setError]               = useState('')
+  const [showInterpretacao,  setShowInterpretacao]   = useState(false)
+  const [expandedRisk,       setExpandedRisk]        = useState<number | null>(null)
+  const [showRecoDesc,       setShowRecoDesc]        = useState(false)
+  const [showQuandoEscalar,  setShowQuandoEscalar]   = useState(false)
 
   const bench = getBenchmark(clientData?.niche || '')
 
@@ -236,10 +240,16 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
                   />
                 )}
               </div>
-              <div className="bg-[#16161A] border border-[#2A2A30] rounded-xl p-4">
-                <div className="text-xs text-slate-500 uppercase tracking-wider mb-1.5">Interpretação</div>
-                <p className="text-sm text-slate-300 leading-relaxed">{diagnostic.saude_financeira.interpretacao}</p>
-              </div>
+              <button onClick={() => setShowInterpretacao(v => !v)}
+                className="w-full flex items-center justify-between bg-[#16161A] border border-[#2A2A30] rounded-xl px-4 py-2.5 hover:bg-[#1A1A20] transition-colors text-left">
+                <span className="text-xs text-slate-500 uppercase tracking-wider">💬 Interpretação</span>
+                <span className="text-[10px] text-slate-600">{showInterpretacao ? '▲ ocultar' : '▼ ver análise'}</span>
+              </button>
+              {showInterpretacao && (
+                <div className="bg-[#16161A] border border-[#2A2A30] rounded-xl px-4 py-3 animate-fade-up">
+                  <p className="text-sm text-slate-300 leading-relaxed">{diagnostic.saude_financeira.interpretacao}</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -252,30 +262,33 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
                 <span className="text-xs text-slate-600 ml-1">ranqueada por impacto</span>
               </div>
               <div className="space-y-2">
-                {diagnostic.matriz_risco.map((r: any, i: number) => (
-                  <div key={i} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-4">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div className="flex items-center gap-2">
+                {diagnostic.matriz_risco.map((r: any, i: number) => {
+                  const riskColor = r.impacto === 'critico' ? '#FF4D4D' : r.impacto === 'alto' ? '#FB923C' : '#F0B429'
+                  const isOpen = expandedRisk === i
+                  return (
+                    <div key={i} className="bg-[#111114] border border-[#2A2A30] rounded-xl overflow-hidden">
+                      <button onClick={() => setExpandedRisk(isOpen ? null : i)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#16161A] transition-colors text-left">
                         <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                          style={{
-                            background: r.impacto === 'critico' ? 'rgba(255,77,77,0.15)' : r.impacto === 'alto' ? 'rgba(251,146,60,0.15)' : 'rgba(240,180,41,0.15)',
-                            color: r.impacto === 'critico' ? '#FF4D4D' : r.impacto === 'alto' ? '#FB923C' : '#F0B429',
-                          }}>
+                          style={{ background: `${riskColor}18`, color: riskColor }}>
                           {i + 1}
                         </span>
-                        <span className="text-sm font-semibold text-white">{r.risco}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <RiskBadge level={r.probabilidade} />
-                        <RiskBadge level={r.impacto} />
-                      </div>
+                        <span className="text-sm font-semibold text-white flex-1">{r.risco}</span>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <RiskBadge level={r.probabilidade} />
+                          <RiskBadge level={r.impacto} />
+                          <span className="text-slate-600 text-[10px] ml-1">{isOpen ? '▲' : '▼'}</span>
+                        </div>
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-3 border-t border-[#1E1E24] pt-2.5 flex items-start gap-2 animate-fade-up">
+                          <span className="text-[#22C55E] text-xs mt-0.5 flex-shrink-0">→</span>
+                          <span className="text-xs text-slate-400 leading-relaxed">{r.mitigacao}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-start gap-2 pl-8">
-                      <span className="text-[#22C55E] text-xs mt-0.5 flex-shrink-0">→</span>
-                      <span className="text-xs text-slate-500 leading-relaxed">{r.mitigacao}</span>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -323,10 +336,16 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
                 </div>
               )}
 
-              <div className="bg-[#16161A] rounded-xl p-3">
-                <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Quando e como escalar</div>
-                <p className="text-sm text-slate-300">{diagnostic.prontidao_para_escalar.quando_escalar}</p>
-              </div>
+              <button onClick={() => setShowQuandoEscalar(v => !v)}
+                className="w-full flex items-center justify-between bg-[#16161A] rounded-xl px-3 py-2.5 hover:bg-[#1A1A20] transition-colors text-left border border-[#2A2A30]">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider">📅 Quando e como escalar</span>
+                <span className="text-[10px] text-slate-600">{showQuandoEscalar ? '▲' : '▼ ver'}</span>
+              </button>
+              {showQuandoEscalar && (
+                <div className="bg-[#16161A] rounded-xl px-3 py-2.5 animate-fade-up border border-[#2A2A30]">
+                  <p className="text-sm text-slate-300">{diagnostic.prontidao_para_escalar.quando_escalar}</p>
+                </div>
+              )}
 
               {diagnostic.prontidao_para_escalar.projecao_escala && (
                 <div className="grid grid-cols-3 gap-3 mt-3">
@@ -385,8 +404,16 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
                 <span className="font-display font-bold text-white">Recomendação Principal</span>
                 <span className="text-xs text-slate-600">uma ação que muda tudo</span>
               </div>
-              <div className="text-base font-bold text-[#F0B429] mb-2">{diagnostic.recomendacao_principal.titulo}</div>
-              <p className="text-sm text-slate-300 leading-relaxed mb-4">{diagnostic.recomendacao_principal.descricao}</p>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-base font-bold text-[#F0B429]">{diagnostic.recomendacao_principal.titulo}</div>
+                <button onClick={() => setShowRecoDesc(v => !v)}
+                  className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors px-2 py-1 rounded-lg border border-[#2A2A30]">
+                  {showRecoDesc ? '▲ ocultar' : '▼ ver detalhe'}
+                </button>
+              </div>
+              {showRecoDesc && (
+                <p className="text-sm text-slate-300 leading-relaxed mb-4 animate-fade-up">{diagnostic.recomendacao_principal.descricao}</p>
+              )}
               <div className="grid md:grid-cols-3 gap-3">
                 {[
                   { label: '⚡ Esta semana', text: diagnostic.recomendacao_principal.acao_semana_1, color: '#FF4D4D' },
