@@ -771,6 +771,31 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
       'Parceria com construtoras e imobiliárias é fonte estratégica de indicações',
     ],
   },
+  franquias: {
+    name: 'Franquias / Expansão de Negócio',
+    cpl_min: 60, cpl_max: 200,
+    cpl_by_channel: {
+      'Google Search': 'R$80–180',
+      'Meta Ads': 'R$60–160',
+      'LinkedIn': 'R$120–250',
+      'YouTube': 'R$90–200',
+    },
+    cvr_lead_to_sale: 0.05,
+    avg_ticket: 120000,
+    ltv_multiplier: 3.5,
+    best_channels: ['Google Search', 'Meta Ads', 'LinkedIn'],
+    budget_floor: 4000,
+    budget_ideal: 15000,
+    kpi_thresholds: { cpl_good: 100, cpl_bad: 170, roas_good: 4.0, cvr_good: 0.07 },
+    seasonality: ['Jan', 'Fev', 'Jul', 'Ago'],
+    insights: [
+      'Ciclo de venda longo (3–6 meses) — nutrição com conteúdo educativo é essencial',
+      'Google Search captura candidatos de alta intenção ("franquia de X", "investir em franquia")',
+      'Vídeo com depoimento de franqueado existente tem 4× mais engajamento que texto',
+      'Investimento mínimo e prazo de retorno são os gatilhos de conversão principais',
+      'Jan/Fev (planejamento anual) e Jul/Ago (decisões de meio de ano) são picos de busca',
+    ],
+  },
   fotografia_video: {
     name: 'Fotografia / Vídeo / Produção',
     cpl_min: 35, cpl_max: 120,
@@ -1080,7 +1105,10 @@ const KEY_MAP: Record<string, string> = {
 
   // ── Arquitetura / Design ──────────────────────────────────────────────────
   'design de interiores': 'arquitetura_design', 'interiores': 'arquitetura_design',
-  arquiteto: 'arquitetura_design', designer: 'arquitetura_design',
+  arquiteto: 'arquitetura_design', arquitetura: 'arquitetura_design', designer: 'arquitetura_design',
+
+  // ── Franquias ─────────────────────────────────────────────────────────────
+  franquia: 'franquias', franquias: 'franquias', franqueado: 'franquias', franqueadora: 'franquias',
 
   // ── Fotografia / Vídeo ────────────────────────────────────────────────────
   fotografia: 'fotografia_video', fotografo: 'fotografia_video', fotógrafo: 'fotografia_video',
@@ -1237,6 +1265,7 @@ const SEASONALITY_INDEXES: Record<string, number[]> = {
   farmacia:            [1.25, 1.05, 0.90, 0.85, 0.85, 1.30, 1.20, 1.00, 0.90, 0.90, 0.95, 1.00],
   servicos_residenciais:[1.25, 1.00, 0.90, 0.85, 0.90, 0.90, 0.85, 0.85, 0.90, 1.20, 1.10, 1.00],
   arquitetura_design:  [1.30, 1.20, 1.00, 0.85, 0.85, 0.80, 0.80, 0.85, 0.95, 1.25, 1.10, 0.90],
+  franquias:           [1.40, 1.30, 0.95, 0.85, 0.85, 0.85, 1.25, 1.20, 0.90, 0.90, 0.85, 0.80],
   fotografia_video:    [0.85, 0.85, 0.90, 0.90, 0.95, 0.90, 0.85, 0.85, 0.90, 1.05, 1.35, 1.45],
   seguranca_privada:   [1.25, 0.95, 0.90, 0.85, 0.85, 0.85, 0.85, 0.90, 0.90, 1.25, 1.05, 0.90],
   padaria_cafeteria:   [0.95, 0.90, 0.90, 0.90, 0.95, 1.20, 0.95, 0.90, 0.90, 0.95, 1.00, 1.30],
@@ -1395,6 +1424,11 @@ const CREATIVE_ANGLES_DATA: Record<string, CreativeAngles> = {
     saturated:     ['renderização editorial de alto padrão', 'foto de portfólio sem cliente', '"premiado e renomado"'],
     trending:      ['processo do projeto do zero à entrega', 'cliente contando transformação do espaço', 'antes/depois com quem mora lá'],
     underexplored: ['design funcional para espaços pequenos', 'arquitetura biofílica (tendência global)', 'reformas sem derrubar paredes'],
+  },
+  franquias: {
+    saturated:     ['"franquia de sucesso"', 'foto genérica de loja franqueada', 'tabela de investimento sem contexto'],
+    trending:      ['depoimento real de franqueado com resultados em números', 'dia a dia do franqueado em vídeo curto', 'comparativo de retorno vs. emprego CLT'],
+    underexplored: ['franquias com baixo investimento inicial (<R$50k)', 'operação home office ou remota', 'suporte da franqueadora no pós-abertura'],
   },
   fotografia_video: {
     saturated:     ['portfólio em slideshow genérico', 'foto de casamento sem contexto', '"fotógrafo profissional"'],
@@ -1701,7 +1735,7 @@ export interface FunnelBenchmarks {
 
 export function getFunnelBenchmarks(benchKey: string): FunnelBenchmarks {
   const bench = BENCHMARKS[benchKey] || BENCHMARKS['outro']
-  const isHighTicket  = ['imobiliario','juridico','financeiro','tecnologia','construcao','moveis_planejados','arquitetura_design','consultoria','marketing_agencia','eventos'].includes(benchKey)
+  const isHighTicket  = ['imobiliario','juridico','financeiro','tecnologia','construcao','moveis_planejados','arquitetura_design','consultoria','marketing_agencia','eventos','franquias'].includes(benchKey)
   const isLocalService = ['barbearia','beleza','depilacao','harmonizacao','fisioterapia','lava_jato','lavanderia','autoescola','servicos_residenciais','padaria_cafeteria','restaurante','automotivo','pet'].includes(benchKey)
   const isMedical     = ['saude','odontologia','psicologia','nutricao','farmacia','fisioterapia'].includes(benchKey)
 

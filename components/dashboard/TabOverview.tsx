@@ -425,13 +425,15 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         {
           label: 'Receita Estimada',
           value: `R$${Math.round(proj.revenueMonth / 1000)}k`,
-          sub: `R$${Math.round(proj.revenueMin / 1000)}k – R$${Math.round(proj.revenueMax / 1000)}k/mês`,
+          sub: bench!.avg_ticket > 10000
+            ? `Projeção steady-state (mês 4-6) · ciclo longo`
+            : `R$${Math.round(proj.revenueMin / 1000)}k – R$${Math.round(proj.revenueMax / 1000)}k/mês`,
           color: '#F0B429',
         },
         {
           label: 'Leads / mês',
           value: `~${proj.leadsMonth.toLocaleString('pt-BR')}`,
-          sub: `Intervalo R$${Math.round(proj.cplAvg)} CPL · ${bench!.cpl_min}–${bench!.cpl_max} nicho`,
+          sub: `CPL médio R$${Math.round(proj.adjustedCPLAvg)} · benchmark R$${bench!.cpl_min}–${bench!.cpl_max}`,
           color: '#22C55E',
         },
         {
@@ -547,27 +549,40 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
 
       {/* Métricas adicionais do nicho */}
       {proj && bench && !hasRealData && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">LTV por Cliente</div>
-            <div className="font-display text-xl font-bold text-[#A78BFA]">
-              R${Math.round(proj.ltv / 1000)}k
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
+              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">LTV por Cliente</div>
+              <div className="font-display text-xl font-bold text-[#A78BFA]">
+                R${Math.round(proj.ltv / 1000)}k
+              </div>
+              <div className="text-[10px] text-slate-600 mt-1">{bench.ltv_multiplier}× ticket médio</div>
             </div>
-            <div className="text-[10px] text-slate-600 mt-1">{bench.ltv_multiplier}× ticket médio</div>
-          </div>
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Vendas Est./mês</div>
-            <div className="font-display text-xl font-bold text-[#22C55E]">{proj.salesMonth}</div>
-            <div className="text-[10px] text-slate-600 mt-1">CVR {(bench.cvr_lead_to_sale * 100).toFixed(0)}% do nicho</div>
-          </div>
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Ticket Médio</div>
-            <div className="font-display text-xl font-bold text-[#38BDF8]">
-              R${bench.avg_ticket.toLocaleString('pt-BR')}
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
+              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Vendas Est./mês</div>
+              <div className="font-display text-xl font-bold text-[#22C55E]">{proj.salesMonth}</div>
+              <div className="text-[10px] text-slate-600 mt-1">CVR {(bench.cvr_lead_to_sale * 100).toFixed(0)}% do nicho</div>
             </div>
-            <div className="text-[10px] text-slate-600 mt-1">{bench.name}</div>
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
+              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Ticket Médio</div>
+              <div className="font-display text-xl font-bold text-[#38BDF8]">
+                R${bench.avg_ticket.toLocaleString('pt-BR')}
+              </div>
+              <div className="text-[10px] text-slate-600 mt-1">{bench.name}</div>
+            </div>
           </div>
-        </div>
+          {bench.avg_ticket > 10000 && (
+            <div className="rounded-xl px-4 py-3 flex items-start gap-3"
+              style={{ background: 'rgba(240,180,41,0.06)', border: '1px solid rgba(240,180,41,0.2)' }}>
+              <span className="text-base flex-shrink-0 mt-0.5">⏳</span>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                <strong className="text-[#F0B429]">Nicho de alto ticket com ciclo longo.</strong>{' '}
+                Receita e vendas estimadas refletem o <strong className="text-white">steady-state (mês 4–6)</strong>, não o mês 1.
+                Nos primeiros 60–120 dias os leads estão em nurturing — planeje o pipeline com horizonte trimestral.
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Unit Economics do cliente */}
