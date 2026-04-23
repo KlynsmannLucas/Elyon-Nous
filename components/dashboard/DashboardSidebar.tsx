@@ -8,6 +8,7 @@ export type TabKey =
   | 'analise' | 'anuncios' | 'audiencias'
   | 'performance' | 'acoes' | 'cenarios' | 'mercado' | 'funil'
   | 'persona' | 'conteudo' | 'assets' | 'concorrentes'
+  | 'relatorios'
 
 export const SIDEBAR_SECTIONS: {
   label: string
@@ -29,6 +30,7 @@ export const SIDEBAR_SECTIONS: {
   { label: 'Resultados', items: [
     { key: 'performance',  label: 'Performance',    icon: '📊' },
     { key: 'acoes',        label: 'Plano de Ações', icon: '✅' },
+    { key: 'relatorios',   label: 'Relatórios',     icon: '📤' },
   ]},
   { label: 'Criativo', items: [
     { key: 'persona',      label: 'Persona IA',           icon: '👤' },
