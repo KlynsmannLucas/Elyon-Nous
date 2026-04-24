@@ -2,23 +2,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
-// Tipos de ação considerados como "lead" em ordem de prioridade
-const LEAD_ACTION_TYPES = [
-  'lead',
-  'onsite_conversion.lead_grouped',
-]
-// WhatsApp / mensagens — contados separadamente como conversas
+// "lead" é o evento primário. "lead_grouped" agrega múltiplas janelas de atribuição
+// e se sobrepõe com "lead" — usar os dois juntos infla o número. Usar apenas um.
+const LEAD_FORM_PRIMARY   = 'lead'
+const LEAD_FORM_FALLBACK  = 'onsite_conversion.lead_grouped'
+
+// WhatsApp: "messaging_first_reply" = 1 reply por conversa (mais preciso).
+// "total_messaging_connection" é muito amplo (qualquer interação) — excluído.
 const WHATSAPP_ACTION_TYPES = [
   'onsite_conversion.messaging_conversation_started_7d',
   'messaging_first_reply',
   'onsite_conversion.messaging_first_reply',
-  'onsite_conversion.total_messaging_connection',
 ]
 
 function extractActions(actions: any[], types: string[]): number {
   return (actions || [])
     .filter((a: any) => types.includes(a.action_type))
     .reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0)
+}
+
+// Retorna leads de formulário sem dupla-contagem:
+// usa "lead" se existir, caso contrário usa "lead_grouped" como fallback.
+function extractFormLeads(actions: any[]): number {
+  const primary = extractActions(actions, [LEAD_FORM_PRIMARY])
+  if (primary > 0) return primary
+  return extractActions(actions, [LEAD_FORM_FALLBACK])
 }
 
 function dateStr(d: Date): string {
@@ -103,11 +111,10 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(c.impressions || '0')
       const frequency   = +parseFloat(c.frequency || '0').toFixed(2)
 
-      // Leads via formulário (lead form)
-      const leadFormLeads = extractActions(c.actions, LEAD_ACTION_TYPES)
-      // Conversas WhatsApp
+      // Leads via formulário — sem dupla-contagem entre "lead" e "lead_grouped"
+      const leadFormLeads = extractFormLeads(c.actions)
+      // Conversas WhatsApp (apenas first_reply, não conexões genéricas)
       const whatsappLeads = extractActions(c.actions, WHATSAPP_ACTION_TYPES)
-      // Total efetivo: formulários + WhatsApp (ambos são conversões reais para o negócio)
       const leads = leadFormLeads + whatsappLeads
 
       const cpl = leads > 0 ? +(spend / leads).toFixed(2) : 0
@@ -150,7 +157,7 @@ export async function POST(req: NextRequest) {
     // Previous period totals for MoM comparison
     const prevTotals = prevRows.reduce((acc, c) => {
       const spend  = parseFloat(c.spend || '0')
-      const leads  = extractActions(c.actions, LEAD_ACTION_TYPES) + extractActions(c.actions, WHATSAPP_ACTION_TYPES)
+      const leads  = extractFormLeads(c.actions) + extractActions(c.actions, WHATSAPP_ACTION_TYPES)
       const clicks = parseInt(c.clicks || '0')
       return { spend: acc.spend + spend, leads: acc.leads + leads, clicks: acc.clicks + clicks }
     }, { spend: 0, leads: 0, clicks: 0 })
