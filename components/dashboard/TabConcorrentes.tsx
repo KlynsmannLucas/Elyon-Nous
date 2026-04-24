@@ -1,7 +1,7 @@
 // components/dashboard/TabConcorrentes.tsx — Radar de Concorrentes
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData, Competitor } from '@/lib/store'
 
@@ -151,6 +151,180 @@ function AnalysisCard({ competitor, onRemove }: { competitor: Competitor; onRemo
   )
 }
 
+// ── Pesquisa Profunda Manus ────────────────────────────────────────────────────
+function ManusResearch({ niche, city }: { niche: string; city?: string }) {
+  const [taskId, setTaskId]   = useState<string | null>(null)
+  const [status, setStatus]   = useState<'idle' | 'creating' | 'running' | 'done' | 'error'>('idle')
+  const [result, setResult]   = useState<any>(null)
+  const [rawText, setRawText] = useState<string | null>(null)
+  const [errMsg, setErrMsg]   = useState('')
+  const [resType, setResType] = useState<'competitors' | 'market'>('competitors')
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  async function startResearch() {
+    setStatus('creating')
+    setResult(null)
+    setRawText(null)
+    setErrMsg('')
+    try {
+      const res = await fetch('/api/manus/task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche, city, type: resType }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error)
+      setTaskId(data.task_id)
+      setStatus('running')
+      // polling a cada 15s
+      pollRef.current = setInterval(() => pollStatus(data.task_id), 15000)
+    } catch (e: any) {
+      setStatus('error')
+      setErrMsg(e.message)
+    }
+  }
+
+  async function pollStatus(id: string) {
+    try {
+      const res = await fetch(`/api/manus/status?task_id=${id}`)
+      const data = await res.json()
+      if (data.done) {
+        clearInterval(pollRef.current!)
+        setStatus(data.status === 'error' ? 'error' : 'done')
+        setResult(data.parsed)
+        setRawText(data.output)
+      }
+    } catch {}
+  }
+
+  function reset() {
+    clearInterval(pollRef.current!)
+    setTaskId(null)
+    setStatus('idle')
+    setResult(null)
+    setRawText(null)
+    setErrMsg('')
+  }
+
+  return (
+    <div className="rounded-2xl p-5 mb-6" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(167,139,250,0.04))', border: '1px solid rgba(99,102,241,0.25)' }}>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+          style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)' }}>
+          🤖
+        </div>
+        <div>
+          <div className="text-sm font-bold text-white">Pesquisa Profunda · Manus AI</div>
+          <div className="text-[10px] text-slate-500">Agente autônomo — pesquisa, analisa e entrega resultado completo</div>
+        </div>
+        <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
+          style={{ background: 'rgba(99,102,241,0.12)', color: '#818CF8', border: '1px solid rgba(99,102,241,0.3)' }}>
+          BETA
+        </span>
+      </div>
+
+      {status === 'idle' && (
+        <>
+          <div className="flex gap-2 mb-4">
+            {(['competitors', 'market'] as const).map(t => (
+              <button key={t} onClick={() => setResType(t)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={{
+                  background: resType === t ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
+                  border: resType === t ? '1px solid rgba(99,102,241,0.4)' : '1px solid #2A2A30',
+                  color: resType === t ? '#818CF8' : '#64748B',
+                }}>
+                {t === 'competitors' ? '🎯 Top 5 Concorrentes' : '📊 Pesquisa de Mercado'}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-slate-500 mb-4 leading-relaxed">
+            {resType === 'competitors'
+              ? `O Manus vai pesquisar autonomamente os 5 principais concorrentes de ${niche} no mercado — posicionamento, canais, criativos, pricing e oportunidades de diferenciação.`
+              : `O Manus vai pesquisar o mercado de ${niche} — tamanho, CPL real, canais mais eficientes, sazonalidade e tendências.`}
+          </p>
+          <button onClick={startResearch}
+            className="w-full py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg,#6366F1,#818CF8)', color: '#fff' }}>
+            🚀 Iniciar Pesquisa Autônoma
+          </button>
+        </>
+      )}
+
+      {(status === 'creating' || status === 'running') && (
+        <div className="text-center py-6">
+          <div className="text-3xl mb-3 animate-pulse">🤖</div>
+          <div className="text-sm font-semibold text-white mb-1">
+            {status === 'creating' ? 'Iniciando agente...' : 'Manus pesquisando autonomamente'}
+          </div>
+          <div className="text-[11px] text-slate-500 mb-4">Isso leva 2–5 minutos. Pode deixar aberto.</div>
+          {taskId && (
+            <a href={`https://manus.im/app/${taskId}`} target="_blank" rel="noopener noreferrer"
+              className="text-[11px] text-[#818CF8] underline underline-offset-2">
+              Ver agente trabalhando ao vivo ↗
+            </a>
+          )}
+        </div>
+      )}
+
+      {status === 'done' && (
+        <div>
+          {result ? (
+            <ManusResultView data={result} />
+          ) : (
+            <pre className="text-[11px] text-slate-400 whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">{rawText}</pre>
+          )}
+          <button onClick={reset} className="mt-4 text-[11px] text-slate-500 hover:text-slate-300 underline underline-offset-2">
+            Nova pesquisa
+          </button>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div>
+          <div className="text-sm text-red-400 mb-3">{errMsg || 'Erro na pesquisa'}</div>
+          <button onClick={reset} className="text-[11px] text-slate-500 hover:text-slate-300 underline">Tentar novamente</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ManusResultView({ data }: { data: any }) {
+  const competitors = Array.isArray(data) ? data : data.competitors || []
+  const opportunities = data.opportunities || data.opportunity
+  const mistakes = data.competitor_mistakes || data.mistakes
+
+  return (
+    <div className="space-y-4">
+      {competitors.map((c: any, i: number) => (
+        <div key={i} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #2A2A30' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="font-bold text-white text-sm">{c.name || c.competitor_name}</span>
+            {c.website && <a href={c.website} target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#818CF8]">↗ {c.website}</a>}
+          </div>
+          {c.positioning && <p className="text-[11px] text-slate-400 mb-2"><span className="text-[#818CF8] font-semibold">Posicionamento: </span>{c.positioning}</p>}
+          {c.channels && <p className="text-[11px] text-slate-400 mb-2"><span className="text-[#22C55E] font-semibold">Canais: </span>{Array.isArray(c.channels) ? c.channels.join(', ') : c.channels}</p>}
+          {c.pricing && <p className="text-[11px] text-slate-400 mb-2"><span className="text-[#F0B429] font-semibold">Pricing: </span>{c.pricing}</p>}
+          {c.weaknesses && <p className="text-[11px] text-slate-400"><span className="text-[#FF4D4D] font-semibold">Fraquezas: </span>{Array.isArray(c.weaknesses) ? c.weaknesses.join(' · ') : c.weaknesses}</p>}
+        </div>
+      ))}
+      {opportunities && (
+        <div className="rounded-xl p-4" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)' }}>
+          <div className="text-[10px] font-bold text-[#22C55E] uppercase tracking-wider mb-2">Oportunidades de Diferenciação</div>
+          <p className="text-[11px] text-slate-300 leading-relaxed">{Array.isArray(opportunities) ? opportunities.join(' · ') : opportunities}</p>
+        </div>
+      )}
+      {mistakes && (
+        <div className="rounded-xl p-4" style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)' }}>
+          <div className="text-[10px] font-bold text-[#FF4D4D] uppercase tracking-wider mb-2">Erros dos Concorrentes</div>
+          <p className="text-[11px] text-slate-300 leading-relaxed">{Array.isArray(mistakes) ? mistakes.join(' · ') : mistakes}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function TabConcorrentes({ clientData }: Props) {
   const competitors      = useAppStore(s => s.competitors)
   const addCompetitor    = useAppStore(s => s.addCompetitor)
@@ -281,6 +455,11 @@ export function TabConcorrentes({ clientData }: Props) {
         style={{ background: 'linear-gradient(135deg, #6366F1, #818CF8)' }}>
         {loading ? '🔍 Analisando concorrente...' : '🔍 Analisar Concorrente'}
       </button>
+
+      {/* Pesquisa Profunda — Manus AI */}
+      {clientData?.niche && (
+        <ManusResearch niche={clientData.niche} city={clientData.city} />
+      )}
 
       {/* Lista de concorrentes */}
       {clientCompetitors.length > 0 && (
