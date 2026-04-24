@@ -256,6 +256,23 @@ const LP_CSS = `
 @keyframes roas-in{0%{opacity:0;transform:translateY(10px) scale(.96)}100%{opacity:1;transform:none}}
 .niche-slot-anim{animation:niche-in .32s cubic-bezier(.34,1.56,.64,1) forwards;}
 .roas-anim{animation:roas-in .38s cubic-bezier(.34,1.56,.64,1) forwards;}
+/* PIPELINE */
+.pipeline-sect{padding:60px 0 80px;}
+.pipeline-title{font-family:var(--f-display);font-size:clamp(22px,3vw,32px);font-weight:800;letter-spacing:-1px;color:var(--text);margin-bottom:12px;}
+.pipeline-title em{color:var(--gold);font-style:normal;}
+.pipeline-sub{font-size:15px;color:var(--sub);line-height:1.7;max-width:520px;margin-bottom:48px;}
+.pipeline-flow{display:grid;grid-template-columns:1fr 32px 1fr 32px 1fr 32px 1fr;gap:0;align-items:center;margin-bottom:32px;}
+.pipe-step{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 16px;text-align:center;transition:border-color .2s;}
+.pipe-step:hover{border-color:rgba(245,165,0,.3);}
+.pipe-step.hl{border-color:rgba(245,165,0,.3);background:linear-gradient(135deg,rgba(245,165,0,.06),var(--surface));box-shadow:0 0 30px rgba(245,165,0,.06);}
+.pipe-ico{font-size:22px;margin-bottom:9px;}
+.pipe-lbl{font-family:var(--f-mono);font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+.pipe-name{font-family:var(--f-display);font-size:14px;font-weight:700;letter-spacing:-.2px;margin-bottom:5px;}
+.pipe-desc{font-size:11px;color:var(--muted);line-height:1.55;}
+.pipe-arr{text-align:center;color:rgba(255,255,255,.18);font-size:20px;}
+.pipeline-quote{background:rgba(245,165,0,.04);border:1px solid rgba(245,165,0,.15);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;padding:16px 22px;}
+.pq-text{font-size:14px;color:var(--sub);line-height:1.65;}
+.pq-text strong{color:var(--gold);}
 /* SOCIAL BAR */
 .social-bar{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:16px 0;background:rgba(255,255,255,.015);position:relative;z-index:1;}
 .social-bar-inner{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;}
@@ -275,6 +292,8 @@ const LP_CSS = `
   .b-ndata{grid-template-columns:1fr;}
   .lp-container{padding:0 20px;}
   .section-h{font-size:32px;}
+  .pipeline-flow{grid-template-columns:1fr;gap:8px;}
+  .pipe-arr{transform:rotate(90deg);}
   .hero-b-h{font-size:clamp(28px,6vw,40px);}
 }
 @media(max-width:600px){
@@ -525,6 +544,47 @@ export default function LandingPage() {
             </div>
           </section>
 
+          {/* Pipeline Section */}
+          <section className="pipeline-sect">
+            <div className="lp-container">
+              <div className="section-eyebrow lp-fade">Por que o ELYON funciona</div>
+              <h2 className="pipeline-title lp-fade">IA sozinha não é vantagem.<br /><em>Pipeline de dados é.</em></h2>
+              <p className="pipeline-sub lp-fade lp-d1">IA todo mundo tem. O que separa quem cresce de quem queima budget é ter dados estruturados + contexto de nicho para tomar decisões certas.</p>
+              <div className="pipeline-flow lp-fade lp-d1">
+                <div className="pipe-step">
+                  <div className="pipe-ico">📥</div>
+                  <div className="pipe-lbl">Entrada</div>
+                  <div className="pipe-name">Dados Brutos</div>
+                  <div className="pipe-desc">Histórico de ads, CPL real e ROAS por campanha</div>
+                </div>
+                <div className="pipe-arr">→</div>
+                <div className="pipe-step">
+                  <div className="pipe-ico">⚡</div>
+                  <div className="pipe-lbl">Benchmark</div>
+                  <div className="pipe-name">Nicho Real</div>
+                  <div className="pipe-desc">CPL do segmento, CVR médio, ticket e budget ideal</div>
+                </div>
+                <div className="pipe-arr">→</div>
+                <div className="pipe-step hl">
+                  <div className="pipe-ico">🧠</div>
+                  <div className="pipe-lbl">Análise</div>
+                  <div className="pipe-name">Diagnóstico + Contexto</div>
+                  <div className="pipe-desc">Score de saúde, gargalos do funil, oportunidades reais</div>
+                </div>
+                <div className="pipe-arr">→</div>
+                <div className="pipe-step">
+                  <div className="pipe-ico">🎯</div>
+                  <div className="pipe-lbl">Decisão</div>
+                  <div className="pipe-name">Plano Executável</div>
+                  <div className="pipe-desc">90 dias de ações, canais prioritários, budget otimizado</div>
+                </div>
+              </div>
+              <div className="pipeline-quote lp-fade lp-d2">
+                <p className="pq-text">O jogo não é IA — <strong>o jogo é quem tem o melhor pipeline de dados + análise + contexto.</strong> Porque IA todo mundo tem. Dados estruturados do seu nicho = vantagem real que seu concorrente ainda não tem.</p>
+              </div>
+            </div>
+          </section>
+
           {/* How A */}
           <section className="how-a" id="como-funciona">
             <div className="lp-container">
@@ -657,6 +717,47 @@ export default function LandingPage() {
                     <div className="stat-b-sub">{s.sub}</div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Pipeline Section B */}
+          <section className="pipeline-sect">
+            <div className="lp-container">
+              <div className="section-eyebrow lp-fade">Por que o ELYON funciona</div>
+              <h2 className="pipeline-title lp-fade">IA sozinha não é vantagem.<br /><em>Pipeline de dados é.</em></h2>
+              <p className="pipeline-sub lp-fade lp-d1">IA todo mundo tem. O que separa quem cresce de quem queima budget é ter dados estruturados + contexto de nicho para tomar decisões certas.</p>
+              <div className="pipeline-flow lp-fade lp-d1">
+                <div className="pipe-step">
+                  <div className="pipe-ico">📥</div>
+                  <div className="pipe-lbl">Entrada</div>
+                  <div className="pipe-name">Dados Brutos</div>
+                  <div className="pipe-desc">Histórico de ads, CPL real e ROAS por campanha</div>
+                </div>
+                <div className="pipe-arr">→</div>
+                <div className="pipe-step">
+                  <div className="pipe-ico">⚡</div>
+                  <div className="pipe-lbl">Benchmark</div>
+                  <div className="pipe-name">Nicho Real</div>
+                  <div className="pipe-desc">CPL do segmento, CVR médio, ticket e budget ideal</div>
+                </div>
+                <div className="pipe-arr">→</div>
+                <div className="pipe-step hl">
+                  <div className="pipe-ico">🧠</div>
+                  <div className="pipe-lbl">Análise</div>
+                  <div className="pipe-name">Diagnóstico + Contexto</div>
+                  <div className="pipe-desc">Score de saúde, gargalos do funil, oportunidades reais</div>
+                </div>
+                <div className="pipe-arr">→</div>
+                <div className="pipe-step">
+                  <div className="pipe-ico">🎯</div>
+                  <div className="pipe-lbl">Decisão</div>
+                  <div className="pipe-name">Plano Executável</div>
+                  <div className="pipe-desc">90 dias de ações, canais prioritários, budget otimizado</div>
+                </div>
+              </div>
+              <div className="pipeline-quote lp-fade lp-d2">
+                <p className="pq-text">O jogo não é IA — <strong>o jogo é quem tem o melhor pipeline de dados + análise + contexto.</strong> Porque IA todo mundo tem. Dados estruturados do seu nicho = vantagem real que seu concorrente ainda não tem.</p>
               </div>
             </div>
           </section>
