@@ -79,7 +79,7 @@ function ScoreBar({ score }: { score: number }) {
 
 // ── Formulário de entrada rápida de histórico ────────────────────────────────
 function AddHistoryForm({ onClose }: { onClose: () => void }) {
-  const { addCampaign } = useAppStore()
+  const { addCampaign, connectedAccounts } = useAppStore()
   const [form, setForm] = useState({
     channel: 'Meta Ads',
     period: '',
@@ -94,6 +94,46 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
     salesCycle: '',
   })
   const [saving, setSaving] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importMsg, setImportMsg] = useState('')
+
+  const GOOGLE_CHANNELS = ['Google Ads', 'Google Search', 'Google PMAX']
+  const connectedMeta   = connectedAccounts.find(a => a.platform === 'meta')
+  const connectedGoogle = connectedAccounts.find(a => a.platform === 'google')
+  const isGoogle        = GOOGLE_CHANNELS.includes(form.channel)
+  const activeAccount   = isGoogle ? connectedGoogle : (form.channel === 'Meta Ads' ? connectedMeta : null)
+
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
+  async function importFromAds() {
+    if (!activeAccount) return
+    setImporting(true)
+    setImportMsg('')
+    try {
+      const endpoint = isGoogle ? '/api/ads-data/google' : '/api/ads-data/meta'
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: activeAccount.accessToken, accountId: activeAccount.accountId }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || 'Erro ao importar dados')
+      const now = new Date()
+      const period = `${months[now.getMonth()]} ${now.getFullYear()}`
+      setForm(f => ({
+        ...f,
+        period,
+        budgetSpent: Math.round(data.totals?.spend ?? 0).toString(),
+        leads:       Math.round(data.totals?.leads ?? 0).toString(),
+        revenue:     Math.round(data.totals?.revenue ?? 0).toString(),
+      }))
+      setImportMsg('✓ Dados importados — últimos 30 dias')
+    } catch (err: any) {
+      setImportMsg('✗ ' + (err.message || 'Erro ao conectar'))
+    } finally {
+      setImporting(false)
+    }
+  }
 
   const u = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
   const cplPreview = form.budgetSpent && form.leads && Number(form.leads) > 0
@@ -135,10 +175,32 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="bg-[#111114] border border-[#F0B42930] rounded-2xl p-5 animate-fade-up">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="font-display font-bold text-white text-sm">+ Registrar Período</div>
         <button onClick={onClose} className="text-slate-600 hover:text-slate-400 text-lg">×</button>
       </div>
+
+      {/* Import from Ads banner */}
+      {activeAccount && (
+        <div className="flex items-center gap-2 mb-4 p-2.5 rounded-xl"
+          style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)' }}>
+          <span className="text-[10px] text-slate-500 flex-1">
+            {isGoogle ? 'Google Ads' : 'Meta Ads'} conectado
+            {importMsg ? (
+              <span className="ml-2 font-semibold" style={{ color: importMsg.startsWith('✓') ? '#22C55E' : '#FF4D4D' }}>{importMsg}</span>
+            ) : (
+              <span className="ml-2 text-slate-600">· Preencha automaticamente com dados reais</span>
+            )}
+          </span>
+          <button
+            onClick={importFromAds}
+            disabled={importing}
+            className="px-3 py-1 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
+            style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22C55E' }}>
+            {importing ? '⏳ Importando...' : '⬇ Importar últimos 30d'}
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4">
         {/* Canal */}
