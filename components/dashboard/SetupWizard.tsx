@@ -145,7 +145,7 @@ function Tip({ text }: { text: string }) {
 }
 
 export function SetupWizard({ onComplete }: Props) {
-  const { setClientData, setWizardStep, wizardStep } = useAppStore()
+  const { setClientData, setWizardStep, wizardStep, setMarketResearchTaskId, setMarketResearch } = useAppStore()
 
   const [form, setForm] = useState({
     clientName:         '',
@@ -260,6 +260,40 @@ export function SetupWizard({ onComplete }: Props) {
         awarenessStage:    form.awarenessStage || undefined,
       }
       setClientData(clientData)
+
+      // Disparo silencioso — agente pesquisa concorrentes em background sem bloquear o fluxo
+      fetch('/api/manus/task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche: clientData.niche, city: clientData.city, type: 'competitors' }),
+      }).then(r => r.json()).then(data => {
+        if (data.task_id) {
+          setMarketResearchTaskId(clientData.clientName, data.task_id)
+          // Poll até concluir (max 10 min, a cada 20s)
+          let attempts = 0
+          const poll = setInterval(async () => {
+            attempts++
+            if (attempts > 30) { clearInterval(poll); return }
+            try {
+              const r = await fetch(`/api/manus/status?task_id=${data.task_id}`)
+              const d = await r.json()
+              if (d.done) {
+                clearInterval(poll)
+                if (d.parsed || d.output) {
+                  setMarketResearch(clientData.clientName, {
+                    competitors: d.parsed?.competitors ?? (Array.isArray(d.parsed) ? d.parsed : []),
+                    opportunities: d.parsed?.opportunities ?? '',
+                    mistakes: d.parsed?.competitor_mistakes ?? '',
+                    raw: d.output,
+                    fetchedAt: new Date().toISOString(),
+                  })
+                }
+              }
+            } catch {}
+          }, 20000)
+        }
+      }).catch(() => {})
+
       onComplete(importedFiles.length > 0 ? importedFiles : undefined)
     } catch (e: any) {
       setError(e.message)

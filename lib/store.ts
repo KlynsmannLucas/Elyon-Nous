@@ -272,6 +272,12 @@ interface AppStore {
   freshBenchmarks: Record<string, FreshBenchmark>
   setFreshBenchmark: (niche: string, data: FreshBenchmark) => void
 
+  // Pesquisa de mercado/concorrentes gerada por agente IA nos bastidores — keyed by clientName
+  marketResearch: Record<string, { competitors: any[]; opportunities: string; mistakes: string; fetchedAt: string }>
+  marketResearchTaskIds: Record<string, string>
+  setMarketResearch: (clientName: string, data: any) => void
+  setMarketResearchTaskId: (clientName: string, taskId: string) => void
+
   clearAll: () => void
 }
 
@@ -479,6 +485,15 @@ export const useAppStore = create<AppStore>()(
         set((s) => ({ freshBenchmarks: { ...s.freshBenchmarks, [niche.toLowerCase()]: data } }))
       },
 
+      marketResearch: {},
+      marketResearchTaskIds: {},
+      setMarketResearch: (clientName, data) => {
+        set((s) => ({ marketResearch: { ...s.marketResearch, [clientName]: data } }))
+      },
+      setMarketResearchTaskId: (clientName, taskId) => {
+        set((s) => ({ marketResearchTaskIds: { ...s.marketResearchTaskIds, [clientName]: taskId } }))
+      },
+
       competitors: {},
       addCompetitor: (clientName, competitor) => {
         const full: Competitor = { ...competitor, id: crypto.randomUUID() }
@@ -548,6 +563,8 @@ export const useAppStore = create<AppStore>()(
         clientPersonas:           state.clientPersonas,
         clientAssets:             state.clientAssets,
         freshBenchmarks:          state.freshBenchmarks,
+        marketResearch:           state.marketResearch,
+        marketResearchTaskIds:    state.marketResearchTaskIds,
         competitors:              state.competitors,
       }),
     }
