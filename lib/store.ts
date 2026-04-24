@@ -2,6 +2,15 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export interface FreshBenchmark {
+  niche:      string
+  cpl_min:    number
+  cpl_max:    number
+  roas_avg:   number | null
+  confidence: string
+  fetchedAt:  string // ISO
+}
+
 export interface ConnectedAccount {
   platform: 'meta' | 'google'
   accessToken: string
@@ -259,6 +268,10 @@ interface AppStore {
   updateCompetitor: (clientName: string, id: string, updates: Partial<Competitor>) => void
   removeCompetitor: (clientName: string, id: string) => void
 
+  // Benchmarks frescos via Tavily — keyed by niche (ex: "odontologia")
+  freshBenchmarks: Record<string, FreshBenchmark>
+  setFreshBenchmark: (niche: string, data: FreshBenchmark) => void
+
   clearAll: () => void
 }
 
@@ -461,6 +474,11 @@ export const useAppStore = create<AppStore>()(
         }))
       },
 
+      freshBenchmarks: {},
+      setFreshBenchmark: (niche, data) => {
+        set((s) => ({ freshBenchmarks: { ...s.freshBenchmarks, [niche.toLowerCase()]: data } }))
+      },
+
       competitors: {},
       addCompetitor: (clientName, competitor) => {
         const full: Competitor = { ...competitor, id: crypto.randomUUID() }
@@ -529,6 +547,7 @@ export const useAppStore = create<AppStore>()(
         generatedPersona:         state.generatedPersona,
         clientPersonas:           state.clientPersonas,
         clientAssets:             state.clientAssets,
+        freshBenchmarks:          state.freshBenchmarks,
         competitors:              state.competitors,
       }),
     }

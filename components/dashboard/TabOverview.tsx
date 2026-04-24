@@ -276,6 +276,38 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
   const connectedAccounts = useAppStore(s => s.connectedAccounts)
   const setClientData     = useAppStore(s => s.setClientData)
   const saveCurrentClient = useAppStore(s => s.saveCurrentClient)
+  const freshBenchmarks   = useAppStore(s => s.freshBenchmarks)
+  const setFreshBenchmark = useAppStore(s => s.setFreshBenchmark)
+
+  // Fresh benchmark via Tavily — válido por 24h
+  const FRESH_MAX_AGE = 24 * 60 * 60 * 1000
+  const nicheKey   = niche.toLowerCase()
+  const freshBench = freshBenchmarks[nicheKey]
+  const isFreshValid = !!(freshBench &&
+    (Date.now() - new Date(freshBench.fetchedAt).getTime()) < FRESH_MAX_AGE)
+
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshError, setRefreshError] = useState('')
+
+  async function handleRefreshBenchmark() {
+    if (!niche || refreshing) return
+    setRefreshing(true)
+    setRefreshError('')
+    try {
+      const res = await fetch('/api/benchmarks/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error || 'Erro ao buscar dados')
+      setFreshBenchmark(nicheKey, data)
+    } catch (err: any) {
+      setRefreshError(err.message || 'Falha na busca')
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const handleUpdateBudget = (newBudget: number) => {
     if (!clientData) return
@@ -735,8 +767,8 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
       {/* CPL Radar — comparação visual com benchmark */}
       {bench && (rm?.avgCPL || proj) && (() => {
         const userCPL   = rm?.avgCPL ?? proj?.adjustedCPLAvg ?? 0
-        const benchMin  = bench.cpl_min
-        const benchMax  = bench.cpl_max
+        const benchMin  = isFreshValid ? freshBench!.cpl_min : bench.cpl_min
+        const benchMax  = isFreshValid ? freshBench!.cpl_max : bench.cpl_max
         const benchMid  = (benchMin + benchMax) / 2
         const maxBar    = Math.max(userCPL, benchMax) * 1.2
         const userPct   = Math.min((userCPL / maxBar) * 100, 100)
@@ -755,14 +787,37 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
                 <span className="text-lg">📊</span>
                 <div>
                   <div className="font-display font-bold text-white text-sm">CPL · Você vs. Benchmark</div>
-                  <div className="text-[10px] text-slate-500">{bench.name} · dados reais do mercado BR</div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {isFreshValid ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold"
+                        style={{ color: '#22C55E' }}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] inline-block" />
+                        via web · {timeAgo(freshBench!.fetchedAt)} · {freshBench!.confidence}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-500">{bench.name} · benchmark interno</span>
+                    )}
+                  </div>
                 </div>
               </div>
-              <span className="text-xs font-bold px-3 py-1 rounded-full"
-                style={{ color: cplStatus.color, background: `${cplStatus.color}15`, border: `1px solid ${cplStatus.color}30` }}>
-                {cplStatus.label}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold px-3 py-1 rounded-full"
+                  style={{ color: cplStatus.color, background: `${cplStatus.color}15`, border: `1px solid ${cplStatus.color}30` }}>
+                  {cplStatus.label}
+                </span>
+                <button
+                  onClick={handleRefreshBenchmark}
+                  disabled={refreshing}
+                  title="Buscar dados frescos de CPL via web"
+                  className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all disabled:opacity-50"
+                  style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#818CF8' }}>
+                  {refreshing ? '⏳' : '🔄'} {refreshing ? 'Buscando...' : 'Atualizar via web'}
+                </button>
+              </div>
             </div>
+            {refreshError && (
+              <div className="text-[11px] text-red-400 mb-3 px-1">{refreshError}</div>
+            )}
 
             {/* Barra comparativa */}
             <div className="relative mb-6">
