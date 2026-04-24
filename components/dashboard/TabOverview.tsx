@@ -732,6 +732,93 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         </div>
       </div>
 
+      {/* CPL Radar — comparação visual com benchmark */}
+      {bench && (rm?.avgCPL || proj) && (() => {
+        const userCPL   = rm?.avgCPL ?? proj?.adjustedCPLAvg ?? 0
+        const benchMin  = bench.cpl_min
+        const benchMax  = bench.cpl_max
+        const benchMid  = (benchMin + benchMax) / 2
+        const maxBar    = Math.max(userCPL, benchMax) * 1.2
+        const userPct   = Math.min((userCPL / maxBar) * 100, 100)
+        const midPct    = (benchMid / maxBar) * 100
+        const maxPct    = (benchMax / maxBar) * 100
+
+        const cplStatus =
+          userCPL <= bench.kpi_thresholds.cpl_good  ? { label: 'Abaixo do benchmark ✓', color: '#22C55E' } :
+          userCPL <= bench.kpi_thresholds.cpl_bad   ? { label: 'Dentro do benchmark', color: '#F0B429' } :
+          { label: 'Acima do benchmark ⚠', color: '#FF4D4D' }
+
+        return (
+          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📊</span>
+                <div>
+                  <div className="font-display font-bold text-white text-sm">CPL · Você vs. Benchmark</div>
+                  <div className="text-[10px] text-slate-500">{bench.name} · dados reais do mercado BR</div>
+                </div>
+              </div>
+              <span className="text-xs font-bold px-3 py-1 rounded-full"
+                style={{ color: cplStatus.color, background: `${cplStatus.color}15`, border: `1px solid ${cplStatus.color}30` }}>
+                {cplStatus.label}
+              </span>
+            </div>
+
+            {/* Barra comparativa */}
+            <div className="relative mb-6">
+              <div className="h-3 bg-[#1E1E24] rounded-full overflow-hidden relative">
+                {/* zona verde do benchmark */}
+                <div className="absolute h-full rounded-full opacity-25"
+                  style={{ left: `${(benchMin / maxBar) * 100}%`, width: `${maxPct - (benchMin / maxBar) * 100}%`, background: '#22C55E' }} />
+                {/* barra do user */}
+                <div className="absolute h-full rounded-full transition-all duration-1000"
+                  style={{ width: `${userPct}%`, background: cplStatus.color }} />
+              </div>
+              {/* marcadores */}
+              <div className="relative mt-1" style={{ height: 20 }}>
+                <div className="absolute text-[9px] text-slate-600" style={{ left: `${(benchMin / maxBar) * 100}%`, transform: 'translateX(-50%)' }}>
+                  R${benchMin}
+                </div>
+                <div className="absolute text-[9px] font-bold text-[#22C55E]" style={{ left: `${midPct}%`, transform: 'translateX(-50%)' }}>
+                  R${Math.round(benchMid)} ★
+                </div>
+                <div className="absolute text-[9px] text-slate-600" style={{ left: `${maxPct}%`, transform: 'translateX(-50%)' }}>
+                  R${benchMax}
+                </div>
+                <div className="absolute text-[9px] font-bold" style={{ left: `${Math.min(userPct, 95)}%`, transform: 'translateX(-50%)', color: cplStatus.color }}>
+                  R${Math.round(userCPL)} você
+                </div>
+              </div>
+            </div>
+
+            {/* 3 métricas lado a lado */}
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="bg-[#16161A] rounded-xl p-3 text-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Seu CPL</div>
+                <div className="font-display text-xl font-bold" style={{ color: cplStatus.color }}>R${Math.round(userCPL)}</div>
+                <div className="text-[10px] text-slate-600 mt-0.5">{rm?.avgCPL ? 'dados reais' : 'projeção'}</div>
+              </div>
+              <div className="bg-[#16161A] rounded-xl p-3 text-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Benchmark</div>
+                <div className="font-display text-xl font-bold text-[#22C55E]">R${Math.round(benchMid)}</div>
+                <div className="text-[10px] text-slate-600 mt-0.5">média do nicho</div>
+              </div>
+              <div className="bg-[#16161A] rounded-xl p-3 text-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">CPL Máx. Lucrativo</div>
+                <div className="font-display text-xl font-bold text-[#A78BFA]">
+                  {clientData?.ticketPrice && clientData?.grossMargin && clientData?.conversionRate
+                    ? `R${Math.round(clientData.ticketPrice * (clientData.grossMargin / 100) * (clientData.conversionRate / 100))}`
+                    : `R${bench.kpi_thresholds.cpl_good}`}
+                </div>
+                <div className="text-[10px] text-slate-600 mt-0.5">
+                  {clientData?.ticketPrice ? 'calculado' : 'benchmark nicho'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Insights do nicho */}
       {bench && (
         <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">

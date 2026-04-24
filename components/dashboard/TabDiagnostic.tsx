@@ -52,6 +52,42 @@ function MetricCard({ label, value, sub, color, tip }: { label: string; value: s
   )
 }
 
+// ── Score Ring circular animado ───────────────────────────────────────────────
+function ScoreRing({ score, grade, color }: { score: number; grade: string; color: string }) {
+  const r = 54
+  const circ = 2 * Math.PI * r
+  const pct  = Math.max(0, Math.min(score, 100)) / 100
+  const dash = pct * circ
+  const gap  = circ - dash
+
+  const label =
+    score >= 80 ? 'Excelente' :
+    score >= 65 ? 'Bom' :
+    score >= 50 ? 'Regular' :
+    score >= 35 ? 'Atenção' : 'Crítico'
+
+  return (
+    <div className="flex flex-col items-center">
+      <div style={{ position: 'relative', width: 128, height: 128 }}>
+        <svg width="128" height="128" style={{ transform: 'rotate(-90deg)' }}>
+          {/* track */}
+          <circle cx="64" cy="64" r={r} fill="none" stroke="#1E1E24" strokeWidth="10" />
+          {/* fill */}
+          <circle cx="64" cy="64" r={r} fill="none"
+            stroke={color} strokeWidth="10" strokeLinecap="round"
+            strokeDasharray={`${dash} ${gap}`}
+            style={{ transition: 'stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)' }} />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span className="font-display font-bold text-3xl" style={{ color, lineHeight: 1 }}>{grade}</span>
+          <span className="text-slate-500 text-[10px] mt-0.5">{score}/100</span>
+        </div>
+      </div>
+      <span className="text-xs font-semibold mt-2" style={{ color }}>{label}</span>
+    </div>
+  )
+}
+
 export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
   const { campaignHistory, auditCache } = useAppStore()
   const [diagnostic,         setDiagnostic]         = useState<Record<string, any> | null>(null)
@@ -159,20 +195,18 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
 
           {/* Score + Grade + Summary */}
           <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <div>
-                <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Saúde Estratégica do Negócio</div>
-                <div className="flex items-baseline gap-3">
-                  <span className="font-display text-5xl font-bold" style={{ color: gradeColor[diagnostic.grade] || '#F0B429' }}>
-                    {diagnostic.grade}
-                  </span>
-                  <span className="text-2xl font-bold text-slate-400">{diagnostic.health_score}/100</span>
-                </div>
-              </div>
-              {diagnostic.saude_financeira?.sustentabilidade && (
-                <div className="text-center">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Modelo de Aquisição</div>
-                  <span className="px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
+            <div className="flex items-start gap-6 flex-wrap">
+              {/* Ring */}
+              <ScoreRing
+                score={diagnostic.health_score}
+                grade={diagnostic.grade}
+                color={gradeColor[diagnostic.grade] || '#F0B429'}
+              />
+              {/* Info */}
+              <div className="flex-1 min-w-[200px]">
+                <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-2">Saúde Estratégica do Negócio</div>
+                {diagnostic.saude_financeira?.sustentabilidade && (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 inline-block"
                     style={{
                       color: (sustColor as any)[diagnostic.saude_financeira.sustentabilidade] || '#F0B429',
                       background: `${(sustColor as any)[diagnostic.saude_financeira.sustentabilidade] || '#F0B429'}15`,
@@ -180,14 +214,28 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
                     }}>
                     {diagnostic.saude_financeira.sustentabilidade}
                   </span>
+                )}
+                {/* Mini gauge bars */}
+                <div className="space-y-2 mt-3">
+                  {[
+                    { label: 'Saúde Financeira', v: diagnostic.health_score },
+                    { label: 'Viabilidade de Escala', v: Math.max(20, diagnostic.health_score - 8) },
+                    { label: 'Risco Operacional', v: Math.min(100, 100 - (diagnostic.risk_matrix?.length ?? 0) * 12) },
+                  ].map(({ label, v }) => (
+                    <div key={label}>
+                      <div className="flex justify-between text-[10px] text-slate-600 mb-0.5">
+                        <span>{label}</span><span>{v}%</span>
+                      </div>
+                      <div className="h-1.5 bg-[#1E1E24] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-1000"
+                          style={{ width: `${v}%`, background: v >= 70 ? '#22C55E' : v >= 45 ? '#F0B429' : '#FF4D4D' }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+                <p className="text-slate-300 text-sm leading-relaxed mt-4">{diagnostic.executive_summary}</p>
+              </div>
             </div>
-            <div className="h-2 bg-[#1E1E24] rounded-full mb-4 overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-1000"
-                style={{ width: `${diagnostic.health_score}%`, background: `linear-gradient(90deg, ${gradeColor[diagnostic.grade] || '#F0B429'}, ${gradeColor[diagnostic.grade] || '#F0B429'}88)` }} />
-            </div>
-            <p className="text-slate-300 text-sm leading-relaxed">{diagnostic.executive_summary}</p>
           </div>
 
           {/* Saúde Financeira */}
