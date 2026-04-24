@@ -1,7 +1,7 @@
 // app/api/nous/route.ts — IA NOUS: assistente estratégica por nicho com fallback
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { fetchRealtimeBenchmarks } from '@/lib/tavily'
+import { fetchFocusedBenchmark } from '@/lib/tavily'
 
 // Resposta inteligente usando os dados reais do cliente extraídos do context
 function buildLocalReply(message: string, context: string): string {
@@ -95,10 +95,13 @@ export async function POST(req: NextRequest) {
   try {
     const { message, context, history, niche, city } = await req.json()
 
-    // Busca dados em tempo real se a pergunta for sobre benchmarks/mercado
-    const needsRealtime = /cpl|roas|benchmark|mercado|média|custo|canal|tendência/i.test(message)
-    const realtimeData = needsRealtime && niche
-      ? await fetchRealtimeBenchmarks(niche, city).catch(() => '')
+    // 1 query Tavily focada no tópico da pergunta — rápida (<2s), não bloqueia o chat
+    const topicMatch = message.match(/cpl|roas|benchmark|tendência|custo por lead|canal|criativo|sazonalidade/i)
+    const realtimeData = topicMatch && niche
+      ? await Promise.race([
+          fetchFocusedBenchmark(niche, topicMatch[0], city).catch(() => ''),
+          new Promise<string>(res => setTimeout(() => res(''), 3000)),
+        ])
       : ''
 
     const apiKey = process.env.ANTHROPIC_API_KEY

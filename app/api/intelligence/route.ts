@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
+import { fetchRealtimeBenchmarks } from '@/lib/tavily'
 
 export async function POST(req: NextRequest) {
   const { userId } = auth()
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
 
     const bench = getBenchmark(niche)
     const benchmarkText = getBenchmarkSummary(niche)
+
+    // Tavily: busca dados reais do mercado em paralelo com setup (até 6s)
+    const realtimeDataPromise = fetchRealtimeBenchmarks(niche, body.city).catch(() => '')
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
@@ -152,10 +156,22 @@ Gere EXATAMENTE 6 seções de inteligência, cada uma com foco diferente. Respon
   ]
 }`
 
+    // Aguarda Tavily (até 6s) antes de chamar Claude — dados reais enriquecem a análise
+    const realtimeData = await Promise.race([
+      realtimeDataPromise,
+      new Promise<string>(res => setTimeout(() => res(''), 6000)),
+    ])
+    const enrichedPrompt = realtimeData
+      ? prompt.replace(
+          '=== INTELIGÊNCIA DE MERCADO OBRIGATÓRIA ===',
+          `=== DADOS DE MERCADO EM TEMPO REAL (CPL/ROAS por canal) ===\n${realtimeData}\n\n=== INTELIGÊNCIA DE MERCADO OBRIGATÓRIA ===`
+        )
+      : prompt
+
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 6000,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: enrichedPrompt }],
     })
 
     const raw = (message.content[0] as any).text.trim()

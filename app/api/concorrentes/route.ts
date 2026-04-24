@@ -12,7 +12,7 @@ async function fetchCompetitorAds(
     const params = new URLSearchParams({
       ad_type:              'ALL',
       ad_reached_countries: JSON.stringify(['BR']),
-      search_terms:         competitorName.slice(0, 80),
+      search_terms:         `${competitorName} ${niche}`.slice(0, 80),
       fields,
       limit:                '10',
       access_token:         accessToken,
@@ -91,7 +91,7 @@ Retorne APENAS JSON válido com esta estrutura:
     const anthropic = new Anthropic({ apiKey })
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1500,
       system: 'Você é especialista em inteligência competitiva de marketing digital. Responda APENAS com JSON válido, sem markdown.',
       messages: [{ role: 'user', content: prompt }],

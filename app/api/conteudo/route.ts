@@ -95,7 +95,7 @@ Retorne APENAS um JSON válido com esta estrutura:
     const anthropic = new Anthropic({ apiKey })
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 3000,
       system: 'Você é um especialista em marketing de conteúdo digital brasileiro. Responda APENAS com JSON válido, sem markdown.',
       messages: [{ role: 'user', content: enrichedPrompt }],

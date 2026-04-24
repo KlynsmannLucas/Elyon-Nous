@@ -57,6 +57,28 @@ export async function fetchRealtimeBenchmarks(
   }
 }
 
+/**
+ * Busca 1 query focada — para NOUS chat onde velocidade importa.
+ * Retorna string formatada ou '' se falhar.
+ */
+export async function fetchFocusedBenchmark(
+  niche: string,
+  topic: string,
+  city?: string
+): Promise<string> {
+  const apiKey = process.env.TAVILY_API_KEY
+  if (!apiKey) return ''
+  const location = city ? ` ${city} Brasil` : ' Brasil'
+  const year = new Date().getFullYear()
+  const query = `${topic} ${niche}${location} ${year} benchmark real dados`
+  try {
+    const result = await searchTavily(query, apiKey)
+    return result ? `[Dados de mercado em tempo real]\n${result}` : ''
+  } catch {
+    return ''
+  }
+}
+
 async function searchTavily(query: string, apiKey: string): Promise<string> {
   const res = await fetch('https://api.tavily.com/search', {
     method: 'POST',

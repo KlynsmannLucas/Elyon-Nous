@@ -2,14 +2,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useAppStore, type ClientData, type CampaignRecord } from '@/lib/store'
+import { useAppStore, type ClientData, type CampaignRecord, type NousMessage } from '@/lib/store'
 import { getBenchmark, getBenchmarkSummary, getCreativeAngles, getSeasonalityContext, BENCHMARKS } from '@/lib/niche_benchmarks'
-
-interface Message {
-  role: 'user' | 'nous'
-  content: string
-  ts: number
-}
 
 interface Props {
   clientData: ClientData | null
@@ -27,24 +21,29 @@ const QUICK_PROMPTS = [
 ]
 
 export function NousChat({ clientData, strategy, campaignHistory }: Props) {
-  const auditCache = useAppStore((s) => s.auditCache)
-  const [open, setOpen]       = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput]     = useState('')
+  const auditCache          = useAppStore((s) => s.auditCache)
+  const nousConversations   = useAppStore((s) => s.nousConversations)
+  const addNousMessage      = useAppStore((s) => s.addNousMessage)
+  const clearNousConversation = useAppStore((s) => s.clearNousConversation)
+
+  const clientName = clientData?.clientName || '__global__'
+  const messages: NousMessage[] = nousConversations[clientName] || []
+
+  const [open, setOpen]   = useState(false)
+  const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (open && messages.length === 0) {
-      // Mensagem de boas-vindas contextualizada
       const niche = clientData?.niche || 'seu nicho'
       const name  = clientData?.clientName || 'cliente'
-      setMessages([{
+      addNousMessage(clientName, {
         role: 'nous',
         content: `Olá! Sou a **NOUS**, sua analista estratégica especializada em **${niche}**.\n\nTenho acesso completo aos dados de **${name}**: budget, unit economics, benchmarks reais do nicho${campaignHistory.length > 0 ? `, ${campaignHistory.length} campanhas históricas` : ''}${auditCache[name] ? ', última auditoria' : ''} e estratégia gerada.\n\nMe pergunte qualquer coisa — diagnóstico, criativos, canais, ROAS break-even, CPL máximo. Sou direta e baseio tudo em dados.`,
         ts: Date.now(),
-      }])
+      })
     }
   }, [open])
 
@@ -159,8 +158,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return
-    const userMsg: Message = { role: 'user', content: text.trim(), ts: Date.now() }
-    setMessages((m) => [...m, userMsg])
+    addNousMessage(clientName, { role: 'user', content: text.trim(), ts: Date.now() })
     setInput('')
     setLoading(true)
 
@@ -181,13 +179,13 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
       })
       const json = await res.json()
       if (!json.success) throw new Error(json.error || 'Erro')
-      setMessages((m) => [...m, { role: 'nous', content: json.reply, ts: Date.now() }])
+      addNousMessage(clientName, { role: 'nous', content: json.reply, ts: Date.now() })
     } catch (e: any) {
-      setMessages((m) => [...m, {
+      addNousMessage(clientName, {
         role: 'nous',
         content: `Não consegui processar agora. Tente novamente. (${e.message})`,
         ts: Date.now(),
-      }])
+      })
     } finally {
       setLoading(false)
     }
@@ -244,10 +242,21 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
                 Analista estratégica · {clientData?.niche || 'aguardando contexto'}
               </div>
             </div>
-            <span className="flex items-center gap-1 text-[10px] text-[#22C55E]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
-              online
-            </span>
+            <div className="flex items-center gap-2">
+              {messages.length > 1 && (
+                <button
+                  onClick={() => clearNousConversation(clientName)}
+                  className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors"
+                  title="Limpar conversa"
+                >
+                  limpar
+                </button>
+              )}
+              <span className="flex items-center gap-1 text-[10px] text-[#22C55E]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
+                online
+              </span>
+            </div>
           </div>
 
           {/* Mensagens */}

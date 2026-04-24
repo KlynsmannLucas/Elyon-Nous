@@ -301,12 +301,10 @@ async function runStrategy(body: any) {
       const anthropic        = new Anthropic({ apiKey })
       const benchmarkSection = getBenchmarkSummary(niche)
 
-      // Tavily e IA em paralelo: IA tem até 23s; Tavily só é incluída se chegar em até 2s
-      const [realtimeData] = await Promise.all([
-        Promise.race([
-          realtimeDataPromise,
-          new Promise<string>((resolve) => setTimeout(() => resolve(''), 2000)),
-        ]),
+      // Tavily aguarda até 8s antes do Claude — garante dados reais no prompt
+      const realtimeData = await Promise.race([
+        realtimeDataPromise,
+        new Promise<string>((resolve) => setTimeout(() => resolve(''), 8000)),
       ])
 
       const unitEconomicsSection = (breakEvenROAS || maxProfitCPL || ltv || cacPaybackMonths) ? `

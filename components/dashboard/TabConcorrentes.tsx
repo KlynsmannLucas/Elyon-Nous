@@ -151,26 +151,27 @@ function AnalysisCard({ competitor, onRemove }: { competitor: Competitor; onRemo
   )
 }
 
-// ── Inteligência de Mercado (resultado gerado automaticamente nos bastidores) ──
-function MarketIntelCard({ clientName }: { clientName: string }) {
-  const marketResearch      = useAppStore(s => s.marketResearch)
+// ── Inteligência de Mercado (resultado gerado automaticamente + refresh on-demand) ──
+function MarketIntelCard({ clientName, niche, city }: { clientName: string; niche?: string; city?: string }) {
+  const marketResearch        = useAppStore(s => s.marketResearch)
   const marketResearchTaskIds = useAppStore(s => s.marketResearchTaskIds)
-  const setMarketResearch   = useAppStore(s => s.setMarketResearch)
-  const data = marketResearch[clientName]
+  const setMarketResearch     = useAppStore(s => s.setMarketResearch)
+  const setMarketResearchTaskId = useAppStore(s => s.setMarketResearchTaskId)
+  const data   = marketResearch[clientName]
   const taskId = marketResearchTaskIds[clientName]
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [polling, setPolling] = useState(false)
+  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [polling, setPolling]       = useState(false)
+  const [requesting, setRequesting] = useState(false)
 
-  // Se tem task pendente e ainda não tem resultado, inicia polling
-  useEffect(() => {
-    if (!taskId || data || polling) return
+  const startPolling = (tid: string) => {
+    if (pollRef.current) clearInterval(pollRef.current)
     setPolling(true)
     let attempts = 0
     pollRef.current = setInterval(async () => {
       attempts++
       if (attempts > 30) { clearInterval(pollRef.current!); setPolling(false); return }
       try {
-        const r = await fetch(`/api/manus/status?task_id=${taskId}`)
+        const r = await fetch(`/api/manus/status?task_id=${tid}`)
         const d = await r.json()
         if (d.done && (d.parsed || d.output)) {
           clearInterval(pollRef.current!)
@@ -185,8 +186,32 @@ function MarketIntelCard({ clientName }: { clientName: string }) {
         }
       } catch {}
     }, 20000)
+  }
+
+  // Retoma polling se task pendente sem resultado
+  useEffect(() => {
+    if (!taskId || data || polling) return
+    startPolling(taskId)
     return () => clearInterval(pollRef.current!)
   }, [taskId, data, clientName])
+
+  const handleRefresh = async () => {
+    if (!niche || requesting || polling) return
+    setRequesting(true)
+    try {
+      const r = await fetch('/api/manus/task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche, city, type: 'competitors' }),
+      })
+      const d = await r.json()
+      if (d.task_id) {
+        setMarketResearchTaskId(clientName, d.task_id)
+        startPolling(d.task_id)
+      }
+    } catch {}
+    setRequesting(false)
+  }
 
   // Ainda processando
   if (!data && (taskId || polling)) {
@@ -199,7 +224,19 @@ function MarketIntelCard({ clientName }: { clientName: string }) {
     )
   }
 
-  if (!data) return null
+  if (!data) {
+    return (
+      <div className="rounded-2xl p-4 mb-5 flex items-center justify-between"
+        style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.15)' }}>
+        <span className="text-[11px] text-slate-500">Pesquisa de mercado autônoma não gerada ainda.</span>
+        <button onClick={handleRefresh} disabled={requesting || !niche}
+          className="text-[10px] px-3 py-1.5 rounded-lg font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
+          style={{ background: 'rgba(99,102,241,0.15)', color: '#818CF8', border: '1px solid rgba(99,102,241,0.25)' }}>
+          {requesting ? 'Iniciando...' : '⚡ Pesquisar agora'}
+        </button>
+      </div>
+    )
+  }
 
   const competitors: any[] = data.competitors || []
   const opportunities = data.opportunities
@@ -209,9 +246,21 @@ function MarketIntelCard({ clientName }: { clientName: string }) {
     <div className="mb-6">
       <div className="flex items-center justify-between mb-3">
         <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Inteligência de Mercado</div>
-        <span className="text-[10px] text-slate-600">
-          {data.fetchedAt ? `Atualizado ${timeAgo(data.fetchedAt)}` : ''}
-        </span>
+        <div className="flex items-center gap-3">
+          {polling && (
+            <span className="flex items-center gap-1 text-[10px] text-[#818CF8]">
+              <span className="w-1 h-1 rounded-full bg-[#818CF8] animate-pulse" />atualizando...
+            </span>
+          )}
+          {data.fetchedAt && !polling && (
+            <span className="text-[10px] text-slate-600">{timeAgo(data.fetchedAt)}</span>
+          )}
+          <button onClick={handleRefresh} disabled={requesting || polling || !niche}
+            className="text-[10px] px-2.5 py-1 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-40"
+            style={{ background: 'rgba(99,102,241,0.08)', color: '#818CF8', border: '1px solid rgba(99,102,241,0.2)' }}>
+            {requesting ? '...' : '↻ Atualizar'}
+          </button>
+        </div>
       </div>
 
       {competitors.length > 0 && (
@@ -385,9 +434,13 @@ export function TabConcorrentes({ clientData }: Props) {
         {loading ? '🔍 Analisando concorrente...' : '🔍 Analisar Concorrente'}
       </button>
 
-      {/* Inteligência de mercado gerada automaticamente */}
+      {/* Inteligência de mercado gerada automaticamente + refresh on-demand */}
       {clientData?.clientName && (
-        <MarketIntelCard clientName={clientData.clientName} />
+        <MarketIntelCard
+          clientName={clientData.clientName}
+          niche={clientData.niche}
+          city={clientData.city}
+        />
       )}
 
       {/* Lista de concorrentes */}

@@ -2,6 +2,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export interface NousMessage {
+  role: 'user' | 'nous'
+  content: string
+  ts: number
+}
+
 export interface FreshBenchmark {
   niche:      string
   cpl_min:    number
@@ -278,6 +284,11 @@ interface AppStore {
   setMarketResearch: (clientName: string, data: any) => void
   setMarketResearchTaskId: (clientName: string, taskId: string) => void
 
+  // Conversas NOUS por cliente — persiste entre reloads
+  nousConversations: Record<string, NousMessage[]>
+  addNousMessage: (clientName: string, msg: NousMessage) => void
+  clearNousConversation: (clientName: string) => void
+
   clearAll: () => void
 }
 
@@ -485,6 +496,19 @@ export const useAppStore = create<AppStore>()(
         set((s) => ({ freshBenchmarks: { ...s.freshBenchmarks, [niche.toLowerCase()]: data } }))
       },
 
+      nousConversations: {},
+      addNousMessage: (clientName, msg) =>
+        set((s) => ({
+          nousConversations: {
+            ...s.nousConversations,
+            [clientName]: [...(s.nousConversations[clientName] || []), msg].slice(-100),
+          },
+        })),
+      clearNousConversation: (clientName) =>
+        set((s) => ({
+          nousConversations: { ...s.nousConversations, [clientName]: [] },
+        })),
+
       marketResearch: {},
       marketResearchTaskIds: {},
       setMarketResearch: (clientName, data) => {
@@ -566,6 +590,7 @@ export const useAppStore = create<AppStore>()(
         marketResearch:           state.marketResearch,
         marketResearchTaskIds:    state.marketResearchTaskIds,
         competitors:              state.competitors,
+        nousConversations:        state.nousConversations,
       }),
     }
   )
