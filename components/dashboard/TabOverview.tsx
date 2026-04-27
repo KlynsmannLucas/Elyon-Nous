@@ -891,7 +891,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
             {bench.insights.map((ins, i) => (
               <div key={i} className="flex items-start gap-2 text-sm text-slate-400 bg-[#16161A] rounded-xl px-3 py-2">
                 <span className="text-[#F0B429] mt-0.5 flex-shrink-0">→</span>
-                {ins}
+                <span className="line-clamp-2">{ins}</span>
               </div>
             ))}
           </div>
@@ -902,12 +902,12 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
       {hasAIStrategy && strategy.regulatory_alerts?.length > 0 && (
         <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
           <div className="font-display font-bold text-white text-sm mb-3">⚠️ Alertas do Nicho</div>
-          <div className="space-y-2">
+          <div className="flex flex-wrap gap-1.5">
             {strategy.regulatory_alerts.map((alert: string, i: number) => (
-              <div key={i} className="flex items-start gap-2 text-sm text-slate-400">
-                <span className="text-[#F0B429] mt-0.5 flex-shrink-0">→</span>
-                {alert}
-              </div>
+              <span key={i} className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-full"
+                style={{ background: 'rgba(240,180,41,0.08)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.2)' }}>
+                ⚠ {alert}
+              </span>
             ))}
           </div>
         </div>

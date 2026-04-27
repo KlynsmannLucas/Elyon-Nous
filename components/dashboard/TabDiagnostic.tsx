@@ -97,6 +97,7 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
   const [expandedRisk,       setExpandedRisk]        = useState<number | null>(null)
   const [showRecoDesc,       setShowRecoDesc]        = useState(false)
   const [showQuandoEscalar,  setShowQuandoEscalar]   = useState(false)
+  const [showFullSummary,    setShowFullSummary]     = useState(false)
 
   const bench = getBenchmark(clientData?.niche || '')
 
@@ -233,7 +234,17 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
                     </div>
                   ))}
                 </div>
-                <p className="text-slate-300 text-sm leading-relaxed mt-4">{diagnostic.executive_summary}</p>
+                <div className="mt-4">
+                  <p className={`text-slate-300 text-sm leading-relaxed${showFullSummary ? '' : ' line-clamp-3'}`}>
+                    {diagnostic.executive_summary}
+                  </p>
+                  {(diagnostic.executive_summary?.length ?? 0) > 180 && (
+                    <button onClick={() => setShowFullSummary(v => !v)}
+                      className="mt-1.5 text-[11px] text-slate-600 hover:text-slate-400 transition-colors">
+                      {showFullSummary ? '▲ ver menos' : '▼ ver mais'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -373,12 +384,12 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
               {diagnostic.prontidao_para_escalar.prerequisitos_faltando?.length > 0 && (
                 <div className="mb-4">
                   <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">Pré-requisitos faltando antes de escalar:</div>
-                  <div className="space-y-1.5">
+                  <div className="flex flex-wrap gap-1.5">
                     {diagnostic.prontidao_para_escalar.prerequisitos_faltando.map((p: string, i: number) => (
-                      <div key={i} className="flex items-start gap-2 text-sm">
-                        <span className="text-[#FF4D4D] flex-shrink-0 mt-0.5">✕</span>
-                        <span className="text-slate-400">{p}</span>
-                      </div>
+                      <span key={i} className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full"
+                        style={{ background: 'rgba(255,77,77,0.08)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>
+                        ✕ {p}
+                      </span>
                     ))}
                   </div>
                 </div>

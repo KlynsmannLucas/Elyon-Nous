@@ -200,6 +200,42 @@ function Plan90Days({ plan }: { plan: any[] }) {
   )
 }
 
+// ── Ações prioritárias com limite + expandir ──────────────────────────────────
+function KeyActionsSection({ actions }: { actions: string[] }) {
+  const [showAll, setShowAll] = useState(false)
+  const limit   = 5
+  const visible = showAll ? actions : actions.slice(0, limit)
+  const extra   = actions.length - limit
+
+  return (
+    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+      <div className="font-display font-bold text-white mb-3">⚡ Ações Prioritárias</div>
+      <div className="flex flex-col gap-2">
+        {visible.map((action: string, i: number) => (
+          <div key={i} className="flex items-center gap-3 px-3 py-2.5 bg-[#16161A] rounded-xl">
+            <span className="w-5 h-5 rounded-full bg-[#F0B429] text-black text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+              {i + 1}
+            </span>
+            <span className="text-xs text-slate-300">{action}</span>
+          </div>
+        ))}
+      </div>
+      {!showAll && extra > 0 && (
+        <button onClick={() => setShowAll(true)}
+          className="mt-3 w-full text-[11px] text-slate-500 hover:text-slate-300 transition-colors py-2 rounded-xl border border-[#2A2A30] hover:border-[#3A3A42]">
+          Ver todas (+{extra} ações) ▼
+        </button>
+      )}
+      {showAll && actions.length > limit && (
+        <button onClick={() => setShowAll(false)}
+          className="mt-3 w-full text-[11px] text-slate-500 hover:text-slate-300 transition-colors py-2 rounded-xl border border-[#2A2A30]">
+          Ver menos ▲
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ── Seção colapsável genérica ─────────────────────────────────────────────────
 function CollapsibleSection({ title, defaultOpen = true, children }: {
   title: React.ReactNode; defaultOpen?: boolean; children: React.ReactNode
@@ -425,19 +461,7 @@ export function TabStrategy({ strategy, analysis }: Props) {
 
       {/* ── Ações prioritárias ────────────────────────────────────────── */}
       {hasRealData && strategy.key_actions?.length > 0 && (
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-          <div className="font-display font-bold text-white mb-3">⚡ Ações Prioritárias</div>
-          <div className="flex flex-col gap-2">
-            {strategy.key_actions.map((action: string, i: number) => (
-              <div key={i} className="flex items-center gap-3 px-3 py-2.5 bg-[#16161A] rounded-xl">
-                <span className="w-5 h-5 rounded-full bg-[#F0B429] text-black text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                  {i + 1}
-                </span>
-                <span className="text-xs text-slate-300">{action}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <KeyActionsSection actions={strategy.key_actions} />
       )}
 
     </div>
