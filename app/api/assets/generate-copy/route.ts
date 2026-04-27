@@ -1,96 +1,133 @@
-// app/api/assets/generate-copy/route.ts — Gera copy de anúncio a partir de um asset
+// app/api/assets/generate-copy/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { callLLMJson } from '@/lib/pipeline/llm'
+import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 
 const ASSET_CONTEXT: Record<string, string> = {
-  logo:      'imagem do logotipo da marca (identidade visual, símbolo da empresa)',
-  product:   'foto do produto/serviço oferecido (o que o cliente está comprando)',
-  lifestyle: 'imagem de estilo de vida/ambiente (contexto emocional e aspiracional)',
-  banner:    'arte/banner já criado para anúncio (criativo pronto para veicular)',
+  logo:      'logotipo da marca — reforçar identidade e autoridade da empresa',
+  product:   'foto do produto/serviço — mostrar o que o cliente está comprando',
+  lifestyle: 'imagem aspiracional — mostrar a transformação/resultado desejado',
+  banner:    'arte/banner pronto — anúncio criativo já estruturado para veicular',
   other:     'imagem de apoio da marca',
 }
 
-const PLATFORM_GUIDE: Record<string, string> = {
-  meta:    'Meta Ads (Facebook/Instagram) — primary text até 125 chars, headline até 40 chars',
-  google:  'Google Ads — headline até 30 chars, description até 90 chars',
-  tiktok:  'TikTok Ads — gancho nos primeiros 3s, texto curto e direto',
-  default: 'Meta Ads (Facebook/Instagram) — primary text até 125 chars, headline até 40 chars',
+const PLATFORM_RULES: Record<string, { headlineMax: number; bodyMax: number; notes: string }> = {
+  meta:    { headlineMax: 40,  bodyMax: 125, notes: 'Meta Ads (Feed/Stories) — primeiros 3 chars são gold, emoji permitido no body' },
+  google:  { headlineMax: 30,  bodyMax: 90,  notes: 'Google RSA — incluir keyword principal no headline, sem emoji' },
+  tiktok:  { headlineMax: 35,  bodyMax: 80,  notes: 'TikTok — gancho nos 1,5s, linguagem informal, trend-aware' },
+  default: { headlineMax: 40,  bodyMax: 125, notes: 'Meta Ads — primary text até 125 chars, headline até 40 chars' },
+}
+
+interface GenerateCopyRequest {
+  clientData: {
+    clientName: string
+    niche: string
+    products?: string[]
+    ticketPrice?: number
+    grossMargin?: number
+    conversionRate?: number
+  }
+  assetType: string
+  assetName: string
+  persona?: {
+    name?: string
+    age?: string
+    profession?: string
+    pains?: string[]
+    desires?: string[]
+    objections?: string[]
+  }
+  platform?: string
+  auditInsights?: string[]
+  cplTarget?: number
+  funnelGap?: string
 }
 
 export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { clientData, assetType, assetName, persona, platform = 'meta' } = await req.json()
+  const body: GenerateCopyRequest = await req.json()
+  const { clientData, assetType, assetName, persona, platform = 'meta', auditInsights, cplTarget, funnelGap } = body
 
   if (!clientData || !assetType) {
     return NextResponse.json({ error: 'Dados insuficientes' }, { status: 400 })
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'API key não configurada' }, { status: 500 })
+  const assetDesc    = ASSET_CONTEXT[assetType] || ASSET_CONTEXT.other
+  const platformCfg  = PLATFORM_RULES[platform] || PLATFORM_RULES.default
+  const bench        = getBenchmark(clientData.niche)
+  const benchSummary = getBenchmarkSummary(clientData.niche)
 
-  const assetDesc = ASSET_CONTEXT[assetType] || ASSET_CONTEXT.other
-  const platformGuide = PLATFORM_GUIDE[platform] || PLATFORM_GUIDE.default
+  const cplMax = clientData.ticketPrice && clientData.grossMargin && clientData.conversionRate
+    ? (clientData.ticketPrice * (clientData.grossMargin / 100) * (clientData.conversionRate / 100)).toFixed(0)
+    : null
 
   const personaSection = persona
-    ? `Persona do comprador ideal: ${persona.name}, ${persona.age}, ${persona.profession}.
-Dores principais: ${persona.pains?.slice(0,2).join('; ')}.
-Desejos: ${persona.desires?.slice(0,2).join('; ')}.
-Objeções: ${persona.objections?.slice(0,1).join('; ')}.`
-    : `Público do nicho ${clientData.niche}.`
+    ? `Persona: ${persona.name || 'Ideal'}, ${persona.age || ''}, ${persona.profession || ''}.
+Dores: ${persona.pains?.slice(0, 2).join('; ') || 'Inferir do nicho'}.
+Desejos: ${persona.desires?.slice(0, 2).join('; ') || 'Inferir do nicho'}.
+Objeção principal: ${persona.objections?.[0] || 'Inferir do nicho'}.`
+    : `Público típico do nicho "${clientData.niche}".`
 
-  const prompt = `Você é um redator especialista em copy para anúncios digitais no mercado brasileiro.
+  const contextExtras = [
+    cplMax        ? `CPL máximo lucrativo: R$${cplMax}`                              : null,
+    cplTarget     ? `CPL alvo: R$${cplTarget}`                                       : null,
+    funnelGap     ? `Gargalo do funil: ${funnelGap} — priorizar copy para este estágio` : null,
+    auditInsights?.length
+      ? `Quick wins do Auditor: ${auditInsights.slice(0, 3).join(' | ')}`
+      : null,
+  ].filter(Boolean).join('\n')
+
+  const prompt = `Você é copywriter sênior de direct response especializado em anúncios pagos no Brasil.
 
 CONTEXTO:
-- Empresa: ${clientData.clientName} (${clientData.niche})
-- Produtos/Serviços: ${(clientData.products || []).join(', ')}
-- Asset: ${assetDesc} — arquivo: "${assetName}"
-- Plataforma: ${platformGuide}
+- Empresa: ${clientData.clientName} | Nicho: ${clientData.niche}
+- Produtos: ${(clientData.products || []).join(', ') || 'Principal produto do nicho'}
+- Asset: ${assetDesc} — "${assetName}"
+- Plataforma: ${platformCfg.notes}
+- Headline: máx ${platformCfg.headlineMax} chars | Body: máx ${platformCfg.bodyMax} chars
 - ${personaSection}
+${contextExtras ? `\nDADOS DO DIAGNÓSTICO ELYON:\n${contextExtras}` : ''}
+${benchSummary ? `\nBENCHMARK DO NICHO:\n${benchSummary}` : ''}
+${bench?.insights?.length ? `\nINSIGHTS DO NICHO (use como ganchos):\n${bench.insights.slice(0, 4).map((i: string) => `- ${i}`).join('\n')}` : ''}
 
 TAREFA: Crie 3 variações de copy prontas para usar neste anúncio.
-Cada variação deve:
-- Ser específica para o nicho (NÃO genérica)
-- Usar a dor/desejo do comprador ideal como gancho
-- Ter um CTA direto e urgente
-- Ser natural em português brasileiro
+Cada variação com um ÂNGULO diferente (dor / aspiração / prova social).
+
+REGRAS:
+- Linguagem natural PT-BR — como o cliente fala
+- Headline: gancho direto que para o scroll, dentro do limite
+- Body: dor → solução → CTA em 2-3 frases (Meta) ou 1 frase densa (Google)
+- CTA: verbo de ação + benefício específico (não "Saiba mais")
+- Sem clichês: "transforme sua vida", "o melhor", "não perca"
 
 Retorne SOMENTE JSON válido:
 {
   "variants": [
     {
-      "headline": "até 40 chars — gancho forte que para o scroll",
-      "primaryText": "copy principal 2-3 frases — dor → solução → CTA",
-      "cta": "botão de ação específico (não genérico)",
-      "angle": "ângulo usado (dor | aspiração | prova social | urgência | oferta)"
+      "headline": "<máx ${platformCfg.headlineMax} chars>",
+      "primaryText": "<máx ${platformCfg.bodyMax} chars>",
+      "cta": "<verbo + benefício específico>",
+      "angle": "<dor | aspiração | prova_social | urgência | oferta>",
+      "hook": "<primeira frase que prende — separada para análise>",
+      "visualNotes": "<orientação para o designer: cena, emoção, elemento principal>"
     }
   ]
 }`
 
   try {
-    const { default: Anthropic } = await import('@anthropic-ai/sdk')
-    const anthropic = new Anthropic({ apiKey })
+    const result = await callLLMJson<{ variants: any[] }>({ user: prompt, maxTokens: 2000 })
 
-    const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
-      system: 'Você é especialista em copy para anúncios. Responda APENAS com JSON válido.',
-      messages: [{ role: 'user', content: prompt }],
+    return NextResponse.json({
+      success: true,
+      variants: result.variants,
+      benchmarkUsed: !!bench,
+      niche: clientData.niche,
     })
-
-    const text = (response.content[0] as any).text?.trim() || ''
-    let result: any
-    try {
-      result = JSON.parse(text)
-    } catch {
-      const m = text.match(/(\{[\s\S]*\})/)
-      if (!m) throw new Error('JSON inválido na resposta')
-      result = JSON.parse(m[1])
-    }
-
-    return NextResponse.json({ success: true, variants: result.variants })
   } catch (e: any) {
+    console.error('[generate-copy] Erro:', e.message)
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }

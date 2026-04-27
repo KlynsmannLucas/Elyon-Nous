@@ -23,6 +23,7 @@ import { TabPersona }      from '@/components/dashboard/TabPersona'
 import { TabConteudo }     from '@/components/dashboard/TabConteudo'
 import { TabAssets }       from '@/components/dashboard/TabAssets'
 import { TabConcorrentes } from '@/components/dashboard/TabConcorrentes'
+import { TabCampanha }     from '@/components/dashboard/TabCampanha'
 import { TabRelatorios }   from '@/components/dashboard/TabRelatorios'
 import { NousChat }        from '@/components/dashboard/NousChat'
 import { DashboardSidebar, type TabKey } from '@/components/dashboard/DashboardSidebar'
@@ -624,6 +625,7 @@ export default function DashboardPage() {
       case 'conteudo':      return wrap('Criador de Conteúdo', <TabConteudo clientData={clientData} />)
       case 'assets':        return wrap('Assets da Empresa',     <TabAssets       clientData={clientData} />)
       case 'concorrentes':  return wrap('Radar de Concorrentes', <TabConcorrentes clientData={clientData} />)
+      case 'campanha':      return wrap('Campanha Campeã',       <TabCampanha />)
       case 'relatorios':    return wrap('Relatórios',            <TabRelatorios />)
     }
   }
