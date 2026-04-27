@@ -618,7 +618,7 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
     budget_floor: 2000,
     budget_ideal: 6000,
     kpi_thresholds: { cpl_good: 60, cpl_bad: 100, roas_good: 3.5, cvr_good: 0.10 },
-    seasonality: ['Jan', 'Feb', 'Aug', 'Sep', 'Nov'],
+    seasonality: ['Jan', 'Fev', 'Ago', 'Set', 'Nov'],
     insights: [
       'Tour virtual do projeto em 3D aumenta a taxa de conversão em 60-80%',
       'O ciclo de venda é longo (30-90 dias) — nutrição de lead via WhatsApp é essencial',
@@ -1334,7 +1334,7 @@ const KEY_MAP: Record<string, string> = {
 
   // ── Imobiliário ───────────────────────────────────────────────────────────
   'imóvel': 'imobiliario', imovel: 'imobiliario', imobili: 'imobiliario',
-  construtora: 'construcao', corretor: 'imobiliario',
+  construtora: 'construcao', corretor: 'corretor_imobiliario',
 
   // ── Jurídico ──────────────────────────────────────────────────────────────
   'jurídico': 'juridico', juridico: 'juridico', advocacia: 'juridico',
@@ -1410,6 +1410,10 @@ const KEY_MAP: Record<string, string> = {
   sox: 'auditoria', 'due diligence': 'auditoria', 'due diligência': 'auditoria',
   'governança': 'auditoria', governanca: 'auditoria',
   lgpd: 'auditoria', iso: 'auditoria',
+
+  // ── Palavras genéricas que precisam de fallback razoável ─────────────────────
+  seguro:               'seguro_auto',      // "seguro" genérico → automotivo (mais comum)
+  rh:                   'rh_empresa',
 
   // ── Seguros ───────────────────────────────────────────────────────────────
   'plano de saúde':     'corretor_saude',
@@ -2013,9 +2017,9 @@ export interface FunnelBenchmarks {
 
 export function getFunnelBenchmarks(benchKey: string): FunnelBenchmarks {
   const bench = BENCHMARKS[benchKey] || BENCHMARKS['outro']
-  const isHighTicket  = ['imobiliario','juridico','financeiro','tecnologia','construcao','moveis_planejados','arquitetura_design','consultoria','marketing_agencia','eventos','franquias'].includes(benchKey)
+  const isHighTicket  = ['imobiliario','juridico','financeiro','tecnologia','construcao','moveis_planejados','arquitetura_design','consultoria','marketing_agencia','eventos','franquias','corretor_imobiliario','protecao_patrimonial','rh_empresa','auditoria'].includes(benchKey)
   const isLocalService = ['barbearia','beleza','depilacao','harmonizacao','fisioterapia','lava_jato','lavanderia','autoescola','servicos_residenciais','padaria_cafeteria','restaurante','automotivo','pet'].includes(benchKey)
-  const isMedical     = ['saude','odontologia','psicologia','nutricao','farmacia','fisioterapia'].includes(benchKey)
+  const isMedical     = ['saude','odontologia','psicologia','nutricao','farmacia'].includes(benchKey) // fisioterapia removida (já em isLocalService)
 
   return {
     cpl_good:           bench.kpi_thresholds.cpl_good,
