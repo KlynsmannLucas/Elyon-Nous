@@ -29,13 +29,14 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from('clients')
-    .select('id, client_data, strategy_data, audit_data, saved_at, updated_at')
+    .select('id, client_data, strategy_data, audit_data, extra_data, saved_at, updated_at')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false })
 
   if (error) {
     console.error('[clients GET]', error.message)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    // Retorna vazio em vez de 500 — evita quebrar o seletor se a tabela ainda não existe
+    return NextResponse.json({ clients: [], _dbError: error.message })
   }
 
   const clients = (data || []).map((row: any) => ({
@@ -43,6 +44,7 @@ export async function GET() {
     clientData: row.client_data,
     strategyData: row.strategy_data ?? null,
     auditData: row.audit_data ?? null,
+    extraData: row.extra_data ?? null,
     savedAt: row.saved_at || row.updated_at,
   }))
 
@@ -55,11 +57,11 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!supabaseAdmin) {
-    return NextResponse.json({ success: true, warning: 'Supabase not configured' })
+    return NextResponse.json({ success: false, warning: 'Supabase not configured' })
   }
 
   const body = await req.json()
-  const { id, clientData, strategyData, auditData, savedAt } = body
+  const { id, clientData, strategyData, auditData, extraData, savedAt } = body
 
   if (!id || !clientData) {
     return NextResponse.json({ error: 'Missing id or clientData' }, { status: 400 })
@@ -74,6 +76,7 @@ export async function POST(req: Request) {
         client_data: clientData,
         strategy_data: strategyData ?? null,
         audit_data: auditData ?? null,
+        extra_data: extraData ?? null,
         saved_at: savedAt || new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },

@@ -353,32 +353,92 @@ export default function DashboardPage() {
     generatedPersona, connectedAccounts,
   } = useAppStore()
 
+  // ── Helpers de persistência no banco ─────────────────────────────────────────
+
+  /** Coleta todos os dados por-cliente para salvar no campo extra_data */
+  const buildExtraData = useCallback((clientName: string) => {
+    const s = useAppStore.getState()
+    return {
+      competitors:      s.competitors[clientName]      ?? [],
+      actionPlanCache:  s.actionPlanCache[clientName]  ?? [],
+      clientPersona:    s.clientPersonas[clientName]   ?? null,
+      nousConversation: s.nousConversations[clientName] ?? [],
+      funnelEntries:    s.funnelEntries.filter((e) => e.clientName === clientName),
+      campaignHistory:  s.campaignHistory,
+      creativeTests:    s.creativeTests,
+    }
+  }, [])
+
+  /** POST um cliente ao Supabase imediatamente (sem debounce) */
+  const saveToDb = useCallback((clientName?: string) => {
+    const state = useAppStore.getState()
+    const { clientData: cd, savedClients: sc, auditCache: ac } = state
+    const name = clientName ?? cd?.clientName
+    if (!name) return
+    const entry = sc.find((s) => s.clientData.clientName === name)
+    if (!entry) return
+    fetch('/api/clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...entry,
+        auditData: ac[name] ?? null,
+        extraData: buildExtraData(name),
+      }),
+    }).catch(() => {})
+  }, [buildExtraData])
+
   // ── Sincronização com banco de dados ──────────────────────────────────────────
-  // Carrega clientes do Supabase ao montar (garante sync cross-device)
+  const [dbLoaded, setDbLoaded] = useState(false)
+
   useEffect(() => {
     if (!isLoaded || !user) return
     fetch('/api/clients')
       .then((r) => r.json())
-      .then(({ clients }) => {
-        if (Array.isArray(clients) && clients.length > 0) {
-          setSavedClients(clients)
-          const restored: Record<string, any[]> = {}
-          for (const c of clients) {
-            if (c.auditData && c.clientData?.clientName) {
-              restored[c.clientData.clientName] = c.auditData
-            }
-          }
-          if (Object.keys(restored).length > 0) {
-            useAppStore.setState((s) => ({ auditCache: { ...s.auditCache, ...restored } }))
-          }
-          // Incognito fix: if no active client in store, auto-load the most recent one
-          if (!useAppStore.getState().clientData && clients[0]) {
-            useAppStore.getState().loadSavedClient(clients[0].id)
+      .then(({ clients, _dbError }) => {
+        if (_dbError) console.warn('[clients sync] DB error:', _dbError)
+        if (!Array.isArray(clients) || clients.length === 0) return
+
+        setSavedClients(clients)
+
+        // Restaura auditCache + extraData de todos os clientes
+        const auditRestored: Record<string, any[]> = {}
+        for (const c of clients) {
+          const name: string = c.clientData?.clientName
+          if (!name) continue
+          if (c.auditData) auditRestored[name] = c.auditData
+          if (c.extraData) {
+            useAppStore.setState((s) => ({
+              competitors:     c.extraData.competitors?.length     ? { ...s.competitors,     [name]: c.extraData.competitors }     : s.competitors,
+              actionPlanCache: c.extraData.actionPlanCache?.length  ? { ...s.actionPlanCache, [name]: c.extraData.actionPlanCache }  : s.actionPlanCache,
+              clientPersonas:  c.extraData.clientPersona            ? { ...s.clientPersonas,  [name]: c.extraData.clientPersona }    : s.clientPersonas,
+              nousConversations: c.extraData.nousConversation?.length ? { ...s.nousConversations, [name]: c.extraData.nousConversation } : s.nousConversations,
+              funnelEntries:   c.extraData.funnelEntries?.length    ? [...s.funnelEntries, ...c.extraData.funnelEntries.filter((e: any) => !s.funnelEntries.find((f) => f.id === e.id))] : s.funnelEntries,
+              campaignHistory: s.campaignHistory.length === 0 && c.extraData.campaignHistory?.length ? c.extraData.campaignHistory : s.campaignHistory,
+              creativeTests:   s.creativeTests.length === 0   && c.extraData.creativeTests?.length   ? c.extraData.creativeTests   : s.creativeTests,
+            }))
           }
         }
+        if (Object.keys(auditRestored).length > 0) {
+          useAppStore.setState((s) => ({ auditCache: { ...s.auditCache, ...auditRestored } }))
+        }
+
+        // Sem dados locais (incognito / cache limpo) → carrega o cliente mais recente
+        if (!useAppStore.getState().clientData) {
+          useAppStore.getState().loadSavedClient(clients[0].id)
+        }
       })
-      .catch(() => {}) // falha silenciosa — localStorage continua funcionando
+      .catch(() => {})
+      .finally(() => setDbLoaded(true))
   }, [isLoaded, user?.id])
+
+  // Quando o banco carrega e temos cliente+estratégia, vai direto pro dashboard
+  // (cobre o caso de incognito / cache limpo onde localStorage estava vazio)
+  useEffect(() => {
+    if (!dbLoaded) return
+    const { clientData: cd, strategyData: sd } = useAppStore.getState()
+    if (cd && sd) setView('dashboard')
+  }, [dbLoaded])
 
   // Persiste cliente no banco + localStorage (debounced: máx 1 req/3s)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -386,19 +446,8 @@ export default function DashboardPage() {
     saveCurrentClient() // atualiza localStorage imediatamente
     // Debounce: cancela requisição pendente e agenda nova em 3s
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(() => {
-      const state = useAppStore.getState()
-      const { clientData: cd, savedClients: sc, auditCache: ac } = state
-      if (!cd) return
-      const entry = sc.find((s) => s.clientData.clientName === cd.clientName)
-      if (!entry) return
-      fetch('/api/clients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...entry, auditData: ac[cd.clientName] ?? null }),
-      }).catch(() => {})
-    }, 3000)
-  }, [saveCurrentClient])
+    saveTimerRef.current = setTimeout(() => saveToDb(), 3000)
+  }, [saveCurrentClient, saveToDb])
 
   // Remove cliente do banco + localStorage
   const persistDelete = useCallback((id: string) => {
@@ -414,25 +463,23 @@ export default function DashboardPage() {
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
 
-  // Se há clientData e strategyData no store ao montar, vai direto pro dashboard
-  // Caso contrário sempre cai no seletor (mesmo sem clientes salvos)
+  // View inicial: dados locais (localStorage) definem a view imediatamente.
+  // Se não há dados locais, espera o banco carregar (tratado no useEffect [dbLoaded]).
   useEffect(() => {
     if (clientData && strategyData) {
       setView('dashboard')
-    } else {
+    } else if (clientData || savedClients.length > 0) {
       setView('selector')
     }
+    // Se não há nada local nem no banco ainda, fica em 'selector' (estado inicial padrão)
 
-    // Se voltou de um checkout bem-sucedido, força reload do user no Clerk
-    // para buscar o plano atualizado (JWT pode estar em cache)
     const params = new URLSearchParams(window.location.search)
     if (params.get('checkout') === 'ok' || params.get('checkout') === 'success') {
       user?.reload().then(() => {
-        // Limpa o param da URL sem reload da página
         window.history.replaceState({}, '', '/dashboard')
       })
     }
-  }, []) // só na montagem
+  }, []) // só na montagem — o hook [dbLoaded] cuida do caso assíncrono
 
   const handleWizardComplete = useCallback(async (importData?: WizardImportData[]) => {
     if (!clientData) return
@@ -509,7 +556,8 @@ export default function DashboardPage() {
         generatedAt: new Date().toISOString(),
       })
       recordStrategyGeneration()
-      await persistSave()
+      saveCurrentClient() // localStorage imediato
+      saveToDb()          // banco imediato (sem debounce — não pode perder o primeiro save)
 
       // Se o usuário importou arquivos no wizard, auto-executa a auditoria
       if (importData && importData.length > 0) {
@@ -719,6 +767,22 @@ export default function DashboardPage() {
 
   // ── Seletor de clientes ──
   if (view === 'selector') {
+    // Aguarda banco antes de mostrar seletor vazio — evita "lista vazia" falsa
+    if (!dbLoaded && savedClients.length === 0) {
+      return (
+        <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+          <div className="text-center">
+            <span className="font-display font-bold text-2xl block mb-6" style={{
+              background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>ELYON</span>
+            <div className="w-6 h-6 border-2 border-[#F0B429] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-slate-600 text-sm">Carregando seus clientes...</p>
+          </div>
+        </div>
+      )
+    }
+
     const atClientLimit = savedClients.length >= planLimits.maxClients
     return (
       <ClientSelector
