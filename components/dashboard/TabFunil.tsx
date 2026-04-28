@@ -255,6 +255,21 @@ function StageCard({ stage, isBottleneck }: { stage: StageResult; isBottleneck: 
 }
 
 // ── Formulário ────────────────────────────────────────────────────────────────
+function Field({ label, hint, required, children }: { label: string; hint: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <span className="text-xs font-semibold text-slate-200">{label}</span>
+        {required
+          ? <span className="text-[10px] text-[#F0B429] font-bold">obrigatório</span>
+          : <span className="text-[10px] text-slate-600">opcional</span>}
+      </div>
+      <p className="text-[10px] text-slate-500 mb-2 leading-snug">{hint}</p>
+      {children}
+    </div>
+  )
+}
+
 function FunnelForm({ clientData, onSubmit }: { clientData: ClientData; onSubmit: (data: Omit<FunnelEntry, 'id' | 'createdAt'>) => void }) {
   const months = ['Jan 2025','Fev 2025','Mar 2025','Abr 2025','Mai 2025','Jun 2025','Jul 2025','Ago 2025','Set 2025','Out 2025','Nov 2025','Dez 2025',
                   'Jan 2026','Fev 2026','Mar 2026','Abr 2026','Mai 2026','Jun 2026']
@@ -277,72 +292,97 @@ function FunnelForm({ clientData, onSubmit }: { clientData: ClientData; onSubmit
     onSubmit({ ...form, clientName: clientData.clientName })
   }
 
-  const inputStyle: React.CSSProperties = {
+  const inp: React.CSSProperties = {
     width: '100%', background: '#0C0C12', border: '1px solid #2A2A30',
-    borderRadius: '10px', padding: '8px 12px', color: '#F8FAFC',
+    borderRadius: '10px', padding: '10px 12px', color: '#F8FAFC',
     fontSize: '13px', outline: 'none',
   }
-  const labelStyle: React.CSSProperties = { fontSize: '11px', color: '#64748B', marginBottom: '4px', display: 'block' }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div>
-          <label style={labelStyle}>Período</label>
-          <select value={form.period} onChange={(e) => set('period', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-            {months.map((m) => <option key={m}>{m}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={labelStyle}>Canal principal</label>
-          <select value={form.channel} onChange={(e) => set('channel', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-            {CHANNELS.map((c) => <option key={c}>{c}</option>)}
-          </select>
+    <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* Guia rápido */}
+      <div className="rounded-xl p-4" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
+        <div className="text-[10px] font-bold text-[#F0B429] uppercase tracking-widest mb-2">Como usar em 3 passos</div>
+        <div className="space-y-1">
+          {[
+            'Abra o gerenciador de anúncios (Meta Ads Manager ou Google Ads)',
+            'Selecione o período, cole os números que aparecem na tela',
+            'Campos opcionais ficam em branco — o diagnóstico funciona mesmo assim',
+          ].map((s, i) => (
+            <div key={i} className="flex items-start gap-2 text-[11px] text-slate-400">
+              <span className="w-4 h-4 rounded-full bg-[#F0B429]/10 text-[#F0B429] text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+              {s}
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-3">
-        <div>
-          <label style={labelStyle}>Investimento (R$)</label>
-          <input type="number" value={form.investment || ''} onChange={(e) => set('investment', Number(e.target.value))} style={inputStyle} min={0} required />
+      {/* Seção 1: Período & Canal */}
+      <div>
+        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <span>📅 Período & Canal</span>
         </div>
-        <div>
-          <label style={labelStyle}>Impressões <span className="text-slate-600">(opcional)</span></label>
-          <input type="number" value={form.impressions || ''} onChange={(e) => set('impressions', Number(e.target.value))} style={inputStyle} min={0} placeholder="0" />
-        </div>
-        <div>
-          <label style={labelStyle}>Cliques <span className="text-slate-600">(opcional)</span></label>
-          <input type="number" value={form.clicks || ''} onChange={(e) => set('clicks', Number(e.target.value))} style={inputStyle} min={0} placeholder="0" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-4 gap-3 mb-3">
-        <div>
-          <label style={labelStyle}>Leads gerados</label>
-          <input type="number" value={form.leads || ''} onChange={(e) => set('leads', Number(e.target.value))} style={inputStyle} min={0} required />
-        </div>
-        <div>
-          <label style={labelStyle}>Leads qualificados</label>
-          <input type="number" value={form.qualifiedLeads || ''} onChange={(e) => set('qualifiedLeads', Number(e.target.value))} style={inputStyle} min={0} required />
-        </div>
-        <div>
-          <label style={labelStyle}>Vendas fechadas</label>
-          <input type="number" value={form.sales || ''} onChange={(e) => set('sales', Number(e.target.value))} style={inputStyle} min={0} required />
-        </div>
-        <div>
-          <label style={labelStyle}>Ticket médio (R$)</label>
-          <input type="number" value={form.avgTicket || ''} onChange={(e) => set('avgTicket', Number(e.target.value))} style={inputStyle} min={0} />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Período" hint="Mês que você quer analisar">
+            <select value={form.period} onChange={(e) => set('period', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+              {months.map((m) => <option key={m}>{m}</option>)}
+            </select>
+          </Field>
+          <Field label="Canal principal" hint="Onde rodou os anúncios">
+            <select value={form.channel} onChange={(e) => set('channel', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+              {CHANNELS.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          </Field>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div>
-          <label style={labelStyle}>Tempo médio de resposta ao lead <span className="text-slate-600">(horas — opcional)</span></label>
-          <input type="number" value={form.avgResponseHours || ''} onChange={(e) => set('avgResponseHours', Number(e.target.value))} style={inputStyle} min={0} step={0.5} placeholder="ex: 0.5 = 30min" />
+      {/* Seção 2: Investimento & Alcance */}
+      <div>
+        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">💰 Investimento & Alcance do Anúncio</div>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Investimento (R$)" hint="Total gasto em anúncios no período" required>
+            <input type="number" value={form.investment || ''} onChange={(e) => set('investment', Number(e.target.value))} style={inp} min={0} required placeholder="ex: 3.000" />
+          </Field>
+          <Field label="Impressões" hint="Vezes que o anúncio foi exibido — está no painel de anúncios">
+            <input type="number" value={form.impressions || ''} onChange={(e) => set('impressions', Number(e.target.value))} style={inp} min={0} placeholder="ex: 50.000" />
+          </Field>
+          <Field label="Cliques no anúncio" hint="Quantas pessoas clicaram — também no painel">
+            <input type="number" value={form.clicks || ''} onChange={(e) => set('clicks', Number(e.target.value))} style={inp} min={0} placeholder="ex: 750" />
+          </Field>
         </div>
       </div>
 
-      <button type="submit" className="w-full py-3 rounded-xl font-bold text-sm text-black"
+      {/* Seção 3: Resultados do Funil */}
+      <div>
+        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">🎯 Resultados do Funil de Vendas</div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Leads gerados" hint="Formulários preenchidos ou mensagens recebidas pelo anúncio" required>
+            <input type="number" value={form.leads || ''} onChange={(e) => set('leads', Number(e.target.value))} style={inp} min={0} required placeholder="ex: 42" />
+          </Field>
+          <Field label="Leads qualificados" hint="Dos leads recebidos, quantos tinham perfil real para comprar" required>
+            <input type="number" value={form.qualifiedLeads || ''} onChange={(e) => set('qualifiedLeads', Number(e.target.value))} style={inp} min={0} required placeholder="ex: 18" />
+          </Field>
+          <Field label="Vendas fechadas" hint="Clientes que efetivamente compraram / assinaram" required>
+            <input type="number" value={form.sales || ''} onChange={(e) => set('sales', Number(e.target.value))} style={inp} min={0} required placeholder="ex: 5" />
+          </Field>
+          <Field label="Ticket médio (R$)" hint="Valor médio de cada venda — calcula ROAS e CAC automaticamente">
+            <input type="number" value={form.avgTicket || ''} onChange={(e) => set('avgTicket', Number(e.target.value))} style={inp} min={0} placeholder="ex: 1.500" />
+          </Field>
+        </div>
+      </div>
+
+      {/* Seção 4: Velocidade */}
+      <div>
+        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">⚡ Velocidade de Resposta ao Lead</div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Tempo médio de resposta (horas)" hint="Em quanto tempo você contata o lead? · 0.5 = 30min · 1 = 1h · 4 = meio período">
+            <input type="number" value={form.avgResponseHours || ''} onChange={(e) => set('avgResponseHours', Number(e.target.value))} style={inp} min={0} step={0.5} placeholder="ex: 0.5 (30min) ou 2 (2 horas)" />
+          </Field>
+        </div>
+      </div>
+
+      <button type="submit" className="w-full py-3.5 rounded-xl font-bold text-sm text-black transition-opacity hover:opacity-90"
         style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
         🔬 Diagnosticar Gargalo
       </button>

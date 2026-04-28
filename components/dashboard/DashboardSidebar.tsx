@@ -1,7 +1,7 @@
 // components/dashboard/DashboardSidebar.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
@@ -65,6 +65,14 @@ interface Props {
 
 export function DashboardSidebar({ active, onChange, clientData, userPlan, user, onSignOut, collapsed, onToggleCollapse }: Props) {
   const [portalLoading, setPortalLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const plan         = userPlan ? PLAN_LABELS[userPlan] : null
   const userName     = user?.firstName || user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'Usuário'
@@ -78,16 +86,39 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
     setPortalLoading(false)
   }
 
-  const W = collapsed ? '56px' : '220px'
+  // Mobile: drawer overlay. Desktop: inline sidebar.
+  const W = isMobile
+    ? (collapsed ? '0px' : '260px')
+    : (collapsed ? '56px' : '220px')
 
   return (
+    <>
+      {/* Backdrop — só no mobile quando aberto */}
+      {isMobile && !collapsed && (
+        <div
+          onClick={onToggleCollapse}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 299,
+          }}
+        />
+      )}
     <aside style={{
       width: W, flexShrink: 0, height: '100vh',
       background: '#0C0C12',
       borderRight: '1px solid rgba(255,255,255,0.05)',
       display: 'flex', flexDirection: 'column',
-      overflowY: 'auto', overflowX: 'hidden',
-      transition: 'width 0.22s cubic-bezier(0.4,0,0.2,1)',
+      overflowY: isMobile && collapsed ? 'hidden' : 'auto',
+      overflowX: 'hidden',
+      transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1)',
+      // Mobile: drawer fixo por cima do conteúdo
+      ...(isMobile ? {
+        position: 'fixed', top: 0, left: 0, bottom: 0,
+        zIndex: 300,
+        boxShadow: collapsed ? 'none' : '4px 0 32px rgba(0,0,0,0.6)',
+      } : {}),
     }}>
 
       {/* Logo + toggle */}
@@ -164,7 +195,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
               return (
                 <button
                   key={item.key}
-                  onClick={() => onChange(item.key)}
+                  onClick={() => { onChange(item.key); if (isMobile && !collapsed) onToggleCollapse() }}
                   title={collapsed ? item.label : undefined}
                   style={{
                     width: '100%',
@@ -326,5 +357,6 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
         )}
       </div>
     </aside>
+    </>
   )
 }

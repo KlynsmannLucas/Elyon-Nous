@@ -457,6 +457,18 @@ export default function DashboardPage() {
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (mobile) setSidebarCollapsed(true)
+    }
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
   const [genError, setGenError] = useState('')
@@ -754,7 +766,7 @@ export default function DashboardPage() {
 
   // ── Banner de trial ativo ──
   const TrialBanner = inTrial && !hasActivePlan(userPlan) ? (
-    <div style={{ position: 'fixed', bottom: 0, left: '220px', right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(3,3,5,0.95)', backdropFilter: 'blur(12px)' }}>
+    <div style={{ position: 'fixed', bottom: 0, left: isMobile ? 0 : (sidebarCollapsed ? '56px' : '220px'), right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(3,3,5,0.95)', backdropFilter: 'blur(12px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#F5A500', display: 'inline-block', animation: 'pulseDot 2s ease-in-out infinite' }} />
         Avaliação gratuita · <strong style={{ color: '#F5A500' }}>{trialDaysLeft} dia{trialDaysLeft !== 1 ? 's' : ''} restante{trialDaysLeft !== 1 ? 's' : ''}</strong>
