@@ -5,14 +5,15 @@ import { useState, useEffect } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 
-type Section = 'dados' | 'contatos' | 'pagamentos' | 'faturas' | 'seguranca'
+type Section = 'dados' | 'contatos' | 'pagamentos' | 'faturas' | 'seguranca' | 'privacidade'
 
 const SECTIONS: { key: Section; label: string; icon: string }[] = [
-  { key: 'dados',       label: 'Dados Pessoais', icon: '👤' },
-  { key: 'contatos',    label: 'Contatos',        icon: '📞' },
-  { key: 'pagamentos',  label: 'Pagamentos',      icon: '💳' },
-  { key: 'faturas',     label: 'Faturas',         icon: '🧾' },
-  { key: 'seguranca',   label: 'Login e Senha',   icon: '🔒' },
+  { key: 'dados',        label: 'Dados Pessoais',  icon: '👤' },
+  { key: 'contatos',     label: 'Contatos',         icon: '📞' },
+  { key: 'pagamentos',   label: 'Pagamentos',       icon: '💳' },
+  { key: 'faturas',      label: 'Faturas',          icon: '🧾' },
+  { key: 'seguranca',    label: 'Login e Senha',    icon: '🔒' },
+  { key: 'privacidade',  label: 'Privacidade (LGPD)', icon: '🛡️' },
 ]
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
@@ -60,6 +61,22 @@ export default function PerfilPage() {
   const [portalLoading, setPortalLoading] = useState(false)
   const [syncLoading, setSyncLoading] = useState(false)
   const [syncMsg, setSyncMsg]   = useState('')
+
+  // ── Exclusão de conta (LGPD) ────────────────────────────────────────────────
+  const [deleteStep,    setDeleteStep]    = useState<'idle' | 'confirm' | 'deleting' | 'done'>('idle')
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm.toLowerCase() !== 'excluir') return
+    setDeleteStep('deleting')
+    try {
+      await fetch('/api/account', { method: 'DELETE' })
+      setDeleteStep('done')
+      setTimeout(() => { window.location.href = '/' }, 3000)
+    } catch {
+      setDeleteStep('confirm')
+    }
+  }
 
   // ── Ler tab da URL ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -606,6 +623,117 @@ export default function PerfilPage() {
                     })}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── PRIVACIDADE (LGPD) ── */}
+            {activeSection === 'privacidade' && (
+              <div>
+                <h2 className="font-display text-lg font-bold text-white mb-1">Privacidade e seus dados</h2>
+                <p className="text-xs text-slate-500 mb-6">Conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018 — LGPD), você tem direito de saber quais dados armazenamos e de solicitar a exclusão a qualquer momento.</p>
+
+                {/* O que armazenamos */}
+                <div className="mb-6 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30] space-y-3">
+                  <div className="text-sm font-semibold text-white mb-3">Dados que armazenamos sobre você</div>
+                  {[
+                    { icon: '👤', label: 'Conta', desc: 'Nome, e-mail e foto de perfil (gerenciados pelo Clerk)' },
+                    { icon: '💳', label: 'Pagamentos', desc: 'Histórico de assinatura e faturas (gerenciados pelo Stripe — sem dados de cartão)' },
+                    { icon: '📊', label: 'Clientes', desc: 'Dados dos clientes que você cadastrou: nome, nicho, orçamento, métricas e estratégias geradas' },
+                    { icon: '🔗', label: 'Relatórios', desc: 'Links de relatórios compartilhados com prazo de validade' },
+                    { icon: '📧', label: 'Agendamentos', desc: 'E-mails e configuração de envio de relatórios automáticos' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex gap-3 items-start">
+                      <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
+                      <div>
+                        <div className="text-xs font-semibold text-slate-300">{item.label}</div>
+                        <div className="text-xs text-slate-500">{item.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Não armazenamos */}
+                <div className="mb-6 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
+                  <div className="text-sm font-semibold text-white mb-3">O que não armazenamos</div>
+                  <div className="space-y-1.5">
+                    {[
+                      'Tokens OAuth de Meta Ads e Google Ads (ficam apenas na sessão)',
+                      'Dados de cartão de crédito (processados diretamente pelo Stripe)',
+                      'Senhas (gerenciadas pelo Clerk com criptografia)',
+                    ].map((item) => (
+                      <div key={item} className="flex items-start gap-2 text-xs text-slate-400">
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Retenção */}
+                <div className="mb-6 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
+                  <div className="text-sm font-semibold text-white mb-2">Retenção de dados</div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Seus dados são mantidos enquanto sua conta estiver ativa. Ao solicitar a exclusão abaixo, todos os dados são apagados permanentemente e irreversivelmente — incluindo clientes, relatórios e agendamentos.
+                  </p>
+                </div>
+
+                {/* Excluir conta */}
+                <div className="p-4 bg-red-950/20 rounded-xl border border-red-500/20">
+                  <div className="text-sm font-bold text-red-400 mb-1 flex items-center gap-2">
+                    ⚠️ Excluir minha conta e todos os dados
+                  </div>
+                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                    Esta ação é irreversível. Todos os seus clientes, relatórios, estratégias e configurações serão apagados permanentemente do Elyon.
+                  </p>
+
+                  {deleteStep === 'idle' && (
+                    <button
+                      onClick={() => setDeleteStep('confirm')}
+                      className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/05 transition-all"
+                    >
+                      Solicitar exclusão de conta
+                    </button>
+                  )}
+
+                  {deleteStep === 'confirm' && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-red-300">Para confirmar, digite <strong>excluir</strong> no campo abaixo:</p>
+                      <input
+                        type="text"
+                        value={deleteConfirm}
+                        onChange={(e) => setDeleteConfirm(e.target.value)}
+                        placeholder="excluir"
+                        className="w-full bg-[#16161A] border border-red-500/30 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-red-500/60"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleDeleteAccount}
+                          disabled={deleteConfirm.toLowerCase() !== 'excluir'}
+                          className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-600 text-white disabled:opacity-40 hover:bg-red-700 transition-colors"
+                        >
+                          Excluir permanentemente
+                        </button>
+                        <button
+                          onClick={() => { setDeleteStep('idle'); setDeleteConfirm('') }}
+                          className="px-4 py-2.5 rounded-xl text-sm text-slate-500 border border-[#2A2A30] hover:text-white"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {deleteStep === 'deleting' && (
+                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                      <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                      Apagando seus dados...
+                    </div>
+                  )}
+
+                  {deleteStep === 'done' && (
+                    <div className="text-sm text-green-400">Conta e dados excluídos. Redirecionando...</div>
+                  )}
+                </div>
               </div>
             )}
 

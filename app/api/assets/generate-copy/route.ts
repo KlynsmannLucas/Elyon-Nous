@@ -48,6 +48,14 @@ export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  const { rateLimit } = await import('@/lib/rateLimit')
+  const rl = rateLimit(userId, 'assets', { max: 10, windowSec: 3600 })
+  if (!rl.ok) {
+    return NextResponse.json({ error: `Limite atingido. Tente novamente em ${rl.retryAfterSec}s.` }, {
+      status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) },
+    })
+  }
+
   const body: GenerateCopyRequest = await req.json()
   const { clientData, assetType, assetName, persona, platform = 'meta', auditInsights, cplTarget, funnelGap } = body
 

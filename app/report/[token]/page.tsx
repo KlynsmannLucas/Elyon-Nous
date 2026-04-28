@@ -27,15 +27,27 @@ export const metadata: Metadata = {
   title: 'Relatório de Performance',
 }
 
-async function fetchReport(token: string): Promise<{ reportData?: ReportData; branding?: Branding; clientName?: string; error?: string }> {
+async function fetchReport(
+  token: string,
+  pw?: string,
+): Promise<{
+  reportData?: ReportData
+  branding?: Branding
+  clientName?: string
+  error?: string
+  requiresPassword?: boolean
+  wrongPassword?: boolean
+}> {
   try {
     const base = process.env.NEXT_PUBLIC_APP_URL || 'https://elyon-nous.vercel.app'
-    const res  = await fetch(`${base}/api/report?token=${token}`, { cache: 'no-store' })
-    if (!res.ok) {
-      const json = await res.json()
-      return { error: json.error || 'Relatório não encontrado' }
-    }
+    const url  = pw
+      ? `${base}/api/report?token=${token}&pw=${encodeURIComponent(pw)}`
+      : `${base}/api/report?token=${token}`
+    const res  = await fetch(url, { cache: 'no-store' })
     const json = await res.json()
+    if (res.status === 403) return { wrongPassword: true, requiresPassword: true }
+    if (!res.ok) return { error: json.error || 'Relatório não encontrado' }
+    if (json.requiresPassword) return { requiresPassword: true, clientName: json.clientName }
     return { reportData: json.reportData, branding: json.branding, clientName: json.clientName }
   } catch {
     return { error: 'Erro ao carregar relatório' }
@@ -62,10 +74,60 @@ function alertConfig(type: string) {
   return                             { color: '#22C55E', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.2)',   icon: '💡' }
 }
 
-export default async function ReportPage({ params }: { params: { token: string } }) {
-  const { reportData: rd, branding, clientName, error } = await fetchReport(params.token)
+export default async function ReportPage({
+  params,
+  searchParams,
+}: {
+  params: { token: string }
+  searchParams: { pw?: string }
+}) {
+  const { reportData: rd, branding, clientName, error, requiresPassword, wrongPassword } =
+    await fetchReport(params.token, searchParams.pw)
 
   const primary = branding?.primaryColor || '#F5A500'
+
+  if (requiresPassword) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#030305', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui, sans-serif', padding: '24px' }}>
+        <div style={{ background: '#0C0C12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '40px 32px', maxWidth: '380px', width: '100%' }}>
+          <div style={{ fontSize: '32px', textAlign: 'center', marginBottom: '12px' }}>🔒</div>
+          <h1 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, textAlign: 'center', marginBottom: '8px' }}>
+            {clientName || 'Relatório'} protegido
+          </h1>
+          <p style={{ color: '#64748B', fontSize: '14px', textAlign: 'center', marginBottom: '28px' }}>
+            Este relatório está protegido com senha. Digite abaixo para acessar.
+          </p>
+          {wrongPassword && (
+            <div style={{ background: 'rgba(255,77,77,0.1)', border: '1px solid rgba(255,77,77,0.25)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', color: '#FF4D4D', fontSize: '13px', textAlign: 'center' }}>
+              Senha incorreta. Tente novamente.
+            </div>
+          )}
+          <form method="GET" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <input
+              name="pw"
+              type="password"
+              placeholder="Digite a senha"
+              autoFocus
+              required
+              style={{
+                background: '#16161A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px',
+                padding: '14px 16px', color: '#fff', fontSize: '15px', outline: 'none', width: '100%', boxSizing: 'border-box',
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000', border: 'none',
+                borderRadius: '12px', padding: '14px', fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              Acessar relatório
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
 
   if (error || !rd) {
     return (

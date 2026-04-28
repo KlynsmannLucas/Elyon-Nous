@@ -43,31 +43,36 @@ export function TabConnections() {
   const metaAccount   = connectedAccounts.find((a) => a.platform === 'meta')
   const googleAccount = connectedAccounts.find((a) => a.platform === 'google')
 
-  // Lê parâmetros OAuth do callback na URL
+  // Lê resultado OAuth via cookie httpOnly (token nunca fica na URL)
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const params = new URLSearchParams(window.location.search)
+    const params   = new URLSearchParams(window.location.search)
     const success  = params.get('oauth_success')
     const platform = params.get('platform') as 'meta' | 'google' | null
-    const token    = params.get('access_token')
-    const accId    = params.get('account_id')
-    const accName  = params.get('account_name')
     const oauthErr = params.get('oauth_error')
 
     if (oauthErr) {
       setError(`Erro ao conectar: ${oauthErr}`)
       window.history.replaceState({}, '', '/dashboard')
+      return
     }
 
-    if (success && platform && token) {
-      connectAccount({
-        platform,
-        accessToken: token,
-        accountId:   accId   || undefined,
-        accountName: accName || undefined,
-        connectedAt: new Date().toISOString(),
-      })
+    if (success && platform) {
       window.history.replaceState({}, '', '/dashboard')
+      fetch('/api/oauth/token')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && data.accessToken) {
+            connectAccount({
+              platform:    data.platform,
+              accessToken: data.accessToken,
+              accountId:   data.accountId   || undefined,
+              accountName: data.accountName || undefined,
+              connectedAt: new Date().toISOString(),
+            })
+          }
+        })
+        .catch(() => setError('Erro ao recuperar token de conexão. Tente conectar novamente.'))
     }
   }, [])
 

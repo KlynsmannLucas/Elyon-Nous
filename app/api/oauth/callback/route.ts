@@ -126,16 +126,22 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Redireciona de volta com os dados via query string (salvo no client pelo TabConnections)
-    const params = new URLSearchParams({
-      oauth_success: '1',
-      platform: platform || '',
-      access_token: accessToken,
-      account_id: accountId,
-      account_name: accountName,
+    // Token nunca vai na URL — armazenado em cookie httpOnly por 60s
+    const oauthResult = Buffer.from(JSON.stringify({
+      platform, accessToken, accountId, accountName,
+    })).toString('base64')
+
+    const res = NextResponse.redirect(
+      new URL(`/dashboard?oauth_success=1&platform=${platform}`, req.url)
+    )
+    res.cookies.set('oauth_result', oauthResult, {
+      httpOnly: true,
+      secure:   process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge:   60,
+      path:     '/',
     })
-    const res = NextResponse.redirect(new URL(`/dashboard?${params}`, req.url))
-    res.cookies.set('oauth_csrf', '', { maxAge: 0, path: '/' }) // limpa o cookie CSRF
+    res.cookies.set('oauth_csrf', '', { maxAge: 0, path: '/' })
     return res
 
   } catch (e: any) {

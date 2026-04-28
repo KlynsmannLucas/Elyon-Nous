@@ -7,6 +7,14 @@ export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  const { rateLimit } = await import('@/lib/rateLimit')
+  const rl = rateLimit(userId, 'manus', { max: 5, windowSec: 3600 })
+  if (!rl.ok) {
+    return NextResponse.json({ error: `Limite atingido. Tente novamente em ${rl.retryAfterSec}s.` }, {
+      status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) },
+    })
+  }
+
   if (!process.env.MANUS_API_KEY) {
     return NextResponse.json({ error: 'MANUS_API_KEY não configurado' }, { status: 500 })
   }

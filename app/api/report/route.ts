@@ -9,7 +9,7 @@
 //   report_data JSONB NOT NULL,
 //   branding    JSONB DEFAULT '{}',
 //   expires_at  TIMESTAMPTZ,
-//   password    TEXT,
+//   password    TEXT,   -- armazena hash HMAC-SHA256, nunca plaintext
 //   created_at  TIMESTAMPTZ DEFAULT NOW()
 // );
 // CREATE INDEX IF NOT EXISTS report_shares_token_idx ON report_shares(token);
@@ -17,12 +17,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { randomBytes } from 'crypto'
+import { randomBytes, createHmac } from 'crypto'
+
+const PEPPER = process.env.CRON_SECRET || 'elyon-report-pepper'
+
+function hashPassword(pw: string): string {
+  return createHmac('sha256', PEPPER).update(pw).digest('hex')
+}
 
 // POST /api/report — cria um share token para o relatório
 export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Banco de dados não configurado. Configure o Supabase para compartilhar relatórios.' }, { status: 503 })
+  }
 
   try {
     const body = await req.json()
@@ -32,25 +42,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'clientName e reportData são obrigatórios' }, { status: 400 })
     }
 
-    const token    = randomBytes(20).toString('hex')
+    const token     = randomBytes(20).toString('hex')
     const expiresAt = expiresInDays
       ? new Date(Date.now() + expiresInDays * 86400000).toISOString()
       : null
 
-    if (!supabaseAdmin) {
-      // Fallback: retorna token codificado localmente (sem persistência)
-      const payload = Buffer.from(JSON.stringify({ clientName, reportData, branding, expiresAt })).toString('base64url')
-      return NextResponse.json({ token: `local_${payload}`, url: `/report/local_${payload}` })
-    }
-
     const { error } = await supabaseAdmin.from('report_shares').insert({
       token,
-      user_id:    userId,
+      user_id:     userId,
       client_name: clientName,
       report_data: reportData,
-      branding:   branding || {},
-      expires_at: expiresAt,
-      password:   password || null,
+      branding:    branding || {},
+      expires_at:  expiresAt,
+      password:    password ? hashPassword(password) : null,
     })
 
     if (error) throw new Error(error.message)
@@ -61,24 +65,17 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET /api/report?token=xxx — busca dados do relatório
+// GET /api/report?token=xxx[&pw=SENHA] — busca dados do relatório
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token')
   if (!token) return NextResponse.json({ error: 'Token obrigatório' }, { status: 400 })
 
+  if (!supabaseAdmin) return NextResponse.json({ error: 'Banco não configurado' }, { status: 503 })
+
   try {
-    // Fallback local token
-    if (token.startsWith('local_')) {
-      const raw = token.slice(6)
-      const data = JSON.parse(Buffer.from(raw, 'base64url').toString('utf-8'))
-      return NextResponse.json({ success: true, ...data })
-    }
-
-    if (!supabaseAdmin) return NextResponse.json({ error: 'Banco não configurado' }, { status: 503 })
-
     const { data, error } = await supabaseAdmin
       .from('report_shares')
-      .select('client_name, report_data, branding, expires_at, created_at')
+      .select('client_name, report_data, branding, expires_at, created_at, password')
       .eq('token', token)
       .single()
 
@@ -88,8 +85,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Este link expirou' }, { status: 410 })
     }
 
+    // Verificação de senha: se o relatório tem hash, exige autenticação
+    if (data.password) {
+      const pw = req.nextUrl.searchParams.get('pw')
+      if (!pw) {
+        return NextResponse.json({ requiresPassword: true, clientName: data.client_name }, { status: 200 })
+      }
+      if (hashPassword(pw) !== data.password) {
+        return NextResponse.json({ error: 'Senha incorreta' }, { status: 403 })
+      }
+    }
+
     return NextResponse.json({
-      success: true,
+      success:     true,
       clientName:  data.client_name,
       reportData:  data.report_data,
       branding:    data.branding || {},

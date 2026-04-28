@@ -576,8 +576,9 @@ export const useAppStore = create<AppStore>()(
         strategyData:        state.strategyData,
         savedClients:        state.savedClients,
         campaignHistory:     state.campaignHistory,
-        connectedAccounts:        state.connectedAccounts,
-        clientConnectedAccounts:  state.clientConnectedAccounts,
+        // connectedAccounts e clientConnectedAccounts intencionalmente excluídos:
+        // tokens OAuth de anúncios não devem persistir no localStorage (segurança / LGPD).
+        // O usuário reconecta Meta/Google por sessão — tokens ficam apenas em memória.
         strategyTimestamps:       state.strategyTimestamps,
         auditCache:               state.auditCache,
         actionPlanCache:          state.actionPlanCache,
