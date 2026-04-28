@@ -1,6 +1,7 @@
 // app/api/conteudo/route.ts — Geração de conteúdo para redes sociais via Claude
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { sanitizeText } from '@/lib/sanitize'
 
 const PLATFORM_GUIDE: Record<string, string> = {
   instagram: 'Instagram Feed/Reels — legendas de até 2200 chars, hashtags ao final, gancho forte nos primeiros 2 segundos do Reels',
@@ -36,7 +37,9 @@ export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { clientData, persona, platform, theme, role, metaAccessToken } = await req.json()
+  const { clientData: _cd, persona, platform, theme: _theme, role, metaAccessToken } = await req.json()
+  const theme = sanitizeText(_theme, 200)
+  const clientData = _cd ? { ..._cd, niche: sanitizeText(_cd.niche, 120), name: sanitizeText(_cd.name, 120) } : _cd
   if (!clientData || !platform || !theme) {
     return NextResponse.json({ error: 'Dados insuficientes' }, { status: 400 })
   }

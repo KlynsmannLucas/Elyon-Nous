@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
+import { sanitizeText } from '@/lib/sanitize'
 
 export async function POST(req: NextRequest) {
   const { userId } = auth()
@@ -19,11 +20,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
-      clientName, niche, budget, objective, currentCPL, mainChallenge,
+      clientName: _cn, niche: _ni, budget, objective: _obj, currentCPL, mainChallenge: _mc,
       strategy, campaignHistory = [],
       ticketPrice, grossMargin, conversionRate, isRecurring,
       auditRealMetrics = null,
     } = body
+    const clientName    = sanitizeText(_cn, 120)
+    const niche         = sanitizeText(_ni, 120)
+    const objective     = sanitizeText(_obj, 300)
+    const mainChallenge = sanitizeText(_mc, 300)
 
     const bench = getBenchmark(niche)
     const benchmarkText = getBenchmarkSummary(niche)

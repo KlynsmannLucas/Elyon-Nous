@@ -1,12 +1,19 @@
 // app/api/persona/route.ts — Geração de persona estruturada via Claude
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { sanitizeText } from '@/lib/sanitize'
 
 export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { clientData, role } = await req.json()
+  const { clientData: _cd, role } = await req.json()
+  const clientData = _cd ? {
+    ..._cd,
+    name:  sanitizeText(_cd.name, 120),
+    niche: sanitizeText(_cd.niche, 120),
+    products: Array.isArray(_cd.products) ? _cd.products.map((p: unknown) => sanitizeText(p, 100)) : _cd.products,
+  } : _cd
   if (!clientData) return NextResponse.json({ error: 'Dados do cliente ausentes' }, { status: 400 })
 
   const roleMap: Record<string, string> = {

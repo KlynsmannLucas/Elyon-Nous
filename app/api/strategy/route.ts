@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { buildNichePromptContext } from '@/lib/niche_prompts'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
+import { sanitizeText, sanitizeNumber } from '@/lib/sanitize'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -262,14 +263,18 @@ function buildFallbackStrategy(data: {
 // ── Lógica principal separada para streaming ────────────────────────────────────
 async function runStrategy(body: any) {
   const {
-    clientName, niche, products, budget, objective, monthlyRevenue,
-    nicheDetails, city, currentCPL, currentLeadSource, mainChallenge,
+    clientName: _cn, niche: _ni, products, budget, objective: _obj, monthlyRevenue,
+    nicheDetails, city, currentCPL, currentLeadSource, mainChallenge: _mc,
     campaignHistory,
     // Unit economics
     ticketPrice, grossMargin, isRecurring, conversionRate,
     // Dados enriquecidos (passados opcionalmente pelo dashboard)
     recentAudit, persona, metaAccessToken,
   } = body
+  const clientName   = sanitizeText(_cn, 120)
+  const niche        = sanitizeText(_ni, 120)
+  const objective    = sanitizeText(_obj, 300)
+  const mainChallenge = sanitizeText(_mc, 300)
 
   const bench         = getBenchmark(niche)
   const nicheContext  = buildNichePromptContext(niche, nicheDetails || {})

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getBenchmarkSummary, getBenchmark } from '@/lib/niche_benchmarks'
+import { sanitizeText } from '@/lib/sanitize'
 
 // ── Fallback estruturado quando IA indisponível ──────────────────────────────
 function buildFallbackDiagnostic(params: {
@@ -161,12 +162,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
-      clientName, niche, budget = 0, monthlyRevenue = 0,
+      clientName: _cn, niche: _ni, budget = 0, monthlyRevenue = 0,
       ticketPrice, grossMargin, conversionRate, isRecurring,
-      currentCPL, mainChallenge, currentLeadSource,
+      currentCPL, mainChallenge: _mc, currentLeadSource,
       campaignHistory = [],
-      auditRealMetrics = null,   // dados reais da última auditoria, se disponível
+      auditRealMetrics = null,
     } = body
+    const clientName   = sanitizeText(_cn, 120)
+    const niche        = sanitizeText(_ni, 120)
+    const mainChallenge = sanitizeText(_mc, 300)
 
     const bench = getBenchmark(niche)
     const benchmarkText = getBenchmarkSummary(niche)

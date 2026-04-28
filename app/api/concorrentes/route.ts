@@ -1,6 +1,7 @@
 // app/api/concorrentes/route.ts — Radar de Concorrentes: Meta Ad Library + Claude
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { sanitizeText } from '@/lib/sanitize'
 
 async function fetchCompetitorAds(
   accessToken: string,
@@ -42,7 +43,9 @@ export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { competitorName, niche, metaAccessToken } = await req.json()
+  const { competitorName: _comp, niche: _ni, metaAccessToken } = await req.json()
+  const competitorName = sanitizeText(_comp, 120)
+  const niche = sanitizeText(_ni, 120)
   if (!competitorName?.trim()) {
     return NextResponse.json({ error: 'Nome do concorrente obrigatório' }, { status: 400 })
   }

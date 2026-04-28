@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { callLLMJson } from '@/lib/pipeline/llm'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { buildNichePromptContext } from '@/lib/niche_prompts'
+import { sanitizeText } from '@/lib/sanitize'
 
 interface CampaignGenerateRequest {
   clientName: string
@@ -208,6 +209,10 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'JSON inválido no body' }, { status: 400 })
   }
+
+  body.clientName = sanitizeText(body.clientName, 120)
+  body.niche      = sanitizeText(body.niche, 120)
+  if (body.objective) body.objective = sanitizeText(body.objective as any, 300)
 
   if (!body.clientName || !body.niche) {
     return NextResponse.json({ error: 'clientName e niche são obrigatórios' }, { status: 400 })

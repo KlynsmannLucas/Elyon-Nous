@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
+import { sanitizeText } from '@/lib/sanitize'
 
 // ── Fallback estruturado quando a IA não está disponível ─────────────────────
 function buildFallbackAudit(
@@ -279,18 +280,21 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const {
-      clientName,
-      niche,
+      clientName: _cn,
+      niche: _ni,
       budget            = 0,
-      objective         = '',
+      objective: _obj   = '',
       metaCampaigns     = [],
       metaTotals        = null,
       googleCampaigns   = [],
       googleTotals      = null,
-      uploadedFiles     = [],   // novo: array de { filename, platform, campaigns[] }
-      uploadedCampaigns = [],   // legado: array plano de campanhas
+      uploadedFiles     = [],
+      uploadedCampaigns = [],
       uploadedPlatform  = null,
     } = body
+    const clientName = sanitizeText(_cn, 120)
+    const niche      = sanitizeText(_ni, 120)
+    const objective  = sanitizeText(_obj, 300)
 
     if (!clientName || !niche) {
       return NextResponse.json({ success: false, error: 'clientName e niche são obrigatórios.' }, { status: 400 })

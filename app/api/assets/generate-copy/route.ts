@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { callLLMJson } from '@/lib/pipeline/llm'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
+import { sanitizeText } from '@/lib/sanitize'
 
 const ASSET_CONTEXT: Record<string, string> = {
   logo:      'logotipo da marca — reforçar identidade e autoridade da empresa',
@@ -57,7 +58,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body: GenerateCopyRequest = await req.json()
-  const { clientData, assetType, assetName, persona, platform = 'meta', auditInsights, cplTarget, funnelGap } = body
+  const { clientData: _cd, assetType, assetName, persona, platform = 'meta', auditInsights, cplTarget, funnelGap } = body
+  const clientData = _cd ? {
+    ..._cd,
+    clientName: sanitizeText(_cd.clientName, 120),
+    niche:      sanitizeText(_cd.niche, 120),
+  } : _cd
 
   if (!clientData || !assetType) {
     return NextResponse.json({ error: 'Dados insuficientes' }, { status: 400 })

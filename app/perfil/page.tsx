@@ -62,6 +62,25 @@ export default function PerfilPage() {
   const [syncLoading, setSyncLoading] = useState(false)
   const [syncMsg, setSyncMsg]   = useState('')
 
+  // ── Exportar dados (LGPD) ───────────────────────────────────────────────────
+  const [exportLoading, setExportLoading] = useState(false)
+
+  const handleExportData = async () => {
+    setExportLoading(true)
+    try {
+      const res = await fetch('/api/account/export')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `elyon-dados-${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
   // ── Exclusão de conta (LGPD) ────────────────────────────────────────────────
   const [deleteStep,    setDeleteStep]    = useState<'idle' | 'confirm' | 'deleting' | 'done'>('idle')
   const [deleteConfirm, setDeleteConfirm] = useState('')
@@ -675,6 +694,50 @@ export default function PerfilPage() {
                   <p className="text-xs text-slate-400 leading-relaxed">
                     Seus dados são mantidos enquanto sua conta estiver ativa. Ao solicitar a exclusão abaixo, todos os dados são apagados permanentemente e irreversivelmente — incluindo clientes, relatórios e agendamentos.
                   </p>
+                </div>
+
+                {/* Exportar dados */}
+                <div className="mb-6 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
+                  <div className="text-sm font-semibold text-white mb-1">Baixar meus dados</div>
+                  <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+                    Exporte todos os seus dados (clientes, estratégias, métricas) em formato JSON — direito garantido pelo Art. 18 da LGPD.
+                  </p>
+                  <button
+                    onClick={handleExportData}
+                    disabled={exportLoading}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:opacity-80 disabled:opacity-50"
+                    style={{ border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429', background: 'rgba(240,180,41,0.05)' }}
+                  >
+                    {exportLoading ? '⏳ Gerando...' : '⬇ Baixar meus dados (JSON)'}
+                  </button>
+                </div>
+
+                {/* Termos */}
+                <div className="mb-6 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
+                  <div className="text-sm font-semibold text-white mb-2">Documentos legais</div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: 'Termos de Uso', href: '/termos' },
+                      { label: 'Política de Privacidade', href: '/privacidade' },
+                      { label: 'Política de Cookies', href: '/cookies' },
+                      { label: 'DPA', href: '/dpa' },
+                    ].map((doc) => (
+                      <a
+                        key={doc.href}
+                        href={doc.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2A30] text-slate-400 hover:text-white hover:border-[#3A3A45] transition-all"
+                      >
+                        {doc.label} ↗
+                      </a>
+                    ))}
+                  </div>
+                  {user?.publicMetadata?.termsAcceptedAt && (
+                    <p className="text-[11px] text-slate-600 mt-2">
+                      Termos aceitos em {new Date(user.publicMetadata.termsAcceptedAt as string).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
                 </div>
 
                 {/* Excluir conta */}

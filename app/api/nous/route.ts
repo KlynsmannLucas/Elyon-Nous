@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { fetchFocusedBenchmark } from '@/lib/tavily'
+import { sanitizeText } from '@/lib/sanitize'
 
 // Resposta inteligente usando os dados reais do cliente extraídos do context
 function buildLocalReply(message: string, context: string): string {
@@ -101,7 +102,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message, context, history, niche, city } = await req.json()
+    const { message: _msg, context, history, niche: _ni, city } = await req.json()
+    const message = sanitizeText(_msg, 600)
+    const niche   = sanitizeText(_ni, 120)
 
     // 1 query Tavily focada no tópico da pergunta — rápida (<2s), não bloqueia o chat
     const topicMatch = message.match(/cpl|roas|benchmark|tendência|custo por lead|canal|criativo|sazonalidade/i)

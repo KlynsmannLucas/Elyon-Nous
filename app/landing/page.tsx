@@ -1086,6 +1086,12 @@ export default function LandingPage() {
               <a href="#precos">Preços</a>
               <Link href="/sign-in">Entrar</Link>
             </div>
+            <div style={{display:'flex',gap:16,flexWrap:'wrap',justifyContent:'center'}}>
+              <Link href="/termos" style={{fontSize:12,color:'var(--muted)',textDecoration:'none'}}>Termos de Uso</Link>
+              <Link href="/privacidade" style={{fontSize:12,color:'var(--muted)',textDecoration:'none'}}>Privacidade</Link>
+              <Link href="/cookies" style={{fontSize:12,color:'var(--muted)',textDecoration:'none'}}>Cookies</Link>
+              <Link href="/dpa" style={{fontSize:12,color:'var(--muted)',textDecoration:'none'}}>DPA</Link>
+            </div>
             <span style={{fontSize:13,color:'var(--muted)'}}>© 2026 ELYON · Pipeline 360° com IA · Brasil</span>
           </div>
         </div>

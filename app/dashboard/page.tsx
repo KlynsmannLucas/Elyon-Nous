@@ -28,6 +28,7 @@ import { TabRelatorios }   from '@/components/dashboard/TabRelatorios'
 import { NousChat }        from '@/components/dashboard/NousChat'
 import { DashboardSidebar, type TabKey } from '@/components/dashboard/DashboardSidebar'
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar'
+import { TermsModal } from '@/components/dashboard/TermsModal'
 import { getPlanLimits, hasActivePlan } from '@/lib/planUtils'
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
@@ -330,6 +331,9 @@ export default function DashboardPage() {
   const { user, isLoaded } = useUser()
   const { signOut }        = useClerk()
   const userPlan   = user?.publicMetadata?.plan as string | undefined
+  const termsAccepted = Boolean(user?.publicMetadata?.termsAcceptedAt)
+  const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(false)
+  const showTermsModal = isLoaded && user && !termsAccepted && !termsAcceptedLocal
 
   // Trial de 7 dias — baseado no createdAt do Clerk
   const TRIAL_DAYS = 7
@@ -877,6 +881,9 @@ export default function DashboardPage() {
   // ── Dashboard completo ──
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#030305', overflow: 'hidden' }}>
+      {showTermsModal && (
+        <TermsModal onAccept={() => setTermsAcceptedLocal(true)} />
+      )}
       <DashboardSidebar
         active={activeTab}
         onChange={setActiveTab}
