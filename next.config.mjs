@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs'
+
 /** @type {import('next').NextConfig} */
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control',   value: 'on' },
@@ -24,4 +26,12 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  org:     process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent:  true,          // sem output no CI
+  widenClientFileUpload: true,
+  hideSourceMaps: true,   // source maps não ficam expostos no bundle público
+  disableLogger: true,
+  automaticVercelMonitors: true,
+})
