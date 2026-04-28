@@ -3,9 +3,22 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const code     = searchParams.get('code')
-  const platform = searchParams.get('state') // 'meta' ou 'google' passado no state
-  const error    = searchParams.get('error')
+  const code      = searchParams.get('code')
+  const stateRaw  = searchParams.get('state') ?? ''
+  const error     = searchParams.get('error')
+
+  // state format: "platform:csrfToken"
+  const colonIdx  = stateRaw.indexOf(':')
+  const platform  = colonIdx > -1 ? stateRaw.slice(0, colonIdx) : stateRaw
+  const csrfToken = colonIdx > -1 ? stateRaw.slice(colonIdx + 1) : ''
+
+  // Verify CSRF token against cookie
+  const cookieCsrf = req.cookies.get('oauth_csrf')?.value ?? ''
+  if (!csrfToken || !cookieCsrf || csrfToken !== cookieCsrf) {
+    return NextResponse.redirect(
+      new URL(`/dashboard?oauth_error=csrf_invalid&platform=${platform}`, req.url)
+    )
+  }
 
   if (error || !code) {
     return NextResponse.redirect(
@@ -121,7 +134,9 @@ export async function GET(req: NextRequest) {
       account_id: accountId,
       account_name: accountName,
     })
-    return NextResponse.redirect(new URL(`/dashboard?${params}`, req.url))
+    const res = NextResponse.redirect(new URL(`/dashboard?${params}`, req.url))
+    res.cookies.set('oauth_csrf', '', { maxAge: 0, path: '/' }) // limpa o cookie CSRF
+    return res
 
   } catch (e: any) {
     return NextResponse.redirect(

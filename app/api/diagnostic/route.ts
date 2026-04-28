@@ -150,6 +150,14 @@ export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
+  const { rateLimit } = await import('@/lib/rateLimit')
+  const rl = rateLimit(userId, 'diagnostic', { max: 5, windowSec: 3600 })
+  if (!rl.ok) {
+    return NextResponse.json({ error: `Limite atingido. Tente novamente em ${rl.retryAfterSec}s.` }, {
+      status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) },
+    })
+  }
+
   try {
     const body = await req.json()
     const {

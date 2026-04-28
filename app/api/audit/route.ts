@@ -261,6 +261,14 @@ export async function POST(req: NextRequest) {
     const { userId } = auth()
     if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
 
+    const { rateLimit } = await import('@/lib/rateLimit')
+    const rl = rateLimit(userId, 'audit', { max: 5, windowSec: 3600 })
+    if (!rl.ok) {
+      return NextResponse.json({ success: false, error: `Limite atingido. Tente novamente em ${rl.retryAfterSec}s.` }, {
+        status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) },
+      })
+    }
+
     const { clerkClient } = await import('@clerk/nextjs/server')
     const clerkUser = await clerkClient().users.getUser(userId)
     const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined

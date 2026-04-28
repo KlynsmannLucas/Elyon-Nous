@@ -123,16 +123,20 @@ export function TabConnections() {
   }
 
   const connectMeta = () => {
-    const appId      = process.env.NEXT_PUBLIC_META_APP_ID
+    const csrf        = crypto.randomUUID()
+    document.cookie   = `oauth_csrf=${csrf}; path=/; max-age=300; samesite=lax`
+    const appId       = process.env.NEXT_PUBLIC_META_APP_ID
     const redirectUri = `${window.location.origin}/api/oauth/callback`
-    const scope = 'ads_read,ads_management,business_management'
+    const scope       = 'ads_read,ads_management,business_management'
     window.location.href =
       `https://www.facebook.com/v19.0/dialog/oauth?` +
       `client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&scope=${scope}&state=meta`
+      `&scope=${scope}&state=${encodeURIComponent(`meta:${csrf}`)}`
   }
 
   const connectGoogle = () => {
+    const csrf        = crypto.randomUUID()
+    document.cookie   = `oauth_csrf=${csrf}; path=/; max-age=300; samesite=lax`
     const clientId    = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
     const redirectUri = `${window.location.origin}/api/oauth/callback`
     const scope = encodeURIComponent(
@@ -141,7 +145,7 @@ export function TabConnections() {
     window.location.href =
       `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=code&scope=${scope}&state=google&access_type=offline&prompt=consent`
+      `&response_type=code&scope=${scope}&state=${encodeURIComponent(`google:${csrf}`)}&access_type=offline&prompt=consent`
   }
 
   return (

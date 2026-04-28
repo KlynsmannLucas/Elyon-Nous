@@ -2,8 +2,12 @@
 // Pesquisa INTERNA na Biblioteca de Anúncios do Meta — nunca exibida ao usuário
 // Alimenta geração de criativos com exemplos reais do mercado
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 export async function POST(req: NextRequest) {
+  const { userId } = auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     const { accessToken, searchTerms, niche } = await req.json()
     if (!accessToken || (!searchTerms && !niche)) {
