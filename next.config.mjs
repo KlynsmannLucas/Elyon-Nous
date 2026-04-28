@@ -1,16 +1,48 @@
 import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
+const CSP = [
+  "default-src 'self'",
+  // Next.js precisa de unsafe-inline para scripts/estilos gerados em build
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://accounts.google.com https://*.clerk.com",
+  "style-src 'self' 'unsafe-inline'",
+  // Imagens: self + data URIs + qualquer HTTPS (avatares Clerk, fotos Google, etc.)
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  // Connect: apenas os serviços reais usados pelo app
+  [
+    "connect-src 'self'",
+    "https://*.supabase.co",
+    "wss://*.supabase.co",
+    "https://*.clerk.com",
+    "https://*.clerk.accounts.dev",
+    "https://api.anthropic.com",
+    "https://api.stripe.com",
+    "https://*.sentry.io",
+    "https://tavily.com",
+    "https://*.tavily.com",
+    "https://graph.facebook.com",
+    "https://googleads.googleapis.com",
+  ].join(' '),
+  // Stripe usa iframes para o checkout seguro
+  "frame-src https://js.stripe.com https://hooks.stripe.com",
+  // Bloqueia plugins (Flash etc.) e previne injeção de base tag
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  // Previne clickjacking (reforça X-Frame-Options)
+  "frame-ancestors 'self'",
+  "upgrade-insecure-requests",
+].join('; ')
+
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control',   value: 'on' },
   { key: 'X-Frame-Options',          value: 'SAMEORIGIN' },
   { key: 'X-Content-Type-Options',   value: 'nosniff' },
   { key: 'Referrer-Policy',          value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy',       value: 'camera=(), microphone=(), geolocation=()' },
-  {
-    key: 'Strict-Transport-Security',
-    value: 'max-age=63072000; includeSubDomains; preload',
-  },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+  { key: 'Content-Security-Policy',  value: CSP },
 ]
 
 const nextConfig = {
@@ -40,14 +72,7 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
-
-  // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  tunnelRoute: "/monitoring",
 
   webpack: {
     // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
