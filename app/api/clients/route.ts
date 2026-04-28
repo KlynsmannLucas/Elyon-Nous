@@ -27,16 +27,37 @@ export async function GET() {
     return NextResponse.json({ clients: [] })
   }
 
-  const { data, error } = await supabaseAdmin
+  // Tenta com extra_data; se a coluna não existir ainda, faz fallback sem ela
+  let data: any[] | null = null
+  let hasExtraData = true
+
+  const res1 = await supabaseAdmin
     .from('clients')
     .select('id, client_data, strategy_data, audit_data, extra_data, saved_at, updated_at')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false })
 
-  if (error) {
-    console.error('[clients GET]', error.message)
-    // Retorna vazio em vez de 500 — evita quebrar o seletor se a tabela ainda não existe
-    return NextResponse.json({ clients: [], _dbError: error.message })
+  if (res1.error) {
+    if (res1.error.message?.includes('extra_data') || res1.error.code === '42703') {
+      // Coluna extra_data ainda não foi criada — faz fallback
+      hasExtraData = false
+      const res2 = await supabaseAdmin
+        .from('clients')
+        .select('id, client_data, strategy_data, audit_data, saved_at, updated_at')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+
+      if (res2.error) {
+        console.error('[clients GET]', res2.error.message)
+        return NextResponse.json({ clients: [], _dbError: res2.error.message })
+      }
+      data = res2.data
+    } else {
+      console.error('[clients GET]', res1.error.message)
+      return NextResponse.json({ clients: [], _dbError: res1.error.message })
+    }
+  } else {
+    data = res1.data
   }
 
   const clients = (data || []).map((row: any) => ({
@@ -44,7 +65,7 @@ export async function GET() {
     clientData: row.client_data,
     strategyData: row.strategy_data ?? null,
     auditData: row.audit_data ?? null,
-    extraData: row.extra_data ?? null,
+    extraData: hasExtraData ? (row.extra_data ?? null) : null,
     savedAt: row.saved_at || row.updated_at,
   }))
 
@@ -67,23 +88,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing id or clientData' }, { status: 400 })
   }
 
+  const record = {
+    id,
+    user_id: userId,
+    client_data: clientData,
+    strategy_data: strategyData ?? null,
+    audit_data: auditData ?? null,
+    extra_data: extraData ?? null,
+    saved_at: savedAt || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+
   const { error } = await supabaseAdmin
     .from('clients')
-    .upsert(
-      {
-        id,
-        user_id: userId,
-        client_data: clientData,
-        strategy_data: strategyData ?? null,
-        audit_data: auditData ?? null,
-        extra_data: extraData ?? null,
-        saved_at: savedAt || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' }
-    )
+    .upsert(record, { onConflict: 'id' })
 
   if (error) {
+    // Coluna extra_data ainda não existe — faz fallback sem ela
+    if (error.message?.includes('extra_data') || error.code === '42703') {
+      const { extra_data: _dropped, ...recordWithoutExtra } = record
+      const { error: e2 } = await supabaseAdmin
+        .from('clients')
+        .upsert(recordWithoutExtra, { onConflict: 'id' })
+      if (e2) {
+        console.error('[clients POST fallback]', e2.message)
+        return NextResponse.json({ error: e2.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, _missingColumn: 'extra_data' })
+    }
     console.error('[clients POST]', error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
