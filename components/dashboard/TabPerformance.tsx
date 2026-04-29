@@ -77,6 +77,331 @@ function ScoreBar({ score }: { score: number }) {
   )
 }
 
+// ── Simulador de Cenários ─────────────────────────────────────────────────────
+function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
+  const niche      = clientData?.niche || ''
+  const bench      = getBenchmark(niche)
+  const initBudget = clientData?.budget || 5000
+  const initTicket = clientData?.ticketPrice || bench?.avg_ticket || 1500
+  const initMargin = clientData?.grossMargin || 40
+
+  const [budget,   setBudget]   = useState(initBudget)
+  const [ticket,   setTicket]   = useState(initTicket)
+  const [margin,   setMargin]   = useState(initMargin)
+  const [scenIdx,  setScenIdx]  = useState<0 | 1 | 2>(1)
+
+  if (!bench) return null
+
+  const benchCVR = clientData?.conversionRate
+    ? clientData.conversionRate / 100
+    : bench.cvr_lead_to_sale
+  const ltv = bench.ltv_multiplier
+
+  const SCENES = [
+    {
+      key: 'conservador', label: 'Conservador', emoji: '🛡',
+      desc: 'Início ou mercado competitivo',
+      color: '#94A3B8', glow: 'rgba(148,163,184,0.07)', border: 'rgba(148,163,184,0.25)',
+      cplCalc: () => bench.cpl_max * 1.20,
+      cvrFactor: 0.65, efficiency: 0.82,
+    },
+    {
+      key: 'recomendado', label: 'Recomendado', emoji: '⚡',
+      desc: 'Estratégia sólida · benchmark do nicho',
+      color: '#F0B429', glow: 'rgba(240,180,41,0.09)', border: 'rgba(240,180,41,0.38)',
+      cplCalc: () => (bench.cpl_min + bench.cpl_max) / 2,
+      cvrFactor: 1.00, efficiency: 0.91,
+    },
+    {
+      key: 'agressivo', label: 'Agressivo', emoji: '🚀',
+      desc: 'Funil otimizado + criativos vencedores',
+      color: '#22C55E', glow: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.30)',
+      cplCalc: () => bench.cpl_min * 0.78,
+      cvrFactor: 1.35, efficiency: 0.96,
+    },
+  ]
+
+  function calcScene(i: 0 | 1 | 2) {
+    const s            = SCENES[i]
+    const cpl          = Math.max(s.cplCalc(), 1)
+    const activeBudget = budget * s.efficiency
+    const leads        = Math.round(activeBudget / cpl)
+    const cvr          = Math.min(benchCVR * s.cvrFactor, 1)
+    const sales        = +(leads * cvr).toFixed(1)
+    const revenue      = Math.round(sales * ticket)
+    const roas         = budget > 0 ? +(revenue / budget).toFixed(2) : 0
+    const ltvRevenue   = Math.round(sales * ticket * ltv)
+    const profit       = Math.round(revenue * (margin / 100) - budget)
+    const breakEvenSales = margin > 0 ? budget / (ticket * (margin / 100)) : 0
+    const breakEvenMet   = sales >= breakEvenSales
+    return { cpl: Math.round(cpl), leads, sales, revenue, roas, ltvRevenue, profit, cvr: +(cvr * 100).toFixed(1), breakEvenSales: +breakEvenSales.toFixed(1), breakEvenMet }
+  }
+
+  const all = ([0, 1, 2] as const).map(i => calcScene(i))
+  const cur = all[scenIdx]
+  const sc  = SCENES[scenIdx]
+
+  const rampFactors = [0.55, 0.70, 0.83, 0.92, 0.97, 1.00]
+  const rampLabels  = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6']
+
+  const fmtR = (v: number) =>
+    v >= 1_000_000 ? `R$${(v / 1_000_000).toFixed(1)}M`
+    : v >= 1000    ? `R$${(v / 1000).toFixed(0)}K`
+    :                `R$${v.toLocaleString('pt-BR')}`
+
+  const sliderCls = 'w-full h-1.5 rounded-full cursor-pointer appearance-none bg-[#1E1E24]'
+
+  return (
+    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden animate-fade-up">
+      {/* Header */}
+      <div className="px-6 py-5 border-b border-[#2A2A30] flex items-center gap-3">
+        <span className="text-xl">🎯</span>
+        <div>
+          <div className="font-display font-bold text-white">Simulador de Cenários</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Projeção mensal baseada nos benchmarks de {niche || 'seu nicho'}</div>
+        </div>
+        <div className="ml-auto px-3 py-1.5 rounded-full text-[10px] font-bold"
+          style={{ background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.2)', color: '#F0B429' }}>
+          CPL bench: R${bench.cpl_min}–R${bench.cpl_max}
+        </div>
+      </div>
+
+      {/* Sliders */}
+      <div className="px-6 py-4 border-b border-[#1E1E24] bg-[#0C0C0F]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Orçamento mensal</span>
+              <span className="text-sm font-bold text-white">R${budget.toLocaleString('pt-BR')}</span>
+            </div>
+            <input type="range" min={500} max={100000} step={500} value={budget}
+              onChange={e => setBudget(Number(e.target.value))} className={sliderCls}
+              style={{ accentColor: '#F0B429' }} />
+            <div className="flex justify-between text-[10px] text-slate-700 mt-1">
+              <span>R$500</span><span>R$100K</span>
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Ticket médio</span>
+              <span className="text-sm font-bold text-white">R${ticket.toLocaleString('pt-BR')}</span>
+            </div>
+            <input type="range" min={100} max={50000} step={100} value={ticket}
+              onChange={e => setTicket(Number(e.target.value))} className={sliderCls}
+              style={{ accentColor: '#A78BFA' }} />
+            <div className="flex justify-between text-[10px] text-slate-700 mt-1">
+              <span>R$100</span><span>R$50K</span>
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Margem bruta</span>
+              <span className="text-sm font-bold text-white">{margin}%</span>
+            </div>
+            <input type="range" min={10} max={90} step={5} value={margin}
+              onChange={e => setMargin(Number(e.target.value))} className={sliderCls}
+              style={{ accentColor: '#22C55E' }} />
+            <div className="flex justify-between text-[10px] text-slate-700 mt-1">
+              <span>10%</span><span>90%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Scenario pills */}
+      <div className="px-6 py-4 grid grid-cols-3 gap-3 border-b border-[#1E1E24]">
+        {SCENES.map((s, i) => (
+          <button key={s.key} onClick={() => setScenIdx(i as 0|1|2)}
+            className="relative flex flex-col items-center gap-1 pt-5 pb-4 rounded-2xl text-center transition-all duration-200"
+            style={{
+              background:  scenIdx === i ? s.glow : '#0D0D10',
+              border:      `1.5px solid ${scenIdx === i ? s.border : '#1E1E24'}`,
+              boxShadow:   scenIdx === i ? `0 0 24px ${s.glow}` : 'none',
+            }}>
+            {i === 1 && (
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#F0B429] text-black">
+                RECOMENDADO
+              </span>
+            )}
+            <span className="text-2xl">{s.emoji}</span>
+            <span className="text-xs font-bold mt-0.5" style={{ color: scenIdx === i ? s.color : '#64748B' }}>{s.label}</span>
+            <span className="text-[10px] text-slate-600 px-2 leading-tight">{s.desc}</span>
+            <div className="mt-2 font-bold text-lg" style={{ color: s.color }}>
+              {fmtR(all[i].revenue)}
+              <span className="text-[10px] font-normal text-slate-600">/mês</span>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Active scenario detail */}
+      <div className="px-6 py-5 space-y-4">
+        {/* 4 KPI cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: 'Leads / mês',    value: cur.leads.toString(),            color: '#38BDF8',                                     sub: `CPL alvo: R$${cur.cpl}` },
+            { label: 'Vendas / mês',   value: cur.sales.toString(),            color: sc.color,                                      sub: `CVR: ${cur.cvr}%` },
+            { label: 'Receita / mês',  value: fmtR(cur.revenue),              color: '#F0B429',                                     sub: `ROAS: ${cur.roas}×` },
+            { label: 'Lucro bruto',    value: fmtR(Math.max(0, cur.profit)),   color: cur.profit > 0 ? '#22C55E' : '#FF4D4D',        sub: cur.profit > 0 ? `margem aplicada: ${margin}%` : 'abaixo do break-even' },
+          ].map(k => (
+            <div key={k.label} className="bg-[#0D0D10] border border-[#1E1E24] rounded-2xl p-4">
+              <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">{k.label}</div>
+              <div className="font-display text-2xl font-bold" style={{ color: k.color }}>{k.value}</div>
+              <div className="text-[10px] text-slate-600 mt-1">{k.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* CPL position bar */}
+        <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[10px] text-slate-500 uppercase tracking-wider">Posição do CPL alvo no benchmark</span>
+            <span className="text-xs font-bold" style={{ color: sc.color }}>R${cur.cpl} / lead</span>
+          </div>
+          <div className="relative h-2 bg-[#1E1E24] rounded-full">
+            {(() => {
+              const scale  = bench.cpl_max * 1.6
+              const minPct = Math.min((bench.cpl_min / scale) * 100, 90)
+              const maxPct = Math.min((bench.cpl_max / scale) * 100, 90)
+              const curPct = Math.min(Math.max((cur.cpl  / scale) * 100, 2), 96)
+              return (
+                <>
+                  <div className="absolute h-full rounded-full opacity-30"
+                    style={{ left: `${minPct}%`, width: `${maxPct - minPct}%`, background: 'linear-gradient(90deg,#22C55E,#F0B429,#FF4D4D)' }} />
+                  <div className="absolute top-1/2 w-3.5 h-3.5 rounded-full border-2 border-[#111114]"
+                    style={{ left: `${curPct}%`, top: '50%', transform: 'translate(-50%,-50%)', background: sc.color }} />
+                </>
+              )
+            })()}
+          </div>
+          <div className="flex justify-between text-[10px] text-slate-700 mt-2">
+            <span>R$0</span>
+            <span className="text-slate-500">Benchmark: R${bench.cpl_min}–R${bench.cpl_max}</span>
+            <span>R${Math.round(bench.cpl_max * 1.6)}</span>
+          </div>
+        </div>
+
+        {/* Break-even + LTV */}
+        <div className="grid md:grid-cols-2 gap-3">
+          <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Break-even mensal</div>
+            <div className="font-display text-2xl font-bold" style={{ color: cur.breakEvenMet ? '#22C55E' : '#F0B429' }}>
+              {cur.breakEvenSales.toFixed(1)} <span className="text-sm font-normal text-slate-500">vendas p/ cobrir o gasto</span>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex-1 h-1.5 bg-[#1E1E24] rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.min((cur.sales / Math.max(cur.breakEvenSales, 0.1)) * 100, 100)}%`,
+                    background: cur.breakEvenMet ? '#22C55E' : '#F0B429',
+                  }} />
+              </div>
+              <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: cur.breakEvenMet ? '#22C55E' : '#F0B429' }}>
+                {cur.sales} / {cur.breakEvenSales.toFixed(1)}
+              </span>
+            </div>
+            <div className="text-[10px] mt-2" style={{ color: cur.breakEvenMet ? '#22C55E' : '#94A3B8' }}>
+              {cur.breakEvenMet ? '✓ Projeção cobre o investimento' : '⚠ Abaixo do break-even — aumente o ticket ou a margem'}
+            </div>
+          </div>
+
+          <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Valor real por cliente (LTV)</div>
+            <div className="font-display text-2xl font-bold text-[#A78BFA]">{fmtR(cur.ltvRevenue)}</div>
+            <div className="text-[10px] text-slate-600 mt-1">
+              {cur.sales} clientes × R${ticket.toLocaleString('pt-BR')} × {ltv}× LTV
+            </div>
+            <div className="mt-2 text-[10px] text-slate-500">
+              ROAS efetivo com LTV:{' '}
+              <span className="font-bold text-[#A78BFA]">{+(cur.roas * ltv).toFixed(1)}×</span>
+              {ltv > 1.5 && <span className="ml-1 text-slate-700">· nicho com alta recorrência</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Ramp bars */}
+        <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
+          <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-4">Curva de maturação — receita projetada mês a mês</div>
+          <div className="flex items-end gap-2" style={{ height: 88 }}>
+            {rampFactors.map((f, i) => {
+              const rev = Math.round(cur.revenue * f)
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1" style={{ height: '100%', justifyContent: 'flex-end' }}>
+                  <div className="text-[9px] font-bold mb-1" style={{ color: i === 5 ? sc.color : '#64748B' }}>{fmtR(rev)}</div>
+                  <div className="w-full rounded-t-lg transition-all duration-500"
+                    style={{ height: `${Math.round(f * 64)}px`, background: i === 5 ? sc.color : `${sc.color}35`, minHeight: 4 }} />
+                  <div className="text-[9px] text-slate-700 mt-1">{rampLabels[i]}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Sensitivity */}
+        <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
+          <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-3">Análise de sensibilidade</div>
+          <div className="grid md:grid-cols-3 gap-3">
+            {[
+              {
+                label: 'CPL +25%',
+                detail: `${Math.round(cur.leads * 0.80)} leads → ${fmtR(Math.round(cur.leads * 0.80 * (cur.cvr / 100) * ticket))} receita`,
+                color: '#FF4D4D', sign: '▼',
+              },
+              {
+                label: 'CVR −20%',
+                detail: `${(cur.cvr * 0.8).toFixed(1)}% CVR → ${fmtR(Math.round(cur.leads * (cur.cvr * 0.8 / 100) * ticket))} receita`,
+                color: '#F0B429', sign: '▼',
+              },
+              {
+                label: 'Ticket +15%',
+                detail: `R$${Math.round(ticket * 1.15).toLocaleString('pt-BR')} → ${fmtR(Math.round(cur.sales * ticket * 1.15))} receita`,
+                color: '#22C55E', sign: '▲',
+              },
+            ].map(s => (
+              <div key={s.label} className="p-3 rounded-xl"
+                style={{ background: `${s.color}08`, border: `1px solid ${s.color}20` }}>
+                <span className="text-[10px] font-bold block mb-1" style={{ color: s.color }}>{s.sign} {s.label}</span>
+                <span className="text-[11px] text-slate-400">{s.detail}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Comparison table */}
+        <div className="rounded-2xl overflow-hidden border border-[#1E1E24]">
+          <div className="grid grid-cols-7 px-4 py-2.5 bg-[#0A0A0D] text-[10px] text-slate-600 uppercase tracking-wider">
+            <span className="col-span-2">Cenário</span>
+            <span>CPL</span><span>Leads</span><span>Vendas</span><span>Receita</span><span>ROAS</span>
+          </div>
+          {SCENES.map((s, i) => {
+            const m = all[i]
+            const roasGood = bench.kpi_thresholds?.roas_good ?? 3
+            return (
+              <div key={s.key}
+                className="grid grid-cols-7 px-4 py-3.5 items-center border-t border-[#1E1E24] cursor-pointer transition-all hover:bg-[#16161A]"
+                style={{
+                  background:  scenIdx === i ? s.glow : 'transparent',
+                  borderLeft:  `3px solid ${scenIdx === i ? s.color : 'transparent'}`,
+                }}
+                onClick={() => setScenIdx(i as 0|1|2)}>
+                <div className="col-span-2 flex items-center gap-2">
+                  <span className="text-lg">{s.emoji}</span>
+                  <span className="text-xs font-bold" style={{ color: scenIdx === i ? s.color : '#94A3B8' }}>{s.label}</span>
+                </div>
+                <span className="text-xs text-slate-400">R${m.cpl}</span>
+                <span className="text-xs text-slate-400">{m.leads}</span>
+                <span className="text-xs text-slate-400">{m.sales}</span>
+                <span className="text-xs font-bold" style={{ color: s.color }}>{fmtR(m.revenue)}</span>
+                <span className="text-xs font-bold" style={{ color: m.roas >= roasGood ? '#22C55E' : '#F0B429' }}>{m.roas}×</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Formulário de entrada rápida de histórico ────────────────────────────────
 function AddHistoryForm({ onClose }: { onClose: () => void }) {
   const { addCampaign, connectedAccounts } = useAppStore()
@@ -502,6 +827,9 @@ export function TabPerformance({ clientData }: Props) {
           <StatCard key={s.label} label={s.label} value={s.value} sub={s.sub} color={s.color} delay={i * 0.08} />
         ))}
       </div>
+
+      {/* Simulador de Cenários */}
+      <SimuladorCenarios clientData={clientData} />
 
       {/* Comparativo MoM */}
       {mom && (

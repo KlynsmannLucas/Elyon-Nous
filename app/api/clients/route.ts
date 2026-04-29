@@ -14,9 +14,16 @@
 // -- Se a tabela já existe, adicione a coluna:
 // ALTER TABLE clients ADD COLUMN IF NOT EXISTS audit_data JSONB;
 
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+
+const PLAN_LIMITS: Record<string, number> = {
+  individual:   3,
+  profissional: 8,
+  avancada:     15,
+}
+const FREE_LIMIT = 1
 
 // GET /api/clients — lista todos os clientes do usuário autenticado
 export async function GET() {
@@ -86,6 +93,29 @@ export async function POST(req: Request) {
 
   if (!id || !clientData) {
     return NextResponse.json({ error: 'Missing id or clientData' }, { status: 400 })
+  }
+
+  if (supabaseAdmin) {
+    // Check if this is a new client (not an update to an existing one)
+    const { data: existing } = await supabaseAdmin
+      .from('clients').select('id').eq('id', id).eq('user_id', userId).maybeSingle()
+
+    if (!existing) {
+      // New client — enforce plan limit
+      const { count } = await supabaseAdmin
+        .from('clients').select('id', { count: 'exact', head: true }).eq('user_id', userId)
+
+      const user = await clerkClient().users.getUser(userId)
+      const plan = (user.publicMetadata?.plan as string | undefined) ?? ''
+      const limit = PLAN_LIMITS[plan] ?? FREE_LIMIT
+
+      if ((count ?? 0) >= limit) {
+        return NextResponse.json(
+          { error: 'Limite de clientes atingido', limit, plan: plan || 'free', upgrade: true },
+          { status: 403 }
+        )
+      }
+    }
   }
 
   const record = {

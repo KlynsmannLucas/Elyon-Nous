@@ -245,6 +245,28 @@ const LP_CSS = `
 .promo-strip{background:linear-gradient(90deg,rgba(245,165,0,.12),rgba(167,139,250,.08),rgba(245,165,0,.12));border-bottom:1px solid rgba(245,165,0,.2);padding:9px 0;text-align:center;font-family:var(--f-mono);font-size:11.5px;font-weight:600;color:var(--sub);letter-spacing:.04em;position:relative;z-index:101;}
 .promo-strip em{color:var(--gold);font-style:normal;}
 .promo-strip a{color:var(--gold);text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
+/* SUBSTITUI */
+.subst-sect{padding:80px 0;}
+.subst-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:36px;}
+.subst-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 20px;position:relative;}
+.subst-card-tag{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;color:var(--red);}
+.subst-card-ico{font-size:22px;margin-bottom:10px;}
+.subst-card-name{font-family:var(--f-display);font-size:15px;font-weight:700;margin-bottom:6px;}
+.subst-card-price{font-family:var(--f-mono);font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px;}
+.subst-card-reason{font-size:12.5px;color:var(--muted);line-height:1.6;}
+.subst-vs-bar{margin-top:28px;display:flex;align-items:center;justify-content:center;gap:24px;background:linear-gradient(135deg,rgba(245,165,0,.06),rgba(34,197,94,.04));border:1px solid rgba(245,165,0,.22);border-radius:14px;padding:22px 32px;flex-wrap:wrap;}
+.subst-vs-col{text-align:center;}
+.subst-vs-eyebrow{font-family:var(--f-mono);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.subst-vs-val{font-family:var(--f-display);font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;}
+.subst-vs-sep{font-size:28px;color:var(--muted);}
+/* CTA PERSONA CARDS */
+.cta-persona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:44px;position:relative;z-index:1;}
+.cta-persona{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px;text-align:left;cursor:pointer;transition:all .2s;text-decoration:none;display:block;}
+.cta-persona:hover{border-color:rgba(245,165,0,.35);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.cta-persona-ico{font-size:22px;margin-bottom:10px;}
+.cta-persona-who{font-family:var(--f-mono);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.cta-persona-pain{font-family:var(--f-display);font-size:15px;font-weight:700;letter-spacing:-.3px;margin-bottom:8px;color:var(--text);line-height:1.25;}
+.cta-persona-action{font-size:13px;color:var(--gold);font-weight:600;}
 /* FOOTER */
 .lp-footer{border-top:1px solid var(--border);padding:40px 0;}
 .lp-footer-inner{display:flex;flex-direction:column;align-items:center;gap:16px;}
@@ -281,6 +303,10 @@ const LP_CSS = `
 .social-sep{width:1px;height:14px;background:var(--border);}
 /* MOBILE */
 @media(max-width:900px){
+  .subst-grid{grid-template-columns:1fr 1fr!important;}
+  .cta-persona-grid{grid-template-columns:1fr!important;}
+  .subst-vs-bar{gap:12px!important;padding:18px 16px!important;}
+  .subst-vs-val{font-size:22px!important;}
   /* Hero B */
   .hero-b-top{grid-template-columns:1fr!important;}
   .hero-b-left{border-right:none!important;border-bottom:1px solid var(--border);padding:60px 20px 36px!important;}
@@ -315,6 +341,7 @@ const LP_CSS = `
   .niche-slot{min-width:200px!important;}
 }
 @media(max-width:600px){
+  .subst-grid{grid-template-columns:1fr!important;}
   .lp-nav{padding:0 16px;}
   .lp-nav-links{display:none;}
   /* Hero A mobile — stack CTAs */
@@ -730,7 +757,7 @@ export default function LandingPage() {
                 <div className="social-sep" />
                 <div className="social-item">💰 CPL máximo lucrativo calculado</div>
                 <div className="social-sep" />
-                <div className="social-item">🤖 5 agentes IA em paralelo</div>
+                <div className="social-item">🤖 5 agentes IA especializados</div>
                 <div className="social-sep" />
                 <div className="social-item">🧠 NOUS com contexto do cliente</div>
               </div>
@@ -806,7 +833,7 @@ export default function LandingPage() {
               <div className="timeline">
                 {[
                   {n:'01',h:'Informe nicho, budget e financeiro',p:'Selecione seu nicho entre 80+ opções. Informe ticket médio, margem e taxa de fechamento. O ELYON já calcula seu CPL máximo lucrativo e ROAS break-even — antes mesmo de conectar qualquer conta.',tag:'✓ Resultado em 2 minutos'},
-                  {n:'02',h:'Pipeline 360° identifica onde você está perdendo',p:'5 agentes IA rodam em paralelo: Auditor encontra desperdícios. Analista cruza CPL com benchmark do nicho. Estrategista define prioridade de escala. O resultado é um diagnóstico completo — não uma lista genérica de sugestões.',tag:'✓ Diagnóstico em 3–5 min'},
+                  {n:'02',h:'Pipeline 360° identifica onde você está perdendo',p:'5 agentes IA em cadeia especializada: Auditor detecta desperdícios. Analista cruza CPL com benchmark do nicho. Estrategista define prioridade de escala. Cada agente alimenta o próximo — diagnóstico completo, não lista genérica.',tag:'✓ Diagnóstico em 3–5 min'},
                   {n:'03',h:'Dashboard com inteligência viva — não relatório estático',p:'Conecte Meta Ads e Google Ads via OAuth. Veja CPL real vs. benchmark, trends de campanha, simulador what-if de budget e NOUS — a IA que responde com os dados específicos do seu cliente, não com respostas genéricas.',tag:'✓ Atualiza em tempo real'},
                 ].map((t,i)=>(
                   <div key={i} className={`tl-item lp-fade lp-d${i}`}>
@@ -926,6 +953,60 @@ export default function LandingPage() {
                   </div>
                 </div>
 
+              </div>
+            </div>
+          </section>
+
+          {/* O que o ELYON substitui */}
+          <section className="subst-sect">
+            <div className="lp-container">
+              <div className="section-eyebrow lp-fade">O que o ELYON substitui</div>
+              <h2 className="section-h lp-fade">Você já paga por isso.<br /><em>Sem os resultados.</em></h2>
+              <p style={{fontSize:16,color:'var(--sub)',lineHeight:1.75,maxWidth:520}} className="lp-fade lp-d1">Cada alternativa abaixo resolve o mesmo problema — mas nenhuma cruza dados reais do nicho, IA contextual e pipeline completo na mesma plataforma.</p>
+              <div className="subst-grid lp-fade lp-d1">
+                <div className="subst-card">
+                  <div className="subst-card-tag">substituído</div>
+                  <div className="subst-card-ico">👤</div>
+                  <div className="subst-card-name">Consultor de Marketing</div>
+                  <div className="subst-card-price">R$5k–15k/mês</div>
+                  <p className="subst-card-reason">Reunião mensal, relatório manual, sem dados de nicho em tempo real. Disponível só em horário comercial.</p>
+                </div>
+                <div className="subst-card">
+                  <div className="subst-card-tag">substituído</div>
+                  <div className="subst-card-ico">📊</div>
+                  <div className="subst-card-name">Reportei / Ferramentas de Report</div>
+                  <div className="subst-card-price">R$400–800/mês</div>
+                  <p className="subst-card-reason">Relatório bonito, sem diagnóstico. Mostra o que aconteceu — não diz por quê nem o que fazer. Zero benchmark de nicho.</p>
+                </div>
+                <div className="subst-card">
+                  <div className="subst-card-tag">substituído</div>
+                  <div className="subst-card-ico">📁</div>
+                  <div className="subst-card-name">Planilhas Google / Excel</div>
+                  <div className="subst-card-price">Horas do seu tempo</div>
+                  <p className="subst-card-reason">Fórmulas que quebram, atualização manual toda semana, sem contexto de nicho e zero IA para interpretar.</p>
+                </div>
+                <div className="subst-card">
+                  <div className="subst-card-tag">substituído</div>
+                  <div className="subst-card-ico">🤖</div>
+                  <div className="subst-card-name">ChatGPT / IA genérica</div>
+                  <div className="subst-card-price">Respostas sem contexto</div>
+                  <p className="subst-card-reason">Não sabe seu ticket, nicho, CPL real nem ROAS. Dá sugestões genéricas que não aplicam ao seu mercado específico.</p>
+                </div>
+              </div>
+              <div className="subst-vs-bar lp-fade lp-d2">
+                <div className="subst-vs-col">
+                  <div className="subst-vs-eyebrow" style={{color:'var(--muted)'}}>custo das alternativas acima</div>
+                  <div className="subst-vs-val" style={{color:'var(--red)'}}>R$6k–16k<span style={{fontSize:16,fontWeight:500}}>/mês</span></div>
+                </div>
+                <div className="subst-vs-sep">→</div>
+                <div className="subst-vs-col">
+                  <div className="subst-vs-eyebrow" style={{color:'var(--gold)'}}>ELYON completo</div>
+                  <div className="subst-vs-val" style={{color:'var(--gold)'}}>a partir de R$297<span style={{fontSize:16,fontWeight:500}}>/mês</span></div>
+                </div>
+                <div style={{borderLeft:'1px solid var(--border)',height:48,alignSelf:'center'}} />
+                <div style={{fontSize:13,color:'var(--sub)',maxWidth:240,lineHeight:1.6}}>
+                  Com diagnóstico, benchmark de nicho, IA contextual e pipeline 360° — na mesma plataforma.
+                </div>
               </div>
             </div>
           </section>
@@ -1059,15 +1140,41 @@ export default function LandingPage() {
           {/* CTA B */}
           <section className="cta-b">
             <div className="lp-container">
-              <h2 className="cta-b-h lp-fade"><span>Seu CPL benchmark</span><br /><em>em 3 minutos.</em><br /><span>Grátis.</span></h2>
-              <p className="cta-b-sub lp-fade">Informe seu nicho e budget. O ELYON calcula CPL máximo lucrativo, ROAS break-even e mostra onde você está perdendo dinheiro — comparado com o mercado real.</p>
-              <div style={{position:'relative',zIndex:1,display:'flex',gap:14,justifyContent:'center',alignItems:'center',marginBottom:28}} className="lp-fade">
-                <Link href="/sign-up" className="btn-p lg">Ver meu benchmark agora →</Link>
+              <div className="section-eyebrow section-eyebrow-c lp-fade" style={{justifyContent:'center'}}>Comece agora — gratuito</div>
+              <h2 className="cta-b-h lp-fade"><em>Qual é o seu CPL</em><br /><span>benchmark hoje?</span></h2>
+              <p className="cta-b-sub lp-fade">Escolha seu perfil e veja exatamente o que o ELYON entrega para você.</p>
+
+              {/* Persona cards */}
+              <div className="cta-persona-grid lp-fade lp-d1">
+                <Link href="/sign-up" className="cta-persona">
+                  <div className="cta-persona-ico">🏬</div>
+                  <div className="cta-persona-who">Dono de negócio</div>
+                  <div className="cta-persona-pain">Quero saber se meu CPL está caro para o meu nicho</div>
+                  <div className="cta-persona-action">Ver benchmark do meu segmento →</div>
+                </Link>
+                <Link href="/sign-up" className="cta-persona" style={{borderColor:'rgba(245,165,0,.2)',background:'linear-gradient(135deg,rgba(245,165,0,.04),var(--surface))'}}>
+                  <div className="cta-persona-ico">📊</div>
+                  <div className="cta-persona-who">Gestor de tráfego</div>
+                  <div className="cta-persona-pain">Quero provar ROI para meu cliente com dado real — não com feeling</div>
+                  <div className="cta-persona-action">Rodar Pipeline 360° do cliente →</div>
+                </Link>
+                <Link href="/sign-up" className="cta-persona">
+                  <div className="cta-persona-ico">🏢</div>
+                  <div className="cta-persona-who">Agência de marketing</div>
+                  <div className="cta-persona-pain">Quero escalar 15 clientes com IA sem contratar analistas</div>
+                  <div className="cta-persona-action">Ver plano Avançada →</div>
+                </Link>
               </div>
-              <div className="trust-row lp-fade" style={{justifyContent:'center',marginTop:16}}>
+
+              {/* Main CTA */}
+              <div style={{position:'relative',zIndex:1,display:'flex',gap:14,justifyContent:'center',alignItems:'center',marginBottom:16}} className="lp-fade lp-d2">
+                <Link href="/sign-up" className="btn-p lg">Começar grátis — sem cartão →</Link>
+              </div>
+              <div className="trust-row lp-fade lp-d2" style={{justifyContent:'center',marginTop:8}}>
                 <div className="trust-item"><span className="trust-check">✓</span>Sem cartão de crédito</div>
                 <div className="trust-item"><span className="trust-check">✓</span>Resultado em 3 minutos</div>
                 <div className="trust-item"><span className="trust-check">✓</span>80+ nichos cobertos</div>
+                <div className="trust-item"><span className="trust-check">✓</span>Cancele quando quiser</div>
               </div>
             </div>
           </section>
