@@ -474,20 +474,25 @@ export default function LandingPage() {
     return () => clearInterval(t)
   }, [])
 
-  // Scroll fade — também ativa elementos já visíveis no viewport
+  // Scroll fade — duplo rAF garante que o layout já terminou antes de checar viewport
   useEffect(() => {
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('lp-visible');obs.unobserve(e.target)} })
     }, { threshold: 0.08, rootMargin: '0px 0px -20px 0px' })
-    document.querySelectorAll('.lp-fade').forEach(el => {
-      const rect = (el as HTMLElement).getBoundingClientRect()
-      if (rect.top < window.innerHeight) {
-        el.classList.add('lp-visible')
-      } else {
-        obs.observe(el)
-      }
-    })
-    return () => obs.disconnect()
+
+    const activate = () => {
+      document.querySelectorAll('.lp-fade').forEach(el => {
+        const rect = (el as HTMLElement).getBoundingClientRect()
+        if (rect.top < window.innerHeight + 50) {
+          el.classList.add('lp-visible')
+        } else {
+          obs.observe(el)
+        }
+      })
+    }
+    // Duplo rAF: primeiro frame confirma mount, segundo confirma layout completo
+    const id = requestAnimationFrame(() => requestAnimationFrame(activate))
+    return () => { cancelAnimationFrame(id); obs.disconnect() }
   }, [activeVar])
 
   // Counters

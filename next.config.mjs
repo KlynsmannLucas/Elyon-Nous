@@ -4,7 +4,7 @@ import { withSentryConfig } from '@sentry/nextjs'
 const CSP = [
   "default-src 'self'",
   // Next.js precisa de unsafe-inline para scripts/estilos gerados em build
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://accounts.google.com https://*.clerk.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://accounts.google.com https://*.clerk.com https://*.clerk.accounts.dev",
   "style-src 'self' 'unsafe-inline'",
   // Imagens: self + data URIs + qualquer HTTPS (avatares Clerk, fotos Google, etc.)
   "img-src 'self' data: blob: https:",
@@ -16,6 +16,7 @@ const CSP = [
     "wss://*.supabase.co",
     "https://*.clerk.com",
     "https://*.clerk.accounts.dev",
+    "https://clerk.elyon-nous.vercel.app",
     "https://api.anthropic.com",
     "https://api.stripe.com",
     "https://*.sentry.io",
@@ -25,7 +26,7 @@ const CSP = [
     "https://googleads.googleapis.com",
   ].join(' '),
   // Stripe usa iframes para o checkout seguro
-  "frame-src https://js.stripe.com https://hooks.stripe.com",
+  "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.com https://*.clerk.accounts.dev",
   // Bloqueia plugins (Flash etc.) e previne injeção de base tag
   "object-src 'none'",
   "base-uri 'self'",
