@@ -30,7 +30,7 @@ const CSP = [
   // Bloqueia plugins (Flash etc.) e previne injeção de base tag
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  "form-action 'self' https://*.clerk.com https://*.clerk.accounts.dev",
   // Previne clickjacking (reforça X-Frame-Options)
   "frame-ancestors 'self'",
   "upgrade-insecure-requests",
