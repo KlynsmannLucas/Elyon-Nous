@@ -339,9 +339,9 @@ export default function DashboardPage() {
   const TRIAL_DAYS = 7
   const createdAt      = typeof user?.createdAt === 'number' ? user.createdAt : Date.now()
   const trialMsLeft    = (createdAt + TRIAL_DAYS * 24 * 60 * 60 * 1000) - Date.now()
-  const inTrial        = trialMsLeft > 0
+  const inTrial        = user ? trialMsLeft > 0 : false  // sem user = sem trial
   const trialDaysLeft  = Math.ceil(trialMsLeft / (24 * 60 * 60 * 1000))
-  const hasAccess      = hasActivePlan(userPlan) || inTrial
+  const hasAccess      = user ? (hasActivePlan(userPlan) || inTrial) : false  // sem user = sem acesso
 
   // Durante trial sem plano, aplica limites do tier 'trial' (3 clientes, 4 estratégias/hora)
   const effectivePlan = hasActivePlan(userPlan) ? userPlan : (inTrial ? 'trial' : 'free')
@@ -395,8 +395,16 @@ export default function DashboardPage() {
   // ── Sincronização com banco de dados ──────────────────────────────────────────
   const [dbLoaded, setDbLoaded] = useState(false)
 
+  // Safety net: se dbLoaded não for setado em 10s (fetch travado), libera a tela
   useEffect(() => {
-    if (!isLoaded || !user) return
+    const t = setTimeout(() => setDbLoaded(true), 10000)
+    return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    if (!isLoaded) return
+    // Auth carregou mas sem user (sessão inválida) → libera UI imediatamente
+    if (!user) { setDbLoaded(true); return }
     fetch('/api/clients')
       .then((r) => r.json())
       .then(({ clients, _dbError }) => {
