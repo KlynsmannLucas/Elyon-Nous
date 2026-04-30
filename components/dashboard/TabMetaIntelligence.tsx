@@ -2,6 +2,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  Cell, PieChart, Pie, LabelList, ComposedChart, Line,
+} from 'recharts'
 import { useAppStore } from '@/lib/store'
 
 type LearningPhase = 'learning' | 'learning_limited' | 'stable' | 'inactive'
@@ -531,7 +535,8 @@ function PlatformPanel({ platforms }: { platforms: PlatformBreakdown[] }) {
       <h3 className="font-display font-bold text-white mb-4 flex items-center gap-2">
         <span>📱</span> Distribuição por Plataforma
       </h3>
-      <div className="space-y-5">
+      <PlatformBarChart platforms={platforms} />
+      <div className="mt-4 space-y-4">
         {Object.entries(grouped).map(([plat, rows]) => {
           const color = platformColor[plat] || '#64748B'
           const totalSpend = rows.reduce((s, r) => s + r.spend, 0)
@@ -545,7 +550,6 @@ function PlatformPanel({ platforms }: { platforms: PlatformBreakdown[] }) {
                   <span className="font-semibold text-white text-sm">{platformLabel[plat] || plat}</span>
                 </div>
                 <div className="flex gap-3 text-xs text-slate-500">
-                  <span className="text-[#F0B429] font-semibold">{fmt(totalSpend)}</span>
                   {totalLeads > 0 && <span className="text-[#38BDF8]">{totalLeads} leads</span>}
                   {platCpl    > 0 && <span className="text-slate-300">CPL R${platCpl}</span>}
                 </div>
@@ -636,6 +640,185 @@ function DemoPanel({ demo }: { demo: DemoBreakdown[] }) {
         })}
       </div>
     </div>
+  )
+}
+
+// ── Campaign Spend + Leads Chart ─────────────────────────────────────────
+function CampaignSpendChart({ campaigns }: { campaigns: Campaign[] }) {
+  const top = [...campaigns]
+    .filter(c => c.spend30 > 0)
+    .sort((a, b) => b.spend30 - a.spend30)
+    .slice(0, 8)
+    .map(c => ({
+      name: c.name.length > 24 ? c.name.slice(0, 24) + '…' : c.name,
+      spend: Math.round(c.spend30),
+      leads: c.leads30,
+      cpl: c.cpl30,
+    }))
+
+  if (top.length === 0) return null
+
+  const hasLeads = top.some(c => c.leads > 0)
+
+  return (
+    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+      <h3 className="font-display font-bold text-white mb-1 flex items-center gap-2">
+        <span>📊</span> Investimento por Campanha
+      </h3>
+      <p className="text-xs text-slate-500 mb-5">Top {top.length} campanhas — últimos 30 dias</p>
+      <ResponsiveContainer width="100%" height={Math.max(200, top.length * 48)}>
+        <ComposedChart data={top} layout="vertical" margin={{ left: 8, right: hasLeads ? 56 : 56, top: 0, bottom: 0 }}>
+          <XAxis type="number" hide />
+          <YAxis
+            type="category" dataKey="name" width={170}
+            tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false}
+          />
+          {hasLeads && (
+            <YAxis
+              yAxisId="leads" orientation="right" type="number"
+              tick={{ fill: '#38BDF8', fontSize: 10 }} axisLine={false} tickLine={false}
+              width={36}
+            />
+          )}
+          <Tooltip
+            cursor={{ fill: 'rgba(255,255,255,0.025)' }}
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null
+              const d = payload[0].payload
+              return (
+                <div style={{ background: '#16161A', border: '1px solid #2A2A30', borderRadius: 10, padding: '10px 14px', fontSize: 12 }}>
+                  <div className="text-slate-300 font-semibold mb-2">{d.name}</div>
+                  <div className="text-[#F0B429]">Investido: R${d.spend.toLocaleString('pt-BR')}</div>
+                  {d.leads > 0 && <div className="text-[#38BDF8]">Leads: {d.leads}</div>}
+                  {d.cpl > 0 && <div className="text-slate-400">CPL: R${d.cpl}</div>}
+                </div>
+              )
+            }}
+          />
+          <Bar dataKey="spend" name="Investido" fill="#F0B429" radius={[0, 6, 6, 0]} barSize={18}>
+            <LabelList
+              dataKey="spend" position="right"
+              formatter={(v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v}`}
+              style={{ fill: '#94A3B8', fontSize: 10 }}
+            />
+          </Bar>
+          {hasLeads && (
+            <Line
+              yAxisId="leads" dataKey="leads" name="Leads"
+              stroke="#38BDF8" strokeWidth={2} dot={{ fill: '#38BDF8', r: 4 }}
+              type="monotone"
+            />
+          )}
+        </ComposedChart>
+      </ResponsiveContainer>
+      <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
+        <span><span className="inline-block w-3 h-2 rounded mr-1.5" style={{ background: '#F0B429' }} />Investido (barra)</span>
+        {hasLeads && <span><span className="inline-block w-3 h-0.5 rounded mr-1.5 bg-[#38BDF8]" />Leads (linha)</span>}
+      </div>
+    </div>
+  )
+}
+
+// ── Objective Donut Chart ─────────────────────────────────────────────────
+const OBJ_COLORS = ['#1877F2', '#38BDF8', '#22C55E', '#F0B429', '#A78BFA', '#F472B6', '#FB923C', '#64748B']
+
+function ObjectiveDonut({ byObjective, totalSpend }: { byObjective: Record<string, ObjGroup>; totalSpend: number }) {
+  const data = Object.entries(byObjective)
+    .filter(([, g]) => g.totalSpend > 0)
+    .map(([, g], i) => ({ name: g.label, value: Math.round(g.totalSpend), color: OBJ_COLORS[i % OBJ_COLORS.length] }))
+
+  if (data.length === 0) return <div className="text-xs text-slate-600">Nenhum dado disponível.</div>
+
+  return (
+    <div>
+      <ResponsiveContainer width="100%" height={200}>
+        <PieChart>
+          <Pie data={data} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value">
+            {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+          </Pie>
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null
+              const d = payload[0].payload
+              const pct = totalSpend > 0 ? ((d.value / totalSpend) * 100).toFixed(1) : '0'
+              return (
+                <div style={{ background: '#16161A', border: '1px solid #2A2A30', borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
+                  <div style={{ color: d.color }} className="font-semibold mb-1">{d.name}</div>
+                  <div className="text-slate-300">R${d.value.toLocaleString('pt-BR')}</div>
+                  <div className="text-slate-500">{pct}% do total</div>
+                </div>
+              )
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+        {data.map(d => (
+          <div key={d.name} className="flex items-center gap-1.5 text-xs">
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: d.color }} />
+            <span className="text-slate-400">{d.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Platform Bar Chart ────────────────────────────────────────────────────
+function PlatformBarChart({ platforms }: { platforms: PlatformBreakdown[] }) {
+  const platformLabel: Record<string, string> = {
+    facebook: 'Facebook', instagram: 'Instagram', audience_network: 'Aud. Network', messenger: 'Messenger',
+  }
+  const platformColor: Record<string, string> = {
+    facebook: '#1877F2', instagram: '#E1306C', audience_network: '#F0B429', messenger: '#00B2FF',
+  }
+
+  const grouped: Record<string, { spend: number; leads: number }> = {}
+  for (const p of platforms) {
+    if (!grouped[p.platform]) grouped[p.platform] = { spend: 0, leads: 0 }
+    grouped[p.platform].spend += p.spend
+    grouped[p.platform].leads += p.leads
+  }
+
+  const data = Object.entries(grouped)
+    .sort(([, a], [, b]) => b.spend - a.spend)
+    .map(([plat, totals]) => ({
+      name: platformLabel[plat] || plat,
+      spend: Math.round(totals.spend),
+      leads: totals.leads,
+      color: platformColor[plat] || '#64748B',
+    }))
+
+  if (data.length === 0) return null
+
+  return (
+    <ResponsiveContainer width="100%" height={160}>
+      <BarChart data={data} margin={{ left: 0, right: 8, top: 4, bottom: 4 }}>
+        <XAxis dataKey="name" tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} />
+        <YAxis hide />
+        <Tooltip
+          content={({ active, payload }) => {
+            if (!active || !payload?.length) return null
+            const d = payload[0].payload
+            return (
+              <div style={{ background: '#16161A', border: '1px solid #2A2A30', borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
+                <div style={{ color: d.color }} className="font-semibold mb-1">{d.name}</div>
+                <div className="text-[#F0B429]">R${d.spend.toLocaleString('pt-BR')}</div>
+                {d.leads > 0 && <div className="text-[#38BDF8]">{d.leads} leads</div>}
+              </div>
+            )
+          }}
+        />
+        <Bar dataKey="spend" radius={[6, 6, 0, 0]} barSize={40}>
+          {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+          <LabelList
+            dataKey="spend" position="top"
+            formatter={(v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v}`}
+            style={{ fill: '#94A3B8', fontSize: 10 }}
+          />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   )
 }
 
@@ -971,25 +1154,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
               <h3 className="font-display font-bold text-white mb-4 flex items-center gap-2">
                 <span>📊</span> Distribuição por Objetivo
               </h3>
-              <div className="space-y-2.5">
-                {Object.entries(data.byObjective).map(([key, g]) => {
-                  const pct = data.totals.spend > 0 ? (g.totalSpend / data.totals.spend) * 100 : 0
-                  return (
-                    <div key={key}>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-slate-400 truncate max-w-[160px]">{g.label}</span>
-                        <span className="text-slate-300 font-semibold">{fmt(g.totalSpend)}</span>
-                      </div>
-                      <div className="h-1.5 bg-[#1E1E24] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #1877F2, #38BDF8)' }} />
-                      </div>
-                    </div>
-                  )
-                })}
-                {Object.keys(data.byObjective).length === 0 && (
-                  <div className="text-xs text-slate-600">Nenhum dado disponível.</div>
-                )}
-              </div>
+              <ObjectiveDonut byObjective={data.byObjective} totalSpend={data.totals.spend} />
             </div>
           </div>
 
@@ -1035,6 +1200,9 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
             {(data.platformBreakdown?.length ?? 0) > 0 && <PlatformPanel platforms={data.platformBreakdown} />}
             {(data.demoBreakdown?.length ?? 0) > 0 && <DemoPanel demo={data.demoBreakdown} />}
           </div>
+
+          {/* Gráfico de gasto por campanha */}
+          {data.campaigns.length > 0 && <CampaignSpendChart campaigns={data.campaigns} />}
 
           {/* Tabela de campanhas */}
           {data.campaigns.length > 0 && (() => {
