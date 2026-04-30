@@ -41,9 +41,9 @@ const LP_CSS = `
 .btn-p.lg{font-size:17px;padding:16px 36px;border-radius:12px;}
 .btn-s{background:transparent;color:var(--sub);font-size:15px;padding:14px 24px;border-radius:10px;border:1px solid var(--border-hi);cursor:pointer;font-family:var(--f-body);transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;}
 .btn-s:hover{color:var(--text);border-color:rgba(245,165,0,.3);}
-/* FADE UP */
-.lp-fade{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease;}
-.lp-fade.lp-visible{opacity:1;transform:none;}
+/* FADE UP — elementos visíveis por padrão; JS adiciona lp-js ao body para ativar o efeito */
+body.lp-js .lp-fade{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease;}
+body.lp-js .lp-fade.lp-visible{opacity:1;transform:none;}
 .lp-d1{transition-delay:.1s;}.lp-d2{transition-delay:.2s;}.lp-d3{transition-delay:.3s;}
 /* TERMINAL */
 .terminal{background:#07080D;border:1px solid rgba(34,197,94,.25);border-radius:14px;overflow:hidden;box-shadow:0 0 40px rgba(34,197,94,.08),0 24px 64px rgba(0,0,0,.5);margin-bottom:28px;}
@@ -421,7 +421,8 @@ export default function LandingPage() {
     const canvas = canvasRef.current
     if (!canvas) return
     const c = canvas
-    const ctx = c.getContext('2d')!
+    const ctx = c.getContext('2d')
+    if (!ctx) return
     function resize() { c.width = window.innerWidth; c.height = window.innerHeight }
     window.addEventListener('resize', resize); resize()
     type P = { x:number;y:number;vx:number;vy:number;size:number;alpha:number;color:string }
@@ -474,23 +475,26 @@ export default function LandingPage() {
     return () => clearInterval(t)
   }, [])
 
-  // Scroll fade — duplo rAF garante que o layout já terminou antes de checar viewport
+  // Scroll fade — progressive enhancement: conteúdo visível por padrão, fade ativado após JS pronto
   useEffect(() => {
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('lp-visible');obs.unobserve(e.target)} })
     }, { threshold: 0.08, rootMargin: '0px 0px -20px 0px' })
 
     const activate = () => {
+      const vh = window.innerHeight || document.documentElement.clientHeight || 600
+      // Marca elementos visíveis ANTES de ativar o CSS de fade (sem flash)
       document.querySelectorAll('.lp-fade').forEach(el => {
         const rect = (el as HTMLElement).getBoundingClientRect()
-        if (rect.top < window.innerHeight + 50) {
+        if (rect.top < vh + 50) {
           el.classList.add('lp-visible')
         } else {
           obs.observe(el)
         }
       })
+      // Só ativa opacity:0 depois que os visíveis já têm lp-visible
+      document.body.classList.add('lp-js')
     }
-    // Duplo rAF: primeiro frame confirma mount, segundo confirma layout completo
     const id = requestAnimationFrame(() => requestAnimationFrame(activate))
     return () => { cancelAnimationFrame(id); obs.disconnect() }
   }, [activeVar])
