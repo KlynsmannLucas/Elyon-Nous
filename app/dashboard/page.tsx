@@ -400,13 +400,8 @@ export default function DashboardPage() {
   }, [buildExtraData])
 
   // ── Sincronização com banco de dados ──────────────────────────────────────────
-  const [dbLoaded, setDbLoaded] = useState(false)
-
-  // Safety net: se dbLoaded não for setado em 3s (fetch travado), libera a tela
-  useEffect(() => {
-    const t = setTimeout(() => setDbLoaded(true), 3000)
-    return () => clearTimeout(t)
-  }, [])
+  // Começa como true para não bloquear a UI — clientes carregam em background
+  const [dbLoaded, setDbLoaded] = useState(true)
 
   useEffect(() => {
     if (!isLoaded) return
