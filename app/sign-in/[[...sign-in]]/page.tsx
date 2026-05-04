@@ -21,6 +21,7 @@ export default function SignInPage() {
 
       {/* Componente Clerk com tema escuro ELYON */}
       <SignIn
+        forceRedirectUrl="/dashboard"
         appearance={{
           variables: {
             colorPrimary: '#F0B429',

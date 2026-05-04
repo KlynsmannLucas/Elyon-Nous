@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useAuth } from '@clerk/nextjs'
 import Link from 'next/link'
 
 // ── CSS ──────────────────────────────────────────────────────────────────────
@@ -406,6 +407,9 @@ const BENCHMARKS = [
 
 // ── COMPONENT ────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const { isSignedIn } = useAuth()
+  const entrarHref = isSignedIn ? '/dashboard' : '/sign-in'
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeVar] = useState<'A' | 'B'>('B')
   const [nicheIdx, setNicheIdx] = useState(0)
@@ -538,7 +542,7 @@ export default function LandingPage() {
           <a href="#precos">Preços</a>
         </div>
         <div className="lp-nav-actions">
-          <Link href="/sign-in" className="lp-ghost-link">Entrar</Link>
+          <Link href={entrarHref} className="lp-ghost-link">Entrar</Link>
           <Link href="/sign-up" className="lp-nav-cta">Ver benchmark grátis →</Link>
         </div>
       </nav>
@@ -564,7 +568,7 @@ export default function LandingPage() {
                   </div>
                   <div className="hero-a-ctas">
                     <Link href="/sign-up" className="btn-p">Ver dados do meu nicho →</Link>
-                    <Link href="/sign-in" style={{fontSize:14,color:'var(--sub)',textDecoration:'none'}}>Já tenho conta</Link>
+                    <Link href={entrarHref} style={{fontSize:14,color:'var(--sub)',textDecoration:'none'}}>Já tenho conta</Link>
                   </div>
                   <div className="trust-row">
                     <div className="trust-item"><span className="trust-check">✓</span>Análise gratuita</div>
@@ -742,7 +746,7 @@ export default function LandingPage() {
                   <p className="hero-b-sub">O ELYON cruza seus dados reais com o benchmark do seu segmento — e mostra exatamente onde cada real do seu budget está sendo desperdiçado. Em 3 minutos. Sem achismo. Sem reunião.</p>
                   <div style={{display:'flex',gap:14,alignItems:'center',flexWrap:'wrap',marginBottom:24}}>
                     <Link href="/sign-up" className="btn-p">Ver benchmark do meu nicho →</Link>
-                    <Link href="/sign-in" className="btn-s">Já tenho conta</Link>
+                    <Link href={entrarHref} className="btn-s">Já tenho conta</Link>
                   </div>
                   <div className="trust-row">
                     <div className="trust-item"><span className="trust-check">✓</span>Grátis para começar</div>
@@ -1200,7 +1204,7 @@ export default function LandingPage() {
               <a href="#features">Recursos</a>
               <a href="#nichos">Nichos</a>
               <a href="#precos">Preços</a>
-              <Link href="/sign-in">Entrar</Link>
+              <Link href={entrarHref}>Entrar</Link>
             </div>
             <div style={{display:'flex',gap:16,flexWrap:'wrap',justifyContent:'center'}}>
               <Link href="/termos" style={{fontSize:12,color:'var(--muted)',textDecoration:'none'}}>Termos de Uso</Link>
