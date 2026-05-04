@@ -809,7 +809,8 @@ export default function DashboardPage() {
       )
     }
 
-    const atClientLimit = savedClients.length >= planLimits.maxClients
+    // Só verifica limite depois que o Clerk carregou — evita falso "Limite atingido"
+    const atClientLimit = isLoaded && savedClients.length >= planLimits.maxClients
     return (
       <ClientSelector
         savedClients={savedClients}

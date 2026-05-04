@@ -14,7 +14,7 @@ export interface PlanLimits {
 
 const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   free: {
-    maxClients: 0,
+    maxClients: 1,
     maxStrategiesPerHour: 0,
     hasConnections: false,
     hasMultipleAccounts: false,
