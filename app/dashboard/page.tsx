@@ -761,7 +761,7 @@ export default function DashboardPage() {
               <p className="text-xs mb-2" style={{ color: syncMsg.includes('ativado') ? '#22C55E' : '#F0B429' }}>{syncMsg}</p>
             )}
             <button
-              onClick={() => signOut({ redirectUrl: '/sign-in' })}
+              onClick={async () => { await signOut(); window.location.href = '/sign-in' }}
               className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 border border-[#2A2A30] transition-colors"
             >
               Sair da conta
@@ -827,7 +827,7 @@ export default function DashboardPage() {
         maxClients={planLimits.maxClients}
         user={user}
         userPlan={userPlan}
-        onSignOut={() => signOut({ redirectUrl: '/sign-in' })}
+        onSignOut={async () => { await signOut(); window.location.href = '/sign-in' }}
         auditCache={auditCache}
       />
     )
@@ -901,7 +901,7 @@ export default function DashboardPage() {
         clientData={clientData}
         userPlan={userPlan}
         user={user}
-        onSignOut={() => signOut({ redirectUrl: '/sign-in' })}
+        onSignOut={async () => { await signOut(); window.location.href = '/sign-in' }}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
       />
