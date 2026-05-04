@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
@@ -328,8 +329,14 @@ function ClientSelector({
 
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const router             = useRouter()
   const { user, isLoaded } = useUser()
   const { signOut }        = useClerk()
+
+  // Redirect client-side se auth carregou e não tem usuário
+  useEffect(() => {
+    if (isLoaded && !user) router.replace('/sign-in')
+  }, [isLoaded, user, router])
   const userPlan   = user?.publicMetadata?.plan as string | undefined
   const termsAccepted = Boolean(user?.publicMetadata?.termsAcceptedAt)
   const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(false)
@@ -395,9 +402,9 @@ export default function DashboardPage() {
   // ── Sincronização com banco de dados ──────────────────────────────────────────
   const [dbLoaded, setDbLoaded] = useState(false)
 
-  // Safety net: se dbLoaded não for setado em 10s (fetch travado), libera a tela
+  // Safety net: se dbLoaded não for setado em 3s (fetch travado), libera a tela
   useEffect(() => {
-    const t = setTimeout(() => setDbLoaded(true), 10000)
+    const t = setTimeout(() => setDbLoaded(true), 3000)
     return () => clearTimeout(t)
   }, [])
 
