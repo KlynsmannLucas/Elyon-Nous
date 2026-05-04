@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Plano "${plan}" não está configurado. Contate o suporte.` }, { status: 400 })
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'https://elyon-nous.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'https://elyonnous.com'
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',

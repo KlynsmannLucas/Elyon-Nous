@@ -15,7 +15,7 @@ export async function POST(_req: NextRequest) {
       return NextResponse.json({ error: 'Sem assinatura ativa.' }, { status: 400 })
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://elyon-nous.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://elyonnous.com'
     const session = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,
       return_url: `${appUrl}/dashboard`,

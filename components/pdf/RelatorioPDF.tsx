@@ -516,7 +516,7 @@ function PageActionPlan({
       <View style={{ position: 'absolute', bottom: 40, left: 40, right: 40 }}>
         <View style={styles.divider} />
         <Text style={{ fontSize: 8, color: '#2A2A30', textAlign: 'center' }}>
-          ELYON NOUS · Relatório gerado automaticamente · elyon-nous.vercel.app
+          ELYON NOUS · Relatório gerado automaticamente · elyonnous.com
         </Text>
       </View>
     </Page>

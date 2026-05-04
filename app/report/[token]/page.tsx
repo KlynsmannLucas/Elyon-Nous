@@ -39,7 +39,7 @@ async function fetchReport(
   wrongPassword?: boolean
 }> {
   try {
-    const base = process.env.NEXT_PUBLIC_APP_URL || 'https://elyon-nous.vercel.app'
+    const base = process.env.NEXT_PUBLIC_APP_URL || 'https://elyonnous.com'
     const url  = pw
       ? `${base}/api/report?token=${token}&pw=${encodeURIComponent(pw)}`
       : `${base}/api/report?token=${token}`

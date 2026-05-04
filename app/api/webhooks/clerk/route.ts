@@ -54,7 +54,7 @@ const WELCOME_HTML = (firstName: string) => `
       </div>
 
       <!-- CTA -->
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://elyon-nous.vercel.app'}/dashboard"
+      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://elyonnous.com'}/dashboard"
         style="display:block;text-align:center;background:linear-gradient(135deg,#F5A500,#FFD166);color:#000;font-weight:800;font-size:15px;padding:16px;border-radius:14px;text-decoration:none;">
         Acessar meu dashboard →
       </a>
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendKey}` },
         body: JSON.stringify({
-          from:    'Elyon <oi@elyon-nous.vercel.app>',
+          from:    'Elyon <oi@elyonnous.com>',
           to:      [email],
           subject: `Bem-vindo ao Elyon${firstName ? `, ${firstName}` : ''}! Seu dashboard está pronto 🚀`,
           html:    WELCOME_HTML(firstName),

@@ -74,7 +74,7 @@ export async function GET(req: Request) {
         .limit(1)
         .single()
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://elyon-nous.vercel.app'
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://elyonnous.com'
       const reportUrl = share ? `${appUrl}/report/${share.token}` : appUrl
 
       const rd = share?.report_data as any
