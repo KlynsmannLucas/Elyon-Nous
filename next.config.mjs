@@ -16,7 +16,8 @@ const CSP = [
     "wss://*.supabase.co",
     "https://*.clerk.com",
     "https://*.clerk.accounts.dev",
-    "https://clerk.elyon-nous.vercel.app",
+    "https://accounts.google.com",
+    "https://oauth2.googleapis.com",
     "https://api.anthropic.com",
     "https://api.stripe.com",
     "https://*.sentry.io",
@@ -26,7 +27,7 @@ const CSP = [
     "https://googleads.googleapis.com",
   ].join(' '),
   // Stripe usa iframes para o checkout seguro
-  "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.com https://*.clerk.accounts.dev",
+  "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.com https://*.clerk.accounts.dev https://accounts.google.com",
   // Bloqueia plugins (Flash etc.) e previne injeção de base tag
   "object-src 'none'",
   "base-uri 'self'",

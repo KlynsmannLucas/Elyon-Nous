@@ -2,7 +2,6 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
@@ -329,14 +328,9 @@ function ClientSelector({
 
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const router             = useRouter()
   const { user, isLoaded } = useUser()
   const { signOut }        = useClerk()
 
-  // Redirect client-side se auth carregou e não tem usuário
-  useEffect(() => {
-    if (isLoaded && !user) router.replace('/sign-in')
-  }, [isLoaded, user, router])
   const userPlan   = user?.publicMetadata?.plan as string | undefined
   const termsAccepted = Boolean(user?.publicMetadata?.termsAcceptedAt)
   const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(false)
