@@ -5,14 +5,16 @@ const isAuthRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)'])
 
 export default clerkMiddleware((auth, req) => {
   const { userId } = auth()
+  const url = new URL(req.url)
+
+  // ?logout=1 → usuário acabou de pedir sign-out; deixa chegar na tela de login
+  // mesmo que o cookie de sessão ainda exista (signOut() é assíncrono)
+  if (url.searchParams.get('logout') === '1') return
 
   // Usuário já logado tentando ir para sign-in/sign-up → manda pro dashboard
   if (userId && isAuthRoute(req)) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
-
-  // Rotas protegidas: proteção feita pelo Clerk via auth().protect()
-  // Não usamos redirect manual para evitar loop com dev-browser-missing
 })
 
 export const config = {

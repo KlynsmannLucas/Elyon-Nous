@@ -755,7 +755,7 @@ export default function DashboardPage() {
               <p className="text-xs mb-2" style={{ color: syncMsg.includes('ativado') ? '#22C55E' : '#F0B429' }}>{syncMsg}</p>
             )}
             <button
-              onClick={() => { signOut().catch(() => {}); window.location.href = '/sign-in' }}
+              onClick={() => { signOut().catch(() => {}); window.location.href = '/sign-in?logout=1' }}
               className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 border border-[#2A2A30] transition-colors"
             >
               Sair da conta
@@ -821,7 +821,7 @@ export default function DashboardPage() {
         maxClients={planLimits.maxClients}
         user={user}
         userPlan={userPlan}
-        onSignOut={() => { signOut().catch(() => {}); window.location.href = '/sign-in' }}
+        onSignOut={() => { signOut().catch(() => {}); window.location.href = '/sign-in?logout=1' }}
         auditCache={auditCache}
       />
     )
@@ -895,7 +895,7 @@ export default function DashboardPage() {
         clientData={clientData}
         userPlan={userPlan}
         user={user}
-        onSignOut={() => { signOut().catch(() => {}); window.location.href = '/sign-in' }}
+        onSignOut={() => { signOut().catch(() => {}); window.location.href = '/sign-in?logout=1' }}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
       />

@@ -253,14 +253,6 @@ export default function PerfilPage() {
     return { label: s,  color: '#64748B' }
   }
 
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#F0B429]/30 border-t-[#F0B429] rounded-full animate-spin" />
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-[#0A0A0B] px-4 py-8">
       {/* Navbar */}
@@ -278,7 +270,7 @@ export default function PerfilPage() {
           ELYON
         </span>
         <button
-          onClick={() => signOut({ redirectUrl: '/sign-in' })}
+          onClick={() => { signOut().catch(() => {}); window.location.href = '/sign-in?logout=1' }}
           className="text-sm text-slate-600 hover:text-red-400 transition-colors flex items-center gap-1.5"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -880,7 +872,7 @@ export default function PerfilPage() {
 
                   <div className="pt-2 border-t border-[#2A2A30]">
                     <button
-                      onClick={() => signOut({ redirectUrl: '/sign-in' })}
+                      onClick={() => { signOut().catch(() => {}); window.location.href = '/sign-in?logout=1' }}
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm text-red-400 border border-red-400/20 hover:bg-red-400/05 transition-all"
                     >
                       Sair desta conta
