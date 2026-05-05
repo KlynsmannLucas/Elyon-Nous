@@ -34,7 +34,7 @@ async function fetchAdLibraryContext(accessToken: string, niche: string, theme: 
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { clientData: _cd, persona, platform, theme: _theme, role, metaAccessToken } = await req.json()

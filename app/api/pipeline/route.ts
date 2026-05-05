@@ -64,7 +64,7 @@ async function callLLMJson<T>(anthropic: Anthropic, prompt: string, maxTokens: n
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return new Response('Unauthorized', { status: 401 })
 
   const input = await req.json()

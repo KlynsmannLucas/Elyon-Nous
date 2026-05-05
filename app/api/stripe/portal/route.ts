@@ -5,7 +5,7 @@ import { stripe } from '@/lib/stripe'
 
 export async function POST(_req: NextRequest) {
   try {
-    const { userId } = auth()
+    const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const user = await currentUser()

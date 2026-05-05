@@ -27,7 +27,7 @@ const FREE_LIMIT = 1
 
 // GET /api/clients — lista todos os clientes do usuário autenticado
 export async function GET() {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!supabaseAdmin) {
@@ -81,7 +81,7 @@ export async function GET() {
 
 // POST /api/clients — cria ou atualiza (upsert) um cliente
 export async function POST(req: Request) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!supabaseAdmin) {
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
       const { count } = await supabaseAdmin
         .from('clients').select('id', { count: 'exact', head: true }).eq('user_id', userId)
 
-      const user = await clerkClient().users.getUser(userId)
+      const user = await (await clerkClient()).users.getUser(userId)
       const plan = (user.publicMetadata?.plan as string | undefined) ?? ''
       const limit = PLAN_LIMITS[plan] ?? FREE_LIMIT
 

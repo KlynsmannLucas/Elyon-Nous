@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export async function DELETE() {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const errors: string[] = []
@@ -19,7 +19,7 @@ export async function DELETE() {
 
   try {
     const { clerkClient } = await import('@clerk/nextjs/server')
-    await clerkClient().users.deleteUser(userId)
+    await (await clerkClient()).users.deleteUser(userId)
   } catch (e: any) {
     errors.push(`clerk: ${e.message}`)
   }

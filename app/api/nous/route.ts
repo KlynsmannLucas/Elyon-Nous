@@ -77,7 +77,7 @@ function buildLocalReply(message: string, context: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
 
   const { rateLimit } = await import('@/lib/rateLimit')
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
   // Sempre busca do Clerk diretamente — JWT pode estar cacheado sem o plano atualizado
   const { clerkClient } = await import('@clerk/nextjs/server')
-  const clerkUser = await clerkClient().users.getUser(userId)
+  const clerkUser = await (await clerkClient()).users.getUser(userId)
   const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
   const hasActivePlan = plan && plan !== 'free'
 

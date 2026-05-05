@@ -21,7 +21,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 // GET — lista agendamentos do usuário
 export async function GET() {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   if (!supabaseAdmin) return NextResponse.json({ schedules: [] })
 
@@ -37,7 +37,7 @@ export async function GET() {
 
 // POST — cria ou atualiza agendamento
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { clientName, emails, frequency = 'weekly', dayOfWeek = 1, active = true } = await req.json()
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE — remove agendamento por clientName
 export async function DELETE(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const clientName = req.nextUrl.searchParams.get('clientName')

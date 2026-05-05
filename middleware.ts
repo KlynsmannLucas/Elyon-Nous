@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server'
 
 const isAuthRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)'])
 
-export default clerkMiddleware((auth, req) => {
-  const { userId } = auth()
+export default clerkMiddleware(async (auth, req) => {
+  const { userId } = await auth()
   const url = new URL(req.url)
 
   // ?logout=1 → usuário acabou de pedir sign-out; deixa chegar na tela de login

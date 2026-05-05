@@ -479,7 +479,7 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
 // ── POST com streaming (keepalive a cada 3s → Vercel Hobby suporta até 60s) ─────
 export async function POST(req: NextRequest) {
   // Verificação de acesso: sempre busca do Clerk diretamente (JWT pode estar cacheado)
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) {
     return new Response('Não autenticado', { status: 401 })
   }
@@ -493,7 +493,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { clerkClient } = await import('@clerk/nextjs/server')
-  const clerkUser = await clerkClient().users.getUser(userId)
+  const clerkUser = await (await clerkClient()).users.getUser(userId)
   const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
   const hasActivePlan = plan && plan !== 'free'
 

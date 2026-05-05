@@ -259,7 +259,7 @@ function buildFallbackAudit(
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth()
+    const { userId } = await auth()
     if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
 
     const { rateLimit } = await import('@/lib/rateLimit')
@@ -271,7 +271,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { clerkClient } = await import('@clerk/nextjs/server')
-    const clerkUser = await clerkClient().users.getUser(userId)
+    const clerkUser = await (await clerkClient()).users.getUser(userId)
     const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
     const inTrial = (Date.now() - clerkUser.createdAt) < 7 * 24 * 60 * 60 * 1000
     if (!plan && !inTrial) {

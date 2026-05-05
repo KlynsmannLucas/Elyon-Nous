@@ -192,7 +192,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { rateLimit } = await import('@/lib/rateLimit')

@@ -40,7 +40,7 @@ async function fetchCompetitorAds(
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { competitorName: _comp, niche: _ni, metaAccessToken } = await req.json()

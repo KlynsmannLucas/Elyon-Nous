@@ -63,7 +63,7 @@ async function fetchAllInsights(accountId: string, accessToken: string, timePara
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
 
   try {

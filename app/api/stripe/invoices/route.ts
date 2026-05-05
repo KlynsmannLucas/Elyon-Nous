@@ -5,11 +5,11 @@ import { stripe } from '@/lib/stripe'
 
 export async function GET() {
   try {
-    const { userId } = auth()
+    const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const { clerkClient } = await import('@clerk/nextjs/server')
-    const clerkUser = await clerkClient().users.getUser(userId)
+    const clerkUser = await (await clerkClient()).users.getUser(userId)
 
     // Tenta usar stripeCustomerId salvo no metadata primeiro
     const stripeCustomerId = (clerkUser.publicMetadata as any)?.stripeCustomerId as string | undefined

@@ -6,7 +6,7 @@ import { fetchRealtimeBenchmarks } from '@/lib/tavily'
 import { sanitizeText } from '@/lib/sanitize'
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
 
   const { rateLimit } = await import('@/lib/rateLimit')

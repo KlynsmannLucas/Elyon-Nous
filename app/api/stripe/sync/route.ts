@@ -14,11 +14,11 @@ const PRICE_TO_PLAN: Record<string, string> = {
 
 export async function POST() {
   try {
-    const { userId } = auth()
+    const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const { clerkClient } = await import('@clerk/nextjs/server')
-    const clerkUser = await clerkClient().users.getUser(userId)
+    const clerkUser = await (await clerkClient()).users.getUser(userId)
     const email = clerkUser.emailAddresses?.[0]?.emailAddress
 
     if (!email) return NextResponse.json({ error: 'Email não encontrado' }, { status: 400 })
@@ -70,7 +70,7 @@ export async function POST() {
     }
 
     // Atualiza Clerk com o plano encontrado
-    await clerkClient().users.updateUserMetadata(userId, {
+    await (await clerkClient()).users.updateUserMetadata(userId, {
       publicMetadata: {
         plan: activePlan,
         stripeCustomerId,

@@ -131,7 +131,7 @@ const PURCHASE_TYPES = ['purchase', 'omni_purchase']
 const MSG_TYPES     = ['onsite_conversion.messaging_conversation_started_7d','messaging_first_reply','onsite_conversion.messaging_first_reply','onsite_conversion.total_messaging_connection']
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
 
   try {

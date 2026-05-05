@@ -3,11 +3,11 @@ import { NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 
 export async function POST() {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   try {
-    await clerkClient().users.updateUser(userId, {
+    await (await clerkClient()).users.updateUser(userId, {
       publicMetadata: {
         termsAcceptedAt: new Date().toISOString(),
         termsVersion: '2025-04',

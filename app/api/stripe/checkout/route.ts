@@ -5,7 +5,7 @@ import { stripe, PLANS, type PlanKey } from '@/lib/stripe'
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth()   // auth() é síncrono no Clerk v5
+    const { userId } = await auth()   // auth() é síncrono no Clerk v5
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }

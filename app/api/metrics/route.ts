@@ -6,7 +6,7 @@ import { getBenchmark } from '@/lib/niche_benchmarks'
 
 // GET — busca métricas do usuário
 export async function GET(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
 // POST — salva nova métrica e retorna análise vs benchmark
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   try {
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE — remove uma métrica
 export async function DELETE(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)

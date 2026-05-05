@@ -27,7 +27,7 @@ async function tavilySearch(query: string, apiKey: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { niche } = await req.json()
