@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const params   = useSearchParams()
   const router   = useRouter()
   const { isLoaded, isSignedIn } = useAuth()
@@ -19,7 +19,6 @@ export default function CheckoutPage() {
       return
     }
 
-    // Cria sessão de checkout
     fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -64,5 +63,23 @@ export default function CheckoutPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+        <div className="text-center max-w-sm">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-5"
+            style={{ background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.25)' }}>
+            <span className="text-2xl animate-pulse">⚡</span>
+          </div>
+          <p className="font-display text-white font-bold text-lg mb-2">Carregando...</p>
+        </div>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   )
 }
