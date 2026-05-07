@@ -63,7 +63,7 @@ export default function RootLayout({
       signUpUrl="/sign-up"
       afterSignInUrl="/dashboard"
       afterSignUpUrl="/dashboard"
-      clerkJSVersion="5.27.0"
+      clerkJSVersion="6"
     >
       <html lang="pt-BR" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}>
         <body className="bg-[#0A0A0B] text-slate-200 font-body antialiased">
