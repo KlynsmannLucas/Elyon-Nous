@@ -283,7 +283,7 @@ const PLANS = [
   {
     name: 'Plataforma',
     desc: 'Acompanhe e ajuste com dados reais',
-    price: 'R$97',
+    price: 'R$297',
     period: '/mês',
     cta: 'Começar agora',
     ctaStyle: 'secondary',
@@ -293,7 +293,7 @@ const PLANS = [
   {
     name: 'Profissional',
     desc: 'Escale campanhas com inteligência',
-    price: 'R$297',
+    price: 'R$997',
     period: '/mês',
     cta: 'Começar agora',
     ctaStyle: 'primary',
@@ -305,7 +305,7 @@ const PLANS = [
   {
     name: 'Avançado',
     desc: 'Decisões estratégicas completas',
-    price: 'R$697',
+    price: 'R$2.997',
     period: '/mês',
     cta: 'Começar agora',
     ctaStyle: 'secondary',
