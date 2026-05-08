@@ -331,13 +331,13 @@ export default function DashboardPage() {
   const { user, isLoaded } = useUser()
   const { signOut }        = useClerk()
 
-  // Timeout: se Clerk demorar >4s para carregar, continua mesmo sem isLoaded
+  // Timeout: se Clerk demorar >3s para carregar, continua mesmo sem isLoaded.
+  // Usa [] para nunca resetar — se isLoaded oscilar, o timer não é cancelado.
   const [clerkTimeout, setClerkTimeout] = useState(false)
   useEffect(() => {
-    if (isLoaded) return
-    const t = setTimeout(() => setClerkTimeout(true), 4000)
+    const t = setTimeout(() => setClerkTimeout(true), 3000)
     return () => clearTimeout(t)
-  }, [isLoaded])
+  }, [])
 
   const userPlan   = user?.publicMetadata?.plan as string | undefined
   const termsAccepted = Boolean(user?.publicMetadata?.termsAcceptedAt)
@@ -368,7 +368,7 @@ export default function DashboardPage() {
 
   const {
     clientData, strategyData, isGenerating,
-    setStrategyData, setIsGenerating, clearAll, wizardStep, setWizardStep,
+    setStrategyData, setIsGenerating, clearAll, setWizardStep,
     savedClients, setSavedClients, saveCurrentClient, loadSavedClient, deleteSavedClient,
     campaignHistory,
     recordStrategyGeneration, getStrategyCountLastHour,
@@ -733,6 +733,12 @@ export default function DashboardPage() {
     } finally {
       setSyncing(false)
     }
+  }
+
+  // ── Não autenticado: redireciona para sign-in ──
+  if (isLoaded && !user) {
+    if (typeof window !== 'undefined') window.location.href = '/sign-in'
+    return null
   }
 
   // ── Sem acesso (trial expirado + sem plano): mostra paywall ──
