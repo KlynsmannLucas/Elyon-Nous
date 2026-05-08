@@ -727,7 +727,7 @@ export default function PerfilPage() {
                   </div>
                   {user?.publicMetadata?.termsAcceptedAt && (
                     <p className="text-[11px] text-slate-600 mt-2">
-                      Termos aceitos em {new Date(user.publicMetadata.termsAcceptedAt as string).toLocaleDateString('pt-BR')}
+                      Termos aceitos em {new Date(String(user.publicMetadata.termsAcceptedAt)).toLocaleDateString('pt-BR')}
                     </p>
                   )}
                 </div>

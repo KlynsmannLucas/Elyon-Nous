@@ -9,6 +9,7 @@ import { sanitizeText } from '@/lib/sanitize'
 interface CampaignGenerateRequest {
   clientName: string
   niche: string
+  objective?: string
   ticketPrice?: number
   grossMargin?: number
   conversionRate?: number
@@ -212,7 +213,7 @@ export async function POST(req: NextRequest) {
 
   body.clientName = sanitizeText(body.clientName, 120)
   body.niche      = sanitizeText(body.niche, 120)
-  if (body.objective) body.objective = sanitizeText(body.objective as any, 300)
+  if (body.objective) body.objective = sanitizeText(body.objective, 300)
 
   if (!body.clientName || !body.niche) {
     return NextResponse.json({ error: 'clientName e niche são obrigatórios' }, { status: 400 })
