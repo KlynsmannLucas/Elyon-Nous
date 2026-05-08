@@ -35,8 +35,9 @@ export async function GET(req: NextRequest) {
 
     // ── META ────────────────────────────────────────────────────────────────────
     if (platform === 'meta') {
-      const clientId     = process.env.META_APP_ID!
-      const clientSecret = process.env.META_APP_SECRET!
+      const clientId     = process.env.META_APP_ID
+      const clientSecret = process.env.META_APP_SECRET
+      if (!clientId || !clientSecret) throw new Error('Credenciais Meta não configuradas no servidor')
       const redirectUri  = `${appOrigin}/api/oauth/callback`
 
       const tokenRes = await fetch(
@@ -66,8 +67,9 @@ export async function GET(req: NextRequest) {
 
     // ── GOOGLE ──────────────────────────────────────────────────────────────────
     if (platform === 'google') {
-      const clientId     = process.env.GOOGLE_CLIENT_ID!
-      const clientSecret = process.env.GOOGLE_CLIENT_SECRET!
+      const clientId     = process.env.GOOGLE_CLIENT_ID
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+      if (!clientId || !clientSecret) throw new Error('Credenciais Google não configuradas no servidor')
       const redirectUri  = `${appOrigin}/api/oauth/callback`
 
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {

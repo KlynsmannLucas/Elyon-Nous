@@ -8,6 +8,7 @@ import { getBenchmark } from '@/lib/niche_benchmarks'
 export async function GET(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+  if (!supabase)  return NextResponse.json({ data: [] })
 
   const { searchParams } = new URL(req.url)
   const clientName = searchParams.get('clientName')
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+  if (!supabase)  return NextResponse.json({ error: 'Banco de dados não configurado' }, { status: 503 })
 
   try {
     const body = await req.json()
@@ -94,6 +96,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+  if (!supabase)  return NextResponse.json({ error: 'Banco de dados não configurado' }, { status: 503 })
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')

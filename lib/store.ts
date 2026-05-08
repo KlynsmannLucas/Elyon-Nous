@@ -319,8 +319,8 @@ export const useAppStore = create<AppStore>()(
       clientConnectedAccounts: {},
 
       connectAccount: (account) => {
-        const clientName = get().clientData?.clientName || '__global__'
         set((s) => {
+          const clientName = s.clientData?.clientName || '__global__'
           const updated = [
             ...(s.clientConnectedAccounts[clientName] || []).filter((a) => a.platform !== account.platform),
             account,
@@ -333,8 +333,8 @@ export const useAppStore = create<AppStore>()(
       },
 
       disconnectAccount: (platform) => {
-        const clientName = get().clientData?.clientName || '__global__'
         set((s) => {
+          const clientName = s.clientData?.clientName || '__global__'
           const updated = (s.clientConnectedAccounts[clientName] || []).filter((a) => a.platform !== platform)
           return {
             connectedAccounts: updated,

@@ -5,14 +5,14 @@ const url  = process.env.NEXT_PUBLIC_SUPABASE_URL  || ''
 const key  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 // Supabase is optional — features that depend on it degrade gracefully
-export const supabase = url && key ? createClient(url, key) : null as any
+export const supabase = url && key ? createClient(url, key) : null
 
 // Cliente admin com service role key (server-side apenas)
 // Se SUPABASE_SERVICE_ROLE_KEY não estiver definido, usa a anon key como fallback
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || key
 export const supabaseAdmin = url && serviceKey
   ? createClient(url, serviceKey, { auth: { persistSession: false } })
-  : null as any
+  : null
 
 // ── Tipos das tabelas ──────────────────────────────────────────────────────────
 export interface StrategyRecord {
@@ -42,6 +42,7 @@ export interface MetricRecord {
 
 /** Busca histórico de estratégias do usuário */
 export async function loadStrategyHistory(userId: string, clientName?: string) {
+  if (!supabase) return []
   let q = supabase
     .from('strategy_history')
     .select('*')
@@ -61,6 +62,7 @@ export async function saveStrategy(
   niche: string,
   snapshot: Record<string, any>
 ) {
+  if (!supabase) return { data: null, error: new Error('Supabase não configurado') }
   const { data, error } = await supabase
     .from('strategy_history')
     .insert({
@@ -76,6 +78,7 @@ export async function saveStrategy(
 
 /** Busca métricas do usuário */
 export async function loadMetrics(userId: string, clientName?: string) {
+  if (!supabase) return [] as MetricRecord[]
   let q = supabase
     .from('campaign_metrics')
     .select('*')
@@ -90,6 +93,7 @@ export async function loadMetrics(userId: string, clientName?: string) {
 
 /** Salva uma métrica */
 export async function saveMetric(userId: string, metric: Omit<MetricRecord, 'id'>) {
+  if (!supabase) return { data: null, error: new Error('Supabase não configurado') }
   const { data, error } = await supabase
     .from('campaign_metrics')
     .insert({ ...metric, user_id: userId })

@@ -18,49 +18,52 @@ export async function POST(req: NextRequest) {
 
   const client = await clerkClient()
 
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object as any
-      const userId  = session.metadata?.userId
-      const plan    = session.metadata?.plan
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as any
+        const userId  = session.metadata?.userId
+        const plan    = session.metadata?.plan
 
-      if (userId && plan) {
+        if (!userId) { console.warn('[stripe/webhook] checkout.session.completed sem userId no metadata'); break }
+        if (!plan)   { console.warn('[stripe/webhook] checkout.session.completed sem plan no metadata'); break }
+
         await client.users.updateUserMetadata(userId, {
           publicMetadata: { plan, stripeCustomerId: session.customer, planUpdatedAt: new Date().toISOString() },
         })
+        break
       }
-      break
-    }
 
-    case 'customer.subscription.updated': {
-      const sub    = event.data.object as any
-      const userId = sub.metadata?.userId
-      const plan   = sub.metadata?.plan
-      const status = sub.status
+      case 'customer.subscription.updated': {
+        const sub    = event.data.object as any
+        const userId = sub.metadata?.userId
+        const plan   = sub.metadata?.plan as string | undefined
+        const status = sub.status as string
 
-      if (userId) {
+        if (!userId) { console.warn('[stripe/webhook] subscription.updated sem userId'); break }
+
+        const newPlan = status === 'active' && plan ? plan : 'free'
         await client.users.updateUserMetadata(userId, {
-          publicMetadata: {
-            plan: status === 'active' ? plan : 'free',
-            subscriptionStatus: status,
-            planUpdatedAt: new Date().toISOString(),
-          },
+          publicMetadata: { plan: newPlan, subscriptionStatus: status, planUpdatedAt: new Date().toISOString() },
         })
+        break
       }
-      break
-    }
 
-    case 'customer.subscription.deleted': {
-      const sub    = event.data.object as any
-      const userId = sub.metadata?.userId
+      case 'customer.subscription.deleted': {
+        const sub    = event.data.object as any
+        const userId = sub.metadata?.userId
 
-      if (userId) {
+        if (!userId) { console.warn('[stripe/webhook] subscription.deleted sem userId'); break }
+
         await client.users.updateUserMetadata(userId, {
           publicMetadata: { plan: 'free', subscriptionStatus: 'canceled' },
         })
+        break
       }
-      break
     }
+  } catch (err: any) {
+    console.error('[stripe/webhook] Erro ao atualizar metadata do Clerk:', err.message)
+    return NextResponse.json({ error: 'Erro interno ao processar evento' }, { status: 500 })
   }
 
   return NextResponse.json({ received: true })
