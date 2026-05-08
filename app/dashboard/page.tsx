@@ -339,7 +339,6 @@ export default function DashboardPage() {
     return () => clearTimeout(t)
   }, [])
 
-  const userPlan   = user?.publicMetadata?.plan as string | undefined
   const termsAccepted = Boolean(user?.publicMetadata?.termsAcceptedAt)
   // Persiste aceite de termos no localStorage para não re-exibir o modal a cada reload
   const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(() => {
@@ -350,22 +349,7 @@ export default function DashboardPage() {
   })
   const showTermsModal = isLoaded && user && !termsAccepted && !termsAcceptedLocal
 
-  // Trial de 14 dias — baseado no createdAt do Clerk
-  // Clerk v5 retorna user.createdAt como Date (objeto), não number — precisa de .getTime()
   const TRIAL_DAYS = 14
-  const rawCreatedAt   = user?.createdAt
-  const createdAt      = rawCreatedAt instanceof Date
-    ? rawCreatedAt.getTime()
-    : typeof rawCreatedAt === 'number' ? rawCreatedAt : Date.now()
-  const trialMsLeft    = (createdAt + TRIAL_DAYS * 24 * 60 * 60 * 1000) - Date.now()
-  const inTrial        = user ? trialMsLeft > 0 : false
-  const trialDaysLeft  = Math.ceil(trialMsLeft / (24 * 60 * 60 * 1000))
-  // Server layout já garantiu autenticação — enquanto Clerk JS não carrega, assume acesso
-  const hasAccess      = !isLoaded ? true : user ? (hasActivePlan(userPlan) || inTrial) : false
-
-  // Durante trial sem plano, aplica limites do tier 'trial' (3 clientes, 4 estratégias/hora)
-  const effectivePlan = hasActivePlan(userPlan) ? userPlan : (inTrial ? 'trial' : 'free')
-  const planLimits    = getPlanLimits(effectivePlan)
 
   const {
     clientData, strategyData, isGenerating,
@@ -412,16 +396,54 @@ export default function DashboardPage() {
     }).catch(() => {})
   }, [buildExtraData])
 
+  // ── User info do servidor (fallback quando Clerk JS não carregou) ─────────────
+  const [serverUser, setServerUser] = useState<{
+    id: string; firstName: string | null; lastName: string | null
+    email: string; plan: string | null; createdAt: number
+  } | null>(null)
+
+  useEffect(() => {
+    // Carrega dados do usuário via servidor — não depende do Clerk JS client-side
+    if (isLoaded && user) return // Clerk já carregou, não precisa do servidor
+    fetch('/api/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.user) setServerUser(data.user) })
+      .catch(() => {})
+  }, [isLoaded, user])
+
+  // Usa dados do Clerk quando carregado, senão usa dados do servidor
+  const effectiveUser = (isLoaded && user) ? user : serverUser
+    ? {
+        firstName:      serverUser.firstName,
+        lastName:       serverUser.lastName,
+        username:       null,
+        emailAddresses: [{ emailAddress: serverUser.email }],
+        publicMetadata: { plan: serverUser.plan },
+        createdAt:      serverUser.createdAt,
+        reload:         async () => {},
+      } as any
+    : null
+
+  // Todos os cálculos de plano/trial derivados do effectiveUser (Clerk ou servidor)
+  const effectiveUserPlan = effectiveUser?.publicMetadata?.plan as string | undefined
+  const rawCreatedAt      = effectiveUser?.createdAt
+  const createdAt         = rawCreatedAt instanceof Date
+    ? rawCreatedAt.getTime()
+    : typeof rawCreatedAt === 'number' ? rawCreatedAt : Date.now()
+  const trialMsLeft    = (createdAt + TRIAL_DAYS * 24 * 60 * 60 * 1000) - Date.now()
+  const inTrial        = effectiveUser ? trialMsLeft > 0 : false
+  const trialDaysLeft  = Math.ceil(trialMsLeft / (24 * 60 * 60 * 1000))
+  const hasAccess      = (!isLoaded && !serverUser) ? true : effectiveUser ? (hasActivePlan(effectiveUserPlan) || inTrial) : false
+  const effectivePlan  = hasActivePlan(effectiveUserPlan) ? effectiveUserPlan : (inTrial ? 'trial' : 'free')
+  const planLimits     = getPlanLimits(effectivePlan)
+
   // ── Sincronização com banco de dados ──────────────────────────────────────────
-  // Começa como true para não bloquear a UI — clientes carregam em background
+  // Roda na montagem sem esperar pelo Clerk JS — auth server-side via cookie de sessão
   const [dbLoaded, setDbLoaded] = useState(true)
 
   useEffect(() => {
-    if (!isLoaded) return
-    // Auth carregou mas sem user (sessão inválida) → libera UI imediatamente
-    if (!user) { setDbLoaded(true); return }
     fetch('/api/clients')
-      .then((r) => r.json())
+      .then(r => r.ok ? r.json() : { clients: [] })
       .then(({ clients, _dbError }) => {
         if (_dbError) console.warn('[clients sync] DB error:', _dbError)
         if (!Array.isArray(clients) || clients.length === 0) return
@@ -457,7 +479,7 @@ export default function DashboardPage() {
       })
       .catch(() => {})
       .finally(() => setDbLoaded(true))
-  }, [isLoaded, user?.id])
+  }, []) // monta uma vez — autenticação garantida pelo layout.tsx server-side
 
   // Quando o banco carrega e temos cliente+estratégia, vai direto pro dashboard
   // (cobre o caso de incognito / cache limpo onde localStorage estava vazio)
@@ -829,7 +851,7 @@ export default function DashboardPage() {
   }
 
   // ── Banner de trial ativo ──
-  const TrialBanner = inTrial && !hasActivePlan(userPlan) ? (
+  const TrialBanner = inTrial && !hasActivePlan(effectiveUserPlan) ? (
     <div style={{ position: 'fixed', bottom: 0, left: isMobile ? 0 : (sidebarCollapsed ? '56px' : '220px'), right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(3,3,5,0.95)', backdropFilter: 'blur(12px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#F5A500', display: 'inline-block', animation: 'pulseDot 2s ease-in-out infinite' }} />
@@ -860,8 +882,8 @@ export default function DashboardPage() {
         onDelete={persistDelete}
         clientLimitReached={atClientLimit}
         maxClients={planLimits.maxClients}
-        user={user}
-        userPlan={userPlan}
+        user={effectiveUser}
+        userPlan={effectiveUserPlan}
         onSignOut={() => { signOut().catch(() => {}); window.location.href = '/sign-in?logout=1' }}
         auditCache={auditCache}
       />
@@ -937,8 +959,8 @@ export default function DashboardPage() {
         active={activeTab}
         onChange={setActiveTab}
         clientData={clientData}
-        userPlan={userPlan}
-        user={user}
+        userPlan={effectiveUserPlan}
+        user={effectiveUser}
         onSignOut={() => { signOut().catch(() => {}); window.location.href = '/sign-in?logout=1' }}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
@@ -954,7 +976,7 @@ export default function DashboardPage() {
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(v => !v)}
         />
-        <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', paddingBottom: inTrial && !hasActivePlan(userPlan) ? '72px' : '40px' }}>
+        <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px' }}>
           <div key={activeTab} className="animate-fade-up">
             {renderTab()}
           </div>
