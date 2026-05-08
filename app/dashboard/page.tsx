@@ -331,9 +331,23 @@ export default function DashboardPage() {
   const { user, isLoaded } = useUser()
   const { signOut }        = useClerk()
 
+  // Timeout: se Clerk demorar >4s para carregar, continua mesmo sem isLoaded
+  const [clerkTimeout, setClerkTimeout] = useState(false)
+  useEffect(() => {
+    if (isLoaded) return
+    const t = setTimeout(() => setClerkTimeout(true), 4000)
+    return () => clearTimeout(t)
+  }, [isLoaded])
+
   const userPlan   = user?.publicMetadata?.plan as string | undefined
   const termsAccepted = Boolean(user?.publicMetadata?.termsAcceptedAt)
-  const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(false)
+  // Persiste aceite de termos no localStorage para não re-exibir o modal a cada reload
+  const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('elyon_terms_v1') === '1'
+    }
+    return false
+  })
   const showTermsModal = isLoaded && user && !termsAccepted && !termsAcceptedLocal
 
   // Trial de 14 dias — baseado no createdAt do Clerk
@@ -791,8 +805,8 @@ export default function DashboardPage() {
 
   // ── Seletor de clientes ──
   if (view === 'selector') {
-    // Aguarda Clerk carregar antes de exibir — evita "Usuário" e "Trial / Sem plano" falsos
-    if (!isLoaded) {
+    // Aguarda Clerk carregar — fallback automático após 4s para não bloquear
+    if (!isLoaded && !clerkTimeout) {
       return (
         <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
           <div className="text-center">
@@ -891,7 +905,10 @@ export default function DashboardPage() {
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#030305', overflow: 'hidden' }}>
       {showTermsModal && (
-        <TermsModal onAccept={() => setTermsAcceptedLocal(true)} />
+        <TermsModal onAccept={() => {
+          localStorage.setItem('elyon_terms_v1', '1')
+          setTermsAcceptedLocal(true)
+        }} />
       )}
       <DashboardSidebar
         active={activeTab}
