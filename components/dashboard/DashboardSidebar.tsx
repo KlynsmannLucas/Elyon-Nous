@@ -75,8 +75,8 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
   }, [])
 
   const plan         = userPlan ? PLAN_LABELS[userPlan] : null
-  const userName     = user?.firstName || user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'Usuário'
-  const avatarLetter = userName.charAt(0).toUpperCase()
+  const userName     = user?.firstName || user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || ''
+  const avatarLetter = userName ? userName.charAt(0).toUpperCase() : '·'
 
   const handlePortal = async () => {
     setPortalLoading(true)

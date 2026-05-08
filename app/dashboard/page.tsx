@@ -336,9 +336,13 @@ export default function DashboardPage() {
   const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(false)
   const showTermsModal = isLoaded && user && !termsAccepted && !termsAcceptedLocal
 
-  // Trial de 7 dias — baseado no createdAt do Clerk
-  const TRIAL_DAYS = 7
-  const createdAt      = typeof user?.createdAt === 'number' ? user.createdAt : Date.now()
+  // Trial de 14 dias — baseado no createdAt do Clerk
+  // Clerk v5 retorna user.createdAt como Date (objeto), não number — precisa de .getTime()
+  const TRIAL_DAYS = 14
+  const rawCreatedAt   = user?.createdAt
+  const createdAt      = rawCreatedAt instanceof Date
+    ? rawCreatedAt.getTime()
+    : typeof rawCreatedAt === 'number' ? rawCreatedAt : Date.now()
   const trialMsLeft    = (createdAt + TRIAL_DAYS * 24 * 60 * 60 * 1000) - Date.now()
   const inTrial        = user ? trialMsLeft > 0 : false  // sem user = sem trial
   const trialDaysLeft  = Math.ceil(trialMsLeft / (24 * 60 * 60 * 1000))
@@ -787,8 +791,8 @@ export default function DashboardPage() {
 
   // ── Seletor de clientes ──
   if (view === 'selector') {
-    // Aguarda banco antes de mostrar seletor vazio — evita "lista vazia" falsa
-    if (!dbLoaded && savedClients.length === 0) {
+    // Aguarda Clerk carregar antes de exibir — evita "Usuário" e "Trial / Sem plano" falsos
+    if (!isLoaded) {
       return (
         <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
           <div className="text-center">
@@ -797,7 +801,7 @@ export default function DashboardPage() {
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>ELYON</span>
             <div className="w-6 h-6 border-2 border-[#F0B429] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-slate-600 text-sm">Carregando seus clientes...</p>
+            <p className="text-slate-600 text-sm">Carregando...</p>
           </div>
         </div>
       )

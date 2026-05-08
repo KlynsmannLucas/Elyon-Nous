@@ -498,7 +498,7 @@ export async function POST(req: NextRequest) {
   const hasActivePlan = plan && plan !== 'free'
 
   if (!hasActivePlan) {
-    const TRIAL_DAYS = 7
+    const TRIAL_DAYS = 14
     const inTrial = (Date.now() - clerkUser.createdAt) < TRIAL_DAYS * 24 * 60 * 60 * 1000
     if (!inTrial) {
       return new Response(

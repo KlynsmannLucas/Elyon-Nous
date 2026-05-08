@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
   const hasActivePlan = plan && plan !== 'free'
 
   if (!hasActivePlan) {
-    const inTrial = (Date.now() - clerkUser.createdAt) < 7 * 24 * 60 * 60 * 1000
+    const inTrial = (Date.now() - clerkUser.createdAt) < 14 * 24 * 60 * 60 * 1000
     if (!inTrial) {
       return NextResponse.json({ success: false, error: 'Período de avaliação encerrado. Assine um plano para continuar.' }, { status: 402 })
     }
