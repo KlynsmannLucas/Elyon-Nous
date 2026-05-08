@@ -358,9 +358,10 @@ export default function DashboardPage() {
     ? rawCreatedAt.getTime()
     : typeof rawCreatedAt === 'number' ? rawCreatedAt : Date.now()
   const trialMsLeft    = (createdAt + TRIAL_DAYS * 24 * 60 * 60 * 1000) - Date.now()
-  const inTrial        = user ? trialMsLeft > 0 : false  // sem user = sem trial
+  const inTrial        = user ? trialMsLeft > 0 : false
   const trialDaysLeft  = Math.ceil(trialMsLeft / (24 * 60 * 60 * 1000))
-  const hasAccess      = user ? (hasActivePlan(userPlan) || inTrial) : false  // sem user = sem acesso
+  // Server layout já garantiu autenticação — enquanto Clerk JS não carrega, assume acesso
+  const hasAccess      = !isLoaded ? true : user ? (hasActivePlan(userPlan) || inTrial) : false
 
   // Durante trial sem plano, aplica limites do tier 'trial' (3 clientes, 4 estratégias/hora)
   const effectivePlan = hasActivePlan(userPlan) ? userPlan : (inTrial ? 'trial' : 'free')
@@ -842,22 +843,7 @@ export default function DashboardPage() {
 
   // ── Seletor de clientes ──
   if (view === 'selector') {
-    // Aguarda Clerk carregar — fallback automático após 4s para não bloquear
-    if (!isLoaded && !clerkTimeout) {
-      return (
-        <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
-          <div className="text-center">
-            <span className="font-display font-bold text-2xl block mb-6" style={{
-              background: 'linear-gradient(135deg, #F0B429, #FFD166)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>ELYON</span>
-            <div className="w-6 h-6 border-2 border-[#F0B429] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-slate-600 text-sm">Carregando...</p>
-          </div>
-        </div>
-      )
-    }
-
+    // Servidor já garantiu autenticação (layout.tsx) — não bloqueia no isLoaded do cliente.
     // Só verifica limite depois que o Clerk carregou — evita falso "Limite atingido"
     const atClientLimit = isLoaded && savedClients.length >= planLimits.maxClients
     return (
