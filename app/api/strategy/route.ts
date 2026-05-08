@@ -499,7 +499,8 @@ export async function POST(req: NextRequest) {
 
   if (!hasActivePlan) {
     const TRIAL_DAYS = 14
-    const inTrial = (Date.now() - clerkUser.createdAt) < TRIAL_DAYS * 24 * 60 * 60 * 1000
+    const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
+    const inTrial = (Date.now() - createdAtMs) < TRIAL_DAYS * 24 * 60 * 60 * 1000
     if (!inTrial) {
       return new Response(
         `data: ${JSON.stringify({ success: false, error: 'Período de avaliação encerrado. Assine um plano para continuar.' })}\n\n`,

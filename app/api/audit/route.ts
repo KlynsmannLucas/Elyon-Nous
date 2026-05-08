@@ -273,7 +273,8 @@ export async function POST(req: NextRequest) {
     const { clerkClient } = await import('@clerk/nextjs/server')
     const clerkUser = await (await clerkClient()).users.getUser(userId)
     const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
-    const inTrial = (Date.now() - clerkUser.createdAt) < 14 * 24 * 60 * 60 * 1000
+    const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
+    const inTrial = (Date.now() - createdAtMs) < 14 * 24 * 60 * 60 * 1000
     if (!plan && !inTrial) {
       return NextResponse.json({ success: false, error: 'Período de avaliação encerrado.' }, { status: 402 })
     }
