@@ -334,6 +334,11 @@ function ClientSelector({
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
 
+  // Mounted: evita hydration mismatch com Clerk (useUser retorna valores diferentes server vs client).
+  // Sem isso, onClick/useEffect não funcionam em produção.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   // Timeout: se Clerk demorar >3s para carregar, continua mesmo sem isLoaded.
   // Usa [] para nunca resetar — se isLoaded oscilar, o timer não é cancelado.
   const [clerkTimeout, setClerkTimeout] = useState(false)
@@ -857,6 +862,8 @@ export default function DashboardPage() {
       </a>
     </div>
   ) : null
+
+  if (!mounted) return <div className="min-h-screen bg-[#0A0A0B]" />
 
   // ── Seletor de clientes ──
   if (view === 'selector') {
