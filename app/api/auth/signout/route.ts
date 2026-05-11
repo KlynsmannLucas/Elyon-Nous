@@ -1,4 +1,4 @@
-// app/api/auth/signout/route.ts — Logout server-side: revoga sessão e redireciona
+// app/api/auth/signout/route.ts — Logout server-side: revoga sessão, limpa cookies e redireciona
 import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -11,9 +11,14 @@ export async function GET(req: NextRequest) {
       await clerk.sessions.revokeSession(sessionId)
     }
   } catch {
-    // Mesmo se revogar falhar, redireciona para sign-in
+    // Mesmo se revogar falhar, limpa cookies e redireciona
   }
 
-  // Usa a origem da própria requisição — nunca vai para localhost em produção
-  return NextResponse.redirect(new URL('/sign-in', req.url))
+  const res = NextResponse.redirect(new URL('/sign-in', req.url))
+
+  // Limpa os cookies de sessão do Clerk para que o middleware não redirecione de volta
+  res.cookies.set('__session', '', { maxAge: 0, path: '/' })
+  res.cookies.set('__client_uat', '', { maxAge: 0, path: '/' })
+
+  return res
 }

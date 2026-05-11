@@ -347,13 +347,14 @@ export default function DashboardPage() {
   }, [])
 
   const termsAccepted = Boolean(user?.publicMetadata?.termsAcceptedAt)
-  // Persiste aceite de termos no localStorage para não re-exibir o modal a cada reload
-  const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('elyon_terms_v1') === '1'
-    }
-    return false
-  })
+  // Começa false no server e no client — sem mismatch de hydration
+  const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(false)
+  // mounted garante que o render complexo só acontece no client após hydration
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setTermsAcceptedLocal(localStorage.getItem('elyon_terms_v1') === '1')
+    setMounted(true)
+  }, [])
   const showTermsModal = isLoaded && user && !termsAccepted && !termsAcceptedLocal
 
   const TRIAL_DAYS = 14
@@ -757,6 +758,19 @@ export default function DashboardPage() {
     } finally {
       setSyncing(false)
     }
+  }
+
+  // ── Aguarda hydration antes de renderizar qualquer lógica interativa ──
+  // Evita mismatch server/client que impede o React de anexar event handlers
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+        <span className="font-display font-bold text-2xl" style={{
+          background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        }}>ELYON</span>
+      </div>
+    )
   }
 
   // ── Clerk falhou a inicializar em 3s (timeout) — mostra tela de reconexão ──
