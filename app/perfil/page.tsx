@@ -278,21 +278,25 @@ function PerfilPageInner() {
     <div className="min-h-screen bg-[#0A0A0B] px-4 py-8">
       {/* Navbar */}
       <div className="max-w-4xl mx-auto flex items-center justify-between mb-10">
-        <a
-          href="/dashboard"
+        <button
+          type="button"
+          onClick={() => window.location.assign('/dashboard')}
           className="flex items-center gap-2 text-sm text-slate-500 hover:text-white transition-colors"
+          style={{ background: 'transparent', cursor: 'pointer' }}
         >
           ← Voltar ao dashboard
-        </a>
+        </button>
         <span
           className="font-display font-bold text-xl"
           style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
         >
           ELYON
         </span>
-        <a
-          href="/api/auth/signout"
+        <button
+          type="button"
+          onClick={() => window.location.assign('/api/auth/signout')}
           className="text-sm text-slate-600 hover:text-red-400 transition-colors flex items-center gap-1.5"
+          style={{ background: 'transparent', cursor: 'pointer' }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -300,7 +304,7 @@ function PerfilPageInner() {
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           Sair
-        </a>
+        </button>
       </div>
 
       <div className="max-w-4xl mx-auto">

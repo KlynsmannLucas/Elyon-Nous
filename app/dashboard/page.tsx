@@ -177,10 +177,12 @@ function ClientSelector({
           }}>
             ELYON
           </span>
-          <a
-            href="/api/auth/signout"
+          <button
+            type="button"
             title="Sair da conta"
+            onClick={() => window.location.assign('/api/auth/signout')}
             className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-red-400 transition-colors px-3 py-2 rounded-xl border border-[#2A2A30] hover:border-red-400/30"
+            style={{ background: 'transparent', cursor: 'pointer' }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -188,7 +190,7 @@ function ClientSelector({
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
             Sair
-          </a>
+          </button>
         </div>
 
         {/* Card do perfil do usuário */}
@@ -831,13 +833,14 @@ export default function DashboardPage() {
             {syncMsg && (
               <p className="text-xs mb-2" style={{ color: syncMsg.includes('ativado') ? '#22C55E' : '#F0B429' }}>{syncMsg}</p>
             )}
-            <a
-              href="/api/auth/signout"
+            <button
+              type="button"
+              onClick={() => window.location.assign('/api/auth/signout')}
               className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 border border-[#2A2A30] transition-colors"
-              style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
+              style={{ background: 'transparent', cursor: 'pointer' }}
             >
               Sair da conta
-            </a>
+            </button>
           </div>
           <p className="text-xs text-slate-600">
             Problemas com sua assinatura?{' '}
