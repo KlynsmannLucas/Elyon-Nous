@@ -347,15 +347,9 @@ export default function DashboardPage() {
   }, [])
 
   const termsAccepted = Boolean(user?.publicMetadata?.termsAcceptedAt)
-  // Começa false no server e no client — sem mismatch de hydration
   const [termsAcceptedLocal, setTermsAcceptedLocal] = useState(false)
-  // mounted garante que o render complexo só acontece no client após hydration
-  const [mounted, setMounted] = useState(false)
   useEffect(() => {
-    try {
-      setTermsAcceptedLocal(localStorage.getItem('elyon_terms_v1') === '1')
-    } catch {}
-    setMounted(true) // sempre executa, mesmo se localStorage lançar SecurityError (Safari Private)
+    try { setTermsAcceptedLocal(localStorage.getItem('elyon_terms_v1') === '1') } catch {}
   }, [])
   const showTermsModal = isLoaded && user && !termsAccepted && !termsAcceptedLocal
 
@@ -760,44 +754,6 @@ export default function DashboardPage() {
     } finally {
       setSyncing(false)
     }
-  }
-
-  // ── Aguarda hydration antes de renderizar qualquer lógica interativa ──
-  // Evita mismatch server/client que impede o React de anexar event handlers
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0B] flex flex-col items-center justify-center gap-5">
-        <span className="font-display font-bold text-2xl" style={{
-          background: 'linear-gradient(135deg, #F0B429, #FFD166)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>ELYON</span>
-        {/* Spinner — visível imediatamente */}
-        <div style={{
-          width: 28, height: 28, borderRadius: '50%',
-          border: '3px solid rgba(240,180,41,0.2)',
-          borderTopColor: '#F0B429',
-          animation: 'spin 0.8s linear infinite',
-        }} />
-        {/* Botão de reload — aparece após 5s via CSS, sem precisar de JS */}
-        <div style={{ opacity: 0, animation: 'fadeInDelayed 0.4s forwards', animationDelay: '5s' }}>
-          <p className="text-xs text-slate-500 text-center mb-3">
-            Demorando mais que o esperado?
-          </p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded-xl text-sm font-semibold border"
-            style={{ border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429', background: 'rgba(240,180,41,0.05)', cursor: 'pointer' }}
-          >
-            Recarregar página
-          </button>
-        </div>
-        <style>{`
-          @keyframes spin { to { transform: rotate(360deg); } }
-          @keyframes fadeInDelayed { to { opacity: 1; } }
-        `}</style>
-      </div>
-    )
   }
 
   // ── Clerk falhou a inicializar em 3s (timeout) — mostra tela de reconexão ──
