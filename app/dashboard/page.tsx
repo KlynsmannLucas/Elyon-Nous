@@ -117,7 +117,6 @@ function getClientHealthScore(client: SavedClient, auditCache: Record<string, an
 function ClientSelector({
   savedClients,
   onSelect,
-  onNew,
   onDelete,
   clientLimitReached,
   maxClients,
@@ -127,7 +126,6 @@ function ClientSelector({
 }: {
   savedClients: SavedClient[]
   onSelect: (id: string) => void
-  onNew: () => void
   onDelete: (id: string) => void
   clientLimitReached?: boolean
   maxClients?: number
@@ -302,24 +300,30 @@ function ClientSelector({
         )}
 
         {/* Criar novo cliente */}
-        <button
-          onClick={onNew}
-          className="w-full flex items-center justify-center gap-3 border border-dashed rounded-2xl p-5 transition-all"
-          style={clientLimitReached
-            ? { borderColor: 'rgba(255,77,77,0.3)', color: '#FF4D4D', cursor: 'not-allowed', opacity: 0.7 }
-            : { borderColor: '#2A2A30', color: '#64748B' }
-          }
-        >
-          <span className="text-xl">{clientLimitReached ? '🔒' : '+'}</span>
-          <div className="text-left">
-            <span className="text-sm font-semibold block">
-              {clientLimitReached ? `Limite atingido (${maxClients} cliente${maxClients !== 1 ? 's' : ''})` : 'Novo cliente'}
-            </span>
-            {clientLimitReached && (
-              <span className="text-xs opacity-70">Faça upgrade para adicionar mais →</span>
-            )}
-          </div>
-        </button>
+        {clientLimitReached ? (
+          <a
+            href="/planos"
+            className="w-full flex items-center justify-center gap-3 border border-dashed rounded-2xl p-5 transition-all"
+            style={{ display: 'flex', textDecoration: 'none', borderColor: 'rgba(255,77,77,0.3)', color: '#FF4D4D' }}
+          >
+            <span className="text-xl">🔒</span>
+            <div className="text-left">
+              <span className="text-sm font-semibold block">
+                Limite atingido ({maxClients} cliente{maxClients !== 1 ? 's' : ''})
+              </span>
+              <span className="text-xs opacity-70">Clique para fazer upgrade →</span>
+            </div>
+          </a>
+        ) : (
+          <a
+            href="/dashboard?new=1"
+            className="w-full flex items-center justify-center gap-3 border border-dashed rounded-2xl p-5 transition-all hover:border-[rgba(240,180,41,0.3)] hover:text-slate-300"
+            style={{ display: 'flex', textDecoration: 'none', borderColor: '#2A2A30', color: '#64748B' }}
+          >
+            <span className="text-xl">+</span>
+            <span className="text-sm font-semibold">Novo cliente</span>
+          </a>
+        )}
       </div>
     </div>
   )
@@ -514,14 +518,20 @@ export default function DashboardPage() {
   // View inicial: dados locais (localStorage) definem a view imediatamente.
   // Se não há dados locais, espera o banco carregar (tratado no useEffect [dbLoaded]).
   useEffect(() => {
-    if (clientData && strategyData) {
+    const params = new URLSearchParams(window.location.search)
+
+    // ?new=1 tem prioridade — usuário clicou "Novo cliente" (link <a href>)
+    if (params.get('new') === '1') {
+      window.history.replaceState({}, '', '/dashboard')
+      setView('wizard')
+      setWizardStep(0)
+    } else if (clientData && strategyData) {
       setView('dashboard')
     } else if (clientData || savedClients.length > 0) {
       setView('selector')
     }
     // Se não há nada local nem no banco ainda, fica em 'selector' (estado inicial padrão)
 
-    const params = new URLSearchParams(window.location.search)
     if (params.get('checkout') === 'ok' || params.get('checkout') === 'success') {
       user?.reload().then(() => {
         window.history.replaceState({}, '', '/dashboard')
@@ -859,13 +869,6 @@ export default function DashboardPage() {
       <ClientSelector
         savedClients={savedClients}
         onSelect={handleSelectSaved}
-        onNew={() => {
-          if (atClientLimit) {
-            alert(`Seu plano permite até ${planLimits.maxClients} cliente${planLimits.maxClients > 1 ? 's' : ''}. Faça upgrade para adicionar mais.`)
-            return
-          }
-          setView('wizard'); setWizardStep(0)
-        }}
         onDelete={persistDelete}
         clientLimitReached={atClientLimit}
         maxClients={planLimits.maxClients}
