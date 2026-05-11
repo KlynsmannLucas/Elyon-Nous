@@ -30,11 +30,41 @@ export async function POST(req: NextRequest) {
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'https://elyonnous.com'
+    const email  = user?.emailAddresses?.[0]?.emailAddress
+
+    // Reutiliza customer existente se já tiver stripeCustomerId salvo no Clerk
+    // Evita duplicatas quando o mesmo usuário acessa o checkout mais de uma vez
+    const savedCustomerId = (user?.publicMetadata as any)?.stripeCustomerId as string | undefined
+    let stripeCustomer: string | undefined
+
+    if (savedCustomerId) {
+      // Verifica se o customer ainda existe no Stripe
+      try {
+        const existing = await stripe.customers.retrieve(savedCustomerId)
+        if (!existing.deleted) stripeCustomer = savedCustomerId
+      } catch {
+        // Customer não existe mais — cria um novo abaixo
+      }
+    }
+
+    if (!stripeCustomer && email) {
+      // Busca por email antes de criar (evita duplicata se metadado não foi salvo)
+      const found = await stripe.customers.list({ email, limit: 1 })
+      if (found.data.length > 0) {
+        stripeCustomer = found.data[0].id
+      } else {
+        const created = await stripe.customers.create({
+          email,
+          metadata: { userId },
+        })
+        stripeCustomer = created.id
+      }
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      customer_email: user?.emailAddresses?.[0]?.emailAddress,
+      ...(stripeCustomer ? { customer: stripeCustomer } : { customer_email: email }),
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${appUrl}/success?plan=${plan}&checkout=ok`,
       cancel_url: `${appUrl}/planos`,
