@@ -5,10 +5,12 @@ const CSP = [
   "default-src 'self'",
   // Next.js precisa de unsafe-inline para scripts/estilos gerados em build
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://accounts.google.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.elyonnous.com https://accounts.elyonnous.com",
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com",
   // Imagens: self + data URIs + qualquer HTTPS (avatares Clerk, fotos Google, etc.)
   "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  // Clerk usa web workers para refresh de token
+  "worker-src 'self' blob: https://clerk.elyonnous.com",
   // Connect: apenas os serviços reais usados pelo app
   [
     "connect-src 'self'",

@@ -3,6 +3,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
+import { useServerUserData } from './UserDataProvider'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
 import { SetupWizard, type WizardImportData } from '@/components/dashboard/SetupWizard'
@@ -396,20 +397,8 @@ export default function DashboardPage() {
     }).catch(() => {})
   }, [buildExtraData])
 
-  // ── User info do servidor (fallback quando Clerk JS não carregou) ─────────────
-  const [serverUser, setServerUser] = useState<{
-    id: string; firstName: string | null; lastName: string | null
-    email: string; plan: string | null; createdAt: number
-  } | null>(null)
-
-  useEffect(() => {
-    // Carrega dados do usuário via servidor — não depende do Clerk JS client-side
-    if (isLoaded && user) return // Clerk já carregou, não precisa do servidor
-    fetch('/api/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.user) setServerUser(data.user) })
-      .catch(() => {})
-  }, [isLoaded, user])
+  // ── User info pré-carregado pelo layout.tsx (server-side, sem fetch extra) ────
+  const serverUser = useServerUserData()
 
   // Usa dados do Clerk quando carregado, senão usa dados do servidor
   const effectiveUser = (isLoaded && user) ? user : serverUser
