@@ -19,7 +19,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
 const PLAN_LIMITS: Record<string, number> = {
-  individual:   3,
+  individual:   1,
   profissional: 8,
   avancada:     15,
 }

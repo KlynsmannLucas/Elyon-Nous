@@ -41,7 +41,7 @@ const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     hasAPI: false,
   },
   profissional: {
-    maxClients: 10,
+    maxClients: 8,
     maxStrategiesPerHour: 0,
     hasConnections: true,
     hasMultipleAccounts: false,

@@ -39,7 +39,7 @@ const PLANS = [
     price: 'R$497',
     priceEnd: '/mês',
     features: [
-      'Até 10 clientes ativos',
+      'Até 8 clientes ativos',
       'Tudo do Individual',
       'Conexão Meta + Google Ads',
       'Auditoria automática com IA',

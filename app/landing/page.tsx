@@ -299,7 +299,7 @@ const PLANS = [
     ctaStyle: 'primary',
     featured: true,
     badge: 'Mais escolhido',
-    features: ['Tudo da Plataforma', 'Até 10 clientes', 'Conexão Meta + Google Ads', 'Auditoria automática', 'Relatórios em PDF'],
+    features: ['Tudo da Plataforma', 'Até 8 clientes', 'Conexão Meta + Google Ads', 'Auditoria automática', 'Relatórios em PDF'],
     href: '/sign-in',
   },
   {
