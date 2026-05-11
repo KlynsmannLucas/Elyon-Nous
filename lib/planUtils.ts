@@ -50,7 +50,7 @@ const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     hasAPI: false,
   },
   avancada: {
-    maxClients: 999,
+    maxClients: 15,
     maxStrategiesPerHour: 0,
     hasConnections: true,
     hasMultipleAccounts: true,

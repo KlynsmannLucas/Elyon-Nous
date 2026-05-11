@@ -61,7 +61,7 @@ const PLANS = [
     price: 'R$1.497',
     priceEnd: '/mês',
     features: [
-      'Clientes ilimitados',
+      'Até 15 clientes',
       'Tudo do Profissional',
       'Múltiplas contas Ads',
       'Relatórios avançados',

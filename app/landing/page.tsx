@@ -309,7 +309,7 @@ const PLANS = [
     period: '/mês',
     cta: 'Começar agora',
     ctaStyle: 'secondary',
-    features: ['Tudo do Profissional', 'Clientes ilimitados', 'Múltiplas contas por plataforma', 'Acesso à API', 'Suporte prioritário'],
+    features: ['Tudo do Profissional', 'Até 15 clientes', 'Múltiplas contas por plataforma', 'Acesso à API', 'Suporte prioritário'],
     href: '/sign-in',
   },
 ]
