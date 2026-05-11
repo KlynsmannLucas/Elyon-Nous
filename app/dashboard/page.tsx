@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { useUser, useClerk } from '@clerk/nextjs'
+import { useUser } from '@clerk/nextjs'
 import { useServerUserData } from './UserDataProvider'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
@@ -117,6 +117,7 @@ function getClientHealthScore(client: SavedClient, auditCache: Record<string, an
 function ClientSelector({
   savedClients,
   onSelect,
+  onNew,
   onDelete,
   clientLimitReached,
   maxClients,
@@ -126,6 +127,7 @@ function ClientSelector({
 }: {
   savedClients: SavedClient[]
   onSelect: (id: string) => void
+  onNew: () => void
   onDelete: (id: string) => void
   clientLimitReached?: boolean
   maxClients?: number
@@ -315,14 +317,15 @@ function ClientSelector({
             </div>
           </a>
         ) : (
-          <a
-            href="/dashboard?new=1"
+          <button
+            type="button"
+            onClick={onNew}
             className="w-full flex items-center justify-center gap-3 border border-dashed rounded-2xl p-5 transition-all hover:border-[rgba(240,180,41,0.3)] hover:text-slate-300"
-            style={{ display: 'flex', textDecoration: 'none', borderColor: '#2A2A30', color: '#64748B' }}
+            style={{ borderColor: '#2A2A30', color: '#64748B', background: 'transparent', cursor: 'pointer' }}
           >
             <span className="text-xl">+</span>
             <span className="text-sm font-semibold">Novo cliente</span>
-          </a>
+          </button>
         )}
       </div>
     </div>
@@ -332,7 +335,6 @@ function ClientSelector({
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
-  const { signOut }        = useClerk()
 
   // Timeout: se Clerk demorar >3s para carregar, continua mesmo sem isLoaded.
   // Usa [] para nunca resetar — se isLoaded oscilar, o timer não é cancelado.
@@ -829,12 +831,13 @@ export default function DashboardPage() {
             {syncMsg && (
               <p className="text-xs mb-2" style={{ color: syncMsg.includes('ativado') ? '#22C55E' : '#F0B429' }}>{syncMsg}</p>
             )}
-            <button
-              onClick={() => { try { signOut() } catch {} window.location.href = '/sign-in?logout=1' }}
+            <a
+              href="/api/auth/signout"
               className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 border border-[#2A2A30] transition-colors"
+              style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
             >
               Sair da conta
-            </button>
+            </a>
           </div>
           <p className="text-xs text-slate-600">
             Problemas com sua assinatura?{' '}
@@ -869,6 +872,7 @@ export default function DashboardPage() {
       <ClientSelector
         savedClients={savedClients}
         onSelect={handleSelectSaved}
+        onNew={() => { setView('wizard'); setWizardStep(0) }}
         onDelete={persistDelete}
         clientLimitReached={atClientLimit}
         maxClients={planLimits.maxClients}
@@ -950,7 +954,6 @@ export default function DashboardPage() {
         clientData={clientData}
         userPlan={effectiveUserPlan}
         user={effectiveUser}
-        onSignOut={() => { try { signOut() } catch {} window.location.href = '/sign-in?logout=1' }}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
       />

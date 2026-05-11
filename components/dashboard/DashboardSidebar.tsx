@@ -58,12 +58,11 @@ interface Props {
   clientData: any
   userPlan?: string
   user: any
-  onSignOut: () => void
   collapsed: boolean
   onToggleCollapse: () => void
 }
 
-export function DashboardSidebar({ active, onChange, clientData, userPlan, user, onSignOut, collapsed, onToggleCollapse }: Props) {
+export function DashboardSidebar({ active, onChange, clientData, userPlan, user, collapsed, onToggleCollapse }: Props) {
   const [portalLoading, setPortalLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -320,8 +319,8 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                     ⚡
                   </a>
               }
-              <button onClick={onSignOut}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', transition: 'all 0.15s' }}
+              <a href="/api/auth/signout"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)', textDecoration: 'none', transition: 'all 0.15s' }}
                 title="Sair"
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,77,77,0.08)'; e.currentTarget.style.color = '#FF4D4D'; e.currentTarget.style.borderColor = 'rgba(255,77,77,0.2)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
@@ -329,7 +328,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-              </button>
+              </a>
             </div>
           </>
         ) : (
@@ -343,16 +342,16 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '13px', fontWeight: 700, color: '#000',
               }}>{avatarLetter}</div>
-            <button onClick={onSignOut}
+            <a href="/api/auth/signout"
               title="Sair"
-              style={{ width: '30px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', transition: 'all 0.15s' }}
+              style={{ width: '30px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.3)', textDecoration: 'none', transition: 'all 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,77,77,0.08)'; e.currentTarget.style.color = '#FF4D4D'; e.currentTarget.style.borderColor = 'rgba(255,77,77,0.2)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
               </svg>
-            </button>
+            </a>
           </div>
         )}
       </div>
