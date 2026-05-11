@@ -1,8 +1,8 @@
 // app/api/auth/signout/route.ts — Logout server-side: revoga sessão e redireciona
 import { auth } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const { sessionId } = await auth()
     if (sessionId) {
@@ -14,6 +14,6 @@ export async function GET() {
     // Mesmo se revogar falhar, redireciona para sign-in
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'https://elyonnous.com'
-  return NextResponse.redirect(`${appUrl}/sign-in`)
+  // Usa a origem da própria requisição — nunca vai para localhost em produção
+  return NextResponse.redirect(new URL('/sign-in', req.url))
 }

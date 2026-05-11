@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useServerUserData } from '@/app/dashboard/UserDataProvider'
 
 type Section = 'dados' | 'contatos' | 'pagamentos' | 'faturas' | 'seguranca' | 'privacidade'
@@ -56,7 +56,6 @@ function InputField({
 function PerfilPageInner() {
   const { user, isLoaded } = useUser()
   const { openUserProfile } = useClerk()
-  const router = useRouter()
   const searchParams = useSearchParams()
   const serverUser = useServerUserData()
 
@@ -76,11 +75,17 @@ function PerfilPageInner() {
     setEffectiveCreatedAt(ts ? new Date(ts).toLocaleDateString('pt-BR') : '—')
   }, [isLoaded, user, serverUser])
 
-  // Tab vem diretamente do useSearchParams — sem flash de "dados" antes de mudar
+  // Tab vem do URL — inicializa estado e sincroniza em mudanças de navegação
   const tabParam = searchParams.get('tab') as Section
   const [activeSection, setActiveSection] = useState<Section>(
     () => (tabParam && SECTIONS.some(s => s.key === tabParam)) ? tabParam : 'dados'
   )
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') as Section
+    if (tab && SECTIONS.some(s => s.key === tab)) setActiveSection(tab)
+    else if (!tab) setActiveSection('dados')
+  }, [searchParams])
   const [portalLoading, setPortalLoading] = useState(false)
   const [syncLoading, setSyncLoading] = useState(false)
   const [syncMsg, setSyncMsg]   = useState('')
@@ -273,12 +278,12 @@ function PerfilPageInner() {
     <div className="min-h-screen bg-[#0A0A0B] px-4 py-8">
       {/* Navbar */}
       <div className="max-w-4xl mx-auto flex items-center justify-between mb-10">
-        <button
-          onClick={() => router.push('/dashboard')}
+        <a
+          href="/dashboard"
           className="flex items-center gap-2 text-sm text-slate-500 hover:text-white transition-colors"
         >
           ← Voltar ao dashboard
-        </button>
+        </a>
         <span
           className="font-display font-bold text-xl"
           style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
@@ -334,11 +339,13 @@ function PerfilPageInner() {
           {/* Sidebar */}
           <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-2 h-fit">
             {SECTIONS.map((s) => (
-              <button
+              <a
                 key={s.key}
-                onClick={() => setActiveSection(s.key)}
+                href={`/perfil?tab=${s.key}`}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left"
                 style={{
+                  display: 'flex',
+                  textDecoration: 'none',
                   background: activeSection === s.key ? 'rgba(240,180,41,0.08)' : 'transparent',
                   color: activeSection === s.key ? '#F0B429' : '#64748B',
                   border: activeSection === s.key ? '1px solid rgba(240,180,41,0.2)' : '1px solid transparent',
@@ -346,7 +353,7 @@ function PerfilPageInner() {
               >
                 <span>{s.icon}</span>
                 <span className="font-semibold">{s.label}</span>
-              </button>
+              </a>
             ))}
           </div>
 
