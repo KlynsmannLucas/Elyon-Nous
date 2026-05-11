@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
+import { useServerUserData } from '@/app/dashboard/UserDataProvider'
 
 type Section = 'dados' | 'contatos' | 'pagamentos' | 'faturas' | 'seguranca' | 'privacidade'
 
@@ -56,6 +57,17 @@ export default function PerfilPage() {
   const { user, isLoaded } = useUser()
   const { signOut, openUserProfile } = useClerk()
   const router = useRouter()
+  const serverUser = useServerUserData()
+
+  // Usa dados do Clerk quando carregado, senão usa dados do servidor
+  const effectiveFirstName = (isLoaded && user) ? user.firstName : serverUser?.firstName
+  const effectiveLastName  = (isLoaded && user) ? user.lastName  : serverUser?.lastName
+  const effectiveEmail     = (isLoaded && user) ? (user.primaryEmailAddress?.emailAddress || '') : (serverUser?.email || '')
+  const effectivePlan      = (isLoaded && user) ? (user.publicMetadata?.plan as string | undefined) : (serverUser?.plan ?? undefined)
+  const effectiveCreatedAt = (isLoaded && user)
+    ? (user.createdAt ? new Date(typeof user.createdAt === 'number' ? user.createdAt : user.createdAt).toLocaleDateString('pt-BR') : '—')
+    : (serverUser?.createdAt ? new Date(serverUser.createdAt).toLocaleDateString('pt-BR') : '—')
+  const effectiveId        = (isLoaded && user) ? user.id : serverUser?.id
 
   const [activeSection, setActiveSection] = useState<Section>('dados')
   const [portalLoading, setPortalLoading] = useState(false)
@@ -222,17 +234,15 @@ export default function PerfilPage() {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
-  const userPlan  = user?.publicMetadata?.plan as string | undefined
+  const userPlan  = effectivePlan
   const planInfo  = userPlan ? PLAN_LABELS[userPlan] : null
-  const email     = user?.primaryEmailAddress?.emailAddress || ''
-  const firstName = user?.firstName || ''
-  const lastName  = user?.lastName  || ''
+  const email     = effectiveEmail
+  const firstName = effectiveFirstName || ''
+  const lastName  = effectiveLastName  || ''
   const fullName  = [firstName, lastName].filter(Boolean).join(' ') || '—'
   const phone     = user?.primaryPhoneNumber?.phoneNumber || ''
   const username  = user?.username || ''
-  const createdAt = user?.createdAt
-    ? new Date(typeof user.createdAt === 'number' ? user.createdAt : user.createdAt).toLocaleDateString('pt-BR')
-    : '—'
+  const createdAt = effectiveCreatedAt
 
   // Verifica se conta é baseada em senha (não só OAuth)
   const hasPassword = user?.passwordEnabled ?? false
@@ -270,7 +280,7 @@ export default function PerfilPage() {
           ELYON
         </span>
         <button
-          onClick={() => { signOut().catch(() => {}); window.location.href = '/sign-in?logout=1' }}
+          onClick={() => { try { signOut() } catch {} window.location.href = '/sign-in?logout=1' }}
           className="text-sm text-slate-600 hover:text-red-400 transition-colors flex items-center gap-1.5"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -345,7 +355,7 @@ export default function PerfilPage() {
                 <Field label="Email principal"  value={email} />
                 <Field label="Username"         value={username} />
                 <Field label="Membro desde"     value={createdAt} />
-                <Field label="ID do usuário"    value={user?.id || '—'} sub="Identificador único da conta" />
+                <Field label="ID do usuário"    value={effectiveId || '—'} sub="Identificador único da conta" />
                 <div className="mt-6">
                   <button
                     onClick={() => openUserProfile()}
@@ -872,7 +882,7 @@ export default function PerfilPage() {
 
                   <div className="pt-2 border-t border-[#2A2A30]">
                     <button
-                      onClick={() => { signOut().catch(() => {}); window.location.href = '/sign-in?logout=1' }}
+                      onClick={() => { try { signOut() } catch {} window.location.href = '/sign-in?logout=1' }}
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm text-red-400 border border-red-400/20 hover:bg-red-400/05 transition-all"
                     >
                       Sair desta conta
