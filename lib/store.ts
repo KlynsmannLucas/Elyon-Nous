@@ -1,6 +1,14 @@
 // lib/store.ts — Estado global com Zustand
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+
+// Safari Private Browsing e configurações de privacidade podem lançar SecurityError
+// ao acessar localStorage. Este wrapper garante que nunca quebre a hidratação.
+const safeLocalStorage = createJSONStorage(() => ({
+  getItem:    (k: string) => { try { return localStorage.getItem(k) } catch { return null } },
+  setItem:    (k: string, v: string) => { try { localStorage.setItem(k, v) } catch {} },
+  removeItem: (k: string) => { try { localStorage.removeItem(k) } catch {} },
+}))
 
 export interface NousMessage {
   role: 'user' | 'nous'
@@ -571,6 +579,7 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'elyon-store',
+      storage: safeLocalStorage,
       partialize: (state) => ({
         clientData:          state.clientData,
         strategyData:        state.strategyData,

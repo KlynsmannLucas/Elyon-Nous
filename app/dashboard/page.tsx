@@ -352,8 +352,10 @@ export default function DashboardPage() {
   // mounted garante que o render complexo só acontece no client após hydration
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
-    setTermsAcceptedLocal(localStorage.getItem('elyon_terms_v1') === '1')
-    setMounted(true)
+    try {
+      setTermsAcceptedLocal(localStorage.getItem('elyon_terms_v1') === '1')
+    } catch {}
+    setMounted(true) // sempre executa, mesmo se localStorage lançar SecurityError (Safari Private)
   }, [])
   const showTermsModal = isLoaded && user && !termsAccepted && !termsAcceptedLocal
 
