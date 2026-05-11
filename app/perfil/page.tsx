@@ -86,6 +86,7 @@ function PerfilPageInner() {
     if (tab && SECTIONS.some(s => s.key === tab)) setActiveSection(tab)
     else if (!tab) setActiveSection('dados')
   }, [searchParams])
+  const [mounted, setMounted]     = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [syncLoading, setSyncLoading] = useState(false)
   const [syncMsg, setSyncMsg]   = useState('')
@@ -220,6 +221,8 @@ function PerfilPageInner() {
       .finally(() => setInvoicesLoading(false))
   }, [activeSection])
 
+  useEffect(() => { setMounted(true) }, [])
+
   // ── Pagamentos ──────────────────────────────────────────────────────────────
   const handlePortal = async () => {
     setPortalLoading(true)
@@ -272,6 +275,17 @@ function PerfilPageInner() {
     if (s === 'open')   return { label: 'Em aberto', color: '#F0B429' }
     if (s === 'void')   return { label: 'Cancelada', color: '#64748B' }
     return { label: s,  color: '#64748B' }
+  }
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+        <span className="font-display font-bold text-xl" style={{
+          background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        }}>ELYON</span>
+      </div>
+    )
   }
 
   return (
@@ -898,12 +912,14 @@ function PerfilPageInner() {
                   </button>
 
                   <div className="pt-2 border-t border-[#2A2A30]">
-                    <a
-                      href="/api/auth/signout"
+                    <button
+                      type="button"
+                      onClick={() => window.location.assign('/api/auth/signout')}
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm text-red-400 border border-red-400/20 hover:bg-red-400/05 transition-all"
+                      style={{ background: 'transparent', cursor: 'pointer' }}
                     >
                       Sair desta conta
-                    </a>
+                    </button>
                   </div>
                 </div>
               </div>
