@@ -1,9 +1,9 @@
 // app/perfil/page.tsx — Perfil do usuário: dados, plano, pagamentos, segurança
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useServerUserData } from '@/app/dashboard/UserDataProvider'
 
 type Section = 'dados' | 'contatos' | 'pagamentos' | 'faturas' | 'seguranca' | 'privacidade'
@@ -53,10 +53,11 @@ function InputField({
   )
 }
 
-export default function PerfilPage() {
+function PerfilPageInner() {
   const { user, isLoaded } = useUser()
-  const { signOut, openUserProfile } = useClerk()
+  const { openUserProfile } = useClerk()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const serverUser = useServerUserData()
 
   // Usa dados do Clerk quando carregado, senão usa dados do servidor
@@ -64,12 +65,22 @@ export default function PerfilPage() {
   const effectiveLastName  = (isLoaded && user) ? user.lastName  : serverUser?.lastName
   const effectiveEmail     = (isLoaded && user) ? (user.primaryEmailAddress?.emailAddress || '') : (serverUser?.email || '')
   const effectivePlan      = (isLoaded && user) ? (user.publicMetadata?.plan as string | undefined) : (serverUser?.plan ?? undefined)
-  const effectiveCreatedAt = (isLoaded && user)
-    ? (user.createdAt ? new Date(typeof user.createdAt === 'number' ? user.createdAt : user.createdAt).toLocaleDateString('pt-BR') : '—')
-    : (serverUser?.createdAt ? new Date(serverUser.createdAt).toLocaleDateString('pt-BR') : '—')
   const effectiveId        = (isLoaded && user) ? user.id : serverUser?.id
 
-  const [activeSection, setActiveSection] = useState<Section>('dados')
+  // Data só calculada no client para evitar mismatch de hidratação Node vs browser
+  const [effectiveCreatedAt, setEffectiveCreatedAt] = useState('—')
+  useEffect(() => {
+    const ts = (isLoaded && user)
+      ? (user.createdAt ? (typeof user.createdAt === 'number' ? user.createdAt : new Date(user.createdAt as any).getTime()) : null)
+      : (serverUser?.createdAt ?? null)
+    setEffectiveCreatedAt(ts ? new Date(ts).toLocaleDateString('pt-BR') : '—')
+  }, [isLoaded, user, serverUser])
+
+  // Tab vem diretamente do useSearchParams — sem flash de "dados" antes de mudar
+  const tabParam = searchParams.get('tab') as Section
+  const [activeSection, setActiveSection] = useState<Section>(
+    () => (tabParam && SECTIONS.some(s => s.key === tabParam)) ? tabParam : 'dados'
+  )
   const [portalLoading, setPortalLoading] = useState(false)
   const [syncLoading, setSyncLoading] = useState(false)
   const [syncMsg, setSyncMsg]   = useState('')
@@ -109,12 +120,7 @@ export default function PerfilPage() {
     }
   }
 
-  // ── Ler tab da URL ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const tab = params.get('tab') as Section
-    if (tab && SECTIONS.some((s) => s.key === tab)) setActiveSection(tab)
-  }, [])
+  // Tab já inicializado do useSearchParams — sem useEffect necessário
 
   // ── Telefone ────────────────────────────────────────────────────────────────
   const [showPhoneForm, setShowPhoneForm] = useState(false)
@@ -279,8 +285,8 @@ export default function PerfilPage() {
         >
           ELYON
         </span>
-        <button
-          onClick={() => { try { signOut() } catch {} window.location.href = '/sign-in?logout=1' }}
+        <a
+          href="/api/auth/signout"
           className="text-sm text-slate-600 hover:text-red-400 transition-colors flex items-center gap-1.5"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -289,7 +295,7 @@ export default function PerfilPage() {
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           Sair
-        </button>
+        </a>
       </div>
 
       <div className="max-w-4xl mx-auto">
@@ -881,12 +887,12 @@ export default function PerfilPage() {
                   </button>
 
                   <div className="pt-2 border-t border-[#2A2A30]">
-                    <button
-                      onClick={() => { try { signOut() } catch {} window.location.href = '/sign-in?logout=1' }}
+                    <a
+                      href="/api/auth/signout"
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm text-red-400 border border-red-400/20 hover:bg-red-400/05 transition-all"
                     >
                       Sair desta conta
-                    </button>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -896,5 +902,13 @@ export default function PerfilPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PerfilPage() {
+  return (
+    <Suspense>
+      <PerfilPageInner />
+    </Suspense>
   )
 }
