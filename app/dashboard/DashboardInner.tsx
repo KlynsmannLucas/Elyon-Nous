@@ -333,6 +333,15 @@ function ClientSelector({
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardInner() {
   console.log('DASHBOARD INNER RENDER')
+
+  // mounted: SEMPRE false no server e no client inicial (useState(false))
+  // Garante que server e client renderizam a mesma div → sem hydration mismatch
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    console.log('DASHBOARD INNER MOUNTED')
+    setMounted(true)
+  }, [])
+
   const { user, isLoaded } = useUser()
 
   const [clerkTimeout, setClerkTimeout] = useState(false)
@@ -753,8 +762,19 @@ export default function DashboardInner() {
     }
   }
 
-  // Clerk ainda não carregou: mostra tela neutra (sem SSR, sem mismatch)
-  if (!isLoaded && !clerkTimeout) return <div className="min-h-screen bg-[#0A0A0B]" />
+  // Guard 1 — IGUAL no server e no client → sem mismatch → effects rodam
+  if (!mounted) return (
+    <div style={{ background: 'white', color: '#333', minHeight: '100vh', padding: 40, fontSize: 20, fontFamily: 'monospace' }}>
+      Aguardando mount... (mounted=false, isLoaded={String(isLoaded)})
+    </div>
+  )
+
+  // Guard 2 — só roda após mount (client-only) → seguro usar isLoaded aqui
+  if (!isLoaded && !clerkTimeout) return (
+    <div style={{ background: 'white', color: '#333', minHeight: '100vh', padding: 40, fontSize: 20, fontFamily: 'monospace' }}>
+      Aguardando Clerk... (mounted=true, isLoaded=false, clerkTimeout=false)
+    </div>
+  )
 
   // ── Clerk falhou a inicializar em 5s — mostra tela de reconexão ──
   if (clerkTimeout && !isLoaded) {
