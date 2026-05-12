@@ -332,10 +332,15 @@ function ClientSelector({
 
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardInner() {
-  // mounted: SEMPRE false no server e no client inicial (useState(false))
-  // O return !mounted não pode conter valores de hook — deve ser 100% estático
+  // mounted + forceClient: garantem que o component sai do estado de loading
+  // O return !mounted deve ser 100% estático — zero valores de hook no JSX
   const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  const [forceClient, setForceClient] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+    const t = setTimeout(() => setForceClient(true), 1500)
+    return () => clearTimeout(t)
+  }, [])
 
   const { user, isLoaded } = useUser()
 
@@ -757,11 +762,17 @@ export default function DashboardInner() {
     }
   }
 
-  // Guard 1: 100% estático — sem valores de hook no JSX → server = client → sem mismatch
-  if (!mounted) return <div className="min-h-screen bg-[#0A0A0B]" />
+  // Guard 1: 100% estático — zero valores de hook no JSX → server = client → sem hydration mismatch
+  if (!mounted && !forceClient) return (
+    <div suppressHydrationWarning style={{ minHeight: '100vh', background: '#0A0A0B' }} />
+  )
 
-  // Guard 2: só roda após mount; aqui é seguro usar isLoaded/clerkTimeout
-  if (!isLoaded && !clerkTimeout) return <div className="min-h-screen bg-[#0A0A0B]" />
+  // Guard 2: após mount, espera Clerk — mostra texto para não ficar preto silencioso
+  if (!isLoaded && !clerkTimeout) return (
+    <div style={{ minHeight: '100vh', background: '#0A0A0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#64748B', fontSize: 14 }}>Carregando...</p>
+    </div>
+  )
 
   // ── Clerk falhou a inicializar em 5s — mostra tela de reconexão ──
   if (clerkTimeout && !isLoaded) {
