@@ -338,11 +338,18 @@ export default function DashboardPage() {
   const [storeReady, setStoreReady] = useState(false)
   useEffect(() => {
     setMounted(true)
-    const hydrate = async () => {
-      try { await (useAppStore.persist as any)?.rehydrate?.() } catch {}
-      setStoreReady(true)
+    const hydrateStore = async () => {
+      try {
+        if ((useAppStore.persist as any)?.rehydrate) {
+          await (useAppStore.persist as any).rehydrate()
+        }
+      } catch (err) {
+        console.error('[elyon] Zustand rehydrate failed:', err)
+      } finally {
+        setStoreReady(true)
+      }
     }
-    hydrate()
+    hydrateStore()
   }, [])
 
   // Timeout: se Clerk demorar >3s para carregar, continua mesmo sem isLoaded.
@@ -765,44 +772,33 @@ export default function DashboardPage() {
     }
   }
 
-  const appReady = mounted && storeReady && isLoaded
+  const clerkReady = isLoaded || clerkTimeout
+  const appReady = mounted && storeReady && clerkReady
 
   // Guard 1: idêntico no server e no client inicial — garante hydration sem mismatch
   if (!mounted) return <div className="min-h-screen bg-[#0A0A0B]" />
 
-  // Guard 2: espera store (localStorage) + Clerk carregarem antes de qualquer lógica real
+  // Guard 2: espera store + Clerk (com fallback de timeout)
   if (!appReady) {
-    // ── Clerk falhou a inicializar em 3s (timeout) — mostra tela de reconexão ──
-    if (clerkTimeout && !isLoaded) {
-      return (
-        <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
-          <div className="text-center max-w-sm">
-            <span className="font-display font-bold text-2xl block mb-6" style={{
-              background: 'linear-gradient(135deg, #F0B429, #FFD166)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>ELYON</span>
-            <p className="text-slate-400 text-sm mb-2">Não foi possível verificar sua sessão.</p>
-            <p className="text-slate-600 text-xs mb-6">Recarregue a página ou faça login novamente.</p>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => window.location.reload()}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-black"
-                style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
-              >
-                Recarregar
-              </button>
-              <a
-                href="/sign-in"
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-[#2A2A30] text-slate-400 hover:text-white transition-colors"
-              >
-                Fazer login
-              </a>
-            </div>
-          </div>
-        </div>
-      )
-    }
-    return <div className="min-h-screen bg-[#0A0A0B]" />
+    return (
+      <div style={{ color: 'white', background: '#0A0A0B', minHeight: '100vh', padding: 24, fontFamily: 'monospace' }}>
+        <h1 style={{ fontSize: 18, marginBottom: 16 }}>⏳ Carregando dashboard...</h1>
+        <pre style={{ fontSize: 13, color: '#aaa' }}>
+          {JSON.stringify({
+            mounted,
+            storeReady,
+            isLoaded,
+            clerkTimeout,
+            clerkReady,
+            appReady,
+            dbLoaded,
+            hasAccess,
+            view,
+            userId: user?.id ?? null,
+          }, null, 2)}
+        </pre>
+      </div>
+    )
   }
 
   // ── Não autenticado: redireciona para sign-in ──
