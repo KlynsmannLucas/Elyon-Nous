@@ -15,11 +15,14 @@
 html { scroll-behavior: smooth; }
 
 body {
-  /* DIAGNÓSTICO: fundo branco para detectar renders invisíveis — restaurar #030305 após diagnóstico */
-  background-color: white !important;
-  color: black !important;
+  background-color: #030305;
+  color: #E2E8F0;
   font-family: var(--font-dm-sans), sans-serif;
   -webkit-font-smoothing: antialiased;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size: 44px 44px;
 }
 
 /* ── Focus ring ──────────────────────────────────────────────────────────── */
