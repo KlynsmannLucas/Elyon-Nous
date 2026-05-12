@@ -332,6 +332,7 @@ function ClientSelector({
 
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardInner() {
+  console.log('DASHBOARD INNER RENDER')
   const { user, isLoaded } = useUser()
 
   const [clerkTimeout, setClerkTimeout] = useState(false)
