@@ -334,12 +334,6 @@ function ClientSelector({
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
 
-  // Rehydrata o store do localStorage (skipHydration:true impede auto-hidratação antes do React montar).
-  // try/catch protege contra JSON corrompido no localStorage que derrubaria o componente.
-  useEffect(() => {
-    try { useAppStore.persist.rehydrate() } catch {}
-  }, [])
-
   // Mounted: evita hydration mismatch com Clerk (useUser retorna valores diferentes server vs client).
   // Sem isso, onClick/useEffect não funcionam em produção.
   const [mounted, setMounted] = useState(false)
@@ -440,7 +434,7 @@ export default function DashboardPage() {
 
   // ── Sincronização com banco de dados ──────────────────────────────────────────
   // Roda na montagem sem esperar pelo Clerk JS — auth server-side via cookie de sessão
-  const [dbLoaded, setDbLoaded] = useState(false)
+  const [dbLoaded, setDbLoaded] = useState(true)
 
   useEffect(() => {
     fetch('/api/clients')
@@ -525,20 +519,19 @@ export default function DashboardPage() {
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
 
-  // View inicial: lê do store APÓS rehydrate() para ver os dados do localStorage.
-  // Usa getState() em vez de variáveis do closure para capturar o estado pós-hidratação.
+  // View inicial: dados locais (localStorage) definem a view imediatamente.
+  // Se não há dados locais, espera o banco carregar (tratado no useEffect [dbLoaded]).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const { clientData: cd, strategyData: sd, savedClients: sc } = useAppStore.getState()
 
     // ?new=1 tem prioridade — usuário clicou "Novo cliente" (link <a href>)
     if (params.get('new') === '1') {
       window.history.replaceState({}, '', '/dashboard')
       setView('wizard')
       setWizardStep(0)
-    } else if (cd && sd) {
+    } else if (clientData && strategyData) {
       setView('dashboard')
-    } else if (cd || sc.length > 0) {
+    } else if (clientData || savedClients.length > 0) {
       setView('selector')
     }
     // Se não há nada local nem no banco ainda, fica em 'selector' (estado inicial padrão)
@@ -766,6 +759,11 @@ export default function DashboardPage() {
     }
   }
 
+  // Primeiro guard: server (isLoaded=true via Clerk SSR) e client inicial (isLoaded=false)
+  // produzem HTML diferente em qualquer check que dependa de isLoaded.
+  // Retornar o mesmo <div> em ambos garante hydration perfeita — effects rodam — mounted vira true.
+  if (!mounted) return <div className="min-h-screen bg-[#0A0A0B]" />
+
   // ── Clerk falhou a inicializar em 3s (timeout) — mostra tela de reconexão ──
   if (clerkTimeout && !isLoaded) {
     return (
@@ -858,10 +856,6 @@ export default function DashboardPage() {
       </div>
     )
   }
-
-  // Bloqueia qualquer render que dependa de isLoaded/user enquanto o componente não montou.
-  // Garante que server (isLoaded=true) e client initial (isLoaded=false) produzam o mesmo HTML.
-  if (!mounted) return <div className="min-h-screen bg-[#0A0A0B]" />
 
   // ── Banner de trial ativo ──
   const TrialBanner = inTrial && !hasActivePlan(effectiveUserPlan) ? (

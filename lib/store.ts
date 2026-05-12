@@ -580,7 +580,6 @@ export const useAppStore = create<AppStore>()(
     {
       name: 'elyon-store',
       storage: safeLocalStorage,
-      skipHydration: true,
       partialize: (state) => ({
         clientData:          state.clientData,
         strategyData:        state.strategyData,
