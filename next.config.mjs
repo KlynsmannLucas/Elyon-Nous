@@ -64,7 +64,10 @@ const nextConfig = {
   },
 }
 
-export default withSentryConfig(nextConfig, {
+// DIAGNÓSTICO: Sentry desabilitado temporariamente para isolar crash de chunk
+export default nextConfig
+/*
+const _withSentry = withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
@@ -94,3 +97,4 @@ export default withSentryConfig(nextConfig, {
     },
   },
 });
+*/
