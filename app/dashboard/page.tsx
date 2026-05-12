@@ -332,11 +332,13 @@ function ClientSelector({
 
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  console.log('APP RENDER START')
   const { user, isLoaded } = useUser()
 
   const [mounted, setMounted] = useState(false)
   const [storeReady, setStoreReady] = useState(false)
   useEffect(() => {
+    console.log('APP MOUNTED')
     setMounted(true)
     const hydrateStore = async () => {
       try {
@@ -775,15 +777,19 @@ export default function DashboardPage() {
   const clerkReady = isLoaded || clerkTimeout
   const appReady = mounted && storeReady && clerkReady
 
-  // Guard 1: idêntico no server e no client inicial — garante hydration sem mismatch
-  if (!mounted) return <div className="min-h-screen bg-[#0A0A0B]" />
+  // Guard 1: mesmo output server e client → hydration sem mismatch
+  if (!mounted) return (
+    <div style={{ background: 'red', color: 'white', minHeight: '100vh', padding: 40, fontSize: 28, fontFamily: 'monospace', zIndex: 999999, position: 'relative' }}>
+      MONTANDO... (mounted=false)
+    </div>
+  )
 
   // Guard 2: espera store + Clerk (com fallback de timeout)
   if (!appReady) {
     return (
-      <div style={{ color: 'white', background: '#0A0A0B', minHeight: '100vh', padding: 24, fontFamily: 'monospace' }}>
-        <h1 style={{ fontSize: 18, marginBottom: 16 }}>⏳ Carregando dashboard...</h1>
-        <pre style={{ fontSize: 13, color: '#aaa' }}>
+      <div style={{ color: '#111', background: '#fff', minHeight: '100vh', padding: 24, fontFamily: 'monospace' }}>
+        <h1 style={{ fontSize: 20, marginBottom: 16, color: 'red' }}>DEBUG — AGUARDANDO appReady</h1>
+        <pre style={{ fontSize: 13 }}>
           {JSON.stringify({
             mounted,
             storeReady,

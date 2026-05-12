@@ -9,27 +9,15 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 
   return (
     <html>
-      <body style={{ margin: 0, background: '#0A0A0B', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ textAlign: 'center', maxWidth: '420px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-            <h1 style={{ color: '#fff', fontSize: '22px', fontWeight: 700, margin: '0 0 12px' }}>
-              Algo deu errado
-            </h1>
-            <p style={{ color: '#64748B', fontSize: '15px', lineHeight: 1.6, margin: '0 0 28px' }}>
-              Ocorreu um erro inesperado. Nossa equipe já foi notificada.
-            </p>
-            <button
-              onClick={reset}
-              style={{
-                background: 'linear-gradient(135deg, #F5A500, #FFD166)',
-                color: '#000', fontWeight: 700, fontSize: '15px',
-                padding: '14px 28px', borderRadius: '14px', border: 'none', cursor: 'pointer',
-              }}
-            >
-              Tentar novamente
-            </button>
-          </div>
+      <body style={{ margin: 0, background: '#fff', fontFamily: 'monospace' }}>
+        <div style={{ minHeight: '100vh', padding: '40px' }}>
+          <h1 style={{ color: 'red', fontSize: '24px', margin: '0 0 16px' }}>ERRO GLOBAL CAPTURADO</h1>
+          <pre style={{ color: '#111', fontSize: '13px', whiteSpace: 'pre-wrap', marginBottom: 24 }}>
+            {error?.message}{'\n\n'}{error?.stack}
+          </pre>
+          <button onClick={reset} style={{ background: '#F5A500', color: '#000', fontWeight: 700, fontSize: '15px', padding: '12px 24px', border: 'none', cursor: 'pointer', borderRadius: 8 }}>
+            Tentar novamente
+          </button>
         </div>
       </body>
     </html>
