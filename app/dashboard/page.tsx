@@ -334,10 +334,16 @@ function ClientSelector({
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
 
-  // Mounted: evita hydration mismatch com Clerk (useUser retorna valores diferentes server vs client).
-  // Sem isso, onClick/useEffect não funcionam em produção.
   const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  const [storeReady, setStoreReady] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+    const hydrate = async () => {
+      try { await (useAppStore.persist as any)?.rehydrate?.() } catch {}
+      setStoreReady(true)
+    }
+    hydrate()
+  }, [])
 
   // Timeout: se Clerk demorar >3s para carregar, continua mesmo sem isLoaded.
   // Usa [] para nunca resetar — se isLoaded oscilar, o timer não é cancelado.
@@ -759,40 +765,44 @@ export default function DashboardPage() {
     }
   }
 
-  // Primeiro guard: server (isLoaded=true via Clerk SSR) e client inicial (isLoaded=false)
-  // produzem HTML diferente em qualquer check que dependa de isLoaded.
-  // Retornar o mesmo <div> em ambos garante hydration perfeita — effects rodam — mounted vira true.
+  const appReady = mounted && storeReady && isLoaded
+
+  // Guard 1: idêntico no server e no client inicial — garante hydration sem mismatch
   if (!mounted) return <div className="min-h-screen bg-[#0A0A0B]" />
 
-  // ── Clerk falhou a inicializar em 3s (timeout) — mostra tela de reconexão ──
-  if (clerkTimeout && !isLoaded) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <span className="font-display font-bold text-2xl block mb-6" style={{
-            background: 'linear-gradient(135deg, #F0B429, #FFD166)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>ELYON</span>
-          <p className="text-slate-400 text-sm mb-2">Não foi possível verificar sua sessão.</p>
-          <p className="text-slate-600 text-xs mb-6">Recarregue a página ou faça login novamente.</p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={() => window.location.reload()}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold text-black"
-              style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
-            >
-              Recarregar
-            </button>
-            <a
-              href="/sign-in"
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-[#2A2A30] text-slate-400 hover:text-white transition-colors"
-            >
-              Fazer login
-            </a>
+  // Guard 2: espera store (localStorage) + Clerk carregarem antes de qualquer lógica real
+  if (!appReady) {
+    // ── Clerk falhou a inicializar em 3s (timeout) — mostra tela de reconexão ──
+    if (clerkTimeout && !isLoaded) {
+      return (
+        <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
+          <div className="text-center max-w-sm">
+            <span className="font-display font-bold text-2xl block mb-6" style={{
+              background: 'linear-gradient(135deg, #F0B429, #FFD166)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>ELYON</span>
+            <p className="text-slate-400 text-sm mb-2">Não foi possível verificar sua sessão.</p>
+            <p className="text-slate-600 text-xs mb-6">Recarregue a página ou faça login novamente.</p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-black"
+                style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
+              >
+                Recarregar
+              </button>
+              <a
+                href="/sign-in"
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-[#2A2A30] text-slate-400 hover:text-white transition-colors"
+              >
+                Fazer login
+              </a>
+            </div>
           </div>
         </div>
-      </div>
-    )
+      )
+    }
+    return <div className="min-h-screen bg-[#0A0A0B]" />
   }
 
   // ── Não autenticado: redireciona para sign-in ──
