@@ -987,7 +987,7 @@ export default function DashboardBody() {
         active={activeTab}
         onChange={setActiveTab}
         clientData={clientData}
-        userPlan={effectiveUserPlan}
+        userPlan={effectivePlan}
         user={effectiveUser}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
