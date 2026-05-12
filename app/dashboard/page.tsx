@@ -335,8 +335,10 @@ export default function DashboardPage() {
   const { user, isLoaded } = useUser()
 
   // Rehydrata o store do localStorage (skipHydration:true impede auto-hidratação antes do React montar).
-  // Deve ser o primeiro useEffect para que os effects subsequentes vejam os dados locais.
-  useEffect(() => { useAppStore.persist.rehydrate() }, [])
+  // try/catch protege contra JSON corrompido no localStorage que derrubaria o componente.
+  useEffect(() => {
+    try { useAppStore.persist.rehydrate() } catch {}
+  }, [])
 
   // Mounted: evita hydration mismatch com Clerk (useUser retorna valores diferentes server vs client).
   // Sem isso, onClick/useEffect não funcionam em produção.
@@ -857,6 +859,10 @@ export default function DashboardPage() {
     )
   }
 
+  // Bloqueia qualquer render que dependa de isLoaded/user enquanto o componente não montou.
+  // Garante que server (isLoaded=true) e client initial (isLoaded=false) produzam o mesmo HTML.
+  if (!mounted) return <div className="min-h-screen bg-[#0A0A0B]" />
+
   // ── Banner de trial ativo ──
   const TrialBanner = inTrial && !hasActivePlan(effectiveUserPlan) ? (
     <div style={{ position: 'fixed', bottom: 0, left: isMobile ? 0 : (sidebarCollapsed ? '56px' : '220px'), right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(3,3,5,0.95)', backdropFilter: 'blur(12px)' }}>
@@ -869,8 +875,6 @@ export default function DashboardPage() {
       </a>
     </div>
   ) : null
-
-  if (!mounted) return <div className="min-h-screen bg-[#0A0A0B]" />
 
   // ── Seletor de clientes ──
   if (view === 'selector') {
