@@ -1,5 +1,5 @@
-// DIAGNÓSTICO: layout mínimo sem ClerkProvider — remover após diagnóstico
 import type { Metadata } from 'next'
+import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -8,13 +8,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <body style={{ background: '#00FF00', color: 'black', margin: 0, padding: 0 }}>
-        <div style={{ background: '#FF0', color: '#000', padding: '8px 16px', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>
-          LAYOUT MÍNIMO ATIVO — SEM CLERKPROVIDER
-        </div>
-        {children}
-      </body>
-    </html>
+    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard">
+      <html lang="pt-BR">
+        <body style={{ background: 'white', color: 'black', margin: 0, padding: 0 }}>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

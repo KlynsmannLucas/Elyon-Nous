@@ -762,15 +762,15 @@ export default function DashboardInner() {
     }
   }
 
-  // Guard 1: 100% estático — zero valores de hook no JSX → server = client → sem hydration mismatch
+  // Guard 1: 100% estático — cor vermelha para diagnóstico (era #0A0A0B)
   if (!mounted && !forceClient) return (
-    <div suppressHydrationWarning style={{ minHeight: '100vh', background: '#0A0A0B' }} />
+    <div suppressHydrationWarning style={{ minHeight: '100vh', background: '#FF0000' }} />
   )
 
-  // Guard 2: após mount, espera Clerk — mostra texto para não ficar preto silencioso
+  // Guard 2: após mount, espera Clerk
   if (!isLoaded && !clerkTimeout) return (
-    <div style={{ minHeight: '100vh', background: '#0A0A0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#64748B', fontSize: 14 }}>Carregando...</p>
+    <div style={{ minHeight: '100vh', background: '#0000FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>AGUARDANDO CLERK...</p>
     </div>
   )
 
