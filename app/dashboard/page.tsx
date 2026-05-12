@@ -1,15 +1,17 @@
 'use client'
-import dynamic from 'next/dynamic'
+import { lazy, Suspense } from 'react'
 
-const DashboardTest = dynamic(() => import('./DashboardTest'), {
-  ssr: false,
-  loading: () => (
-    <div style={{ background: 'orange', color: 'black', minHeight: '100vh', padding: 40, fontSize: 24 }}>
-      Carregando chunk mínimo...
-    </div>
-  ),
-})
+// Testa React.lazy nativo em vez de next/dynamic
+const DashboardTest = lazy(() => import('./DashboardTest'))
 
 export default function DashboardPage() {
-  return <DashboardTest />
+  return (
+    <Suspense fallback={
+      <div style={{ background: 'purple', color: 'white', minHeight: '100vh', padding: 40, fontSize: 24 }}>
+        React.lazy carregando...
+      </div>
+    }>
+      <DashboardTest />
+    </Suspense>
+  )
 }
