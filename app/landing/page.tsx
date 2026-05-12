@@ -1,7 +1,3 @@
-'use client'
-
-import { useAuth } from '@clerk/nextjs'
-
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -322,8 +318,9 @@ const OBJECTIONS = [
 ]
 
 export default function LandingPage() {
-  const { isSignedIn } = useAuth()
-  const ctaHref = isSignedIn ? '/dashboard' : '/sign-in'
+  // Sempre /sign-in: middleware redireciona usuários logados para /dashboard.
+  // Evita hydration mismatch (useAuth retorna isSignedIn=false no cliente inicial).
+  const ctaHref = '/sign-in'
 
   return (
     <>
