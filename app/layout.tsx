@@ -61,20 +61,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <html lang="pt-BR" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}>
         <body className="bg-[#0A0A0B] text-slate-200 font-body antialiased">
-          <script dangerouslySetInnerHTML={{ __html: `
-            window.addEventListener('error', function(e) {
-              var d = document.createElement('div');
-              d.style = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:16px;z-index:99999;font-size:13px;white-space:pre-wrap;font-family:monospace';
-              d.textContent = 'JS ERROR: ' + e.message + '\\n' + (e.filename||'') + ':' + e.lineno;
-              document.body.appendChild(d);
-            });
-            window.addEventListener('unhandledrejection', function(e) {
-              var d = document.createElement('div');
-              d.style = 'position:fixed;top:0;left:0;right:0;background:orange;color:black;padding:16px;z-index:99999;font-size:13px;white-space:pre-wrap;font-family:monospace';
-              d.textContent = 'PROMISE ERROR: ' + e.reason;
-              document.body.appendChild(d);
-            });
-          ` }} />
           {children}
         </body>
       </html>
