@@ -334,6 +334,10 @@ function ClientSelector({
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
 
+  // Rehydrata o store do localStorage (skipHydration:true impede auto-hidratação antes do React montar).
+  // Deve ser o primeiro useEffect para que os effects subsequentes vejam os dados locais.
+  useEffect(() => { useAppStore.persist.rehydrate() }, [])
+
   // Mounted: evita hydration mismatch com Clerk (useUser retorna valores diferentes server vs client).
   // Sem isso, onClick/useEffect não funcionam em produção.
   const [mounted, setMounted] = useState(false)
@@ -404,16 +408,18 @@ export default function DashboardPage() {
   // ── User info pré-carregado pelo layout.tsx (server-side, sem fetch extra) ────
   const serverUser = useServerUserData()
 
-  // Usa dados do Clerk quando carregado, senão usa dados do servidor
-  const effectiveUser = (isLoaded && user) ? user : serverUser
+  // Sempre usa serverUser para effectiveUser: garante output idêntico no server e no client
+  // inicial (antes do Clerk carregar). Operações dinâmicas que precisam do Clerk real
+  // (ex: reload após checkout) usam `user` diretamente.
+  const effectiveUser = serverUser
     ? {
         firstName:      serverUser.firstName,
         lastName:       serverUser.lastName,
-        username:       null,
-        emailAddresses: [{ emailAddress: serverUser.email }],
-        publicMetadata: { plan: serverUser.plan },
+        username:       null as string | null,
+        emailAddresses: [{ emailAddress: serverUser.email, id: 'primary' }],
+        publicMetadata: { plan: serverUser.plan } as Record<string, unknown>,
         createdAt:      serverUser.createdAt,
-        reload:         async () => {},
+        reload:         async () => { try { await (user as any)?.reload?.() } catch {} },
       } as any
     : null
 
@@ -432,7 +438,7 @@ export default function DashboardPage() {
 
   // ── Sincronização com banco de dados ──────────────────────────────────────────
   // Roda na montagem sem esperar pelo Clerk JS — auth server-side via cookie de sessão
-  const [dbLoaded, setDbLoaded] = useState(true)
+  const [dbLoaded, setDbLoaded] = useState(false)
 
   useEffect(() => {
     fetch('/api/clients')
@@ -517,19 +523,20 @@ export default function DashboardPage() {
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
 
-  // View inicial: dados locais (localStorage) definem a view imediatamente.
-  // Se não há dados locais, espera o banco carregar (tratado no useEffect [dbLoaded]).
+  // View inicial: lê do store APÓS rehydrate() para ver os dados do localStorage.
+  // Usa getState() em vez de variáveis do closure para capturar o estado pós-hidratação.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    const { clientData: cd, strategyData: sd, savedClients: sc } = useAppStore.getState()
 
     // ?new=1 tem prioridade — usuário clicou "Novo cliente" (link <a href>)
     if (params.get('new') === '1') {
       window.history.replaceState({}, '', '/dashboard')
       setView('wizard')
       setWizardStep(0)
-    } else if (clientData && strategyData) {
+    } else if (cd && sd) {
       setView('dashboard')
-    } else if (clientData || savedClients.length > 0) {
+    } else if (cd || sc.length > 0) {
       setView('selector')
     }
     // Se não há nada local nem no banco ainda, fica em 'selector' (estado inicial padrão)
