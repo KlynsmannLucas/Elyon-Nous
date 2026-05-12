@@ -5,58 +5,60 @@ export type PlanTier = 'free' | 'trial' | 'individual' | 'profissional' | 'avanc
 export interface PlanLimits {
   maxClients: number
   maxStrategiesPerHour: number  // 0 = sem limite
+  // Grupos de abas
+  hasAnunciosGroup: boolean     // Anúncios IA + Audiências
+  hasCriativoGroup: boolean     // Campanha, Persona, Conteúdo, Assets, Concorrentes
+  hasAvancadoGroup: boolean     // Inteligência, Cenários, Mercado & Nicho
+  // Features específicas
   hasConnections: boolean       // Meta Ads + Google Ads OAuth
-  hasMultipleAccounts: boolean  // Múltiplas contas por plataforma
-  hasAudit: boolean             // Auditoria com IA
-  hasAdvancedDiagnostic: boolean
-  hasAPI: boolean
+  hasAudit: boolean             // Análise Profunda
 }
 
 const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   free: {
     maxClients: 1,
-    maxStrategiesPerHour: 0,
+    maxStrategiesPerHour: 2,
+    hasAnunciosGroup: false,
+    hasCriativoGroup: false,
+    hasAvancadoGroup: false,
     hasConnections: false,
-    hasMultipleAccounts: false,
     hasAudit: false,
-    hasAdvancedDiagnostic: false,
-    hasAPI: false,
   },
   trial: {
     maxClients: 3,
     maxStrategiesPerHour: 4,
-    hasConnections: false,
-    hasMultipleAccounts: false,
-    hasAudit: false,
-    hasAdvancedDiagnostic: false,
-    hasAPI: false,
+    hasAnunciosGroup: true,
+    hasCriativoGroup: true,
+    hasAvancadoGroup: true,
+    hasConnections: true,
+    hasAudit: true,
   },
   individual: {
-    maxClients: 1,
+    maxClients: 3,
     maxStrategiesPerHour: 0,
+    hasAnunciosGroup: false,
+    hasCriativoGroup: false,
+    hasAvancadoGroup: false,
     hasConnections: false,
-    hasMultipleAccounts: false,
-    hasAudit: false,
-    hasAdvancedDiagnostic: false,
-    hasAPI: false,
+    hasAudit: true,
   },
   profissional: {
-    maxClients: 8,
+    maxClients: 10,
     maxStrategiesPerHour: 0,
+    hasAnunciosGroup: true,
+    hasCriativoGroup: true,
+    hasAvancadoGroup: false,
     hasConnections: true,
-    hasMultipleAccounts: false,
     hasAudit: true,
-    hasAdvancedDiagnostic: true,
-    hasAPI: false,
   },
   avancada: {
-    maxClients: 15,
+    maxClients: 30,
     maxStrategiesPerHour: 0,
+    hasAnunciosGroup: true,
+    hasCriativoGroup: true,
+    hasAvancadoGroup: true,
     hasConnections: true,
-    hasMultipleAccounts: true,
     hasAudit: true,
-    hasAdvancedDiagnostic: true,
-    hasAPI: true,
   },
 }
 
@@ -66,8 +68,10 @@ export function getPlanLimits(plan?: string): PlanLimits {
 }
 
 export function hasActivePlan(plan?: string): boolean {
-  return !!plan && plan !== 'free' && plan in PLAN_LIMITS && plan !== 'free'
+  return !!plan && plan !== 'free' && plan in PLAN_LIMITS
 }
+
+export const TRIAL_DAYS = 7
 
 export const PLAN_NAMES: Record<string, string> = {
   individual:   'Individual',
@@ -75,20 +79,15 @@ export const PLAN_NAMES: Record<string, string> = {
   avancada:     'Avançada',
 }
 
-export const UPGRADE_MESSAGES: Record<string, { title: string; description: string; requiredPlan: string }> = {
-  connections: {
-    title: 'Conexão Meta + Google Ads',
-    description: 'Conecte suas contas de anúncios para ver dados reais em tempo real.',
-    requiredPlan: 'Profissional',
-  },
-  audit: {
-    title: 'Auditoria com IA',
-    description: 'Análise automatizada das suas campanhas com recomendações da IA.',
-    requiredPlan: 'Profissional',
-  },
-  clients: {
-    title: 'Mais clientes',
-    description: 'O plano Individual permite apenas 1 cliente ativo.',
-    requiredPlan: 'Profissional',
-  },
+export const PLAN_PRICES: Record<string, string> = {
+  individual:   'R$297/mês',
+  profissional: 'R$997/mês',
+  avancada:     'R$2.997/mês',
+}
+
+// Plano mínimo necessário para cada grupo bloqueado
+export const GROUP_REQUIRED_PLAN: Record<string, { name: string; price: string }> = {
+  anuncios: { name: 'Profissional', price: 'R$997/mês' },
+  criativo: { name: 'Profissional', price: 'R$997/mês' },
+  avancado: { name: 'Avançado',     price: 'R$2.997/mês' },
 }

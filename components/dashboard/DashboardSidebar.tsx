@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { getPlanLimits } from '@/lib/planUtils'
 
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
@@ -72,6 +73,13 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  const planLimits = getPlanLimits(userPlan)
+  const SECTION_LOCK: Record<string, boolean> = {
+    'Anúncios': !planLimits.hasAnunciosGroup,
+    'Criativo':  !planLimits.hasCriativoGroup,
+    'Avançado':  !planLimits.hasAvancadoGroup,
+  }
 
   const plan         = userPlan ? PLAN_LABELS[userPlan] : null
   const userName     = user?.firstName || user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || ''
@@ -172,16 +180,21 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: collapsed ? '8px 4px' : '8px', overflowY: 'auto' }}>
-        {SIDEBAR_SECTIONS.map((section) => (
+        {SIDEBAR_SECTIONS.map((section) => {
+          const isLocked = SECTION_LOCK[section.label] ?? false
+          return (
           <div key={section.label} style={{ marginBottom: collapsed ? '8px' : '14px' }}>
             {/* Section label — hidden when collapsed */}
             {!collapsed && (
               <div style={{
                 fontSize: '9px', fontFamily: 'var(--font-mono)',
-                color: 'rgba(255,255,255,0.22)', letterSpacing: '0.12em',
+                color: isLocked ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.22)',
+                letterSpacing: '0.12em',
                 textTransform: 'uppercase', padding: '0 8px', marginBottom: '3px',
+                display: 'flex', alignItems: 'center', gap: '4px',
               }}>
                 {section.label}
+                {isLocked && <span style={{ fontSize: '8px', opacity: 0.6 }}>🔒</span>}
               </div>
             )}
 
@@ -195,7 +208,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                 <button
                   key={item.key}
                   onClick={() => { onChange(item.key); if (isMobile && !collapsed) onToggleCollapse() }}
-                  title={collapsed ? item.label : undefined}
+                  title={collapsed ? (isLocked ? `${item.label} (bloqueado)` : item.label) : undefined}
                   style={{
                     width: '100%',
                     display: 'flex',
@@ -207,7 +220,9 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                     border: 'none',
                     background: isActive ? 'rgba(245,165,0,0.1)' : 'transparent',
                     boxShadow: isActive ? 'inset 0 0 0 1px rgba(245,165,0,0.18)' : 'none',
-                    color: isActive ? '#F5A500' : 'rgba(255,255,255,0.42)',
+                    color: isLocked
+                      ? 'rgba(255,255,255,0.22)'
+                      : isActive ? '#F5A500' : 'rgba(255,255,255,0.42)',
                     fontSize: '13px',
                     fontWeight: isActive ? 600 : 400,
                     cursor: 'pointer',
@@ -215,9 +230,16 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                     outline: 'none',
                     transition: 'all 0.12s',
                     position: 'relative',
+                    opacity: isLocked ? 0.6 : 1,
                   }}
-                  onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' } }}
-                  onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.42)' } }}
+                  onMouseEnter={(e) => {
+                    if (isLocked) { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; return }
+                    if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (isLocked) { e.currentTarget.style.background = 'transparent'; return }
+                    if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.42)' }
+                  }}
                 >
                   <span style={{ fontSize: '14px', flexShrink: 0, lineHeight: 1 }}>{item.icon}</span>
 
@@ -230,7 +252,11 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                       }}>
                         {item.label}
                       </span>
-                      {item.badge && (
+                      {isLocked ? (
+                        <span style={{
+                          fontSize: '9px', color: 'rgba(255,255,255,0.2)', flexShrink: 0,
+                        }}>🔒</span>
+                      ) : item.badge ? (
                         <span style={{
                           fontSize: '8px', fontFamily: 'var(--font-mono)', color: '#22C55E',
                           background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
@@ -238,12 +264,18 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                         }}>
                           {item.badge}
                         </span>
-                      )}
+                      ) : null}
                     </>
                   )}
 
-                  {/* Live badge dot when collapsed */}
-                  {collapsed && item.badge && (
+                  {/* Collapsed: live dot or lock dot */}
+                  {collapsed && isLocked && (
+                    <span style={{
+                      position: 'absolute', top: '5px', right: '5px',
+                      fontSize: '7px', opacity: 0.4,
+                    }}>🔒</span>
+                  )}
+                  {collapsed && !isLocked && item.badge && (
                     <span style={{
                       position: 'absolute', top: '5px', right: '5px',
                       width: '5px', height: '5px', borderRadius: '50%',
@@ -254,7 +286,8 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
               )
             })}
           </div>
-        ))}
+          )
+        })}
       </nav>
 
       {/* Client badge */}

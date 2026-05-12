@@ -29,7 +29,7 @@ import { NousChat }        from '@/components/dashboard/NousChat'
 import { DashboardSidebar, type TabKey } from '@/components/dashboard/DashboardSidebar'
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar'
 import { TermsModal } from '@/components/dashboard/TermsModal'
-import { getPlanLimits, hasActivePlan } from '@/lib/planUtils'
+import { getPlanLimits, hasActivePlan, TRIAL_DAYS, GROUP_REQUIRED_PLAN } from '@/lib/planUtils'
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
   individual:   { label: 'Individual',   color: '#38BDF8' },
@@ -346,7 +346,7 @@ export default function DashboardBody() {
   }, [])
   const showTermsModal = isLoaded && user && !termsAccepted && !termsAcceptedLocal
 
-  const TRIAL_DAYS = 14
+  // TRIAL_DAYS importado de planUtils (7 dias)
 
   const {
     clientData, strategyData, isGenerating,
@@ -674,6 +674,57 @@ export default function DashboardBody() {
     setGenError('')
   }
 
+  function UpgradeWall({ group }: { group: 'anuncios' | 'criativo' | 'avancado' }) {
+    const req = GROUP_REQUIRED_PLAN[group]
+    const descriptions: Record<string, { icon: string; title: string; items: string[] }> = {
+      anuncios: {
+        icon: '📡',
+        title: 'Anúncios & Audiências',
+        items: ['Geração de anúncios com IA', 'Segmentação de audiências por nicho', 'Criação de copies para Meta e Google'],
+      },
+      criativo: {
+        icon: '✨',
+        title: 'Criativo & Concorrentes',
+        items: ['Campanha Campeã com IA', 'Persona detalhada do cliente ideal', 'Criador de conteúdo para redes sociais', 'Radar de concorrentes', 'Assets e identidade visual'],
+      },
+      avancado: {
+        icon: '🧠',
+        title: 'Inteligência Avançada',
+        items: ['Inteligência de mercado em tempo real', 'Cenários de crescimento e projeções', 'Análise de mercado e nicho'],
+      },
+    }
+    const info = descriptions[group]
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '40px 24px' }}>
+        <div style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 20px' }}>
+            🔒
+          </div>
+          <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: 'var(--font-syne)' }}>
+            {info.icon} {info.title}
+          </h2>
+          <p style={{ color: '#64748B', fontSize: 14, marginBottom: 24 }}>
+            Disponível no plano <strong style={{ color: '#F0B429' }}>{req.name}</strong> — {req.price}
+          </p>
+          <div style={{ background: '#111114', border: '1px solid #2A2A30', borderRadius: 12, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
+            {info.items.map((item) => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', color: '#94A3B8', fontSize: 13 }}>
+                <span style={{ color: '#22C55E', fontSize: 12 }}>✓</span>
+                {item}
+              </div>
+            ))}
+          </div>
+          <a
+            href="/landing#pricing"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 28px', borderRadius: 10, background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
+          >
+            ⚡ Ver planos e fazer upgrade
+          </a>
+        </div>
+      </div>
+    )
+  }
+
   function renderTab() {
     const strategy = strategyData?.strategy || {}
     const analysis = strategyData?.analysis || {}
@@ -683,6 +734,21 @@ export default function DashboardBody() {
     )
 
     const goUpgrade = () => window.location.href = '/landing#pricing'
+
+    // Abas do grupo Anúncios — requer Profissional
+    if (!planLimits.hasAnunciosGroup && (activeTab === 'anuncios' || activeTab === 'audiencias')) {
+      return <UpgradeWall group="anuncios" />
+    }
+
+    // Abas do grupo Criativo — requer Profissional
+    if (!planLimits.hasCriativoGroup && (activeTab === 'campanha' || activeTab === 'persona' || activeTab === 'conteudo' || activeTab === 'assets' || activeTab === 'concorrentes')) {
+      return <UpgradeWall group="criativo" />
+    }
+
+    // Abas do grupo Avançado — requer Avançado
+    if (!planLimits.hasAvancadoGroup && (activeTab === 'inteligencia' || activeTab === 'cenarios' || activeTab === 'mercado')) {
+      return <UpgradeWall group="avancado" />
+    }
 
     switch (activeTab) {
       case 'overview':      return wrap('Overview',          <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} />)
