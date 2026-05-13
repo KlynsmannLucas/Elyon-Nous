@@ -40,6 +40,12 @@ export function TabConnections() {
   const [loadingGoogle,   setLoadingGoogle]   = useState(false)
   const [error,           setError]           = useState('')
 
+  // Seletor de conta Meta — ativo quando há múltiplas contas após OAuth
+  const [pendingMeta,     setPendingMeta]     = useState<{
+    accessToken: string
+    accounts: { id: string; name: string }[]
+  } | null>(null)
+
   const metaAccount   = connectedAccounts.find((a) => a.platform === 'meta')
   const googleAccount = connectedAccounts.find((a) => a.platform === 'google')
 
@@ -62,15 +68,23 @@ export function TabConnections() {
       fetch('/api/oauth/token')
         .then((r) => r.json())
         .then((data) => {
-          if (data.success && data.accessToken) {
-            connectAccount({
-              platform:    data.platform,
-              accessToken: data.accessToken,
-              accountId:   data.accountId   || undefined,
-              accountName: data.accountName || undefined,
-              connectedAt: new Date().toISOString(),
-            })
+          if (!data.success || !data.accessToken) return
+          const accounts: { id: string; name: string }[] = data.accounts || []
+
+          // Meta com múltiplas contas → mostra seletor
+          if (data.platform === 'meta' && accounts.length > 1) {
+            setPendingMeta({ accessToken: data.accessToken, accounts })
+            return
           }
+
+          // Conta única ou Google → conecta direto
+          connectAccount({
+            platform:    data.platform,
+            accessToken: data.accessToken,
+            accountId:   data.accountId   || undefined,
+            accountName: data.accountName || undefined,
+            connectedAt: new Date().toISOString(),
+          })
         })
         .catch(() => setError('Erro ao recuperar token de conexão. Tente conectar novamente.'))
     }
@@ -199,13 +213,47 @@ export function TabConnections() {
             )}
           </div>
 
-          {metaAccount ? (
+          {/* Seletor de conta — aparece após OAuth com múltiplas contas */}
+          {!metaAccount && pendingMeta ? (
+            <div className="space-y-3">
+              <div className="text-xs text-slate-400 font-semibold">Selecione a conta de anúncios:</div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {pendingMeta.accounts.map((acc) => (
+                  <button
+                    key={acc.id}
+                    onClick={() => {
+                      connectAccount({
+                        platform:    'meta',
+                        accessToken: pendingMeta.accessToken,
+                        accountId:   acc.id,
+                        accountName: acc.name,
+                        connectedAt: new Date().toISOString(),
+                      })
+                      setPendingMeta(null)
+                    }}
+                    className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-80"
+                    style={{ background: 'rgba(24,119,242,0.1)', border: '1px solid rgba(24,119,242,0.25)' }}
+                  >
+                    <div className="text-sm font-semibold truncate">{acc.name}</div>
+                    <div className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {acc.id}</div>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setPendingMeta(null)}
+                className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : metaAccount ? (
             <div className="space-y-3">
               <div className="bg-[#16161A] rounded-xl px-3 py-2">
-                <div className="text-[10px] text-slate-500 uppercase mb-0.5">Conta</div>
+                <div className="text-[10px] text-slate-500 uppercase mb-0.5">Conta ativa</div>
                 <div className="text-sm font-semibold text-white truncate">
                   {metaAccount.accountName || metaAccount.accountId || 'Conta conectada'}
                 </div>
+                <div className="text-[10px] text-slate-600 font-mono mt-0.5">ID: {metaAccount.accountId}</div>
               </div>
               <div className="flex gap-2">
                 <button

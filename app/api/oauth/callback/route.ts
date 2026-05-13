@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
     let accessToken = ''
     let accountId   = ''
     let accountName = ''
+    let allAccounts: { id: string; name: string }[] = []
 
     const appOrigin = new URL(req.url).origin
 
@@ -54,14 +55,18 @@ export async function GET(req: NextRequest) {
       if (tokenData.error) throw new Error(tokenData.error.message)
       accessToken = tokenData.access_token
 
-      // Busca ad accounts do usuário
+      // Busca todas as ad accounts do usuário
       const accountsRes = await fetch(
-        `https://graph.facebook.com/v19.0/me/adaccounts?fields=id,name&access_token=${accessToken}`
+        `https://graph.facebook.com/v19.0/me/adaccounts?fields=id,name&limit=50&access_token=${accessToken}`
       )
       const accountsData = await accountsRes.json()
-      if (accountsData.data?.[0]) {
-        accountId   = accountsData.data[0].id.replace('act_', '')
-        accountName = accountsData.data[0].name
+      allAccounts = (accountsData.data || []).map((a: any) => ({
+        id:   a.id.replace('act_', ''),
+        name: a.name,
+      }))
+      if (allAccounts[0]) {
+        accountId   = allAccounts[0].id
+        accountName = allAccounts[0].name
       }
     }
 
@@ -131,6 +136,7 @@ export async function GET(req: NextRequest) {
     // Token nunca vai na URL — armazenado em cookie httpOnly por 60s
     const oauthResult = Buffer.from(JSON.stringify({
       platform, accessToken, accountId, accountName,
+      accounts: allAccounts,
     })).toString('base64')
 
     const res = NextResponse.redirect(
