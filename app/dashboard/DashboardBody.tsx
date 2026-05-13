@@ -25,9 +25,13 @@ import { TabAssets }       from '@/components/dashboard/TabAssets'
 import { TabConcorrentes } from '@/components/dashboard/TabConcorrentes'
 import { TabCampanha }     from '@/components/dashboard/TabCampanha'
 import { TabRelatorios }   from '@/components/dashboard/TabRelatorios'
+import { TabCRO }              from '@/components/dashboard/TabCRO'
+import { TabBudgetAllocator } from '@/components/dashboard/TabBudgetAllocator'
+import { TabChannelMix }     from '@/components/dashboard/TabChannelMix'
 import { NousChat }        from '@/components/dashboard/NousChat'
 import { DashboardSidebar, type TabKey } from '@/components/dashboard/DashboardSidebar'
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar'
+import { OnboardingFlow }  from '@/components/dashboard/OnboardingFlow'
 import { TermsModal } from '@/components/dashboard/TermsModal'
 import { getPlanLimits, hasActivePlan, TRIAL_DAYS, GROUP_REQUIRED_PLAN } from '@/lib/planUtils'
 
@@ -753,18 +757,18 @@ export default function DashboardBody() {
 
     const goUpgrade = () => window.location.href = '/landing#pricing'
 
-    // Abas do grupo Anúncios — requer Profissional
-    if (!planLimits.hasAnunciosGroup && (activeTab === 'anuncios' || activeTab === 'audiencias')) {
+    // Anúncios — requer Profissional
+    if (!planLimits.hasAnunciosGroup && (activeTab === 'anuncios' || activeTab === 'audiencias' || activeTab === 'persona')) {
       return <UpgradeWall group="anuncios" />
     }
 
-    // Abas do grupo Criativo — requer Profissional
-    if (!planLimits.hasCriativoGroup && (activeTab === 'campanha' || activeTab === 'persona' || activeTab === 'conteudo' || activeTab === 'assets' || activeTab === 'concorrentes')) {
+    // Criativo — requer Profissional
+    if (!planLimits.hasCriativoGroup && (activeTab === 'campanha' || activeTab === 'conteudo' || activeTab === 'assets' || activeTab === 'concorrentes' || activeTab === 'cro')) {
       return <UpgradeWall group="criativo" />
     }
 
-    // Abas do grupo Avançado — requer Avançado
-    if (!planLimits.hasAvancadoGroup && (activeTab === 'inteligencia' || activeTab === 'cenarios' || activeTab === 'mercado')) {
+    // Avançado — requer Avançada
+    if (!planLimits.hasAvancadoGroup && (activeTab === 'budget' || activeTab === 'channelmix' || activeTab === 'mercado' || activeTab === 'cenarios' || activeTab === 'inteligencia')) {
       return <UpgradeWall group="avancado" />
     }
 
@@ -781,6 +785,9 @@ export default function DashboardBody() {
       case 'cenarios':      return wrap('Cenários',          <TabGrowth analysis={analysis} clientData={clientData} />)
       case 'mercado':       return wrap('Mercado & Nicho',   <TabMarketIntel clientData={clientData} />)
       case 'funil':         return wrap('Gargalo do Funil',  <TabFunil clientData={clientData} />)
+      case 'cro':           return wrap('CRO Agent',          <TabCRO />)
+      case 'budget':        return wrap('Budget Allocator',   <TabBudgetAllocator />)
+      case 'channelmix':    return wrap('Channel Mix',        <TabChannelMix />)
       case 'persona':       return wrap('Persona IA',          <TabPersona clientData={clientData} />)
       case 'conteudo':      return wrap('Criador de Conteúdo', <TabConteudo clientData={clientData} />)
       case 'assets':        return wrap('Assets da Empresa',     <TabAssets       clientData={clientData} />)
@@ -1021,8 +1028,9 @@ export default function DashboardBody() {
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(v => !v)}
         />
-        <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px' }}>
-          <div key={activeTab} className="animate-fade-up">
+        <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px' }}>
+          <OnboardingFlow onNavigate={setActiveTab} />
+          <div key={activeTab} className="animate-fade-up" style={{ padding: '0 28px 0' }}>
             {renderTab()}
           </div>
         </main>

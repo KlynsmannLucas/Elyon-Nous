@@ -6,44 +6,51 @@ import { getPlanLimits } from '@/lib/planUtils'
 
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
-  | 'analise' | 'anuncios' | 'audiencias'
+  | 'analise' | 'anuncios' | 'audiencias' | 'cro' | 'budget' | 'channelmix'
   | 'performance' | 'acoes' | 'cenarios' | 'mercado' | 'funil'
   | 'persona' | 'conteudo' | 'assets' | 'concorrentes' | 'campanha'
   | 'relatorios'
 
 export const SIDEBAR_SECTIONS: {
   label: string
+  planLabel?: string   // ex: "Profissional" — mostrado no lock
   items: { key: TabKey; label: string; icon: string; badge?: string }[]
 }[] = [
-  { label: 'Principal', items: [
-    { key: 'overview',     label: 'Visão Geral',    icon: '🏠', badge: 'LIVE' },
-    { key: 'strategy',     label: 'Estratégia',     icon: '⚡' },
+  // ── Gratuito / Individual ──────────────────────────────────────────────────
+  { label: 'Início', items: [
+    { key: 'overview',   label: 'Painel',             icon: '🏠', badge: 'LIVE' },
   ]},
   { label: 'Análise', items: [
-    { key: 'diagnostic',   label: 'Diagnóstico',    icon: '🎯' },
-    { key: 'analise',      label: 'Análise Profunda', icon: '🔍' },
-    { key: 'funil',        label: 'Gargalo do Funil', icon: '🔬' },
+    { key: 'analise',    label: 'Auditoria de Anúncios', icon: '🔍' },
+    { key: 'diagnostic', label: 'Saúde do Negócio',      icon: '🎯' },
+    { key: 'funil',      label: 'Funil de Vendas',       icon: '🔬' },
   ]},
-  { label: 'Anúncios', items: [
-    { key: 'anuncios',     label: 'Anúncios IA',    icon: '📡' },
-    { key: 'audiencias',   label: 'Audiências',     icon: '👥' },
+  { label: 'Estratégia', items: [
+    { key: 'strategy',   label: 'Estratégia',          icon: '⚡' },
+    { key: 'acoes',      label: 'Ações Prioritárias',  icon: '✅' },
+    { key: 'performance',label: 'Resultados',          icon: '📊' },
+    { key: 'relatorios', label: 'Exportar Relatório',  icon: '📤' },
   ]},
-  { label: 'Resultados', items: [
-    { key: 'performance',  label: 'Performance',    icon: '📊' },
-    { key: 'acoes',        label: 'Plano de Ações', icon: '✅' },
-    { key: 'relatorios',   label: 'Relatórios',     icon: '📤' },
+
+  // ── Profissional ───────────────────────────────────────────────────────────
+  { label: 'Anúncios', planLabel: 'Profissional', items: [
+    { key: 'anuncios',     label: 'Meta & Google Ads',  icon: '📡' },
+    { key: 'audiencias',   label: 'Audiências',         icon: '👥' },
+    { key: 'persona',      label: 'Persona do Cliente', icon: '👤' },
   ]},
-  { label: 'Criativo', items: [
-    { key: 'campanha',     label: 'Campanha Campeã',      icon: '⚡' },
-    { key: 'persona',      label: 'Persona IA',           icon: '👤' },
-    { key: 'conteudo',     label: 'Criador de Conteúdo',  icon: '✨' },
-    { key: 'assets',       label: 'Assets da Empresa',    icon: '🖼️' },
-    { key: 'concorrentes', label: 'Radar Concorrentes',   icon: '🎯' },
+  { label: 'Criativo', planLabel: 'Profissional', items: [
+    { key: 'concorrentes', label: 'Concorrentes',        icon: '🕵️' },
+    { key: 'cro',          label: 'Melhorar Conversão',  icon: '⚙️', badge: 'IA' },
+    { key: 'conteudo',     label: 'Criar Conteúdo',      icon: '✨' },
+    { key: 'assets',       label: 'Arquivos da Empresa', icon: '🖼️' },
   ]},
-  { label: 'Avançado', items: [
-    { key: 'inteligencia', label: 'Inteligência',    icon: '🧠' },
-    { key: 'cenarios',     label: 'Cenários',        icon: '📈' },
-    { key: 'mercado',      label: 'Mercado & Nicho', icon: '🌐' },
+
+  // ── Avançada ───────────────────────────────────────────────────────────────
+  { label: 'Avançado', planLabel: 'Avançada', items: [
+    { key: 'budget',      label: 'Alocar Verba',        icon: '💰', badge: 'IA' },
+    { key: 'channelmix',  label: 'Mix de Canais',       icon: '🌐', badge: 'IA' },
+    { key: 'mercado',     label: 'Pesquisa de Mercado', icon: '📡' },
+    { key: 'cenarios',    label: 'Projeções',           icon: '📈' },
   ]},
 ]
 
@@ -77,8 +84,8 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
   const planLimits = getPlanLimits(userPlan)
   const SECTION_LOCK: Record<string, boolean> = {
     'Anúncios': !planLimits.hasAnunciosGroup,
-    'Criativo':  !planLimits.hasCriativoGroup,
-    'Avançado':  !planLimits.hasAvancadoGroup,
+    'Criativo': !planLimits.hasCriativoGroup,
+    'Avançado': !planLimits.hasAvancadoGroup,
   }
 
   const plan         = userPlan ? PLAN_LABELS[userPlan] : null
@@ -191,10 +198,24 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                 color: isLocked ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.22)',
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase', padding: '0 8px', marginBottom: '3px',
-                display: 'flex', alignItems: 'center', gap: '4px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}>
-                {section.label}
-                {isLocked && <span style={{ fontSize: '8px', opacity: 0.6 }}>🔒</span>}
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {section.label}
+                  {isLocked && <span style={{ fontSize: '8px', opacity: 0.5 }}>🔒</span>}
+                </span>
+                {isLocked && section.planLabel && (
+                  <a href="/landing#pricing" style={{
+                    fontSize: '7px', fontWeight: 700, letterSpacing: '0.06em',
+                    color: '#F0B429', background: 'rgba(240,180,41,0.1)',
+                    border: '1px solid rgba(240,180,41,0.2)',
+                    borderRadius: '3px', padding: '1px 5px',
+                    textDecoration: 'none', textTransform: 'uppercase',
+                    transition: 'opacity 0.15s', opacity: 0.8,
+                  }}>
+                    {section.planLabel}
+                  </a>
+                )}
               </div>
             )}
 

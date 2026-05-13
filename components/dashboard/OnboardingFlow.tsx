@@ -1,0 +1,252 @@
+// components/dashboard/OnboardingFlow.tsx — Tutorial de primeiros passos
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useAppStore } from '@/lib/store'
+import type { TabKey } from './DashboardSidebar'
+
+interface Step {
+  id: string
+  number: number
+  icon: string
+  title: string
+  description: string
+  tab?: TabKey
+  action?: string
+  check: (state: any) => boolean
+}
+
+const STEPS: Step[] = [
+  {
+    id: 'client',
+    number: 1,
+    icon: '✍️',
+    title: 'Cadastre seu cliente',
+    description: 'Preencha os dados do cliente para personalizar toda a análise.',
+    action: 'Criar cliente',
+    check: (s) => !!s.clientData?.clientName,
+  },
+  {
+    id: 'audit',
+    number: 2,
+    icon: '🔍',
+    title: 'Rode a auditoria de anúncios',
+    description: 'Conecte sua conta do Meta ou Google e gere o diagnóstico completo.',
+    tab: 'analise',
+    action: 'Ir para Auditoria',
+    check: (s) => {
+      const name = s.clientData?.clientName
+      return name ? (s.auditCache[name]?.length ?? 0) > 0 : false
+    },
+  },
+  {
+    id: 'strategy',
+    number: 3,
+    icon: '⚡',
+    title: 'Gere sua estratégia',
+    description: 'A IA cria um plano de 90 dias baseado nos dados reais da sua conta.',
+    tab: 'strategy',
+    action: 'Gerar estratégia',
+    check: (s) => !!s.strategyData,
+  },
+  {
+    id: 'actions',
+    number: 4,
+    icon: '✅',
+    title: 'Execute o plano de ações',
+    description: 'Veja as tarefas prioritárias e marque conforme for executando.',
+    tab: 'acoes',
+    action: 'Ver ações',
+    check: (s) => {
+      const name = s.clientData?.clientName
+      return name ? (s.actionPlanCache[name]?.length ?? 0) > 0 : false
+    },
+  },
+]
+
+interface Props {
+  onNavigate: (tab: TabKey) => void
+}
+
+export function OnboardingFlow({ onNavigate }: Props) {
+  const [dismissed, setDismissed] = useState(false)
+  const [expanded, setExpanded] = useState(true)
+
+  const state = useAppStore(s => ({
+    clientData: s.clientData,
+    strategyData: s.strategyData,
+    auditCache: s.auditCache,
+    actionPlanCache: s.actionPlanCache,
+  }))
+
+  useEffect(() => {
+    try {
+      const val = localStorage.getItem('elyon_onboarding_dismissed')
+      if (val === '1') setDismissed(true)
+    } catch {}
+  }, [])
+
+  function dismiss() {
+    setDismissed(true)
+    try { localStorage.setItem('elyon_onboarding_dismissed', '1') } catch {}
+  }
+
+  const completedSteps = STEPS.filter(s => s.check(state))
+  const completedCount = completedSteps.length
+  const allDone = completedCount === STEPS.length
+  const nextStep = STEPS.find(s => !s.check(state))
+  const progressPct = (completedCount / STEPS.length) * 100
+
+  if (dismissed) return null
+
+  // Se completou tudo, mostra só um badge de parabéns antes de sumir
+  if (allDone) {
+    return (
+      <div style={{
+        margin: '0 24px 16px',
+        padding: '12px 16px',
+        background: 'rgba(34,197,94,0.06)',
+        border: '1px solid rgba(34,197,94,0.2)',
+        borderRadius: '10px',
+        display: 'flex', alignItems: 'center', gap: '10px',
+      }}>
+        <span style={{ fontSize: '18px' }}>🎉</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#22C55E' }}>
+            Configuração completa!
+          </div>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '1px' }}>
+            Todos os passos foram concluídos. O sistema está pronto para uso.
+          </div>
+        </div>
+        <button onClick={dismiss} style={{
+          background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)',
+          fontSize: '16px', cursor: 'pointer', padding: '2px',
+        }}>×</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{
+      margin: '0 24px 16px',
+      background: '#111114',
+      border: '1px solid rgba(240,180,41,0.2)',
+      borderRadius: '12px',
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(v => !v)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '12px 16px', background: 'transparent', border: 'none',
+          cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        <span style={{ fontSize: '15px' }}>🗺️</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#F0B429', marginBottom: '3px' }}>
+            Primeiros passos — {completedCount}/{STEPS.length} concluídos
+          </div>
+          {/* Progress bar */}
+          <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{
+              width: `${progressPct}%`, height: '100%',
+              background: 'linear-gradient(90deg, #F0B429, #22C55E)',
+              borderRadius: '2px', transition: 'width 0.4s ease',
+            }} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <button
+            onClick={e => { e.stopPropagation(); dismiss() }}
+            style={{
+              background: 'none', border: 'none', color: 'rgba(255,255,255,0.25)',
+              fontSize: '14px', cursor: 'pointer', padding: '2px 4px',
+              borderRadius: '4px',
+            }}
+            title="Fechar tutorial"
+          >×</button>
+          <span style={{
+            fontSize: '10px', color: 'rgba(255,255,255,0.3)',
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s', display: 'inline-block',
+          }}>▾</span>
+        </div>
+      </button>
+
+      {/* Steps */}
+      {expanded && (
+        <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {STEPS.map((step) => {
+            const done = step.check(state)
+            const isNext = step.id === nextStep?.id
+            return (
+              <div
+                key={step.id}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '9px 10px', borderRadius: '8px',
+                  background: isNext ? 'rgba(240,180,41,0.05)' : 'transparent',
+                  border: `1px solid ${isNext ? 'rgba(240,180,41,0.15)' : 'transparent'}`,
+                  transition: 'all 0.15s',
+                }}
+              >
+                {/* Step indicator */}
+                <div style={{
+                  width: '24px', height: '24px', borderRadius: '50%', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: done ? '12px' : '11px', fontWeight: 700,
+                  background: done ? '#22C55E' : isNext ? 'rgba(240,180,41,0.15)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${done ? '#22C55E' : isNext ? 'rgba(240,180,41,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  color: done ? '#000' : isNext ? '#F0B429' : 'rgba(255,255,255,0.3)',
+                }}>
+                  {done ? '✓' : step.number}
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '11px' }}>{step.icon}</span>
+                    <span style={{
+                      fontSize: '12px', fontWeight: done ? 500 : 600,
+                      color: done ? 'rgba(255,255,255,0.4)' : '#fff',
+                      textDecoration: done ? 'line-through' : 'none',
+                    }}>
+                      {step.title}
+                    </span>
+                  </div>
+                  {isNext && (
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
+                      {step.description}
+                    </div>
+                  )}
+                </div>
+
+                {/* CTA */}
+                {isNext && step.tab && (
+                  <button
+                    onClick={() => onNavigate(step.tab!)}
+                    style={{
+                      padding: '5px 12px', borderRadius: '6px', flexShrink: 0,
+                      background: 'rgba(240,180,41,0.12)', border: '1px solid rgba(240,180,41,0.3)',
+                      color: '#F0B429', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {step.action} →
+                  </button>
+                )}
+
+                {done && (
+                  <span style={{ fontSize: '11px', color: '#22C55E', flexShrink: 0 }}>Feito</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}

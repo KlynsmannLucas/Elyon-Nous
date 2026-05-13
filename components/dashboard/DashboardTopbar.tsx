@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import type { TabKey } from './DashboardSidebar'
 import { SIDEBAR_SECTIONS } from './DashboardSidebar'
+import { AlertsPanel } from './AlertsPanel'
 
 interface Props {
   activeTab: TabKey
@@ -94,6 +95,12 @@ export function DashboardTopbar({ activeTab, clientData, onExport, onReset, onSa
           {clientData.clientName}
         </div>
       )}
+
+      {/* Alerts bell */}
+      <AlertsPanel
+        clientName={clientData?.clientName}
+        niche={clientData?.niche}
+      />
 
       {/* Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>

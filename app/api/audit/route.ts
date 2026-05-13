@@ -4,6 +4,81 @@ import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { sanitizeText } from '@/lib/sanitize'
 
+// ── Salva padrões da auditoria na memória RAG (fire-and-forget) ──────────────
+async function saveAuditMemory(
+  userId: string,
+  clientName: string,
+  niche: string,
+  audit: any,
+  realMetrics: any,
+) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const score = audit.healthScore ?? audit.overallScore ?? 0
+    const cpl   = realMetrics?.avgCPL ?? 0
+    const spend = realMetrics?.totalSpend ?? 0
+    const leads = realMetrics?.totalLeads ?? 0
+
+    if (spend < 100) return  // sem dados suficientes para aprender
+
+    // 1. Salva benchmark da conta
+    if (cpl > 0) {
+      await fetch(`${baseUrl}/api/memory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-internal': '1' },
+        body: JSON.stringify({
+          clientName, niche,
+          memoryType: 'benchmark',
+          title: `Benchmark real — ${niche} — CPL R$${cpl}`,
+          description: `Conta com gasto R$${spend} gerou ${leads} leads com CPL médio R$${cpl}. Score de saúde: ${score}/100.`,
+          metrics: { cpl, spend, leads, roas: realMetrics?.avgROAS, ctr: realMetrics?.avgCTR },
+          confidence: 0.9,
+          source: 'audit',
+          period: new Date().toISOString().slice(0, 7),
+        }),
+      })
+    }
+
+    // 2. Salva alertas críticos como padrões de perda
+    const alerts: any[] = audit.alerts ?? []
+    for (const alert of alerts.filter((a: any) => a.type === 'critical').slice(0, 3)) {
+      await fetch(`${baseUrl}/api/memory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-internal': '1' },
+        body: JSON.stringify({
+          clientName, niche,
+          memoryType: 'losing_pattern',
+          title: alert.title || 'Problema crítico detectado',
+          description: alert.description || alert.message || '',
+          metrics: { cpl, spend },
+          confidence: 0.85,
+          source: 'audit',
+        }),
+      })
+    }
+
+    // 3. Salva pontos fortes como padrões vencedores
+    const highlights: string[] = audit.highlights ?? audit.topInsights ?? []
+    if (highlights.length > 0) {
+      await fetch(`${baseUrl}/api/memory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-internal': '1' },
+        body: JSON.stringify({
+          clientName, niche,
+          memoryType: 'winning_creative',
+          title: `Padrão vencedor — ${niche}`,
+          description: highlights.slice(0, 3).join(' | '),
+          metrics: { cpl, roas: realMetrics?.avgROAS },
+          confidence: 0.8,
+          source: 'audit',
+        }),
+      })
+    }
+  } catch {
+    // silencioso — não quebra a auditoria
+  }
+}
+
 // ── Fallback estruturado quando a IA não está disponível ─────────────────────
 function buildFallbackAudit(
   clientName: string,
@@ -671,6 +746,10 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
         const audit = JSON.parse(jsonStr)
         audit.generated_at = new Date().toISOString()
         audit._realMetrics = realMetrics
+
+        // ── Salva padrões na memória RAG (fire-and-forget) ─────────────────
+        saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
+
         return NextResponse.json({ success: true, audit, source: 'ai' })
 
       } catch (aiError: any) {
@@ -684,6 +763,9 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     }
     const audit: Record<string, any> = buildFallbackAudit(clientName, niche, allCampaigns, metaTotals, googleTotals, bench)
     audit._realMetrics = realMetrics
+
+    saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
+
     return NextResponse.json({ success: true, audit, source: 'benchmark' })
 
   } catch (error: any) {
