@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { buildNichePromptContext } from '@/lib/niche_prompts'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
-import { sanitizeText, sanitizeNumber } from '@/lib/sanitize'
+import { sanitizeText } from '@/lib/sanitize'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -33,19 +33,49 @@ function channelCPL(channel: string, cplAvg: number) {
   }
 }
 
-// ── Fallback completo gerado a partir dos benchmarks ────────────────────────────
+// ── Classificação de maturidade da conta ─────────────────────────────────────────
+function classifyMaturity(realSpend: number, realLeads: number): {
+  stage: 'iniciante' | 'crescendo' | 'madura' | 'veterana'
+  label: string; emoji: string; description: string
+} {
+  if (realSpend > 150000 || realLeads > 15000) return {
+    stage: 'veterana', emoji: '🏆', label: 'Conta Veterana',
+    description: 'Conta com histórico robusto e dados suficientes para otimização avançada e escala agressiva.',
+  }
+  if (realSpend > 50000 || realLeads > 3000) return {
+    stage: 'madura', emoji: '📈', label: 'Conta Madura',
+    description: 'Conta com base de dados sólida. Foco em redução de CPL e escalonamento dos canais validados.',
+  }
+  if (realSpend > 10000 || realLeads > 500) return {
+    stage: 'crescendo', emoji: '🌱', label: 'Conta em Crescimento',
+    description: 'Conta com aprendizado inicial concluído. Hora de escalar o que funciona e cortar o que não funciona.',
+  }
+  return {
+    stage: 'iniciante', emoji: '🚀', label: 'Conta Iniciante',
+    description: 'Fase de testes e aprendizado. Os primeiros 30-60 dias são críticos para encontrar o CPL de equilíbrio.',
+  }
+}
+
+// ── Fallback completo gerado a partir dos benchmarks + dados reais ───────────────
 function buildFallbackStrategy(data: {
   clientName: string; niche: string; products: string[]
   budget: number; objective: string; monthlyRevenue: number
   currentCPL?: number; currentLeadSource?: string; mainChallenge?: string
-}, bench: NonNullable<ReturnType<typeof getBenchmark>>) {
-  const cplAvg   = Math.round((bench.cpl_min + bench.cpl_max) / 2)
-  const leads    = Math.round(data.budget / cplAvg)
-  const sales    = Math.round(leads * bench.cvr_lead_to_sale)
-  const revenue  = sales * bench.avg_ticket
-  const roas     = +(revenue / data.budget).toFixed(1)
-  const channels = bench.best_channels.slice(0, 4)
-  const pcts     = [40, 30, 20, 10]
+}, bench: NonNullable<ReturnType<typeof getBenchmark>>, realMetrics?: any) {
+  // Usa CPL real quando disponível, senão usa benchmark
+  const realCPL    = realMetrics?.avgCPL  ? Number(realMetrics.avgCPL)  : 0
+  const realLeads  = realMetrics?.totalLeads ? Number(realMetrics.totalLeads) : 0
+  const realSpend  = realMetrics?.totalSpend ? Number(realMetrics.totalSpend) : 0
+  const cplAvg     = realCPL > 0 ? realCPL : Math.round((bench.cpl_min + bench.cpl_max) / 2)
+  const hasReal    = realSpend > 0 || realLeads > 0
+
+  const maturity   = classifyMaturity(realSpend, realLeads)
+  const leads      = realLeads > 0 ? realLeads : Math.round(data.budget / cplAvg)
+  const sales      = Math.round(leads * bench.cvr_lead_to_sale)
+  const revenue    = sales * bench.avg_ticket
+  const roas       = +(revenue / data.budget).toFixed(1)
+  const channels   = bench.best_channels.slice(0, 4)
+  const pcts       = [40, 30, 20, 10]
 
   const budgetRatio = data.budget / bench.budget_ideal
   const tofuStatus  = budgetRatio >= 0.8 ? 'ok' : budgetRatio >= 0.5 ? 'atenção' : 'crítico'
@@ -74,25 +104,45 @@ function buildFallbackStrategy(data: {
     }
   })
 
+  const maturityBonus  = maturity.stage === 'veterana' ? 20 : maturity.stage === 'madura' ? 15 : maturity.stage === 'crescendo' ? 10 : 0
   const budgetScore    = Math.min(40, Math.round((budgetRatio * 40)))
-  const cplScore       = data.currentCPL
-    ? data.currentCPL <= bench.cpl_min ? 30 : data.currentCPL <= bench.cpl_max ? 20 : 10
-    : 20
-  const historyScore   = 10
+  const cplScore       = realCPL > 0
+    ? realCPL <= bench.cpl_min ? 30 : realCPL <= bench.cpl_max ? 20 : 10
+    : data.currentCPL
+      ? data.currentCPL <= bench.cpl_min ? 30 : data.currentCPL <= bench.cpl_max ? 20 : 10
+      : 20
   const objectiveScore = data.objective?.toLowerCase().includes('escal') ? 10 : 8
-  const dynamicScore   = Math.min(98, Math.max(40, budgetScore + cplScore + historyScore + objectiveScore))
+  const dynamicScore   = Math.min(98, Math.max(40, budgetScore + cplScore + maturityBonus + objectiveScore))
   const scoreLabel     = dynamicScore >= 85 ? 'Excelente' : dynamicScore >= 70 ? 'Boa' : dynamicScore >= 55 ? 'Regular' : 'Básica'
+
+  // Diagnóstico baseado na maturidade real da conta
+  const mainProblem = (() => {
+    if (maturity.stage === 'veterana') {
+      return realCPL > 0 && realCPL < bench.cpl_min
+        ? `Conta veterana com CPL de R$${realCPL} abaixo do benchmark (R$${bench.cpl_min}–${bench.cpl_max}) — oportunidade de escala agressiva. Foco em duplicar orçamento nos conjuntos vencedores e expandir públicos lookalike.`
+        : `Conta veterana com R$${Math.round(realSpend / 1000)}k investidos e ${realLeads.toLocaleString('pt-BR')} leads gerados. Estágio de maturidade avançada — estratégia deve focar em eficiência, diversificação de canais e redução do CPL atual de R$${realCPL}.`
+    }
+    if (maturity.stage === 'madura') {
+      return `Conta madura com histórico sólido. CPL real de R$${realCPL > 0 ? realCPL : cplAvg} ${realCPL > 0 && realCPL <= bench.cpl_max ? 'dentro do benchmark' : 'acima do benchmark'} — foco em otimização dos conjuntos existentes e teste de novos formatos criativos.`
+    }
+    if (maturity.stage === 'crescendo') {
+      return `Conta em fase de crescimento com dados iniciais para otimização. CPL de R$${realCPL > 0 ? realCPL : cplAvg} — momento de escalar o que já funciona e pausar o que consome budget sem retorno.`
+    }
+    return budgetRatio < 0.5
+      ? `Budget de R$${data.budget.toLocaleString('pt-BR')} está abaixo do mínimo recomendado (R$${bench.budget_floor.toLocaleString('pt-BR')}) para o nicho ${data.niche} — impossível ter volume de leads consistente.`
+      : `Conta em fase inicial. Os primeiros 30–60 dias são críticos para encontrar o CPL de equilíbrio e identificar os criativos vencedores.`
+  })()
 
   return {
     intelligence_score: dynamicScore,
     score_label: scoreLabel,
-    recommendation: `Com R$${data.budget.toLocaleString('pt-BR')}/mês no nicho ${data.niche}, a projeção é de ${leads} leads/mês a CPL médio de R$${cplAvg}. Canal principal recomendado: ${channels[0]}. ROAS estimado: ${roas}×.`,
+    recommendation: hasReal
+      ? `${maturity.emoji} ${maturity.label} — R$${Math.round(realSpend / 1000)}k investidos, ${realLeads.toLocaleString('pt-BR')} leads gerados, CPL real de R$${realCPL}. ${realCPL < bench.cpl_min ? `CPL ${Math.round((1 - realCPL / bench.cpl_min) * 100)}% abaixo do benchmark — conta com alta eficiência, prioridade: escala.` : realCPL <= bench.cpl_max ? `CPL dentro do benchmark — foco em otimização e redução gradual.` : `CPL acima do benchmark — revisar segmentação e criativos.`}`
+      : `Com R$${data.budget.toLocaleString('pt-BR')}/mês no nicho ${data.niche}, a projeção é de ${leads} leads/mês a CPL médio de R$${cplAvg}. Canal principal recomendado: ${channels[0]}. ROAS estimado: ${roas}×.`,
     estimated_monthly_revenue_range: `R$${Math.round(revenue * 0.8 / 1000)}k–${Math.round(revenue * 1.2 / 1000)}k`,
     regulatory_alerts: [],
     growth_diagnosis: {
-      main_problem: budgetRatio < 0.5
-        ? `Budget de R$${data.budget.toLocaleString('pt-BR')} está abaixo do mínimo recomendado (R$${bench.budget_floor.toLocaleString('pt-BR')}) para o nicho ${data.niche} — impossível ter volume de leads consistente.`
-        : `Estratégia em fase inicial. O principal risco é a falta de dados históricos para otimização de campanhas — os primeiros 30 dias são críticos.`,
+      main_problem: mainProblem,
       waste_analysis: [
         `Sem segmentação avançada, até 40% do budget é consumido por públicos fora do perfil de compra`,
         `Criativos genéricos reduzem CTR em 50–70% vs criativos com dores específicas do nicho ${data.niche}`,
@@ -269,7 +319,7 @@ async function runStrategy(body: any) {
     // Unit economics
     ticketPrice, grossMargin, isRecurring, conversionRate,
     // Dados enriquecidos (passados opcionalmente pelo dashboard)
-    recentAudit, persona, metaAccessToken,
+    recentAudit, persona,
   } = body
   const clientName   = sanitizeText(_cn, 120)
   const niche        = sanitizeText(_ni, 120)
@@ -350,15 +400,38 @@ ${campaignHistory.map((c: any) => `
   Obs: ${c.notes || '—'}`).join('\n')}
 
 USE ESSES DADOS REAIS para calibrar CPL esperado, identificar canais a priorizar ou evitar, e personalizar o diagnóstico de crescimento. Não ignore o histórico.` : ''}
-${recentAudit?._realMetrics ? `
-=== DADOS REAIS DA CONTA META ADS (últimos 30 dias) ===
-- Investimento real: R$${recentAudit._realMetrics.totalSpend?.toLocaleString('pt-BR') || '0'}
-- Leads reais: ${recentAudit._realMetrics.totalLeads || 0}
-- CPL real: ${recentAudit._realMetrics.avgCPL ? `R$${recentAudit._realMetrics.avgCPL}` : 'não calculado'}
-- ROAS real: ${recentAudit._realMetrics.avgROAS ? `${recentAudit._realMetrics.avgROAS}×` : 'não calculado'}
-- CTR médio: ${recentAudit._realMetrics.avgCTR ? `${recentAudit._realMetrics.avgCTR}%` : 'não disponível'}
-- Campanhas ativas: ${recentAudit._realMetrics.campaignCount || 0}
-CRÍTICO: Esses são os dados REAIS da conta do cliente. Use-os como baseline para diagnóstico e metas — não use estimativas quando há dados reais disponíveis.` : ''}
+${recentAudit?._realMetrics ? (() => {
+        const rm = recentAudit._realMetrics
+        const rSpend  = Number(rm.totalSpend  || 0)
+        const rLeads  = Number(rm.totalLeads  || 0)
+        const rCPL    = Number(rm.avgCPL      || 0)
+        const mat     = classifyMaturity(rSpend, rLeads)
+        const benchAvg = bench ? Math.round((bench.cpl_min + bench.cpl_max) / 2) : 0
+        return `
+=== MATURIDADE E DADOS REAIS DA CONTA META ADS ===
+ESTÁGIO DA CONTA: ${mat.emoji} ${mat.label.toUpperCase()}
+${mat.description}
+
+- Investimento acumulado (30d): R$${rSpend.toLocaleString('pt-BR')}
+- Leads gerados (30d): ${rLeads.toLocaleString('pt-BR')}
+- CPL real: ${rCPL > 0 ? `R$${rCPL}` : 'não calculado'} ${rCPL > 0 && benchAvg > 0 ? `(benchmark do nicho: R$${bench?.cpl_min}–${bench?.cpl_max} — conta está ${rCPL < (bench?.cpl_min || 999) ? '✅ ABAIXO do benchmark (eficiente)' : rCPL <= (bench?.cpl_max || 0) ? '✅ DENTRO do benchmark' : '⚠️ ACIMA do benchmark'})` : ''}
+- ROAS real: ${rm.avgROAS ? `${rm.avgROAS}×` : 'não calculado'}
+- CTR médio: ${rm.avgCTR ? `${rm.avgCTR}%` : 'não disponível'}
+- Campanhas ativas: ${rm.campaignCount || 0}
+
+INSTRUÇÕES OBRIGATÓRIAS BASEADAS NA MATURIDADE:
+${mat.stage === 'veterana' ? `- Esta é uma conta VETERANA. JAMAIS diga "fase inicial" ou "primeiros 30 dias são críticos" — isso não se aplica.
+- O diagnóstico deve focar em: eficiência de escala, diversificação de canais, redução de CPL via otimização avançada.
+- Recomende estratégias para quem já tem dados: lookalike avançado, Advantage+, CBO com histórico, automação de regras.
+- Se CPL real < benchmark: prioridade máxima é ESCALAR budget — não mexa no que funciona.` :
+mat.stage === 'madura' ? `- Conta MADURA com dados suficientes para otimização. Foco em escalar vencedores e pausar perdedores.
+- Recomende testes A/B baseados em dados reais, não apenas "testar criativos" genericamente.` :
+mat.stage === 'crescendo' ? `- Conta em CRESCIMENTO. Dados iniciais disponíveis — hora de identificar padrões e escalar.
+- Balance entre explorar novos públicos e explorar o que já funciona.` :
+`- Conta INICIANTE. Fase de aprendizado e testes — os primeiros 60 dias são críticos.`}
+
+CRÍTICO: Use os dados reais acima como baseline. Não use estimativas de benchmark quando há dados reais.`
+      })() : ''}
 ${persona ? `
 === PERSONA DO CLIENTE IDEAL (gerada por IA) ===
 - Nome: ${persona.name} · Idade: ${persona.age}
@@ -471,7 +544,8 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
 
   const strategy = buildFallbackStrategy(
     { clientName, niche, products, budget, objective, monthlyRevenue, currentCPL, currentLeadSource, mainChallenge },
-    bench
+    bench,
+    recentAudit?._realMetrics ?? null
   )
   return { success: true, strategy, source: 'benchmark' }
 }
