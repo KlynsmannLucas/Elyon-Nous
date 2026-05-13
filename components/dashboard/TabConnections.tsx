@@ -78,13 +78,20 @@ export function TabConnections() {
           }
 
           // Conta única ou Google → conecta direto
-          connectAccount({
+          const accountToConnect = {
             platform:    data.platform,
             accessToken: data.accessToken,
             accountId:   data.accountId   || undefined,
             accountName: data.accountName || undefined,
             connectedAt: new Date().toISOString(),
-          })
+          }
+          connectAccount(accountToConnect)
+          // Persiste no Supabase vinculado ao usuário
+          fetch('/api/connections', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(accountToConnect),
+          }).catch(() => {})
         })
         .catch(() => setError('Erro ao recuperar token de conexão. Tente conectar novamente.'))
     }
@@ -222,14 +229,21 @@ export function TabConnections() {
                   <button
                     key={acc.id}
                     onClick={() => {
-                      connectAccount({
-                        platform:    'meta',
+                      const chosen = {
+                        platform:    'meta' as const,
                         accessToken: pendingMeta.accessToken,
                         accountId:   acc.id,
                         accountName: acc.name,
                         connectedAt: new Date().toISOString(),
-                      })
+                      }
+                      connectAccount(chosen)
                       setPendingMeta(null)
+                      // Persiste no Supabase vinculado ao usuário
+                      fetch('/api/connections', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(chosen),
+                      }).catch(() => {})
                     }}
                     className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-80"
                     style={{ background: 'rgba(24,119,242,0.1)', border: '1px solid rgba(24,119,242,0.25)' }}
@@ -265,7 +279,12 @@ export function TabConnections() {
                   {loadingMeta ? '⏳ Buscando...' : '🔄 Atualizar dados'}
                 </button>
                 <button
-                  onClick={() => { disconnectAccount('meta'); setMetaCampaigns([]); setMetaTotals(null) }}
+                  onClick={() => {
+                    disconnectAccount('meta')
+                    setMetaCampaigns([])
+                    setMetaTotals(null)
+                    fetch('/api/connections/meta', { method: 'DELETE' }).catch(() => {})
+                  }}
                   className="px-3 py-2 rounded-xl text-xs text-slate-600 hover:text-[#FF4D4D] border border-[#2A2A30] transition-colors"
                 >
                   Desconectar
@@ -336,7 +355,12 @@ export function TabConnections() {
                   {loadingGoogle ? '⏳ Buscando...' : '🔄 Atualizar dados'}
                 </button>
                 <button
-                  onClick={() => { disconnectAccount('google'); setGoogleCampaigns([]); setGoogleTotals(null) }}
+                  onClick={() => {
+                    disconnectAccount('google')
+                    setGoogleCampaigns([])
+                    setGoogleTotals(null)
+                    fetch('/api/connections/google', { method: 'DELETE' }).catch(() => {})
+                  }}
                   className="px-3 py-2 rounded-xl text-xs text-slate-600 hover:text-[#FF4D4D] border border-[#2A2A30] transition-colors"
                 >
                   Desconectar

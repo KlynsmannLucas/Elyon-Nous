@@ -178,8 +178,8 @@ export async function POST(req: NextRequest) {
       fetch(`${baseUrl}/${act}/ads?fields=id,name,status,effective_status,campaign_id,adset_id,creative{id,title,body,call_to_action_type,image_url,thumbnail_url}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 8 - insights de ads
       fetch(`${baseUrl}/${act}/insights?fields=${adInsightFields}&date_preset=last_30d&level=ad&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
-      // 9 - pixels
-      fetch(`${baseUrl}/${act}/pixels?fields=id,name,last_fired_time,is_unavailable&access_token=${token}`, { signal: AbortSignal.timeout(10000) }).then(r => r.json()),
+      // 9 - pixels (endpoint correto: adspixels)
+      fetch(`${baseUrl}/${act}/adspixels?fields=id,name,last_fired_time,is_unavailable&access_token=${token}`, { signal: AbortSignal.timeout(10000) }).then(r => r.json()),
       // 10 - breakdown geográfico
       fetch(`${baseUrl}/${act}/insights?fields=spend,actions,impressions&breakdowns=region&date_preset=last_30d&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 11 - breakdown por plataforma

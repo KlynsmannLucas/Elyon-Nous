@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { StatCard } from './StatCard'
 import { strategyData } from '@/lib/mockData'
+import { useAppStore } from '@/lib/store'
 
 interface Props {
   strategy: Record<string, any>
@@ -255,8 +256,16 @@ function CollapsibleSection({ title, defaultOpen = true, children }: {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export function TabStrategy({ strategy, analysis }: Props) {
+  const { clientData, auditCache, connectedAccounts } = useAppStore()
   const hasRealData   = strategy && strategy.priority_ranking?.length > 0
   const hasGrowthData = strategy?.growth_diagnosis || strategy?.funnel_strategy
+
+  // Verifica se há dados reais do Meta Ads no cache de auditoria
+  const cacheKey        = clientData?.clientName || ''
+  const latestAudit     = auditCache[cacheKey]?.[0]?.audit
+  const realMetrics     = latestAudit?._realMetrics
+  const hasRealMetrics  = Boolean(realMetrics?.totalSpend > 0 || realMetrics?.totalLeads > 0)
+  const metaConnected   = connectedAccounts.some(a => a.platform === 'meta')
 
   const channels = hasRealData
     ? strategy.priority_ranking.map((ch: any) => ({
@@ -275,6 +284,40 @@ export function TabStrategy({ strategy, analysis }: Props) {
 
   return (
     <div className="space-y-5">
+
+      {/* Banner de qualidade dos dados */}
+      {hasRealMetrics ? (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+          style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
+          <span className="w-2 h-2 rounded-full bg-[#22C55E] flex-shrink-0" style={{ boxShadow: '0 0 6px #22C55E' }} />
+          <div className="flex-1">
+            <span className="text-[#22C55E] font-semibold text-xs">Estratégia baseada em dados reais do Meta Ads</span>
+            <span className="text-slate-500 text-xs ml-2">
+              · Gasto: R${realMetrics.totalSpend?.toLocaleString('pt-BR') || '0'}
+              {realMetrics.totalLeads > 0 && ` · ${realMetrics.totalLeads} leads`}
+              {realMetrics.avgCPL && ` · CPL real: R$${realMetrics.avgCPL}`}
+            </span>
+          </div>
+        </div>
+      ) : metaConnected ? (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm"
+          style={{ background: 'rgba(240,180,41,0.06)', border: '1px solid rgba(240,180,41,0.2)' }}>
+          <div className="flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-[#F0B429] flex-shrink-0" />
+            <span className="text-[#F0B429] font-semibold text-xs">Estratégia baseada em estimativas do nicho</span>
+            <span className="text-slate-500 text-xs">· Execute a análise Meta Ads para usar dados reais</span>
+          </div>
+          <a href="#anuncios" className="text-xs text-[#F0B429] underline hover:no-underline flex-shrink-0">
+            Analisar conta →
+          </a>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+          style={{ background: 'rgba(100,116,139,0.06)', border: '1px solid rgba(100,116,139,0.15)' }}>
+          <span className="w-2 h-2 rounded-full bg-slate-500 flex-shrink-0" />
+          <span className="text-slate-500 text-xs">Estratégia baseada em estimativas do nicho · Conecte o Meta Ads para calibrar com dados reais</span>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4">

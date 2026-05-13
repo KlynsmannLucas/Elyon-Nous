@@ -319,7 +319,7 @@ function AdSetsPanel({ adSets }: { adSets: AdSet[] }) {
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="text-sm font-semibold text-white truncate max-w-[200px]">{as.name}</span>
+                  <span className="text-sm font-semibold text-white">{as.name}</span>
                   {as.hasRemarketing && (
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                       style={{ background: 'rgba(167,139,250,0.12)', color: '#A78BFA', border: '1px solid rgba(167,139,250,0.25)' }}>
@@ -334,7 +334,7 @@ function AdSetsPanel({ adSets }: { adSets: AdSet[] }) {
                   ))}
                 </div>
                 <div className="flex gap-3 text-xs text-slate-500 flex-wrap">
-                  <span className="text-slate-600 truncate max-w-[150px]">{as.campaignName}</span>
+                  <span className="text-slate-600">{as.campaignName}</span>
                   <span>Meta: <strong className="text-slate-400">{as.optimizationGoalLabel}</strong></span>
                   {as.spend > 0 && <span>Gasto: <strong className="text-[#F0B429]">{fmt(as.spend)}</strong></span>}
                   {as.leads > 0 && <span>Leads: <strong className="text-[#38BDF8]">{as.leads}</strong></span>}
@@ -416,22 +416,23 @@ function CreativesRanking({ ads }: { ads: AdCreative[] }) {
             <div key={ad.id} className="px-5 py-3 hover:bg-[#16161A] transition-colors">
               <div className="flex items-start gap-3">
                 {ad.imageUrl ? (
-                  <img src={ad.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-[#1E1E24]" />
+                  <img src={ad.imageUrl} alt="" className="w-16 h-20 rounded-lg object-cover flex-shrink-0 bg-[#1E1E24]" />
                 ) : (
-                  <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center text-xl"
+                  <div className="w-16 h-20 rounded-lg flex-shrink-0 flex items-center justify-center text-2xl"
                     style={{ background: t.bg, border: `1px solid ${t.border}` }}>
                     {t.icon}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-sm font-semibold text-white truncate max-w-[200px]">{ad.name}</span>
+                    <span className="text-sm font-semibold text-white">{ad.name}</span>
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                       style={{ color: t.color, background: t.bg, border: `1px solid ${t.border}` }}>
                       {t.icon} {t.label}
                     </span>
                   </div>
-                  {ad.title && <div className="text-xs text-slate-400 truncate mb-1">"{ad.title}"</div>}
+                  {ad.title && <div className="text-xs text-slate-400 mb-1">"{ad.title}"</div>}
+                  {ad.body  && <div className="text-xs text-slate-500 mb-1 leading-relaxed">{ad.body}</div>}
                   <div className="flex gap-3 text-xs text-slate-500 flex-wrap">
                     {ad.spend > 0     && <span>Gasto: <strong className="text-[#F0B429]">{fmt(ad.spend)}</strong></span>}
                     {ad.leads > 0     && <span>Leads: <strong className="text-[#38BDF8]">{ad.leads}</strong></span>}
@@ -832,7 +833,7 @@ function CampaignRow({ campaign, freqLimit }: { campaign: Campaign; freqLimit: n
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-white truncate max-w-[200px]">{campaign.name}</span>
+              <span className="text-sm font-semibold text-white">{campaign.name}</span>
               <LearningBadge phase={campaign.learningPhase} />
               <AgeBadge age={campaign.age ?? 'established'} days={campaign.ageDays ?? -1} />
               {hasIssues && (

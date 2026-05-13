@@ -417,6 +417,24 @@ export default function DashboardBody() {
 
   const [dbLoaded, setDbLoaded] = useState(true)
 
+  // Restaura conexões OAuth do Supabase (persistência por usuário, não por browser)
+  useEffect(() => {
+    fetch('/api/connections')
+      .then(r => r.ok ? r.json() : { connections: [] })
+      .then(({ connections }) => {
+        if (!Array.isArray(connections) || connections.length === 0) return
+        const current = useAppStore.getState().connectedAccounts
+        // Adiciona conexões do servidor que ainda não estão no store local
+        for (const conn of connections) {
+          const alreadyInStore = current.some(c => c.platform === conn.platform)
+          if (!alreadyInStore) {
+            useAppStore.getState().connectAccount(conn)
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     fetch('/api/clients')
       .then(r => r.ok ? r.json() : { clients: [] })
