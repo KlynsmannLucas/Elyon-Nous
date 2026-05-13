@@ -6,6 +6,7 @@ import { TabConnections } from './TabConnections'
 import { TabMetaIntelligence } from './TabMetaIntelligence'
 import { TabGoogleIntelligence } from './TabGoogleIntelligence'
 import { TabABTest } from './TabABTest'
+import { TabCriarCampanha } from './TabCriarCampanha'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 
@@ -15,7 +16,7 @@ interface Props {
   clientData: ClientData | null
 }
 
-type SubTab = 'meta' | 'google' | 'abtests' | 'conexoes'
+type SubTab = 'meta' | 'google' | 'criar' | 'abtests' | 'conexoes'
 
 export function TabAnuncios({ planHasConnections, onUpgrade, clientData }: Props) {
   const [sub, setSub] = useState<SubTab>('meta')
@@ -27,6 +28,7 @@ export function TabAnuncios({ planHasConnections, onUpgrade, clientData }: Props
   const subTabs: { key: SubTab; label: string; icon: string; badge?: string }[] = [
     { key: 'meta',     label: 'Meta Ads IA',   icon: '📘', badge: metaConnected ? 'conectado' : undefined },
     { key: 'google',   label: 'Google Ads IA', icon: '🔵', badge: googleConnected ? 'conectado' : undefined },
+    { key: 'criar',    label: 'Criar Campanha', icon: '📣' },
     { key: 'abtests',  label: 'Testes A/B',    icon: '🧪', badge: creativeTests.filter(t => t.status === 'running').length > 0 ? String(creativeTests.filter(t => t.status === 'running').length) : undefined },
     { key: 'conexoes', label: 'Conexões',      icon: '🔗' },
   ]
@@ -86,6 +88,7 @@ export function TabAnuncios({ planHasConnections, onUpgrade, clientData }: Props
       <div key={sub} className="animate-fade-up">
         {sub === 'meta'     && <TabMetaIntelligence    onNavigateToConnections={() => setSub('conexoes')} />}
         {sub === 'google'   && <TabGoogleIntelligence  onNavigateToConnections={() => setSub('conexoes')} />}
+        {sub === 'criar'    && <TabCriarCampanha clientData={clientData} onNavigateToConnections={() => setSub('conexoes')} />}
         {sub === 'abtests'  && <TabABTest clientData={clientData} />}
         {sub === 'conexoes' && <TabConnections />}
       </div>
