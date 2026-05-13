@@ -274,7 +274,7 @@ const PLANS = [
     cta: 'Descobrir agora',
     ctaStyle: 'green',
     features: ['CPL ideal do seu nicho', 'Gap de desperdício', 'Prioridade de correção'],
-    href: '/sign-in',
+    href: '/sign-up',
   },
   {
     name: 'Plataforma',
@@ -284,7 +284,7 @@ const PLANS = [
     cta: 'Começar agora',
     ctaStyle: 'secondary',
     features: ['Tudo do Diagnóstico', 'Monitoramento contínuo', 'Alertas de desvio de CPL', '1 cliente'],
-    href: '/sign-in',
+    href: '/checkout?plan=individual',
   },
   {
     name: 'Profissional',
@@ -296,7 +296,7 @@ const PLANS = [
     featured: true,
     badge: 'Mais escolhido',
     features: ['Tudo da Plataforma', 'Até 8 clientes', 'Conexão Meta + Google Ads', 'Auditoria automática', 'Relatórios em PDF'],
-    href: '/sign-in',
+    href: '/checkout?plan=profissional',
   },
   {
     name: 'Avançado',
@@ -306,7 +306,7 @@ const PLANS = [
     cta: 'Começar agora',
     ctaStyle: 'secondary',
     features: ['Tudo do Profissional', 'Até 15 clientes', 'Múltiplas contas por plataforma', 'Acesso à API', 'Suporte prioritário'],
-    href: '/sign-in',
+    href: '/checkout?plan=avancada',
   },
 ]
 
