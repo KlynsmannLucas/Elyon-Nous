@@ -1,7 +1,7 @@
 // components/dashboard/TabConnections.tsx — Conectar Meta Ads e Google Ads
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { AdsCampaign } from '@/lib/store'
 
@@ -16,16 +16,235 @@ function fmt(n: number) {
   return `R$${n.toFixed(0)}`
 }
 
-function StatusPill({ status }: { status: string }) {
+function fmtNum(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1000)      return `${(n / 1000).toFixed(1)}k`
+  return String(n)
+}
+
+type SortKey = 'name' | 'spend' | 'leads' | 'cpl' | 'ctr' | 'impressions' | 'roas'
+type SortDir = 'asc' | 'desc'
+
+function StatusDot({ status }: { status: string }) {
   const active = status === 'ACTIVE' || status === 'ENABLED'
   return (
-    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-      style={{
-        color: active ? '#22C55E' : '#94A3B8',
-        background: active ? 'rgba(34,197,94,0.1)' : 'rgba(148,163,184,0.1)',
-      }}>
-      {active ? 'Ativa' : 'Pausada'}
-    </span>
+    <div className="flex items-center gap-1.5">
+      <div className="w-2 h-2 rounded-full flex-shrink-0"
+        style={{ background: active ? '#22C55E' : '#475569', boxShadow: active ? '0 0 5px #22C55E80' : 'none' }} />
+      <span className="text-xs" style={{ color: active ? '#22C55E' : '#475569' }}>
+        {active ? 'Ativo' : 'Pausado'}
+      </span>
+    </div>
+  )
+}
+
+function SortHeader({ label, sortKey, current, dir, onSort }: {
+  label: string; sortKey: SortKey; current: SortKey; dir: SortDir
+  onSort: (k: SortKey) => void
+}) {
+  const active = current === sortKey
+  return (
+    <th
+      className="px-3 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide cursor-pointer select-none whitespace-nowrap"
+      style={{ color: active ? '#F0B429' : '#475569' }}
+      onClick={() => onSort(sortKey)}
+    >
+      {label}
+      <span className="ml-1 opacity-60">{active ? (dir === 'desc' ? '↓' : '↑') : '↕'}</span>
+    </th>
+  )
+}
+
+function CampaignTable({ title, icon, color, campaigns, totals }: {
+  title: string; icon: string; color: string
+  campaigns: AdsCampaign[]; totals: Totals | null
+}) {
+  const [search,     setSearch]     = useState('')
+  const [statusFilt, setStatusFilt] = useState<'all' | 'active' | 'paused'>('all')
+  const [sortKey,    setSortKey]    = useState<SortKey>('spend')
+  const [sortDir,    setSortDir]    = useState<SortDir>('desc')
+
+  const handleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
+    else { setSortKey(k); setSortDir('desc') }
+  }
+
+  const filtered = useMemo(() => {
+    let list = [...campaigns]
+    if (statusFilt === 'active') list = list.filter(c => c.status === 'ACTIVE' || c.status === 'ENABLED')
+    if (statusFilt === 'paused') list = list.filter(c => c.status !== 'ACTIVE' && c.status !== 'ENABLED')
+    if (search.trim()) list = list.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+    list.sort((a, b) => {
+      const av = sortKey === 'name' ? a.name : (a as any)[sortKey] ?? 0
+      const bv = sortKey === 'name' ? b.name : (b as any)[sortKey] ?? 0
+      if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+      return sortDir === 'asc' ? av - bv : bv - av
+    })
+    return list
+  }, [campaigns, statusFilt, search, sortKey, sortDir])
+
+  const activeCount = campaigns.filter(c => c.status === 'ACTIVE' || c.status === 'ENABLED').length
+  const pausedCount = campaigns.length - activeCount
+
+  return (
+    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-[#2A2A30]">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{icon}</span>
+            <h3 className="font-display font-bold text-white">{title}</h3>
+            <span className="text-xs text-slate-600">· {campaigns.length} campanhas · últimos 30 dias</span>
+          </div>
+          {/* Search */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Pesquisar campanha..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="text-xs bg-[#16161A] border border-[#2A2A30] rounded-lg px-3 py-1.5 pr-7 text-slate-300 placeholder:text-slate-600 outline-none focus:border-[#F0B429] w-52"
+            />
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs">🔍</span>
+          </div>
+        </div>
+        {/* Status filter tabs */}
+        <div className="flex gap-1">
+          {([
+            { key: 'all',    label: `Todos (${campaigns.length})` },
+            { key: 'active', label: `Ativos (${activeCount})` },
+            { key: 'paused', label: `Pausados (${pausedCount})` },
+          ] as { key: typeof statusFilt; label: string }[]).map(f => (
+            <button key={f.key} onClick={() => setStatusFilt(f.key)}
+              className="text-[11px] font-semibold px-3 py-1 rounded-full transition-all"
+              style={{
+                color:      statusFilt === f.key ? '#0D0D10' : '#475569',
+                background: statusFilt === f.key ? color : 'rgba(71,85,105,0.1)',
+                border:     `1px solid ${statusFilt === f.key ? color : 'rgba(71,85,105,0.2)'}`,
+              }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI totals bar */}
+      {totals && (
+        <div className="grid grid-cols-4 md:grid-cols-7 border-b border-[#1E1E24]">
+          {[
+            { label: 'Investido',  value: fmt(totals.spend),                         color: '#F0B429' },
+            { label: 'Impressões', value: fmtNum(totals.impressions),                 color: '#94A3B8' },
+            { label: 'Cliques',    value: fmtNum(totals.clicks),                      color: '#94A3B8' },
+            { label: 'CTR',        value: `${totals.ctr}%`,                           color: totals.ctr >= 1.5 ? '#22C55E' : totals.ctr >= 0.8 ? '#F0B429' : '#FF4D4D' },
+            { label: 'Leads',      value: String(totals.leads),                       color: '#38BDF8' },
+            { label: 'CPL Real',   value: `R$${totals.cpl}`,                          color: '#A78BFA' },
+            { label: 'ROAS',       value: totals.roas > 0 ? `${totals.roas}×` : '—', color: totals.roas >= 3 ? '#22C55E' : totals.roas > 0 ? '#F0B429' : '#475569' },
+          ].map((k) => (
+            <div key={k.label} className="px-4 py-3 text-center border-r border-[#1E1E24] last:border-0">
+              <div className="text-[9px] text-slate-600 uppercase tracking-wide mb-1">{k.label}</div>
+              <div className="text-sm font-bold font-mono" style={{ color: k.color }}>{k.value}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-[#1E1E24] bg-[#0D0D10]">
+              <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600 w-8">#</th>
+              <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600 cursor-pointer select-none"
+                onClick={() => handleSort('name')}>
+                Campanha <span className="ml-1 opacity-60">{sortKey === 'name' ? (sortDir === 'desc' ? '↓' : '↑') : '↕'}</span>
+              </th>
+              <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600">Status</th>
+              <SortHeader label="Investido"   sortKey="spend"       current={sortKey} dir={sortDir} onSort={handleSort} />
+              <SortHeader label="Leads"       sortKey="leads"       current={sortKey} dir={sortDir} onSort={handleSort} />
+              <SortHeader label="CPL"         sortKey="cpl"         current={sortKey} dir={sortDir} onSort={handleSort} />
+              <SortHeader label="CTR"         sortKey="ctr"         current={sortKey} dir={sortDir} onSort={handleSort} />
+              <SortHeader label="Impressões"  sortKey="impressions" current={sortKey} dir={sortDir} onSort={handleSort} />
+              {campaigns.some(c => c.roas > 0) && (
+                <SortHeader label="ROAS" sortKey="roas" current={sortKey} dir={sortDir} onSort={handleSort} />
+              )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#1A1A20]">
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="px-5 py-8 text-center text-slate-600">
+                  {search ? 'Nenhuma campanha encontrada.' : 'Nenhuma campanha neste filtro.'}
+                </td>
+              </tr>
+            ) : filtered.map((c, i) => {
+              const active = c.status === 'ACTIVE' || c.status === 'ENABLED'
+              const cplColor = c.cpl > 0 ? (c.cpl < 30 ? '#22C55E' : c.cpl < 80 ? '#F0B429' : '#FF4D4D') : '#475569'
+              const ctrColor = c.ctr >= 1.5 ? '#22C55E' : c.ctr >= 0.8 ? '#F0B429' : c.ctr > 0 ? '#FF4D4D' : '#475569'
+              return (
+                <tr key={c.id} className="hover:bg-[#16161A] transition-colors group">
+                  <td className="px-5 py-3 text-slate-700 font-mono text-[10px]">{i + 1}</td>
+                  <td className="px-3 py-3 max-w-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-8 rounded-full flex-shrink-0"
+                        style={{ background: active ? color : '#2A2A30' }} />
+                      <span className="font-semibold text-white leading-tight">{c.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">
+                    <StatusDot status={c.status} />
+                  </td>
+                  <td className="px-3 py-3 text-right font-mono font-semibold text-[#F0B429]">{fmt(c.spend)}</td>
+                  <td className="px-3 py-3 text-right font-mono font-semibold text-[#38BDF8]">
+                    {c.leads > 0 ? c.leads.toLocaleString('pt-BR') : <span className="text-slate-700">—</span>}
+                  </td>
+                  <td className="px-3 py-3 text-right font-mono font-semibold" style={{ color: cplColor }}>
+                    {c.cpl > 0 ? `R$${c.cpl}` : <span className="text-slate-700">—</span>}
+                  </td>
+                  <td className="px-3 py-3 text-right font-mono font-semibold" style={{ color: ctrColor }}>
+                    {c.ctr > 0 ? `${c.ctr}%` : <span className="text-slate-700">—</span>}
+                  </td>
+                  <td className="px-3 py-3 text-right text-slate-500 font-mono">
+                    {fmtNum(c.impressions)}
+                  </td>
+                  {campaigns.some(cc => cc.roas > 0) && (
+                    <td className="px-3 py-3 text-right font-mono font-semibold"
+                      style={{ color: c.roas >= 3 ? '#22C55E' : c.roas > 0 ? '#F0B429' : '#475569' }}>
+                      {c.roas > 0 ? `${c.roas}×` : <span className="text-slate-700">—</span>}
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+          {/* Totals footer row */}
+          {totals && filtered.length > 0 && (
+            <tfoot>
+              <tr className="border-t-2 border-[#2A2A30] bg-[#0D0D10]">
+                <td className="px-5 py-2.5"></td>
+                <td className="px-3 py-2.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wide" colSpan={2}>
+                  Total ({filtered.length} campanhas)
+                </td>
+                <td className="px-3 py-2.5 text-right font-mono font-bold text-[#F0B429] text-xs">{fmt(totals.spend)}</td>
+                <td className="px-3 py-2.5 text-right font-mono font-bold text-[#38BDF8] text-xs">{totals.leads.toLocaleString('pt-BR')}</td>
+                <td className="px-3 py-2.5 text-right font-mono font-bold text-[#A78BFA] text-xs">R${totals.cpl}</td>
+                <td className="px-3 py-2.5 text-right font-mono font-bold text-xs"
+                  style={{ color: totals.ctr >= 1.5 ? '#22C55E' : totals.ctr >= 0.8 ? '#F0B429' : '#FF4D4D' }}>
+                  {totals.ctr}%
+                </td>
+                <td className="px-3 py-2.5 text-right font-mono text-slate-500 text-xs">{fmtNum(totals.impressions)}</td>
+                {campaigns.some(c => c.roas > 0) && (
+                  <td className="px-3 py-2.5 text-right font-mono font-bold text-xs"
+                    style={{ color: totals.roas >= 3 ? '#22C55E' : totals.roas > 0 ? '#F0B429' : '#475569' }}>
+                    {totals.roas > 0 ? `${totals.roas}×` : '—'}
+                  </td>
+                )}
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
   )
 }
 
@@ -423,60 +642,3 @@ export function TabConnections() {
   )
 }
 
-function CampaignTable({ title, icon, color, campaigns, totals }: {
-  title: string; icon: string; color: string
-  campaigns: AdsCampaign[]; totals: Totals | null
-}) {
-  return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
-      <div className="px-6 py-4 border-b border-[#2A2A30] flex items-center gap-2">
-        <span>{icon}</span>
-        <h3 className="font-display font-bold text-white">{title}</h3>
-        <span className="text-xs text-slate-500 ml-1">· últimos 30 dias</span>
-      </div>
-
-      {/* KPIs totais */}
-      {totals && (
-        <div className="grid grid-cols-4 md:grid-cols-7 gap-0 border-b border-[#1E1E24]">
-          {[
-            { label: 'Investido',    value: fmt(totals.spend) },
-            { label: 'Impressões',   value: totals.impressions.toLocaleString('pt-BR') },
-            { label: 'Cliques',      value: totals.clicks.toLocaleString('pt-BR') },
-            { label: 'CTR',          value: `${totals.ctr}%` },
-            { label: 'Leads',        value: String(totals.leads) },
-            { label: 'CPL Real',     value: `R$${totals.cpl}` },
-            { label: 'ROAS',         value: totals.roas > 0 ? `${totals.roas}×` : '—' },
-          ].map((k) => (
-            <div key={k.label} className="px-4 py-3 text-center border-r border-[#1E1E24] last:border-0">
-              <div className="text-[10px] text-slate-600 uppercase mb-0.5">{k.label}</div>
-              <div className="text-sm font-bold" style={{ color }}>{k.value}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Tabela de campanhas */}
-      <div className="divide-y divide-[#1E1E24]">
-        {campaigns.map((c) => (
-          <div key={c.id} className="px-6 py-3 hover:bg-[#16161A] transition-colors">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-semibold text-white truncate">{c.name}</span>
-                  <StatusPill status={c.status} />
-                </div>
-                <div className="flex gap-4 text-xs text-slate-500">
-                  <span>Investido: <strong className="text-[#F0B429]">{fmt(c.spend)}</strong></span>
-                  <span>Leads: <strong className="text-white">{c.leads}</strong></span>
-                  <span>CPL: <strong className="text-[#38BDF8]">R${c.cpl}</strong></span>
-                  {c.roas > 0 && <span>ROAS: <strong className="text-[#22C55E]">{c.roas}×</strong></span>}
-                  <span>CTR: <strong className="text-slate-300">{c.ctr}%</strong></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
