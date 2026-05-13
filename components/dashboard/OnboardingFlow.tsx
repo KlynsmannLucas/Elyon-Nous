@@ -72,12 +72,11 @@ export function OnboardingFlow({ onNavigate }: Props) {
   const [dismissed, setDismissed] = useState(false)
   const [expanded, setExpanded] = useState(true)
 
-  const state = useAppStore(s => ({
-    clientData: s.clientData,
-    strategyData: s.strategyData,
-    auditCache: s.auditCache,
-    actionPlanCache: s.actionPlanCache,
-  }))
+  const clientData     = useAppStore(s => s.clientData)
+  const strategyData   = useAppStore(s => s.strategyData)
+  const auditCache     = useAppStore(s => s.auditCache)
+  const actionPlanCache = useAppStore(s => s.actionPlanCache)
+  const state = { clientData, strategyData, auditCache, actionPlanCache }
 
   useEffect(() => {
     try {

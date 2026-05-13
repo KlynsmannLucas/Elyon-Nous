@@ -56,11 +56,9 @@ export function TabCRO() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | CRORecommendation['priority']>('all')
 
-  const { clientData, auditCache, funnelEntries } = useAppStore(s => ({
-    clientData: s.clientData,
-    auditCache: s.auditCache,
-    funnelEntries: s.funnelEntries,
-  }))
+  const clientData   = useAppStore(s => s.clientData)
+  const auditCache   = useAppStore(s => s.auditCache)
+  const funnelEntries = useAppStore(s => s.funnelEntries)
 
   async function runCROAnalysis() {
     if (!clientData) return

@@ -85,10 +85,8 @@ export function TabChannelMix() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [customBudget, setCustomBudget] = useState('')
 
-  const { clientData, auditCache } = useAppStore(s => ({
-    clientData: s.clientData,
-    auditCache: s.auditCache,
-  }))
+  const clientData = useAppStore(s => s.clientData)
+  const auditCache = useAppStore(s => s.auditCache)
 
   async function runAnalysis() {
     if (!clientData) return

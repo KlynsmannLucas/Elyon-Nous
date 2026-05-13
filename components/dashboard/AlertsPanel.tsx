@@ -27,10 +27,8 @@ export function AlertsPanel({ clientName, niche }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
   const lastClientRef = useRef<string>('')
 
-  const { connectedAccounts, auditCache } = useAppStore(s => ({
-    connectedAccounts: s.connectedAccounts,
-    auditCache: s.auditCache,
-  }))
+  const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const auditCache        = useAppStore(s => s.auditCache)
 
   const fetchAlerts = useCallback(async () => {
     if (!clientName || !niche) return

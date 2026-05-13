@@ -71,10 +71,8 @@ export function TabBudgetAllocator() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [activeView, setActiveView] = useState<'table' | 'visual'>('table')
 
-  const { clientData, auditCache } = useAppStore(s => ({
-    clientData: s.clientData,
-    auditCache: s.auditCache,
-  }))
+  const clientData = useAppStore(s => s.clientData)
+  const auditCache = useAppStore(s => s.auditCache)
 
   // Pré-preenche budget do cliente
   useEffect(() => {
