@@ -1,4 +1,4 @@
-// components/dashboard/TabPerformance.tsx — Performance com histórico inline fácil de preencher
+// components/dashboard/TabPerformance.tsx
 'use client'
 
 import { useState } from 'react'
@@ -12,7 +12,34 @@ interface Props {
   clientData: ClientData | null
 }
 
-// ── Gráfico de linha SVG ─────────────────────────────────────────────────────
+const C = {
+  bg:       '#080D1A',
+  surface:  '#0F1629',
+  elevated: '#131E35',
+  border:   'rgba(99,120,255,0.1)',
+  purple:   '#7C3AED',
+  purpleL:  '#A78BFA',
+  green:    '#22C55E',
+  greenBg:  'rgba(34,197,94,0.1)',
+  red:      '#EF4444',
+  redBg:    'rgba(239,68,68,0.1)',
+  blue:     '#38BDF8',
+  blueBg:   'rgba(56,189,248,0.1)',
+  gold:     '#F59E0B',
+  goldBg:   'rgba(245,158,11,0.1)',
+  orange:   '#F97316',
+  text1:    '#F1F5F9',
+  text2:    'rgba(255,255,255,0.5)',
+  text3:    'rgba(255,255,255,0.25)',
+}
+
+const card: React.CSSProperties = {
+  background: C.surface,
+  border: `1px solid ${C.border}`,
+  borderRadius: 14,
+  padding: 20,
+}
+
 function TrendChart({ points, color, label, format }: {
   points: { x: string; y: number }[]
   color: string
@@ -30,23 +57,23 @@ function TrendChart({ points, color, label, format }: {
   const last = points[points.length - 1]
   const prev = points[points.length - 2]
   const delta = last.y - prev.y
-  const deltaColor = label.includes('CPL') ? (delta <= 0 ? '#22C55E' : '#FF4D4D') : (delta >= 0 ? '#22C55E' : '#FF4D4D')
+  const deltaColor = label.includes('CPL') ? (delta <= 0 ? C.green : C.red) : (delta >= 0 ? C.green : C.red)
 
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4">
-      <div className="flex items-start justify-between mb-3">
+    <div style={card}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
-          <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
-          <div className="font-display text-2xl font-bold mt-0.5" style={{ color }}>{format(last.y)}</div>
+          <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
+          <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4, color }}>{format(last.y)}</div>
         </div>
-        <div className="text-right">
-          <div className="text-xs font-bold" style={{ color: deltaColor }}>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: deltaColor }}>
             {delta > 0 ? '▲' : '▼'} {format(Math.abs(delta))}
           </div>
-          <div className="text-[10px] text-slate-600 mt-0.5">vs período anterior</div>
+          <div style={{ fontSize: 10, color: C.text3, marginTop: 4 }}>vs período anterior</div>
         </div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 64 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 64 }}>
         <path
           d={`${d} L${toX(points.length - 1).toFixed(1)},${(H - PAD).toFixed(1)} L${PAD},${(H - PAD).toFixed(1)} Z`}
           fill={color} opacity={0.06}
@@ -56,9 +83,9 @@ function TrendChart({ points, color, label, format }: {
           <circle key={i} cx={toX(i)} cy={toY(p.y)} r="1.8" fill={color} />
         ))}
       </svg>
-      <div className="flex justify-between mt-1">
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
         {[points[0], points[points.length - 1]].map((p, i) => (
-          <span key={i} className="text-[10px] text-slate-600">{p.x}</span>
+          <span key={i} style={{ fontSize: 10, color: C.text3 }}>{p.x}</span>
         ))}
       </div>
     </div>
@@ -66,18 +93,17 @@ function TrendChart({ points, color, label, format }: {
 }
 
 function ScoreBar({ score }: { score: number }) {
-  const color = score >= 80 ? '#22C55E' : score >= 60 ? '#F0B429' : '#FF4D4D'
+  const color = score >= 80 ? C.green : score >= 60 ? C.gold : C.red
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 h-1.5 bg-[#1E1E24] rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, background: color }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ flex: 1, height: 6, background: C.elevated, borderRadius: 4, overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 4, transition: 'all 0.7s', width: `${score}%`, background: color }} />
       </div>
-      <span className="text-xs font-bold w-8 text-right" style={{ color }}>{score}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, width: 28, textAlign: 'right', color }}>{score}</span>
     </div>
   )
 }
 
-// ── Simulador de Cenários ─────────────────────────────────────────────────────
 function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
   const niche      = clientData?.niche || ''
   const bench      = getBenchmark(niche)
@@ -101,21 +127,21 @@ function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
     {
       key: 'conservador', label: 'Conservador', emoji: '🛡',
       desc: 'Início ou mercado competitivo',
-      color: '#94A3B8', glow: 'rgba(148,163,184,0.07)', border: 'rgba(148,163,184,0.25)',
+      color: C.text2, glow: 'rgba(148,163,184,0.07)', border: 'rgba(148,163,184,0.25)',
       cplCalc: () => bench.cpl_max * 1.20,
       cvrFactor: 0.65, efficiency: 0.82,
     },
     {
       key: 'recomendado', label: 'Recomendado', emoji: '⚡',
       desc: 'Estratégia sólida · benchmark do nicho',
-      color: '#F0B429', glow: 'rgba(240,180,41,0.09)', border: 'rgba(240,180,41,0.38)',
+      color: C.gold, glow: 'rgba(245,158,11,0.09)', border: 'rgba(245,158,11,0.38)',
       cplCalc: () => (bench.cpl_min + bench.cpl_max) / 2,
       cvrFactor: 1.00, efficiency: 0.91,
     },
     {
       key: 'agressivo', label: 'Agressivo', emoji: '🚀',
       desc: 'Funil otimizado + criativos vencedores',
-      color: '#22C55E', glow: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.30)',
+      color: C.green, glow: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.30)',
       cplCalc: () => bench.cpl_min * 0.78,
       cvrFactor: 1.35, efficiency: 0.96,
     },
@@ -149,116 +175,116 @@ function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
     : v >= 1000    ? `R$${(v / 1000).toFixed(0)}K`
     :                `R$${v.toLocaleString('pt-BR')}`
 
-  const sliderCls = 'w-full h-1.5 rounded-full cursor-pointer appearance-none bg-[#1E1E24]'
-
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden animate-fade-up">
+    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
       {/* Header */}
-      <div className="px-6 py-5 border-b border-[#2A2A30] flex items-center gap-3">
-        <span className="text-xl">🎯</span>
+      <div style={{
+        padding: '18px 24px', borderBottom: `1px solid ${C.border}`,
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10, background: `${C.gold}18`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+        }}>🎯</div>
         <div>
-          <div className="font-display font-bold text-white">Simulador de Cenários</div>
-          <div className="text-[11px] text-slate-500 mt-0.5">Projeção mensal baseada nos benchmarks de {niche || 'seu nicho'}</div>
+          <div style={{ fontWeight: 700, color: C.text1, fontSize: 14 }}>Simulador de Cenários</div>
+          <div style={{ fontSize: 11, color: C.text3, marginTop: 4 }}>
+            Projeção mensal baseada nos benchmarks de {niche || 'seu nicho'}
+          </div>
         </div>
-        <div className="ml-auto px-3 py-1.5 rounded-full text-[10px] font-bold"
-          style={{ background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.2)', color: '#F0B429' }}>
+        <div style={{
+          marginLeft: 'auto', padding: '6px 12px', borderRadius: 20,
+          fontSize: 10, fontWeight: 700,
+          background: C.goldBg, border: `1px solid rgba(245,158,11,0.2)`, color: C.gold,
+        }}>
           CPL bench: R${bench.cpl_min}–R${bench.cpl_max}
         </div>
       </div>
 
       {/* Sliders */}
-      <div className="px-6 py-4 border-b border-[#1E1E24] bg-[#0C0C0F]">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Orçamento mensal</span>
-              <span className="text-sm font-bold text-white">R${budget.toLocaleString('pt-BR')}</span>
+      <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C.border}`, background: C.bg }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          {[
+            { label: 'Orçamento mensal', value: `R$${budget.toLocaleString('pt-BR')}`, min: 500, max: 100000, step: 500, val: budget, setter: setBudget, color: C.gold, minL: 'R$500', maxL: 'R$100K' },
+            { label: 'Ticket médio', value: `R$${ticket.toLocaleString('pt-BR')}`, min: 100, max: 50000, step: 100, val: ticket, setter: setTicket, color: C.purpleL, minL: 'R$100', maxL: 'R$50K' },
+            { label: 'Margem bruta', value: `${margin}%`, min: 10, max: 90, step: 5, val: margin, setter: setMargin, color: C.green, minL: '10%', maxL: '90%' },
+          ].map(s => (
+            <div key={s.label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>{s.value}</span>
+              </div>
+              <input type="range" min={s.min} max={s.max} step={s.step} value={s.val}
+                onChange={e => s.setter(Number(e.target.value))}
+                style={{ width: '100%', height: 6, borderRadius: 4, cursor: 'pointer', accentColor: s.color }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.text3, marginTop: 4 }}>
+                <span>{s.minL}</span><span>{s.maxL}</span>
+              </div>
             </div>
-            <input type="range" min={500} max={100000} step={500} value={budget}
-              onChange={e => setBudget(Number(e.target.value))} className={sliderCls}
-              style={{ accentColor: '#F0B429' }} />
-            <div className="flex justify-between text-[10px] text-slate-700 mt-1">
-              <span>R$500</span><span>R$100K</span>
-            </div>
-          </div>
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Ticket médio</span>
-              <span className="text-sm font-bold text-white">R${ticket.toLocaleString('pt-BR')}</span>
-            </div>
-            <input type="range" min={100} max={50000} step={100} value={ticket}
-              onChange={e => setTicket(Number(e.target.value))} className={sliderCls}
-              style={{ accentColor: '#A78BFA' }} />
-            <div className="flex justify-between text-[10px] text-slate-700 mt-1">
-              <span>R$100</span><span>R$50K</span>
-            </div>
-          </div>
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Margem bruta</span>
-              <span className="text-sm font-bold text-white">{margin}%</span>
-            </div>
-            <input type="range" min={10} max={90} step={5} value={margin}
-              onChange={e => setMargin(Number(e.target.value))} className={sliderCls}
-              style={{ accentColor: '#22C55E' }} />
-            <div className="flex justify-between text-[10px] text-slate-700 mt-1">
-              <span>10%</span><span>90%</span>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Scenario pills */}
-      <div className="px-6 py-4 grid grid-cols-3 gap-3 border-b border-[#1E1E24]">
+      <div style={{
+        padding: '16px 24px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 12, borderBottom: `1px solid ${C.border}`,
+      }}>
         {SCENES.map((s, i) => (
           <button key={s.key} onClick={() => setScenIdx(i as 0|1|2)}
-            className="relative flex flex-col items-center gap-1 pt-5 pb-4 rounded-2xl text-center transition-all duration-200"
             style={{
-              background:  scenIdx === i ? s.glow : '#0D0D10',
-              border:      `1.5px solid ${scenIdx === i ? s.border : '#1E1E24'}`,
+              position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 4, paddingTop: 20, paddingBottom: 16, borderRadius: 14, textAlign: 'center',
+              cursor: 'pointer', transition: 'all 0.2s',
+              background:  scenIdx === i ? s.glow : C.elevated,
+              border:      `1.5px solid ${scenIdx === i ? s.border : C.border}`,
               boxShadow:   scenIdx === i ? `0 0 24px ${s.glow}` : 'none',
             }}>
             {i === 1 && (
-              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#F0B429] text-black">
+              <span style={{
+                position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)',
+                padding: '2px 8px', borderRadius: 20, fontSize: 9, fontWeight: 700,
+                background: C.gold, color: '#000',
+              }}>
                 RECOMENDADO
               </span>
             )}
-            <span className="text-2xl">{s.emoji}</span>
-            <span className="text-xs font-bold mt-0.5" style={{ color: scenIdx === i ? s.color : '#64748B' }}>{s.label}</span>
-            <span className="text-[10px] text-slate-600 px-2 leading-tight">{s.desc}</span>
-            <div className="mt-2 font-bold text-lg" style={{ color: s.color }}>
+            <span style={{ fontSize: 24 }}>{s.emoji}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: scenIdx === i ? s.color : C.text3 }}>{s.label}</span>
+            <span style={{ fontSize: 10, color: C.text3, padding: '0 8px', lineHeight: 1.4 }}>{s.desc}</span>
+            <div style={{ marginTop: 8, fontWeight: 700, fontSize: 18, color: s.color }}>
               {fmtR(all[i].revenue)}
-              <span className="text-[10px] font-normal text-slate-600">/mês</span>
+              <span style={{ fontSize: 10, fontWeight: 400, color: C.text3 }}>/mês</span>
             </div>
           </button>
         ))}
       </div>
 
       {/* Active scenario detail */}
-      <div className="px-6 py-5 space-y-4">
+      <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* 4 KPI cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {[
-            { label: 'Leads / mês',    value: cur.leads.toString(),            color: '#38BDF8',                                     sub: `CPL alvo: R$${cur.cpl}` },
-            { label: 'Vendas / mês',   value: cur.sales.toString(),            color: sc.color,                                      sub: `CVR: ${cur.cvr}%` },
-            { label: 'Receita / mês',  value: fmtR(cur.revenue),              color: '#F0B429',                                     sub: `ROAS: ${cur.roas}×` },
-            { label: 'Lucro bruto',    value: fmtR(Math.max(0, cur.profit)),   color: cur.profit > 0 ? '#22C55E' : '#FF4D4D',        sub: cur.profit > 0 ? `margem aplicada: ${margin}%` : 'abaixo do break-even' },
+            { label: 'Leads / mês',    value: cur.leads.toString(),            color: C.blue,   sub: `CPL alvo: R$${cur.cpl}` },
+            { label: 'Vendas / mês',   value: cur.sales.toString(),            color: sc.color, sub: `CVR: ${cur.cvr}%` },
+            { label: 'Receita / mês',  value: fmtR(cur.revenue),              color: C.gold,   sub: `ROAS: ${cur.roas}×` },
+            { label: 'Lucro bruto',    value: fmtR(Math.max(0, cur.profit)),   color: cur.profit > 0 ? C.green : C.red, sub: cur.profit > 0 ? `margem aplicada: ${margin}%` : 'abaixo do break-even' },
           ].map(k => (
-            <div key={k.label} className="bg-[#0D0D10] border border-[#1E1E24] rounded-2xl p-4">
-              <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">{k.label}</div>
-              <div className="font-display text-2xl font-bold" style={{ color: k.color }}>{k.value}</div>
-              <div className="text-[10px] text-slate-600 mt-1">{k.sub}</div>
+            <div key={k.label} style={{ background: C.elevated, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{k.label}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: k.color }}>{k.value}</div>
+              <div style={{ fontSize: 10, color: C.text3, marginTop: 4 }}>{k.sub}</div>
             </div>
           ))}
         </div>
 
         {/* CPL position bar */}
-        <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[10px] text-slate-500 uppercase tracking-wider">Posição do CPL alvo no benchmark</span>
-            <span className="text-xs font-bold" style={{ color: sc.color }}>R${cur.cpl} / lead</span>
+        <div style={{ background: C.elevated, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Posição do CPL alvo no benchmark</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: sc.color }}>R${cur.cpl} / lead</span>
           </div>
-          <div className="relative h-2 bg-[#1E1E24] rounded-full">
+          <div style={{ position: 'relative', height: 8, background: C.bg, borderRadius: 4 }}>
             {(() => {
               const scale  = bench.cpl_max * 1.6
               const minPct = Math.min((bench.cpl_min / scale) * 100, 90)
@@ -266,71 +292,84 @@ function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
               const curPct = Math.min(Math.max((cur.cpl  / scale) * 100, 2), 96)
               return (
                 <>
-                  <div className="absolute h-full rounded-full opacity-30"
-                    style={{ left: `${minPct}%`, width: `${maxPct - minPct}%`, background: 'linear-gradient(90deg,#22C55E,#F0B429,#FF4D4D)' }} />
-                  <div className="absolute top-1/2 w-3.5 h-3.5 rounded-full border-2 border-[#111114]"
-                    style={{ left: `${curPct}%`, top: '50%', transform: 'translate(-50%,-50%)', background: sc.color }} />
+                  <div style={{
+                    position: 'absolute', height: '100%', borderRadius: 4, opacity: 0.3,
+                    left: `${minPct}%`, width: `${maxPct - minPct}%`,
+                    background: 'linear-gradient(90deg,#22C55E,#F59E0B,#EF4444)',
+                  }} />
+                  <div style={{
+                    position: 'absolute', width: 14, height: 14, borderRadius: '50%',
+                    border: `2px solid ${C.surface}`, background: sc.color,
+                    left: `${curPct}%`, top: '50%', transform: 'translate(-50%,-50%)',
+                  }} />
                 </>
               )
             })()}
           </div>
-          <div className="flex justify-between text-[10px] text-slate-700 mt-2">
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.text3, marginTop: 8 }}>
             <span>R$0</span>
-            <span className="text-slate-500">Benchmark: R${bench.cpl_min}–R${bench.cpl_max}</span>
+            <span>Benchmark: R${bench.cpl_min}–R${bench.cpl_max}</span>
             <span>R${Math.round(bench.cpl_max * 1.6)}</span>
           </div>
         </div>
 
         {/* Break-even + LTV */}
-        <div className="grid md:grid-cols-2 gap-3">
-          <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Break-even mensal</div>
-            <div className="font-display text-2xl font-bold" style={{ color: cur.breakEvenMet ? '#22C55E' : '#F0B429' }}>
-              {cur.breakEvenSales.toFixed(1)} <span className="text-sm font-normal text-slate-500">vendas p/ cobrir o gasto</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ background: C.elevated, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Break-even mensal</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: cur.breakEvenMet ? C.green : C.gold }}>
+              {cur.breakEvenSales.toFixed(1)}{' '}
+              <span style={{ fontSize: 13, fontWeight: 400, color: C.text3 }}>vendas p/ cobrir o gasto</span>
             </div>
-            <div className="mt-3 flex items-center gap-2">
-              <div className="flex-1 h-1.5 bg-[#1E1E24] rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.min((cur.sales / Math.max(cur.breakEvenSales, 0.1)) * 100, 100)}%`,
-                    background: cur.breakEvenMet ? '#22C55E' : '#F0B429',
-                  }} />
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ flex: 1, height: 6, background: C.bg, borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4, transition: 'all 0.5s',
+                  width: `${Math.min((cur.sales / Math.max(cur.breakEvenSales, 0.1)) * 100, 100)}%`,
+                  background: cur.breakEvenMet ? C.green : C.gold,
+                }} />
               </div>
-              <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: cur.breakEvenMet ? '#22C55E' : '#F0B429' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap', color: cur.breakEvenMet ? C.green : C.gold }}>
                 {cur.sales} / {cur.breakEvenSales.toFixed(1)}
               </span>
             </div>
-            <div className="text-[10px] mt-2" style={{ color: cur.breakEvenMet ? '#22C55E' : '#94A3B8' }}>
+            <div style={{ fontSize: 10, marginTop: 8, color: cur.breakEvenMet ? C.green : C.text2 }}>
               {cur.breakEvenMet ? '✓ Projeção cobre o investimento' : '⚠ Abaixo do break-even — aumente o ticket ou a margem'}
             </div>
           </div>
 
-          <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Valor real por cliente (LTV)</div>
-            <div className="font-display text-2xl font-bold text-[#A78BFA]">{fmtR(cur.ltvRevenue)}</div>
-            <div className="text-[10px] text-slate-600 mt-1">
+          <div style={{ background: C.elevated, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Valor real por cliente (LTV)</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: C.purpleL }}>{fmtR(cur.ltvRevenue)}</div>
+            <div style={{ fontSize: 10, color: C.text3, marginTop: 4 }}>
               {cur.sales} clientes × R${ticket.toLocaleString('pt-BR')} × {ltv}× LTV
             </div>
-            <div className="mt-2 text-[10px] text-slate-500">
+            <div style={{ marginTop: 8, fontSize: 10, color: C.text3 }}>
               ROAS efetivo com LTV:{' '}
-              <span className="font-bold text-[#A78BFA]">{+(cur.roas * ltv).toFixed(1)}×</span>
-              {ltv > 1.5 && <span className="ml-1 text-slate-700">· nicho com alta recorrência</span>}
+              <span style={{ fontWeight: 700, color: C.purpleL }}>{+(cur.roas * ltv).toFixed(1)}×</span>
+              {ltv > 1.5 && <span style={{ marginLeft: 4, color: C.text3 }}>· nicho com alta recorrência</span>}
             </div>
           </div>
         </div>
 
         {/* Ramp bars */}
-        <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-4">Curva de maturação — receita projetada mês a mês</div>
-          <div className="flex items-end gap-2" style={{ height: 88 }}>
+        <div style={{ background: C.elevated, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+          <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
+            Curva de maturação — receita projetada mês a mês
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 88 }}>
             {rampFactors.map((f, i) => {
               const rev = Math.round(cur.revenue * f)
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1" style={{ height: '100%', justifyContent: 'flex-end' }}>
-                  <div className="text-[9px] font-bold mb-1" style={{ color: i === 5 ? sc.color : '#64748B' }}>{fmtR(rev)}</div>
-                  <div className="w-full rounded-t-lg transition-all duration-500"
-                    style={{ height: `${Math.round(f * 64)}px`, background: i === 5 ? sc.color : `${sc.color}35`, minHeight: 4 }} />
-                  <div className="text-[9px] text-slate-700 mt-1">{rampLabels[i]}</div>
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, height: '100%', justifyContent: 'flex-end' }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: i === 5 ? sc.color : C.text3 }}>{fmtR(rev)}</div>
+                  <div style={{
+                    width: '100%', borderRadius: '4px 4px 0 0', transition: 'all 0.5s',
+                    height: `${Math.round(f * 64)}px`,
+                    background: i === 5 ? sc.color : `${sc.color}35`,
+                    minHeight: 4,
+                  }} />
+                  <div style={{ fontSize: 9, color: C.text3 }}>{rampLabels[i]}</div>
                 </div>
               )
             })}
@@ -338,39 +377,47 @@ function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
         </div>
 
         {/* Sensitivity */}
-        <div className="p-4 bg-[#0D0D10] border border-[#1E1E24] rounded-2xl">
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-3">Análise de sensibilidade</div>
-          <div className="grid md:grid-cols-3 gap-3">
+        <div style={{ background: C.elevated, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+          <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Análise de sensibilidade</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {[
               {
                 label: 'CPL +25%',
                 detail: `${Math.round(cur.leads * 0.80)} leads → ${fmtR(Math.round(cur.leads * 0.80 * (cur.cvr / 100) * ticket))} receita`,
-                color: '#FF4D4D', sign: '▼',
+                color: C.red, sign: '▼',
               },
               {
                 label: 'CVR −20%',
                 detail: `${(cur.cvr * 0.8).toFixed(1)}% CVR → ${fmtR(Math.round(cur.leads * (cur.cvr * 0.8 / 100) * ticket))} receita`,
-                color: '#F0B429', sign: '▼',
+                color: C.gold, sign: '▼',
               },
               {
                 label: 'Ticket +15%',
                 detail: `R$${Math.round(ticket * 1.15).toLocaleString('pt-BR')} → ${fmtR(Math.round(cur.sales * ticket * 1.15))} receita`,
-                color: '#22C55E', sign: '▲',
+                color: C.green, sign: '▲',
               },
             ].map(s => (
-              <div key={s.label} className="p-3 rounded-xl"
-                style={{ background: `${s.color}08`, border: `1px solid ${s.color}20` }}>
-                <span className="text-[10px] font-bold block mb-1" style={{ color: s.color }}>{s.sign} {s.label}</span>
-                <span className="text-[11px] text-slate-400">{s.detail}</span>
+              <div key={s.label} style={{
+                padding: 12, borderRadius: 10,
+                background: `${s.color}08`, border: `1px solid ${s.color}20`,
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, display: 'block', marginBottom: 4, color: s.color }}>
+                  {s.sign} {s.label}
+                </span>
+                <span style={{ fontSize: 11, color: C.text2 }}>{s.detail}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Comparison table */}
-        <div className="rounded-2xl overflow-hidden border border-[#1E1E24]">
-          <div className="grid grid-cols-7 px-4 py-2.5 bg-[#0A0A0D] text-[10px] text-slate-600 uppercase tracking-wider">
-            <span className="col-span-2">Cenário</span>
+        <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}` }}>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
+            padding: '10px 16px', background: C.bg,
+            fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em',
+          }}>
+            <span>Cenário</span>
             <span>CPL</span><span>Leads</span><span>Vendas</span><span>Receita</span><span>ROAS</span>
           </div>
           {SCENES.map((s, i) => {
@@ -378,21 +425,24 @@ function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
             const roasGood = bench.kpi_thresholds?.roas_good ?? 3
             return (
               <div key={s.key}
-                className="grid grid-cols-7 px-4 py-3.5 items-center border-t border-[#1E1E24] cursor-pointer transition-all hover:bg-[#16161A]"
                 style={{
+                  display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
+                  padding: '14px 16px', alignItems: 'center',
+                  borderTop: `1px solid ${C.border}`,
                   background:  scenIdx === i ? s.glow : 'transparent',
                   borderLeft:  `3px solid ${scenIdx === i ? s.color : 'transparent'}`,
+                  cursor: 'pointer', transition: 'all 0.15s',
                 }}
                 onClick={() => setScenIdx(i as 0|1|2)}>
-                <div className="col-span-2 flex items-center gap-2">
-                  <span className="text-lg">{s.emoji}</span>
-                  <span className="text-xs font-bold" style={{ color: scenIdx === i ? s.color : '#94A3B8' }}>{s.label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 18 }}>{s.emoji}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: scenIdx === i ? s.color : C.text2 }}>{s.label}</span>
                 </div>
-                <span className="text-xs text-slate-400">R${m.cpl}</span>
-                <span className="text-xs text-slate-400">{m.leads}</span>
-                <span className="text-xs text-slate-400">{m.sales}</span>
-                <span className="text-xs font-bold" style={{ color: s.color }}>{fmtR(m.revenue)}</span>
-                <span className="text-xs font-bold" style={{ color: m.roas >= roasGood ? '#22C55E' : '#F0B429' }}>{m.roas}×</span>
+                <span style={{ fontSize: 12, color: C.text2 }}>R${m.cpl}</span>
+                <span style={{ fontSize: 12, color: C.text2 }}>{m.leads}</span>
+                <span style={{ fontSize: 12, color: C.text2 }}>{m.sales}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: s.color }}>{fmtR(m.revenue)}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: m.roas >= roasGood ? C.green : C.gold }}>{m.roas}×</span>
               </div>
             )
           })}
@@ -402,7 +452,6 @@ function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
   )
 }
 
-// ── Formulário de entrada rápida de histórico ────────────────────────────────
 function AddHistoryForm({ onClose }: { onClose: () => void }) {
   const { addCampaign, connectedAccounts } = useAppStore()
   const [form, setForm] = useState({
@@ -468,10 +517,10 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
   const CHANNELS = ['Meta Ads', 'Google Ads', 'Google Search', 'Google PMAX', 'TikTok Ads', 'YouTube Ads', 'LinkedIn Ads', 'Outro']
   const PERIODS_SUGG = (() => {
     const now = new Date()
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    const months2 = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
     return Array.from({ length: 6 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      return `${months[d.getMonth()]} ${d.getFullYear()}`
+      return `${months2[d.getMonth()]} ${d.getFullYear()}`
     })
   })()
 
@@ -483,7 +532,7 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
       period: form.period,
       budgetSpent: Number(form.budgetSpent) || 0,
       leads: Number(form.leads) || 0,
-      cplReal: 0, // calculado automaticamente pela store
+      cplReal: 0,
       conversions: Number(form.conversions) || 0,
       revenue: Number(form.revenue) || 0,
       outcome: form.outcome,
@@ -496,180 +545,180 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
     setTimeout(() => { setSaving(false); onClose() }, 300)
   }
 
-  const inputCls = 'w-full bg-[#0D0D10] border border-[#2A2A30] rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-700 focus:outline-none focus:border-[#F0B429] transition-colors'
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: C.elevated, border: `1px solid ${C.border}`,
+    borderRadius: 10, padding: '10px 12px', color: C.text1, fontSize: 13,
+    outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box',
+  }
+  const labelStyle: React.CSSProperties = {
+    fontSize: 10, color: C.text3, textTransform: 'uppercase' as const, letterSpacing: '0.08em', display: 'block', marginBottom: 6,
+  }
 
   return (
-    <div className="bg-[#111114] border border-[#F0B42930] rounded-2xl p-5 animate-fade-up">
-      <div className="flex items-center justify-between mb-3">
-        <div className="font-display font-bold text-white text-sm">+ Registrar Período</div>
-        <button onClick={onClose} className="text-slate-600 hover:text-slate-400 text-lg">×</button>
+    <div style={{
+      ...card,
+      border: `1px solid rgba(245,158,11,0.25)`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, color: C.text1, fontSize: 13 }}>+ Registrar Período</div>
+        <button onClick={onClose} style={{ color: C.text3, fontSize: 18, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
       </div>
 
-      {/* Import from Ads banner */}
       {activeAccount && (
-        <div className="flex items-center gap-2 mb-4 p-2.5 rounded-xl"
-          style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)' }}>
-          <span className="text-[10px] text-slate-500 flex-1">
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '10px 12px', borderRadius: 10,
+          background: C.greenBg, border: `1px solid rgba(34,197,94,0.2)`,
+        }}>
+          <span style={{ fontSize: 10, color: C.text3, flex: 1 }}>
             {isGoogle ? 'Google Ads' : 'Meta Ads'} conectado
             {importMsg ? (
-              <span className="ml-2 font-semibold" style={{ color: importMsg.startsWith('✓') ? '#22C55E' : '#FF4D4D' }}>{importMsg}</span>
+              <span style={{ marginLeft: 8, fontWeight: 600, color: importMsg.startsWith('✓') ? C.green : C.red }}>{importMsg}</span>
             ) : (
-              <span className="ml-2 text-slate-600">· Preencha automaticamente com dados reais</span>
+              <span style={{ marginLeft: 8, color: C.text3 }}>· Preencha automaticamente com dados reais</span>
             )}
           </span>
-          <button
-            onClick={importFromAds}
-            disabled={importing}
-            className="px-3 py-1 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
-            style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22C55E' }}>
+          <button onClick={importFromAds} disabled={importing} style={{
+            padding: '4px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            background: 'rgba(34,197,94,0.12)', border: `1px solid rgba(34,197,94,0.3)`, color: C.green,
+            opacity: importing ? 0.5 : 1,
+          }}>
             {importing ? '⏳ Importando...' : '⬇ Importar últimos 30d'}
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4">
-        {/* Canal */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Canal de mídia</label>
-          <div className="flex flex-wrap gap-1.5">
+          <label style={labelStyle}>Canal de mídia</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {CHANNELS.map(c => (
-              <button key={c} onClick={() => u('channel', c)}
-                className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all"
-                style={{
-                  background: form.channel === c ? 'rgba(240,180,41,0.12)' : '#16161A',
-                  border: form.channel === c ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                  color: form.channel === c ? '#F0B429' : '#64748B',
-                }}>
-                {c}
-              </button>
+              <button key={c} onClick={() => u('channel', c)} style={{
+                padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                cursor: 'pointer', transition: 'all 0.15s',
+                background: form.channel === c ? `${C.gold}18` : C.elevated,
+                border: form.channel === c ? `1px solid rgba(245,158,11,0.4)` : `1px solid ${C.border}`,
+                color: form.channel === c ? C.gold : C.text3,
+              }}>{c}</button>
             ))}
           </div>
         </div>
 
-        {/* Período */}
         <div>
-          <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Período</label>
-          <input type="text" className={inputCls} placeholder="Ex: Abr 2025, Q1 2025, Semana 1 Mai..."
+          <label style={labelStyle}>Período</label>
+          <input type="text" style={inputStyle} placeholder="Ex: Abr 2025, Q1 2025, Semana 1 Mai..."
             value={form.period} onChange={e => u('period', e.target.value)} />
-          <div className="flex flex-wrap gap-1 mt-1.5">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
             {PERIODS_SUGG.map(p => (
-              <button key={p} onClick={() => u('period', p)}
-                className="px-2 py-0.5 rounded text-[10px] transition-colors"
-                style={{
-                  background: form.period === p ? 'rgba(240,180,41,0.1)' : 'transparent',
-                  color: form.period === p ? '#F0B429' : '#475569',
-                  border: '1px solid #2A2A30',
-                }}>
-                {p}
-              </button>
+              <button key={p} onClick={() => u('period', p)} style={{
+                padding: '2px 8px', borderRadius: 6, fontSize: 10, cursor: 'pointer',
+                background: form.period === p ? `${C.gold}12` : 'transparent',
+                color: form.period === p ? C.gold : C.text3,
+                border: `1px solid ${C.border}`,
+              }}>{p}</button>
             ))}
           </div>
         </div>
 
-        {/* Métricas principais */}
-        <div className="grid grid-cols-2 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
-            <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Gasto (R$) *</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-sm">R$</span>
-              <input type="number" className={inputCls} style={{ paddingLeft: '2rem' }}
+            <label style={labelStyle}>Gasto (R$) *</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.text3, fontSize: 13 }}>R$</span>
+              <input type="number" style={{ ...inputStyle, paddingLeft: 32 }}
                 placeholder="5000" value={form.budgetSpent} onChange={e => u('budgetSpent', e.target.value)} />
             </div>
           </div>
           <div>
-            <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Leads gerados *</label>
-            <input type="number" className={inputCls} placeholder="120"
+            <label style={labelStyle}>Leads gerados *</label>
+            <input type="number" style={inputStyle} placeholder="120"
               value={form.leads} onChange={e => u('leads', e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Vendas / Conversões</label>
-            <input type="number" className={inputCls} placeholder="15"
+            <label style={labelStyle}>Vendas / Conversões</label>
+            <input type="number" style={inputStyle} placeholder="15"
               value={form.conversions} onChange={e => u('conversions', e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Receita gerada (R$)</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-sm">R$</span>
-              <input type="number" className={inputCls} style={{ paddingLeft: '2rem' }}
+            <label style={labelStyle}>Receita gerada (R$)</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.text3, fontSize: 13 }}>R$</span>
+              <input type="number" style={{ ...inputStyle, paddingLeft: 32 }}
                 placeholder="30000" value={form.revenue} onChange={e => u('revenue', e.target.value)} />
             </div>
           </div>
         </div>
 
-        {/* Preview CPL */}
         {cplPreview !== null && (
-          <div className="flex items-center gap-3 px-3 py-2 rounded-xl"
-            style={{ background: 'rgba(240,180,41,0.06)', border: '1px solid rgba(240,180,41,0.2)' }}>
-            <span className="text-xs text-slate-500">CPL calculado:</span>
-            <span className="text-sm font-bold text-[#F0B429]">R${cplPreview}</span>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10,
+            background: C.goldBg, border: `1px solid rgba(245,158,11,0.2)`,
+          }}>
+            <span style={{ fontSize: 12, color: C.text3 }}>CPL calculado:</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>R${cplPreview}</span>
             {form.revenue && form.budgetSpent && Number(form.budgetSpent) > 0 && (
               <>
-                <span className="text-xs text-slate-600">·</span>
-                <span className="text-xs text-slate-500">ROAS:</span>
-                <span className="text-sm font-bold text-[#22C55E]">{(Number(form.revenue) / Number(form.budgetSpent)).toFixed(1)}×</span>
+                <span style={{ fontSize: 12, color: C.text3 }}>·</span>
+                <span style={{ fontSize: 12, color: C.text3 }}>ROAS:</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.green }}>
+                  {(Number(form.revenue) / Number(form.budgetSpent)).toFixed(1)}×
+                </span>
               </>
             )}
           </div>
         )}
 
-        {/* Resultado */}
         <div>
-          <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Resultado do período</label>
-          <div className="grid grid-cols-3 gap-2">
-            {(['vencedora', 'neutra', 'perdedora'] as const).map(o => (
-              <button key={o} onClick={() => setForm(f => ({ ...f, outcome: o }))}
-                className="py-2 rounded-xl text-xs font-bold transition-all capitalize"
-                style={{
-                  background: form.outcome === o
-                    ? o === 'vencedora' ? 'rgba(34,197,94,0.12)' : o === 'perdedora' ? 'rgba(255,77,77,0.12)' : 'rgba(240,180,41,0.12)'
-                    : '#16161A',
-                  border: form.outcome === o
-                    ? o === 'vencedora' ? '1px solid rgba(34,197,94,0.4)' : o === 'perdedora' ? '1px solid rgba(255,77,77,0.4)' : '1px solid rgba(240,180,41,0.4)'
-                    : '1px solid #2A2A30',
-                  color: form.outcome === o
-                    ? o === 'vencedora' ? '#22C55E' : o === 'perdedora' ? '#FF4D4D' : '#F0B429'
-                    : '#64748B',
+          <label style={labelStyle}>Resultado do período</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {(['vencedora', 'neutra', 'perdedora'] as const).map(o => {
+              const oColor = o === 'vencedora' ? C.green : o === 'perdedora' ? C.red : C.gold
+              const isActive = form.outcome === o
+              return (
+                <button key={o} onClick={() => setForm(f => ({ ...f, outcome: o }))} style={{
+                  padding: '8px 0', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                  cursor: 'pointer', transition: 'all 0.15s', textTransform: 'capitalize',
+                  background: isActive ? `${oColor}18` : C.elevated,
+                  border: isActive ? `1px solid ${oColor}50` : `1px solid ${C.border}`,
+                  color: isActive ? oColor : C.text3,
                 }}>
-                {o === 'vencedora' ? '✓ Vencedora' : o === 'perdedora' ? '✕ Perdedora' : '— Neutra'}
-              </button>
-            ))}
+                  {o === 'vencedora' ? '✓ Vencedora' : o === 'perdedora' ? '✕ Perdedora' : '— Neutra'}
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        {/* O que funcionou / falhou */}
-        <div className="grid grid-cols-2 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
-            <label className="text-[10px] text-[#22C55E] uppercase tracking-wider block mb-1.5">O que funcionou</label>
-            <textarea className={inputCls} rows={2} style={{ resize: 'none' }}
+            <label style={{ ...labelStyle, color: C.green }}>O que funcionou</label>
+            <textarea style={{ ...inputStyle, resize: 'none' }} rows={2}
               placeholder="Ex: Criativo de antes/depois, público LAL..."
               value={form.whatWorked} onChange={e => u('whatWorked', e.target.value)} />
           </div>
           <div>
-            <label className="text-[10px] text-[#FF4D4D] uppercase tracking-wider block mb-1.5">O que falhou</label>
-            <textarea className={inputCls} rows={2} style={{ resize: 'none' }}
+            <label style={{ ...labelStyle, color: C.red }}>O que falhou</label>
+            <textarea style={{ ...inputStyle, resize: 'none' }} rows={2}
               placeholder="Ex: CPL subiu na 3ª semana, CBO instável..."
               value={form.whatFailed} onChange={e => u('whatFailed', e.target.value)} />
           </div>
         </div>
 
-        {/* Prazo de fechamento — útil para imobiliária, móveis, jurídico */}
         <div>
-          <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">
+          <label style={labelStyle}>
             Prazo médio de fechamento
-            <span className="ml-1 normal-case text-slate-700">(opcional · imobiliária, móveis, jurídico)</span>
+            <span style={{ marginLeft: 4, fontWeight: 400, color: C.text3 }}>(opcional · imobiliária, móveis, jurídico)</span>
           </label>
-          <input type="text" className={inputCls}
+          <input type="text" style={inputStyle}
             placeholder="Ex: 30 dias, 2 meses, 90 dias..."
             value={form.salesCycle} onChange={e => u('salesCycle', e.target.value)} />
         </div>
 
-        {/* Botão salvar */}
-        <button
-          onClick={handleSave}
-          disabled={!form.period || !form.budgetSpent || saving}
-          className="w-full py-3 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-40"
-          style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
-        >
+        <button onClick={handleSave} disabled={!form.period || !form.budgetSpent || saving} style={{
+          width: '100%', padding: '12px 0', borderRadius: 12, fontSize: 13, fontWeight: 700,
+          cursor: 'pointer', border: 'none', transition: 'opacity 0.2s',
+          background: 'linear-gradient(135deg, #F59E0B, #FCD34D)', color: '#000',
+          opacity: (!form.period || !form.budgetSpent || saving) ? 0.4 : 1,
+        }}>
           {saving ? 'Salvando...' : '+ Registrar no Histórico'}
         </button>
       </div>
@@ -677,63 +726,86 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Tabela de histórico ──────────────────────────────────────────────────────
 function HistoryTable({ records, onDelete }: { records: CampaignRecord[]; onDelete: (id: string) => void }) {
   const [confirmDel, setConfirmDel] = useState<string | null>(null)
 
   if (records.length === 0) return null
 
+  const channelColor = (ch: string) => {
+    if (ch.includes('Meta')) return C.blue
+    if (ch.includes('Google')) return C.red
+    if (ch.includes('TikTok')) return C.text2
+    return C.purpleL
+  }
+
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#2A2A30] flex items-center justify-between">
+    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+      <div style={{
+        padding: '16px 20px', borderBottom: `1px solid ${C.border}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
         <div>
-          <div className="font-display font-bold text-white text-sm">Histórico de Campanhas</div>
-          <div className="text-[10px] text-slate-600 mt-0.5">{records.length} períodos registrados</div>
+          <div style={{ fontWeight: 700, color: C.text1, fontSize: 13 }}>Histórico de Campanhas</div>
+          <div style={{ fontSize: 10, color: C.text3, marginTop: 4 }}>{records.length} períodos registrados</div>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
           <thead>
-            <tr className="border-b border-[#1E1E24]">
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
               {['Período', 'Canal', 'Gasto', 'Leads', 'CPL Real', 'Vendas', 'ROAS', 'Resultado', ''].map(h => (
-                <th key={h} className="px-4 py-2.5 text-left text-slate-600 uppercase tracking-wider font-medium whitespace-nowrap">{h}</th>
+                <th key={h} style={{
+                  padding: '10px 16px', textAlign: 'left', color: C.text3,
+                  textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500, whiteSpace: 'nowrap', fontSize: 10,
+                }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {records.map((r) => {
               const roas = r.revenue > 0 && r.budgetSpent > 0 ? (r.revenue / r.budgetSpent).toFixed(1) : '—'
-              const outcomeColor = r.outcome === 'vencedora' ? '#22C55E' : r.outcome === 'perdedora' ? '#FF4D4D' : '#F0B429'
+              const outcomeColor = r.outcome === 'vencedora' ? C.green : r.outcome === 'perdedora' ? C.red : C.gold
+              const cColor = channelColor(r.channel)
               return (
-                <tr key={r.id} className="border-b border-[#1E1E24] last:border-0 hover:bg-[#16161A] transition-colors">
-                  <td className="px-4 py-3 text-white font-medium whitespace-nowrap">{r.period}</td>
-                  <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{r.channel}</td>
-                  <td className="px-4 py-3 text-slate-300 whitespace-nowrap">R${r.budgetSpent.toLocaleString('pt-BR')}</td>
-                  <td className="px-4 py-3 text-slate-300">{r.leads}</td>
-                  <td className="px-4 py-3 font-bold whitespace-nowrap"
-                    style={{ color: r.cplReal > 0 ? '#F0B429' : '#64748B' }}>
+                <tr key={r.id} style={{ borderBottom: `1px solid ${C.border}`, transition: 'background 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = C.elevated)}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <td style={{ padding: '12px 16px', color: C.text1, fontWeight: 500, whiteSpace: 'nowrap' }}>{r.period}</td>
+                  <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      background: `${cColor}12`, color: cColor,
+                    }}>{r.channel}</span>
+                  </td>
+                  <td style={{ padding: '12px 16px', color: C.text2, whiteSpace: 'nowrap' }}>R${r.budgetSpent.toLocaleString('pt-BR')}</td>
+                  <td style={{ padding: '12px 16px', color: C.text2 }}>{r.leads}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 700, whiteSpace: 'nowrap', color: r.cplReal > 0 ? C.gold : C.text3 }}>
                     {r.cplReal > 0 ? `R$${r.cplReal}` : '—'}
                   </td>
-                  <td className="px-4 py-3 text-slate-300">{r.conversions || '—'}</td>
-                  <td className="px-4 py-3 font-bold" style={{ color: roas !== '—' ? '#22C55E' : '#64748B' }}>
+                  <td style={{ padding: '12px 16px', color: C.text2 }}>{r.conversions || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 700, color: roas !== '—' ? C.green : C.text3 }}>
                     {roas !== '—' ? `${roas}×` : '—'}
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold capitalize"
-                      style={{ color: outcomeColor, background: `${outcomeColor}15` }}>
+                  <td style={{ padding: '12px 16px' }}>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 700, textTransform: 'capitalize',
+                      color: outcomeColor, background: `${outcomeColor}15`,
+                    }}>
                       {r.outcome}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td style={{ padding: '12px 16px' }}>
                     {confirmDel === r.id ? (
-                      <div className="flex items-center gap-1">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <button onClick={() => { onDelete(r.id); setConfirmDel(null) }}
-                          className="text-[10px] text-red-400 hover:text-red-300">Confirmar</button>
-                        <span className="text-slate-700">·</span>
-                        <button onClick={() => setConfirmDel(null)} className="text-[10px] text-slate-600">Cancelar</button>
+                          style={{ fontSize: 10, color: C.red, background: 'none', border: 'none', cursor: 'pointer' }}>Confirmar</button>
+                        <span style={{ color: C.text3 }}>·</span>
+                        <button onClick={() => setConfirmDel(null)}
+                          style={{ fontSize: 10, color: C.text3, background: 'none', border: 'none', cursor: 'pointer' }}>Cancelar</button>
                       </div>
                     ) : (
-                      <button onClick={() => setConfirmDel(r.id)} className="text-slate-700 hover:text-slate-500 text-sm">×</button>
+                      <button onClick={() => setConfirmDel(r.id)}
+                        style={{ color: C.text3, fontSize: 16, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
                     )}
                   </td>
                 </tr>
@@ -769,33 +841,31 @@ export function TabPerformance({ clientData }: Props) {
   const roasPoints  = periods.map(x => ({ x, y: byPeriod[x].spend > 0 ? +((byPeriod[x].revenue / byPeriod[x].spend).toFixed(1)) : 0 }))
   const hasTrend    = periods.length >= 2
 
-  // KPIs reais se houver histórico, senão projeção
   const lastPeriodData = periods.length > 0 ? byPeriod[periods[periods.length - 1]] : null
   const realCPL  = lastPeriodData && lastPeriodData.leads > 0 ? Math.round(lastPeriodData.spend / lastPeriodData.leads) : null
   const realROAS = lastPeriodData && lastPeriodData.spend > 0 && lastPeriodData.revenue > 0 ? +(lastPeriodData.revenue / lastPeriodData.spend).toFixed(1) : null
 
   const stats = realCPL
     ? [
-        { label: 'CPL Real (último período)', value: `R$${realCPL}`, sub: 'baseado no histórico real', color: '#F0B429' },
-        { label: 'ROAS Real', value: realROAS ? `${realROAS}×` : '—', sub: 'último período', color: '#22C55E' },
-        { label: 'Leads (último período)', value: lastPeriodData!.leads.toString(), sub: 'do histórico registrado', color: '#A78BFA' },
-        { label: 'Gasto (último período)', value: `R$${lastPeriodData!.spend.toLocaleString('pt-BR')}`, sub: 'investimento real', color: '#38BDF8' },
+        { label: 'CPL Real (último período)', value: `R$${realCPL}`, sub: 'baseado no histórico real', color: C.gold },
+        { label: 'ROAS Real', value: realROAS ? `${realROAS}×` : '—', sub: 'último período', color: C.green },
+        { label: 'Leads (último período)', value: lastPeriodData!.leads.toString(), sub: 'do histórico registrado', color: C.purpleL },
+        { label: 'Gasto (último período)', value: `R$${lastPeriodData!.spend.toLocaleString('pt-BR')}`, sub: 'investimento real', color: C.blue },
       ]
     : proj
     ? [
-        { label: 'Impressões est.',  value: `${Math.round(proj.leadsMonth * 150 / 1000)}K`, sub: 'projeção mensal',    color: '#F0B429' },
-        { label: 'CTR estimado',     value: `3.0%`,                                          sub: 'benchmark do nicho', color: '#22C55E' },
-        { label: 'Leads / mês',      value: `${proj.leadsMin}–${proj.leadsMax}`,              sub: 'faixa estimada',    color: '#A78BFA' },
-        { label: 'Investimento',     value: `R$${budget.toLocaleString('pt-BR')}`,            sub: 'budget configurado', color: '#38BDF8' },
+        { label: 'Impressões est.',  value: `${Math.round(proj.leadsMonth * 150 / 1000)}K`, sub: 'projeção mensal',    color: C.gold },
+        { label: 'CTR estimado',     value: `3.0%`,                                          sub: 'benchmark do nicho', color: C.green },
+        { label: 'Leads / mês',      value: `${proj.leadsMin}–${proj.leadsMax}`,              sub: 'faixa estimada',    color: C.purpleL },
+        { label: 'Investimento',     value: `R$${budget.toLocaleString('pt-BR')}`,            sub: 'budget configurado', color: C.blue },
       ]
     : [
-        { label: 'Impressões',  value: '—', sub: 'sem histórico', color: '#F0B429' },
-        { label: 'CTR',         value: '—', sub: 'sem histórico', color: '#22C55E' },
-        { label: 'Leads',       value: '—', sub: 'sem histórico', color: '#A78BFA' },
-        { label: 'Gasto total', value: '—', sub: 'sem histórico', color: '#38BDF8' },
+        { label: 'Impressões',  value: '—', sub: 'sem histórico', color: C.gold },
+        { label: 'CTR',         value: '—', sub: 'sem histórico', color: C.green },
+        { label: 'Leads',       value: '—', sub: 'sem histórico', color: C.purpleL },
+        { label: 'Gasto total', value: '—', sub: 'sem histórico', color: C.blue },
       ]
 
-  // ── Comparativo Mês a Mês ───────────────────────────────────────────────────
   const mom = (() => {
     if (periods.length < 2) return null
     const curr = byPeriod[periods[periods.length - 1]]
@@ -811,18 +881,19 @@ export function TabPerformance({ clientData }: Props) {
     return {
       currPeriod, prevPeriod,
       items: [
-        { label: 'Investimento', curr: curr.spend,   prev: prev.spend,   delta: pct(curr.spend, prev.spend),     fmt: (v: number) => v >= 1000 ? `R$${(v/1000).toFixed(1)}k` : `R$${v}`, higherIsBetter: null },
-        { label: 'Leads',        curr: curr.leads,   prev: prev.leads,   delta: pct(curr.leads, prev.leads),     fmt: (v: number) => v.toLocaleString('pt-BR'),                           higherIsBetter: true  },
-        { label: 'CPL',          curr: currCPL,      prev: prevCPL,      delta: pct(currCPL, prevCPL),           fmt: (v: number) => `R$${v}`,                                            higherIsBetter: false },
-        { label: 'ROAS',         curr: currROAS,     prev: prevROAS,     delta: pct(currROAS, prevROAS),         fmt: (v: number) => `${v}×`,                                             higherIsBetter: true  },
+        { label: 'Investimento', curr: curr.spend,   prev: prev.spend,   delta: pct(curr.spend, prev.spend),     fmt: (v: number) => v >= 1000 ? `R$${(v/1000).toFixed(1)}k` : `R$${v}`, higherIsBetter: null as boolean | null },
+        { label: 'Leads',        curr: curr.leads,   prev: prev.leads,   delta: pct(curr.leads, prev.leads),     fmt: (v: number) => v.toLocaleString('pt-BR'),                           higherIsBetter: true  as boolean | null },
+        { label: 'CPL',          curr: currCPL,      prev: prevCPL,      delta: pct(currCPL, prevCPL),           fmt: (v: number) => `R$${v}`,                                            higherIsBetter: false as boolean | null },
+        { label: 'ROAS',         curr: currROAS,     prev: prevROAS,     delta: pct(currROAS, prevROAS),         fmt: (v: number) => `${v}×`,                                             higherIsBetter: true  as boolean | null },
       ],
     }
   })()
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         {stats.map((s, i) => (
           <StatCard key={s.label} label={s.label} value={s.value} sub={s.sub} color={s.color} delay={i * 0.08} />
         ))}
@@ -833,29 +904,29 @@ export function TabPerformance({ clientData }: Props) {
 
       {/* Comparativo MoM */}
       {mom && (
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 animate-fade-up">
-          <div className="flex items-center justify-between mb-4">
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <div className="font-display font-bold text-white text-sm">Comparativo Mês a Mês</div>
-              <div className="text-[10px] text-slate-500 mt-0.5">{mom.prevPeriod} → {mom.currPeriod}</div>
+              <div style={{ fontWeight: 700, color: C.text1, fontSize: 13 }}>Comparativo Mês a Mês</div>
+              <div style={{ fontSize: 10, color: C.text3, marginTop: 4 }}>{mom.prevPeriod} → {mom.currPeriod}</div>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             {mom.items.map(item => {
               const d = item.delta
               const isGood = d === null || item.higherIsBetter === null ? null
                 : item.higherIsBetter ? d >= 0 : d <= 0
-              const color = isGood === null ? '#64748B' : isGood ? '#22C55E' : '#FF4D4D'
+              const color = isGood === null ? C.text3 : isGood ? C.green : C.red
               return (
-                <div key={item.label} className="bg-[#16161A] rounded-xl p-3">
-                  <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">{item.label}</div>
-                  <div className="font-display text-xl font-bold text-white mb-1">
+                <div key={item.label} style={{ background: C.elevated, borderRadius: 12, padding: 14 }}>
+                  <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{item.label}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: C.text1, marginBottom: 4 }}>
                     {item.curr != null ? item.fmt(item.curr as number) : '—'}
                   </div>
-                  <div className="text-[11px] font-semibold" style={{ color }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color }}>
                     {d !== null ? `${d >= 0 ? '▲' : '▼'} ${Math.abs(d)}%` : 'Sem dado anterior'}
                   </div>
-                  <div className="text-[10px] text-slate-700 mt-0.5">
+                  <div style={{ fontSize: 10, color: C.text3, marginTop: 4 }}>
                     Ant.: {item.prev != null ? item.fmt(item.prev as number) : '—'}
                   </div>
                 </div>
@@ -865,45 +936,50 @@ export function TabPerformance({ clientData }: Props) {
         </div>
       )}
 
-      {/* Seção de Histórico */}
+      {/* Histórico de Campanhas */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-base">📅</span>
-            <span className="font-display font-bold text-white">Histórico de Campanhas</span>
-            <span className="text-xs text-slate-600">{campaignHistory.length > 0 ? `${campaignHistory.length} períodos` : 'vazio'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              width: 30, height: 30, borderRadius: 8, background: C.elevated,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+            }}>📅</span>
+            <span style={{ fontWeight: 700, color: C.text1, fontSize: 14 }}>Histórico de Campanhas</span>
+            <span style={{ fontSize: 12, color: C.text3 }}>
+              {campaignHistory.length > 0 ? `${campaignHistory.length} períodos` : 'vazio'}
+            </span>
           </div>
-          <button
-            onClick={() => setShowAddForm(v => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
-            style={{
-              background: showAddForm ? 'rgba(240,180,41,0.15)' : 'rgba(240,180,41,0.08)',
-              border: '1px solid rgba(240,180,41,0.3)',
-              color: '#F0B429',
-            }}
-          >
+          <button onClick={() => setShowAddForm(v => !v)} style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            background: showAddForm ? `${C.gold}20` : C.goldBg,
+            border: `1px solid rgba(245,158,11,0.3)`, color: C.gold,
+          }}>
             {showAddForm ? '▲ Fechar' : '+ Registrar Período'}
           </button>
         </div>
 
         {showAddForm && (
-          <div className="mb-4">
+          <div style={{ marginBottom: 16 }}>
             <AddHistoryForm onClose={() => setShowAddForm(false)} />
           </div>
         )}
 
         {campaignHistory.length === 0 && !showAddForm ? (
-          <div className="bg-[#111114] border border-dashed border-[#2A2A30] rounded-2xl p-8 text-center">
-            <div className="text-3xl mb-3 opacity-20">📋</div>
-            <div className="text-sm font-semibold text-white mb-1">Sem histórico registrado</div>
-            <p className="text-xs text-slate-500 mb-4">
+          <div style={{
+            ...card,
+            border: `1px dashed ${C.border}`,
+            textAlign: 'center', padding: 40,
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.15 }}>📋</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text1, marginBottom: 6 }}>Sem histórico registrado</div>
+            <p style={{ fontSize: 12, color: C.text3, marginBottom: 20 }}>
               Registre os resultados de cada período para visualizar a tendência de CPL e ROAS ao longo do tempo.
             </p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="px-4 py-2 rounded-xl text-xs font-bold transition-all"
-              style={{ background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429' }}
-            >
+            <button onClick={() => setShowAddForm(true)} style={{
+              padding: '8px 20px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              background: C.goldBg, border: `1px solid rgba(245,158,11,0.3)`, color: C.gold,
+            }}>
               + Registrar primeiro período
             </button>
           </div>
@@ -914,70 +990,92 @@ export function TabPerformance({ clientData }: Props) {
 
       {/* Tendência histórica */}
       {hasTrend && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">📈</span>
-            <div className="font-display font-bold text-white">Tendência de Performance</div>
-            <span className="text-[10px] text-slate-600 ml-1">{periods.length} períodos</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              width: 30, height: 30, borderRadius: 8, background: C.elevated,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+            }}>📈</span>
+            <div style={{ fontWeight: 700, color: C.text1, fontSize: 14 }}>Tendência de Performance</div>
+            <span style={{ fontSize: 12, color: C.text3 }}>{periods.length} períodos</span>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <TrendChart points={cplPoints} color="#F0B429" label="CPL Médio" format={v => `R$${v}`} />
-            <TrendChart points={roasPoints} color="#22C55E" label="ROAS" format={v => `${v}×`} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <TrendChart points={cplPoints} color={C.gold} label="CPL Médio" format={v => `R$${v}`} />
+            <TrendChart points={roasPoints} color={C.green} label="ROAS" format={v => `${v}×`} />
           </div>
         </div>
       )}
 
-      {/* Tabela de criativos */}
-      <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#2A2A30]">
-          <h3 className="font-display font-bold text-white">Criativos Recomendados por IA</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+      {/* Criativos recomendados */}
+      <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C.border}` }}>
+          <h3 style={{ fontWeight: 700, color: C.text1, fontSize: 14, margin: 0 }}>Criativos Recomendados por IA</h3>
+          <p style={{ fontSize: 12, color: C.text3, marginTop: 4, marginBottom: 0 }}>
             Score baseado em benchmark de CTR e CPL para {niche || 'o nicho'}
           </p>
         </div>
-        <div className="grid grid-cols-12 px-6 py-3 text-xs text-slate-500 uppercase tracking-wider border-b border-[#1E1E24]">
-          <span className="col-span-5">Formato / Ângulo</span>
-          <span className="col-span-2">Canal</span>
-          <span className="col-span-3">Score IA</span>
-          <span className="col-span-2">Status</span>
+        <div style={{
+          display: 'grid', gridTemplateColumns: '5fr 2fr 3fr 2fr',
+          padding: '10px 24px', fontSize: 10, color: C.text3,
+          textTransform: 'uppercase', letterSpacing: '0.08em',
+          borderBottom: `1px solid ${C.border}`,
+        }}>
+          <span>Formato / Ângulo</span>
+          <span>Canal</span>
+          <span>Score IA</span>
+          <span>Status</span>
         </div>
         {content.creatives.map((c, i) => (
-          <div key={c.name}
-            className="grid grid-cols-12 px-6 py-4 items-center border-b border-[#1E1E24] last:border-0 hover:bg-[#16161A] transition-colors animate-fade-up"
-            style={{ animationDelay: `${i * 0.08}s` }}>
-            <div className="col-span-5">
-              <span className="text-sm text-white font-medium leading-tight">{c.name}</span>
-            </div>
-            <div className="col-span-2">
-              <span className="text-xs text-slate-500">{c.channel}</span>
-            </div>
-            <div className="col-span-3">
-              <ScoreBar score={c.score} />
-            </div>
-            <div className="col-span-2">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                style={{ color: c.statusColor, background: `${c.statusColor}18` }}>
-                {c.status}
-              </span>
-            </div>
+          <div key={c.name} style={{
+            display: 'grid', gridTemplateColumns: '5fr 2fr 3fr 2fr',
+            padding: '14px 24px', alignItems: 'center',
+            borderBottom: i < content.creatives.length - 1 ? `1px solid ${C.border}` : 'none',
+            transition: 'background 0.15s',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.background = C.elevated)}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+            <span style={{ fontSize: 13, color: C.text1, fontWeight: 500, lineHeight: 1.4 }}>{c.name}</span>
+            <span style={{ fontSize: 12, color: C.text3 }}>{c.channel}</span>
+            <div><ScoreBar score={c.score} /></div>
+            <span style={{
+              fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 20, display: 'inline-block',
+              color: c.statusColor, background: `${c.statusColor}18`,
+            }}>{c.status}</span>
           </div>
         ))}
       </div>
 
       {/* CPL por canal (benchmark) */}
       {bench && (
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-          <div className="font-display font-bold text-white mb-3">🎯 CPL Benchmark por Canal · {niche}</div>
-          <div className="grid md:grid-cols-2 gap-3">
-            {Object.entries(bench.cpl_by_channel).map(([canal, cpl]) => (
-              <div key={canal} className="flex items-center justify-between p-3 bg-[#16161A] rounded-xl">
-                <span className="text-sm text-slate-300">{canal}</span>
-                <span className="text-sm font-bold text-[#F0B429]">{cpl}</span>
-              </div>
-            ))}
+        <div style={card}>
+          <div style={{ fontWeight: 700, color: C.text1, fontSize: 14, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              width: 30, height: 30, borderRadius: 8, background: C.elevated,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+            }}>🎯</span>
+            CPL Benchmark por Canal · {niche}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            {Object.entries(bench.cpl_by_channel).map(([canal, cpl]) => {
+              const cColor = canal.includes('Meta') ? C.blue : canal.includes('Google') ? C.red : canal.includes('TikTok') ? C.text2 : C.purpleL
+              return (
+                <div key={canal} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px', background: C.elevated, borderRadius: 10,
+                  border: `1px solid ${C.border}`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: cColor, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: C.text2 }}>{canal}</span>
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>{cpl}</span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
+
     </div>
   )
 }

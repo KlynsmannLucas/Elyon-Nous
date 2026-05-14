@@ -46,7 +46,7 @@ export function StatCard({ label, value, trend, sub, color = '#7C3AED', delay = 
 
   return (
     <div style={{
-      background: '#0F1221',
+      background: '#0F1629',
       border: '1px solid rgba(255,255,255,0.06)',
       borderRadius: '14px', padding: '18px',
       display: 'flex', flexDirection: 'column', gap: '10px',

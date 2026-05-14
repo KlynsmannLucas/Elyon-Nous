@@ -10,6 +10,27 @@ interface Props {
   clientData: ClientData | null
 }
 
+const C = {
+  bg:       '#080D1A',
+  surface:  '#0F1629',
+  elevated: '#131E35',
+  border:   'rgba(99,120,255,0.1)',
+  purple:   '#7C3AED',
+  purpleL:  '#A78BFA',
+  green:    '#22C55E',
+  greenBg:  'rgba(34,197,94,0.1)',
+  red:      '#EF4444',
+  redBg:    'rgba(239,68,68,0.1)',
+  blue:     '#38BDF8',
+  blueBg:   'rgba(56,189,248,0.1)',
+  gold:     '#F59E0B',
+  goldBg:   'rgba(245,158,11,0.1)',
+  orange:   '#F97316',
+  text1:    '#F1F5F9',
+  text2:    'rgba(255,255,255,0.5)',
+  text3:    'rgba(255,255,255,0.25)',
+}
+
 const CHANNELS = ['Meta Ads', 'Google Search', 'Instagram', 'TikTok', 'YouTube', 'LinkedIn', 'WhatsApp Ads', 'Múltiplos canais']
 
 const CTR_BY_CHANNEL: Record<string, number> = {
@@ -49,9 +70,9 @@ const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: st
   anuncio: {
     title: 'Problema no Anúncio / Segmentação',
     icon: '📢',
-    color: '#F87171',
-    bg: 'rgba(248,113,113,0.05)',
-    border: 'rgba(248,113,113,0.25)',
+    color: C.red,
+    bg: C.redBg,
+    border: 'rgba(239,68,68,0.25)',
     description: 'O criativo ou a segmentação não está gerando cliques suficientes. Pessoas veem o anúncio mas não clicam — ele não desperta interesse suficiente ou está chegando nas pessoas erradas.',
     actions: [
       'Testar 3 novos criativos com ângulos diferentes nos próximos 14 dias',
@@ -64,9 +85,9 @@ const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: st
   landing_page: {
     title: 'Problema na Landing Page',
     icon: '🖥️',
-    color: '#FB923C',
-    bg: 'rgba(251,146,60,0.05)',
-    border: 'rgba(251,146,60,0.25)',
+    color: C.orange,
+    bg: 'rgba(249,115,22,0.1)',
+    border: 'rgba(249,115,22,0.25)',
     description: 'O anúncio está funcionando — as pessoas clicam — mas a LP não converte. O visitante chega, não se convence e vai embora sem virar lead.',
     actions: [
       'Reescrever a headline: deve responder "o que eu ganho?" em menos de 5 segundos',
@@ -79,9 +100,9 @@ const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: st
   qualificacao: {
     title: 'Problema na Qualidade do Lead',
     icon: '🎯',
-    color: '#FBBF24',
-    bg: 'rgba(251,191,36,0.05)',
-    border: 'rgba(251,191,36,0.25)',
+    color: C.gold,
+    bg: C.goldBg,
+    border: 'rgba(245,158,11,0.25)',
     description: 'Os leads chegam mas poucos qualificam. A oferta está atraindo o público errado, ou a comunicação cria expectativas incompatíveis com o serviço ou preço.',
     actions: [
       'Mencionar faixa de investimento mínimo ou perfil do cliente ideal no anúncio',
@@ -94,8 +115,8 @@ const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: st
   fechamento: {
     title: 'Problema no Processo de Vendas',
     icon: '🤝',
-    color: '#A78BFA',
-    bg: 'rgba(167,139,250,0.05)',
+    color: C.purpleL,
+    bg: 'rgba(167,139,250,0.1)',
     border: 'rgba(167,139,250,0.25)',
     description: 'Os leads são bons e qualificam, mas não fecham. O gargalo está no processo de venda, na proposta, no follow-up ou na gestão de objeções.',
     actions: [
@@ -109,8 +130,8 @@ const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: st
   velocidade: {
     title: 'Problema na Velocidade de Resposta',
     icon: '⚡',
-    color: '#38BDF8',
-    bg: 'rgba(56,189,248,0.05)',
+    color: C.blue,
+    bg: C.blueBg,
     border: 'rgba(56,189,248,0.25)',
     description: 'Leads estão esfriando antes do primeiro contato. Lead respondido em menos de 5 minutos converte até 9× mais do que respondido após 1 hora.',
     actions: [
@@ -124,8 +145,8 @@ const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: st
   saudavel: {
     title: 'Funil Saudável — Hora de Escalar',
     icon: '🚀',
-    color: '#22C55E',
-    bg: 'rgba(34,197,94,0.05)',
+    color: C.green,
+    bg: C.greenBg,
     border: 'rgba(34,197,94,0.25)',
     description: 'Todas as métricas estão dentro dos benchmarks do seu nicho. O funil está convertendo bem. Agora é o momento de aumentar o investimento com segurança.',
     actions: [
@@ -138,7 +159,6 @@ const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: st
   },
 }
 
-// ── Cálculo do diagnóstico ────────────────────────────────────────────────────
 function diagnose(entry: Omit<FunnelEntry, 'id' | 'createdAt'>, benchKey: string): DiagnosisResult {
   const fb = getFunnelBenchmarks(benchKey)
   const channel = entry.channel
@@ -151,8 +171,8 @@ function diagnose(entry: Omit<FunnelEntry, 'id' | 'createdAt'>, benchKey: string
   const roas      = entry.sales > 0 && entry.avgTicket > 0 ? (entry.sales * entry.avgTicket) / entry.investment : null
   const cac       = entry.sales > 0 ? entry.investment / entry.sales : null
 
-  const ctrBench   = CTR_BY_CHANNEL[channel] ?? 1.5
-  const lpBench    = LP_CVR_BY_CHANNEL[channel] ?? 8.0
+  const ctrBench = CTR_BY_CHANNEL[channel] ?? 1.5
+  const lpBench  = LP_CVR_BY_CHANNEL[channel] ?? 8.0
 
   function score(value: number | null, benchmark: number, lowerIsBetter = false, badMultiplier = 2): number {
     if (value === null) return 50
@@ -213,61 +233,65 @@ function diagnose(entry: Omit<FunnelEntry, 'id' | 'createdAt'>, benchKey: string
   return { stages, bottleneck, score: Math.round(avgScore), roas, cac }
 }
 
-// ── Barra de progresso ────────────────────────────────────────────────────────
-function StatusBar({ value, max, status }: { value: number; max: number; status: string }) {
-  const pct = Math.min(100, (value / max) * 100)
-  const color = status === 'bom' ? '#22C55E' : status === 'atencao' ? '#FBBF24' : '#F87171'
-  return (
-    <div className="h-1.5 rounded-full bg-white/5 overflow-hidden mt-1">
-      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
-    </div>
-  )
-}
+const STAGE_COLORS = [C.purple, C.blue, C.gold, C.green, '#22D3EE', '#A78BFA']
 
-// ── Card de etapa do funil ────────────────────────────────────────────────────
 function StageCard({ stage, isBottleneck }: { stage: StageResult; isBottleneck: boolean }) {
-  const colors = { bom: '#22C55E', atencao: '#FBBF24', critico: '#F87171', nd: '#475569' }
-  const c = colors[stage.status]
+  const color = stage.status === 'bom' ? C.green : stage.status === 'atencao' ? C.gold : C.red
+  const colorBg = stage.status === 'bom' ? C.greenBg : stage.status === 'atencao' ? C.goldBg : C.redBg
+  const pct = Math.min(100, stage.score)
+
   return (
-    <div className="rounded-xl p-4 transition-all"
-      style={{
-        background: isBottleneck ? 'rgba(248,113,113,0.06)' : '#111114',
-        border: isBottleneck ? '1px solid rgba(248,113,113,0.35)' : '1px solid #1E1E24',
-        boxShadow: isBottleneck ? '0 0 20px rgba(248,113,113,0.08)' : 'none',
-      }}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-base">{stage.icon}</span>
-          <span className="text-xs font-semibold text-slate-300">{stage.label}</span>
-          {isBottleneck && <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold" style={{ background: 'rgba(248,113,113,0.15)', color: '#F87171' }}>GARGALO</span>}
+    <div style={{
+      background: isBottleneck ? 'rgba(239,68,68,0.06)' : C.surface,
+      border: isBottleneck ? `1px solid rgba(239,68,68,0.35)` : `1px solid ${C.border}`,
+      borderRadius: 14,
+      padding: 20,
+      boxShadow: isBottleneck ? '0 0 24px rgba(239,68,68,0.08)' : 'none',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16 }}>{stage.icon}</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: C.text1 }}>{stage.label}</span>
+          {isBottleneck && (
+            <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 700, fontFamily: 'monospace', background: 'rgba(239,68,68,0.15)', color: C.red, letterSpacing: 1 }}>
+              GARGALO
+            </span>
+          )}
         </div>
-        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ color: c, background: `${c}18` }}>
+        <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, color, background: colorBg, border: `1px solid ${color}40` }}>
           {stage.status === 'bom' ? '✓ BOM' : stage.status === 'atencao' ? '⚠ ATENÇÃO' : '✗ CRÍTICO'}
         </span>
       </div>
-      <div className="flex items-end justify-between">
-        <span className="text-xl font-bold" style={{ color: c }}>{stage.valueLabel}</span>
-        <span className="text-[10px] text-slate-500">benchmark {stage.benchLabel}</span>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1 }}>{stage.valueLabel}</span>
+        <span style={{ fontSize: 10, color: C.text3 }}>benchmark {stage.benchLabel}</span>
       </div>
-      <StatusBar value={stage.score} max={100} status={stage.status} />
+      <div style={{ height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 999, width: `${pct}%`, background: color, transition: 'width 0.6s ease' }} />
+      </div>
     </div>
   )
 }
 
-// ── Formulário ────────────────────────────────────────────────────────────────
 function Field({ label, hint, required, children }: { label: string; hint: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-0.5">
-        <span className="text-xs font-semibold text-slate-200">{label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: C.text1 }}>{label}</span>
         {required
-          ? <span className="text-[10px] text-[#F0B429] font-bold">obrigatório</span>
-          : <span className="text-[10px] text-slate-600">opcional</span>}
+          ? <span style={{ fontSize: 10, color: C.gold, fontWeight: 700 }}>obrigatório</span>
+          : <span style={{ fontSize: 10, color: C.text3 }}>opcional</span>}
       </div>
-      <p className="text-[10px] text-slate-500 mb-2 leading-snug">{hint}</p>
+      <p style={{ fontSize: 10, color: C.text2, marginBottom: 8, lineHeight: 1.4 }}>{hint}</p>
       {children}
     </div>
   )
+}
+
+const INP: React.CSSProperties = {
+  width: '100%', background: '#060A14', border: `1px solid ${C.border}`,
+  borderRadius: 10, padding: '10px 12px', color: C.text1,
+  fontSize: 13, outline: 'none', boxSizing: 'border-box',
 }
 
 function FunnelForm({ clientData, onSubmit }: { clientData: ClientData; onSubmit: (data: Omit<FunnelEntry, 'id' | 'createdAt'>) => void }) {
@@ -292,116 +316,159 @@ function FunnelForm({ clientData, onSubmit }: { clientData: ClientData; onSubmit
     onSubmit({ ...form, clientName: clientData.clientName })
   }
 
-  const inp: React.CSSProperties = {
-    width: '100%', background: '#0C0C12', border: '1px solid #2A2A30',
-    borderRadius: '10px', padding: '10px 12px', color: '#F8FAFC',
-    fontSize: '13px', outline: 'none',
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-
-      {/* Guia rápido */}
-      <div className="rounded-xl p-4" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
-        <div className="text-[10px] font-bold text-[#F0B429] uppercase tracking-widest mb-2">Como usar em 3 passos</div>
-        <div className="space-y-1">
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ background: C.goldBg, border: `1px solid rgba(245,158,11,0.2)`, borderRadius: 12, padding: 16 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 10 }}>Como usar em 3 passos</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {[
             'Abra o gerenciador de anúncios (Meta Ads Manager ou Google Ads)',
             'Selecione o período, cole os números que aparecem na tela',
             'Campos opcionais ficam em branco — o diagnóstico funciona mesmo assim',
           ].map((s, i) => (
-            <div key={i} className="flex items-start gap-2 text-[11px] text-slate-400">
-              <span className="w-4 h-4 rounded-full bg-[#F0B429]/10 text-[#F0B429] text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 11, color: C.text2 }}>
+              <span style={{ width: 16, height: 16, borderRadius: 999, background: 'rgba(245,158,11,0.12)', color: C.gold, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
               {s}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Seção 1: Período & Canal */}
       <div>
-        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-          <span>📅 Período & Canal</span>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.text2, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>📅 Período & Canal</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <Field label="Período" hint="Mês que você quer analisar">
-            <select value={form.period} onChange={(e) => set('period', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+            <select value={form.period} onChange={(e) => set('period', e.target.value)} style={{ ...INP, cursor: 'pointer' }}>
               {months.map((m) => <option key={m}>{m}</option>)}
             </select>
           </Field>
           <Field label="Canal principal" hint="Onde rodou os anúncios">
-            <select value={form.channel} onChange={(e) => set('channel', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+            <select value={form.channel} onChange={(e) => set('channel', e.target.value)} style={{ ...INP, cursor: 'pointer' }}>
               {CHANNELS.map((c) => <option key={c}>{c}</option>)}
             </select>
           </Field>
         </div>
       </div>
 
-      {/* Seção 2: Investimento & Alcance */}
       <div>
-        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">💰 Investimento & Alcance do Anúncio</div>
-        <div className="grid grid-cols-3 gap-3">
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.text2, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>💰 Investimento & Alcance do Anúncio</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           <Field label="Investimento (R$)" hint="Total gasto em anúncios no período" required>
-            <input type="number" value={form.investment || ''} onChange={(e) => set('investment', Number(e.target.value))} style={inp} min={0} required placeholder="ex: 3.000" />
+            <input type="number" value={form.investment || ''} onChange={(e) => set('investment', Number(e.target.value))} style={INP} min={0} required placeholder="ex: 3.000" />
           </Field>
           <Field label="Impressões" hint="Vezes que o anúncio foi exibido — está no painel de anúncios">
-            <input type="number" value={form.impressions || ''} onChange={(e) => set('impressions', Number(e.target.value))} style={inp} min={0} placeholder="ex: 50.000" />
+            <input type="number" value={form.impressions || ''} onChange={(e) => set('impressions', Number(e.target.value))} style={INP} min={0} placeholder="ex: 50.000" />
           </Field>
           <Field label="Cliques no anúncio" hint="Quantas pessoas clicaram — também no painel">
-            <input type="number" value={form.clicks || ''} onChange={(e) => set('clicks', Number(e.target.value))} style={inp} min={0} placeholder="ex: 750" />
+            <input type="number" value={form.clicks || ''} onChange={(e) => set('clicks', Number(e.target.value))} style={INP} min={0} placeholder="ex: 750" />
           </Field>
         </div>
       </div>
 
-      {/* Seção 3: Resultados do Funil */}
       <div>
-        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">🎯 Resultados do Funil de Vendas</div>
-        <div className="grid grid-cols-2 gap-3">
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.text2, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>🎯 Resultados do Funil de Vendas</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <Field label="Leads gerados" hint="Formulários preenchidos ou mensagens recebidas pelo anúncio" required>
-            <input type="number" value={form.leads || ''} onChange={(e) => set('leads', Number(e.target.value))} style={inp} min={0} required placeholder="ex: 42" />
+            <input type="number" value={form.leads || ''} onChange={(e) => set('leads', Number(e.target.value))} style={INP} min={0} required placeholder="ex: 42" />
           </Field>
           <Field label="Leads qualificados" hint="Dos leads recebidos, quantos tinham perfil real para comprar" required>
-            <input type="number" value={form.qualifiedLeads || ''} onChange={(e) => set('qualifiedLeads', Number(e.target.value))} style={inp} min={0} required placeholder="ex: 18" />
+            <input type="number" value={form.qualifiedLeads || ''} onChange={(e) => set('qualifiedLeads', Number(e.target.value))} style={INP} min={0} required placeholder="ex: 18" />
           </Field>
           <Field label="Vendas fechadas" hint="Clientes que efetivamente compraram / assinaram" required>
-            <input type="number" value={form.sales || ''} onChange={(e) => set('sales', Number(e.target.value))} style={inp} min={0} required placeholder="ex: 5" />
+            <input type="number" value={form.sales || ''} onChange={(e) => set('sales', Number(e.target.value))} style={INP} min={0} required placeholder="ex: 5" />
           </Field>
           <Field label="Ticket médio (R$)" hint="Valor médio de cada venda — calcula ROAS e CAC automaticamente">
-            <input type="number" value={form.avgTicket || ''} onChange={(e) => set('avgTicket', Number(e.target.value))} style={inp} min={0} placeholder="ex: 1.500" />
+            <input type="number" value={form.avgTicket || ''} onChange={(e) => set('avgTicket', Number(e.target.value))} style={INP} min={0} placeholder="ex: 1.500" />
           </Field>
         </div>
       </div>
 
-      {/* Seção 4: Velocidade */}
       <div>
-        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">⚡ Velocidade de Resposta ao Lead</div>
-        <div className="grid grid-cols-2 gap-3">
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.text2, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>⚡ Velocidade de Resposta ao Lead</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <Field label="Tempo médio de resposta (horas)" hint="Em quanto tempo você contata o lead? · 0.5 = 30min · 1 = 1h · 4 = meio período">
-            <input type="number" value={form.avgResponseHours || ''} onChange={(e) => set('avgResponseHours', Number(e.target.value))} style={inp} min={0} step={0.5} placeholder="ex: 0.5 (30min) ou 2 (2 horas)" />
+            <input type="number" value={form.avgResponseHours || ''} onChange={(e) => set('avgResponseHours', Number(e.target.value))} style={INP} min={0} step={0.5} placeholder="ex: 0.5 (30min) ou 2 (2 horas)" />
           </Field>
         </div>
       </div>
 
-      <button type="submit" className="w-full py-3.5 rounded-xl font-bold text-sm text-black transition-opacity hover:opacity-90"
-        style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
+      <button type="submit" style={{
+        width: '100%', padding: '14px 0', borderRadius: 12, fontWeight: 700, fontSize: 14,
+        color: '#000', background: 'linear-gradient(135deg, #F59E0B, #FCD34D)',
+        border: 'none', cursor: 'pointer', letterSpacing: 0.3,
+      }}>
         🔬 Diagnosticar Gargalo
       </button>
     </form>
   )
 }
 
-// ── Componente principal ──────────────────────────────────────────────────────
+function VisualFunnel({ entry }: { entry: Omit<FunnelEntry, 'id' | 'createdAt'> }) {
+  const rows = [
+    entry.impressions > 0  && { label: 'Impressões',   value: entry.impressions,   pct: null as string | null },
+    entry.clicks > 0       && { label: 'Cliques',       value: entry.clicks,        pct: entry.impressions > 0 ? (entry.clicks / entry.impressions * 100).toFixed(1) + '%' : null },
+    entry.leads > 0        && { label: 'Leads',         value: entry.leads,         pct: entry.clicks > 0 ? (entry.leads / entry.clicks * 100).toFixed(1) + '%' : null },
+    entry.qualifiedLeads >= 0 && { label: 'Qualificados', value: entry.qualifiedLeads, pct: entry.leads > 0 ? (entry.qualifiedLeads / entry.leads * 100).toFixed(1) + '%' : null },
+    entry.sales >= 0       && { label: 'Vendas',        value: entry.sales,         pct: entry.qualifiedLeads > 0 ? (entry.sales / entry.qualifiedLeads * 100).toFixed(1) + '%' : null },
+  ].filter(Boolean) as { label: string; value: number; pct: string | null }[]
+
+  const maxV = rows[0]?.value || 1
+  const stageColors = [C.purple, C.blue, C.gold, C.green, '#22D3EE']
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {rows.map((row, i) => {
+        const w = Math.max(18, (row.value / maxV) * 100)
+        const color = stageColors[i] || C.purpleL
+        const isLast = i === rows.length - 1
+
+        return (
+          <div key={row.label}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: isLast ? 0 : 0 }}>
+              <div style={{ width: 100, textAlign: 'right', fontSize: 11, color: C.text2, flexShrink: 0 }}>{row.label}</div>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  height: 32, borderRadius: 8,
+                  width: `${w}%`, minWidth: 60,
+                  background: `linear-gradient(90deg, ${color}30, ${color}18)`,
+                  border: `1px solid ${color}40`,
+                  display: 'flex', alignItems: 'center', padding: '0 12px',
+                  fontSize: 12, fontWeight: 700, color,
+                  transition: 'width 0.6s ease',
+                }}>
+                  {row.value.toLocaleString('pt-BR')}
+                </div>
+                {row.pct && (
+                  <span style={{ fontSize: 11, color: C.text3, flexShrink: 0 }}>{row.pct}</span>
+                )}
+              </div>
+            </div>
+            {!isLast && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '3px 0' }}>
+                <div style={{ width: 100, flexShrink: 0 }} />
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
+                  <div style={{ width: 1, height: 10, background: `${color}30`, marginLeft: 20 }} />
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function TabFunil({ clientData }: Props) {
-  const funnelEntries  = useAppStore((s) => s.funnelEntries)
-  const addFunnelEntry = useAppStore((s) => s.addFunnelEntry)
+  const funnelEntries     = useAppStore((s) => s.funnelEntries)
+  const addFunnelEntry    = useAppStore((s) => s.addFunnelEntry)
   const deleteFunnelEntry = useAppStore((s) => s.deleteFunnelEntry)
-  const [showForm, setShowForm]         = useState(true)
-  const [result, setResult]             = useState<DiagnosisResult | null>(null)
-  const [lastEntry, setLastEntry]       = useState<Omit<FunnelEntry, 'id' | 'createdAt'> | null>(null)
+  const [showForm, setShowForm]   = useState(true)
+  const [result, setResult]       = useState<DiagnosisResult | null>(null)
+  const [lastEntry, setLastEntry] = useState<Omit<FunnelEntry, 'id' | 'createdAt'> | null>(null)
 
   if (!clientData) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh] text-slate-500 text-sm">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', color: C.text2, fontSize: 14 }}>
         Configure um cliente primeiro para usar o diagnóstico de funil.
       </div>
     )
@@ -409,7 +476,6 @@ export function TabFunil({ clientData }: Props) {
 
   const bench    = getBenchmark(clientData.niche)
   const benchKey = bench ? Object.keys(BENCHMARKS).find((k) => BENCHMARKS[k] === bench) || 'outro' : 'outro'
-
   const clientEntries = funnelEntries.filter((e) => e.clientName === clientData.clientName)
 
   const handleSubmit = (data: Omit<FunnelEntry, 'id' | 'createdAt'>) => {
@@ -421,69 +487,66 @@ export function TabFunil({ clientData }: Props) {
   }
 
   const presc = result ? PRESCRIPTIONS[result.bottleneck] : null
-
   const scoreColor = result
-    ? result.score >= 70 ? '#22C55E' : result.score >= 45 ? '#FBBF24' : '#F87171'
-    : '#F0B429'
+    ? result.score >= 70 ? C.green : result.score >= 45 ? C.gold : C.red
+    : C.gold
 
   return (
-    <div className="max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ maxWidth: 900 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
-          <h2 className="font-display text-xl font-bold text-white">Diagnóstico de Gargalo do Funil</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0 }}>Diagnóstico de Gargalo do Funil</h2>
+          <p style={{ fontSize: 12, color: C.text2, marginTop: 4, margin: '4px 0 0' }}>
             Identifica com precisão onde o funil está perdendo dinheiro — anúncio, LP, qualificação, vendas ou velocidade
           </p>
         </div>
         {result && (
-          <button onClick={() => { setShowForm(true); setResult(null) }}
-            className="text-xs px-3 py-1.5 rounded-lg font-semibold"
-            style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.2)' }}>
+          <button
+            onClick={() => { setShowForm(true); setResult(null) }}
+            style={{
+              fontSize: 12, padding: '7px 14px', borderRadius: 10, fontWeight: 600, cursor: 'pointer',
+              background: C.goldBg, color: C.gold, border: `1px solid rgba(245,158,11,0.25)`,
+            }}>
             + Nova análise
           </button>
         )}
       </div>
 
-      {/* Formulário */}
       {showForm && (
-        <div className="rounded-2xl p-5 mb-6" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">📊 Dados do período</div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.text2, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>📊 Dados do período</div>
           <FunnelForm clientData={clientData} onSubmit={handleSubmit} />
         </div>
       )}
 
-      {/* Resultado */}
       {result && lastEntry && presc && (
-        <div key={result.bottleneck} className="animate-fade-up">
-          {/* Score geral + resumo financeiro */}
-          <div className="grid grid-cols-4 gap-3 mb-5">
-            <div className="rounded-xl p-4 col-span-1" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-              <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Score do Funil</div>
-              <div className="text-3xl font-bold" style={{ color: scoreColor }}>{result.score}</div>
-              <div className="text-[10px] text-slate-500 mt-0.5">/100</div>
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20 }}>
+              <div style={{ fontSize: 10, color: C.text2, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Score do Funil</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{result.score}</div>
+              <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>/100</div>
             </div>
-            <div className="rounded-xl p-4" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-              <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Investimento</div>
-              <div className="text-xl font-bold text-white">R${lastEntry.investment.toLocaleString('pt-BR')}</div>
-              <div className="text-[10px] text-slate-500">{lastEntry.period}</div>
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20 }}>
+              <div style={{ fontSize: 10, color: C.text2, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Investimento</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.text1, lineHeight: 1 }}>R${lastEntry.investment.toLocaleString('pt-BR')}</div>
+              <div style={{ fontSize: 11, color: C.text3, marginTop: 4 }}>{lastEntry.period}</div>
             </div>
-            <div className="rounded-xl p-4" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-              <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">ROAS</div>
-              <div className="text-xl font-bold" style={{ color: result.roas ? (result.roas >= 3 ? '#22C55E' : result.roas >= 1.5 ? '#FBBF24' : '#F87171') : '#475569' }}>
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20 }}>
+              <div style={{ fontSize: 10, color: C.text2, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>ROAS</div>
+              <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, color: result.roas ? (result.roas >= 3 ? C.green : result.roas >= 1.5 ? C.gold : C.red) : C.text3 }}>
                 {result.roas ? `${result.roas.toFixed(1)}×` : 'N/D'}
               </div>
-              <div className="text-[10px] text-slate-500">retorno s/ invest.</div>
+              <div style={{ fontSize: 11, color: C.text3, marginTop: 4 }}>retorno s/ invest.</div>
             </div>
-            <div className="rounded-xl p-4" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-              <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">CAC</div>
-              <div className="text-xl font-bold text-white">{result.cac ? `R$${result.cac.toFixed(0)}` : 'N/D'}</div>
-              <div className="text-[10px] text-slate-500">custo por cliente</div>
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20 }}>
+              <div style={{ fontSize: 10, color: C.text2, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>CAC</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.text1, lineHeight: 1 }}>{result.cac ? `R$${result.cac.toFixed(0)}` : 'N/D'}</div>
+              <div style={{ fontSize: 11, color: C.text3, marginTop: 4 }}>custo por cliente</div>
             </div>
           </div>
 
-          {/* Cards das etapas */}
-          <div className="grid grid-cols-2 gap-3 mb-5">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
             {result.stages.map((stage) => (
               <StageCard
                 key={stage.key}
@@ -496,50 +559,26 @@ export function TabFunil({ clientData }: Props) {
             ))}
           </div>
 
-          {/* Funil visual simplificado */}
-          <div className="rounded-2xl p-5 mb-5" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Funil de Conversão</div>
-            {(() => {
-              const rows = [
-                lastEntry.impressions > 0 && { label: 'Impressões', value: lastEntry.impressions, pct: null },
-                lastEntry.clicks > 0     && { label: 'Cliques',     value: lastEntry.clicks, pct: lastEntry.impressions > 0 ? (lastEntry.clicks / lastEntry.impressions * 100).toFixed(1) + '%' : null },
-                lastEntry.leads > 0      && { label: 'Leads',       value: lastEntry.leads,  pct: lastEntry.clicks > 0 ? (lastEntry.leads / lastEntry.clicks * 100).toFixed(1) + '%' : null },
-                lastEntry.qualifiedLeads >= 0 && { label: 'Qualificados', value: lastEntry.qualifiedLeads, pct: lastEntry.leads > 0 ? (lastEntry.qualifiedLeads / lastEntry.leads * 100).toFixed(1) + '%' : null },
-                lastEntry.sales >= 0     && { label: 'Vendas',      value: lastEntry.sales,  pct: lastEntry.qualifiedLeads > 0 ? (lastEntry.sales / lastEntry.qualifiedLeads * 100).toFixed(1) + '%' : null },
-              ].filter(Boolean) as { label: string; value: number; pct: string | null }[]
-
-              const maxV = rows[0]?.value || 1
-              return rows.map((row, i) => {
-                const w = Math.max(20, (row.value / maxV) * 100)
-                return (
-                  <div key={row.label} className="flex items-center gap-3 mb-2">
-                    <div className="w-28 text-right text-xs text-slate-400 flex-shrink-0">{row.label}</div>
-                    <div className="flex-1 flex items-center gap-2">
-                      <div className="rounded-md h-7 flex items-center px-3 text-xs font-bold text-white transition-all"
-                        style={{ width: `${w}%`, minWidth: 60, background: i === 0 ? 'rgba(240,180,41,0.25)' : 'rgba(240,180,41,0.12)', border: '1px solid rgba(240,180,41,0.2)' }}>
-                        {row.value.toLocaleString('pt-BR')}
-                      </div>
-                      {row.pct && <span className="text-[11px] text-slate-500">{row.pct}</span>}
-                    </div>
-                  </div>
-                )
-              })
-            })()}
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.text2, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>Funil de Conversão Visual</div>
+            <VisualFunnel entry={lastEntry} />
           </div>
 
-          {/* Diagnóstico e prescrição */}
-          <div className="rounded-2xl p-5" style={{ background: presc.bg, border: `1px solid ${presc.border}` }}>
-            <div className="flex items-start gap-4">
-              <div className="text-4xl flex-shrink-0 mt-1">{presc.icon}</div>
-              <div className="flex-1">
-                <div className="font-display font-bold text-white text-base mb-1">{presc.title}</div>
-                <p className="text-xs leading-relaxed mb-4" style={{ color: '#94A3B8' }}>{presc.description}</p>
-                <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: presc.color }}>Plano de ação</div>
-                <ol className="space-y-2">
+          <div style={{ background: presc.bg, border: `1px solid ${presc.border}`, borderRadius: 16, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}>
+              <div style={{ fontSize: 40, flexShrink: 0, marginTop: 2 }}>{presc.icon}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: C.text1, marginBottom: 8 }}>{presc.title}</div>
+                <p style={{ fontSize: 12, lineHeight: 1.6, color: C.text2, marginBottom: 20 }}>{presc.description}</p>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: presc.color, marginBottom: 12 }}>Plano de ação</div>
+                <ol style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: 0, padding: 0, listStyle: 'none' }}>
                   {presc.actions.map((action, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                      <span className="flex-shrink-0 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center mt-0.5"
-                        style={{ background: `${presc.color}22`, color: presc.color }}>
+                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 12, color: C.text1 }}>
+                      <span style={{
+                        flexShrink: 0, width: 20, height: 20, borderRadius: 999, fontSize: 9, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1,
+                        background: `${presc.color}22`, color: presc.color,
+                      }}>
                         {i + 1}
                       </span>
                       {action}
@@ -552,31 +591,41 @@ export function TabFunil({ clientData }: Props) {
         </div>
       )}
 
-      {/* Histórico */}
       {clientEntries.length > 0 && (
-        <div className="mt-8">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Histórico de análises — {clientData.clientName}</div>
-          <div className="space-y-2">
+        <div style={{ marginTop: 36 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.text2, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>
+            Histórico de análises — {clientData.clientName}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {clientEntries.map((entry) => {
               const dx = diagnose(entry, benchKey)
               const pr = PRESCRIPTIONS[dx.bottleneck]
-              const sc = dx.score >= 70 ? '#22C55E' : dx.score >= 45 ? '#FBBF24' : '#F87171'
+              const sc = dx.score >= 70 ? C.green : dx.score >= 45 ? C.gold : C.red
               return (
-                <div key={entry.id} className="flex items-center justify-between rounded-xl px-4 py-3"
-                  style={{ background: '#111114', border: '1px solid #1E1E24' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-base">{pr.icon}</span>
+                <div key={entry.id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 18 }}>{pr.icon}</span>
                     <div>
-                      <div className="text-sm font-semibold text-white">{entry.period} — {entry.channel}</div>
-                      <div className="text-[11px] text-slate-500">{entry.leads} leads · {entry.sales} vendas · R${entry.investment.toLocaleString('pt-BR')}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>{entry.period} — {entry.channel}</div>
+                      <div style={{ fontSize: 11, color: C.text2, marginTop: 2 }}>{entry.leads} leads · {entry.sales} vendas · R${entry.investment.toLocaleString('pt-BR')}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="text-lg font-bold" style={{ color: sc }}>{dx.score}</div>
-                      <div className="text-[9px] text-slate-600">score</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: sc }}>{dx.score}</div>
+                      <div style={{ fontSize: 9, color: C.text3 }}>score</div>
                     </div>
-                    <button onClick={() => deleteFunnelEntry(entry.id)} className="text-slate-600 hover:text-red-400 transition-colors text-xs">✕</button>
+                    <button
+                      onClick={() => deleteFunnelEntry(entry.id)}
+                      style={{ color: C.text3, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: 4 }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = C.red)}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = C.text3)}
+                    >
+                      ✕
+                    </button>
                   </div>
                 </div>
               )

@@ -45,7 +45,7 @@ export function CreditsDisplay() {
       {open && (
         <div style={{
           position: 'fixed', top: 60, right: 20, zIndex: 9999,
-          background: '#0F1221', border: '1px solid rgba(255,255,255,0.08)',
+          background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 12, padding: 16, minWidth: 220,
           boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
         }}>

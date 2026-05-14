@@ -6,6 +6,29 @@ import { getBenchmark } from '@/lib/niche_benchmarks'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 
+const C = {
+  bg:          '#080D1A',
+  surface:     '#0F1629',
+  elevated:    '#131E35',
+  border:      'rgba(99,120,255,0.1)',
+  borderHover: 'rgba(124,58,237,0.25)',
+  purple:      '#7C3AED',
+  purpleL:     '#A78BFA',
+  purpleXL:    '#C4B5FD',
+  green:       '#22C55E',
+  greenBg:     'rgba(34,197,94,0.1)',
+  red:         '#EF4444',
+  redBg:       'rgba(239,68,68,0.1)',
+  blue:        '#38BDF8',
+  blueBg:      'rgba(56,189,248,0.1)',
+  gold:        '#F59E0B',
+  goldBg:      'rgba(245,158,11,0.1)',
+  orange:      '#F97316',
+  text1:       '#F1F5F9',
+  text2:       'rgba(255,255,255,0.5)',
+  text3:       'rgba(255,255,255,0.25)',
+}
+
 interface Props {
   clientData: ClientData | null
   strategy: Record<string, any>
@@ -13,29 +36,32 @@ interface Props {
 }
 
 function RiskBadge({ level }: { level: string }) {
-  const map: Record<string, { label: string; color: string; bg: string }> = {
-    critico:  { label: 'CRÍTICO',  color: '#FF4D4D', bg: 'rgba(255,77,77,0.1)' },
-    alto:     { label: 'ALTO',     color: '#FB923C', bg: 'rgba(251,146,60,0.1)' },
-    medio:    { label: 'MÉDIO',    color: '#F0B429', bg: 'rgba(240,180,41,0.1)' },
-    baixo:    { label: 'BAIXO',    color: '#22C55E', bg: 'rgba(34,197,94,0.1)' },
-    alta:     { label: 'ALTA',     color: '#FF4D4D', bg: 'rgba(255,77,77,0.1)' },
-    media:    { label: 'MÉDIA',    color: '#F0B429', bg: 'rgba(240,180,41,0.1)' },
+  const map: Record<string, { label: string; color: string; bg: string; border: string }> = {
+    critico:  { label: 'CRÍTICO',  color: C.red,    bg: C.redBg,            border: 'rgba(239,68,68,0.3)' },
+    alto:     { label: 'ALTO',     color: C.orange, bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.3)' },
+    medio:    { label: 'MÉDIO',    color: C.gold,   bg: C.goldBg,           border: 'rgba(245,158,11,0.3)' },
+    baixo:    { label: 'BAIXO',    color: C.green,  bg: C.greenBg,          border: 'rgba(34,197,94,0.3)' },
+    alta:     { label: 'ALTA',     color: C.red,    bg: C.redBg,            border: 'rgba(239,68,68,0.3)' },
+    media:    { label: 'MÉDIA',    color: C.gold,   bg: C.goldBg,           border: 'rgba(245,158,11,0.3)' },
   }
   const s = map[level?.toLowerCase()] || map.medio
   return (
-    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
-      style={{ color: s.color, background: s.bg }}>
+    <span style={{
+      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+      textTransform: 'uppercase', letterSpacing: '0.06em',
+      color: s.color, background: s.bg, border: `1px solid ${s.border}`,
+    }}>
       {s.label}
     </span>
   )
 }
 
 function StatusDot({ status }: { status: string }) {
-  const c = status === 'saudavel' ? '#22C55E' : status === 'problema' ? '#FF4D4D' : '#64748B'
+  const c = status === 'saudavel' ? C.green : status === 'problema' ? C.red : C.text3
   const label = status === 'saudavel' ? 'Saudável' : status === 'problema' ? 'Problema' : 'Não auditado'
   return (
-    <span className="flex items-center gap-1.5 text-xs" style={{ color: c }}>
-      <span className="w-2 h-2 rounded-full inline-block flex-shrink-0" style={{ background: c }} />
+    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: c }}>
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, flexShrink: 0, display: 'inline-block' }} />
       {label}
     </span>
   )
@@ -43,16 +69,20 @@ function StatusDot({ status }: { status: string }) {
 
 function MetricCard({ label, value, sub, color, tip }: { label: string; value: string; sub?: string; color: string; tip?: string }) {
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4">
-      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{label}</div>
-      <div className="font-display text-2xl font-bold" style={{ color }}>{value}</div>
-      {sub && <div className="text-[11px] text-slate-600 mt-0.5">{sub}</div>}
-      {tip && <div className="text-[10px] text-slate-700 mt-1 italic">{tip}</div>}
+    <div style={{
+      background: C.elevated,
+      border: `1px solid ${C.border}`,
+      borderRadius: 14,
+      padding: '16px 18px',
+    }}>
+      <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, color, lineHeight: 1.1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: C.text3, marginTop: 4 }}>{sub}</div>}
+      {tip && <div style={{ fontSize: 10, color: C.text3, marginTop: 4, fontStyle: 'italic', opacity: 0.7 }}>{tip}</div>}
     </div>
   )
 }
 
-// ── Score Ring circular animado ───────────────────────────────────────────────
 function ScoreRing({ score, grade, color }: { score: number; grade: string; color: string }) {
   const r = 54
   const circ = 2 * Math.PI * r
@@ -67,23 +97,21 @@ function ScoreRing({ score, grade, color }: { score: number; grade: string; colo
     score >= 35 ? 'Atenção' : 'Crítico'
 
   return (
-    <div className="flex flex-col items-center">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ position: 'relative', width: 128, height: 128 }}>
         <svg width="128" height="128" style={{ transform: 'rotate(-90deg)' }}>
-          {/* track */}
-          <circle cx="64" cy="64" r={r} fill="none" stroke="#1E1E24" strokeWidth="10" />
-          {/* fill */}
+          <circle cx="64" cy="64" r={r} fill="none" stroke={C.elevated} strokeWidth="10" />
           <circle cx="64" cy="64" r={r} fill="none"
             stroke={color} strokeWidth="10" strokeLinecap="round"
             strokeDasharray={`${dash} ${gap}`}
-            style={{ transition: 'stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)' }} />
+            style={{ transition: 'stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)', filter: `drop-shadow(0 0 6px ${color}60)` }} />
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span className="font-display font-bold text-3xl" style={{ color, lineHeight: 1 }}>{grade}</span>
-          <span className="text-slate-500 text-[10px] mt-0.5">{score}/100</span>
+          <span style={{ color, fontSize: 30, fontWeight: 800, lineHeight: 1 }}>{grade}</span>
+          <span style={{ color: C.text3, fontSize: 10, marginTop: 2 }}>{score}/100</span>
         </div>
       </div>
-      <span className="text-xs font-semibold mt-2" style={{ color }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 600, marginTop: 8, color }}>{label}</span>
     </div>
   )
 }
@@ -101,7 +129,6 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
 
   const bench = getBenchmark(clientData?.niche || '')
 
-  // Pega os dados reais da última auditoria disponível
   const clientAudits = auditCache[clientData?.clientName || ''] || []
   const lastAudit = clientAudits[0]?.audit
   const auditRealMetrics = lastAudit?._realMetrics || null
@@ -140,107 +167,161 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
   }
 
   const gradeColor: Record<string, string> = {
-    'A+': '#22C55E', A: '#22C55E', 'A-': '#22C55E',
-    'B+': '#F0B429', B: '#F0B429', 'B-': '#F0B429',
-    'C+': '#FB923C', C: '#FB923C', D: '#FF4D4D',
+    'A+': C.green, A: C.green, 'A-': C.green,
+    'B+': C.gold,  B: C.gold,  'B-': C.gold,
+    'C+': C.orange, C: C.orange, D: C.red,
   }
 
-  const sustColor = { sustentavel: '#22C55E', fragil: '#F0B429', insustentavel: '#FF4D4D' }
+  const sustColor: Record<string, string> = {
+    sustentavel: C.green,
+    fragil: C.gold,
+    insustentavel: C.red,
+  }
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h2 className="font-display text-2xl font-bold text-white mb-1">Diagnóstico Estratégico do Negócio</h2>
-          <p className="text-slate-500 text-sm">
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0, marginBottom: 6 }}>
+            Diagnóstico Estratégico do Negócio
+          </h2>
+          <p style={{ fontSize: 13, color: C.text2, margin: 0 }}>
             Saúde financeira, viabilidade de escala, riscos críticos e recomendação prioritária.
-            <span className="text-slate-600"> · Distinto da Auditoria (que analisa campanhas).</span>
+            <span style={{ color: C.text3 }}> · Distinto da Auditoria (que analisa campanhas).</span>
           </p>
         </div>
         <button
           onClick={handleGenerate}
           disabled={loading || !clientData}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
-          style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 20px', borderRadius: 12,
+            fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+            color: '#000', border: 'none',
+            opacity: (loading || !clientData) ? 0.5 : 1,
+            transition: 'opacity 0.2s',
+          }}
         >
-          {loading ? '⚡ Diagnosticando...' : '⚡ Gerar Diagnóstico'}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          {loading ? 'Diagnosticando...' : 'Gerar Diagnóstico'}
         </button>
       </div>
 
       {/* Contexto de dados disponíveis */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
         {[
           { label: 'Budget configurado', value: clientData?.budget ? `R$${clientData.budget.toLocaleString('pt-BR')}` : '—', ok: !!clientData?.budget },
           { label: 'Ticket médio', value: clientData?.ticketPrice ? `R$${clientData.ticketPrice.toLocaleString('pt-BR')}` : '—', ok: !!clientData?.ticketPrice },
           { label: 'Histórico de campanhas', value: `${campaignHistory.length} períodos`, ok: campaignHistory.length >= 2 },
           { label: 'Última auditoria', value: lastAudit ? 'Disponível' : 'Sem dados', ok: !!lastAudit },
         ].map((item) => (
-          <div key={item.label} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-3 flex items-center gap-2">
-            <span className="text-xs" style={{ color: item.ok ? '#22C55E' : '#64748B' }}>{item.ok ? '✓' : '○'}</span>
+          <div key={item.label} style={{
+            background: C.surface,
+            border: `1px solid ${item.ok ? 'rgba(34,197,94,0.2)' : C.border}`,
+            borderRadius: 12, padding: '10px 14px',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{
+              width: 22, height: 22, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: item.ok ? C.greenBg : 'rgba(255,255,255,0.04)',
+              color: item.ok ? C.green : C.text3, fontSize: 11, fontWeight: 700, flexShrink: 0,
+            }}>
+              {item.ok ? '✓' : '○'}
+            </span>
             <div>
-              <div className="text-[10px] text-slate-600">{item.label}</div>
-              <div className="text-xs font-semibold text-white">{item.value}</div>
+              <div style={{ fontSize: 10, color: C.text3, marginBottom: 2 }}>{item.label}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.text1 }}>{item.value}</div>
             </div>
           </div>
         ))}
       </div>
 
       {error && (
-        <div className="bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">{error}</div>
+        <div style={{
+          background: C.redBg, border: `1px solid rgba(239,68,68,0.3)`,
+          borderRadius: 12, padding: '12px 16px', fontSize: 13, color: C.red,
+        }}>
+          {error}
+        </div>
       )}
 
       {/* Resultado */}
       {diagnostic && (
-        <div className="space-y-5 animate-fade-up">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
           {/* Score + Grade + Summary */}
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
-            <div className="flex items-start gap-6 flex-wrap">
-              {/* Ring */}
+          <div style={{
+            background: C.surface, border: `1px solid ${C.border}`,
+            borderRadius: 16, padding: 24,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap' }}>
               <ScoreRing
                 score={diagnostic.health_score}
                 grade={diagnostic.grade}
-                color={gradeColor[diagnostic.grade] || '#F0B429'}
+                color={gradeColor[diagnostic.grade] || C.gold}
               />
-              {/* Info */}
-              <div className="flex-1 min-w-[200px]">
-                <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-2">Saúde Estratégica do Negócio</div>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+                  Saúde Estratégica do Negócio
+                </div>
                 {diagnostic.saude_financeira?.sustentabilidade && (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 inline-block"
-                    style={{
-                      color: (sustColor as any)[diagnostic.saude_financeira.sustentabilidade] || '#F0B429',
-                      background: `${(sustColor as any)[diagnostic.saude_financeira.sustentabilidade] || '#F0B429'}15`,
-                      border: `1px solid ${(sustColor as any)[diagnostic.saude_financeira.sustentabilidade] || '#F0B429'}40`,
-                    }}>
+                  <span style={{
+                    display: 'inline-block', marginBottom: 14,
+                    padding: '4px 12px', borderRadius: 99,
+                    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                    color: sustColor[diagnostic.saude_financeira.sustentabilidade] || C.gold,
+                    background: `${sustColor[diagnostic.saude_financeira.sustentabilidade] || C.gold}18`,
+                    border: `1px solid ${sustColor[diagnostic.saude_financeira.sustentabilidade] || C.gold}40`,
+                  }}>
                     {diagnostic.saude_financeira.sustentabilidade}
                   </span>
                 )}
-                {/* Mini gauge bars */}
-                <div className="space-y-2 mt-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
                     { label: 'Saúde Financeira', v: diagnostic.health_score },
                     { label: 'Viabilidade de Escala', v: Math.max(20, diagnostic.health_score - 8) },
                     { label: 'Risco Operacional', v: Math.min(100, 100 - (diagnostic.risk_matrix?.length ?? 0) * 12) },
-                  ].map(({ label, v }) => (
-                    <div key={label}>
-                      <div className="flex justify-between text-[10px] text-slate-600 mb-0.5">
-                        <span>{label}</span><span>{v}%</span>
+                  ].map(({ label, v }) => {
+                    const barColor = v >= 70 ? C.green : v >= 45 ? C.gold : C.red
+                    return (
+                      <div key={label}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.text3, marginBottom: 4 }}>
+                          <span>{label}</span><span style={{ color: barColor }}>{v}%</span>
+                        </div>
+                        <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%', borderRadius: 99,
+                            width: `${v}%`,
+                            background: barColor,
+                            boxShadow: `0 0 6px ${barColor}60`,
+                            transition: 'width 1.2s cubic-bezier(.4,0,.2,1)',
+                          }} />
+                        </div>
                       </div>
-                      <div className="h-1.5 bg-[#1E1E24] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-1000"
-                          style={{ width: `${v}%`, background: v >= 70 ? '#22C55E' : v >= 45 ? '#F0B429' : '#FF4D4D' }} />
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
-                <div className="mt-4">
-                  <p className={`text-slate-300 text-sm leading-relaxed${showFullSummary ? '' : ' line-clamp-3'}`}>
+                <div style={{ marginTop: 16 }}>
+                  <p style={{
+                    fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0,
+                    display: showFullSummary ? 'block' : '-webkit-box',
+                    WebkitLineClamp: showFullSummary ? undefined : 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: showFullSummary ? 'visible' : 'hidden',
+                  } as React.CSSProperties}>
                     {diagnostic.executive_summary}
                   </p>
                   {(diagnostic.executive_summary?.length ?? 0) > 180 && (
-                    <button onClick={() => setShowFullSummary(v => !v)}
-                      className="mt-1.5 text-[11px] text-slate-600 hover:text-slate-400 transition-colors">
+                    <button onClick={() => setShowFullSummary(v => !v)} style={{
+                      marginTop: 6, fontSize: 11, color: C.text3, background: 'none',
+                      border: 'none', cursor: 'pointer', padding: 0,
+                    }}>
                       {showFullSummary ? '▲ ver menos' : '▼ ver mais'}
                     </button>
                   )}
@@ -252,61 +333,81 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
           {/* Saúde Financeira */}
           {diagnostic.saude_financeira && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-base">💰</span>
-                <span className="font-display font-bold text-white">Unit Economics & Saúde Financeira</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: C.goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill={C.gold}>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93V18h-2v1.93C7.06 19.44 4.56 16.94 4.07 14H6v-2H4.07C4.56 9.06 7.06 6.56 10 6.07V8h2V6.07C16.94 6.56 19.44 9.06 19.93 12H18v2h1.93c-.49 2.94-2.99 5.44-5.93 5.93z"/>
+                  </svg>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>Unit Economics & Saúde Financeira</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 12 }}>
                 <MetricCard
                   label="ROAS Break-even"
                   value={`${diagnostic.saude_financeira.break_even_roas}×`}
                   sub="ROAS mínimo para não ter prejuízo"
-                  color="#F0B429"
+                  color={C.gold}
                   tip="Abaixo disso = prejuízo"
                 />
                 <MetricCard
                   label="CPL Máximo Lucrativo"
                   value={`R$${diagnostic.saude_financeira.cpl_maximo_lucrativo}`}
                   sub="Acima disso = gasta mais do que ganha"
-                  color="#FF4D4D"
+                  color={C.red}
                   tip="Piso de pausa de campanhas"
                 />
                 <MetricCard
                   label="LTV Estimado"
                   value={`R$${(diagnostic.saude_financeira.ltv_estimado || 0).toLocaleString('pt-BR')}`}
                   sub="Valor vitalício do cliente"
-                  color="#22C55E"
+                  color={C.green}
                 />
                 <MetricCard
                   label="LTV:CAC"
                   value={`${diagnostic.saude_financeira.ltv_cac_ratio}×`}
                   sub="Mínimo saudável = 3×"
-                  color={diagnostic.saude_financeira.ltv_cac_ratio >= 3 ? '#22C55E' : diagnostic.saude_financeira.ltv_cac_ratio >= 1.5 ? '#F0B429' : '#FF4D4D'}
+                  color={diagnostic.saude_financeira.ltv_cac_ratio >= 3 ? C.green : diagnostic.saude_financeira.ltv_cac_ratio >= 1.5 ? C.gold : C.red}
                   tip={diagnostic.saude_financeira.ltv_cac_ratio >= 3 ? 'Modelo saudável para escalar' : 'Otimizar antes de escalar'}
                 />
                 <MetricCard
                   label="CAC Payback"
                   value={`${diagnostic.saude_financeira.cac_payback_meses} ${diagnostic.saude_financeira.cac_payback_meses === 1 ? 'mês' : 'meses'}`}
                   sub="Tempo para recuperar custo"
-                  color={diagnostic.saude_financeira.cac_payback_meses <= 3 ? '#22C55E' : diagnostic.saude_financeira.cac_payback_meses <= 6 ? '#F0B429' : '#FF4D4D'}
+                  color={diagnostic.saude_financeira.cac_payback_meses <= 3 ? C.green : diagnostic.saude_financeira.cac_payback_meses <= 6 ? C.gold : C.red}
                 />
                 {diagnostic.prontidao_para_escalar?.projecao_escala?.receita_projetada > 0 && (
                   <MetricCard
                     label="Receita com Budget 2×"
                     value={`R$${(diagnostic.prontidao_para_escalar.projecao_escala.receita_projetada || 0).toLocaleString('pt-BR')}`}
                     sub="Projeção ao dobrar investimento"
-                    color="#A78BFA"
+                    color={C.purpleL}
                   />
                 )}
               </div>
-              <button onClick={() => setShowInterpretacao(v => !v)}
-                className="w-full flex items-center justify-between bg-[#16161A] border border-[#2A2A30] rounded-xl px-4 py-2.5 hover:bg-[#1A1A20] transition-colors text-left">
-                <span className="text-xs text-slate-500 uppercase tracking-wider">💬 Interpretação</span>
-                <span className="text-[10px] text-slate-600">{showInterpretacao ? '▲ ocultar' : '▼ ver análise'}</span>
+              <button onClick={() => setShowInterpretacao(v => !v)} style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: C.elevated, border: `1px solid ${C.border}`, borderRadius: 12,
+                padding: '10px 16px', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <span style={{ fontSize: 11, color: C.text2, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill={C.text2}>
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                  </svg>
+                  Interpretação
+                </span>
+                <span style={{ fontSize: 10, color: C.text3 }}>{showInterpretacao ? '▲ ocultar' : '▼ ver análise'}</span>
               </button>
               {showInterpretacao && (
-                <div className="bg-[#16161A] border border-[#2A2A30] rounded-xl px-4 py-3 animate-fade-up">
-                  <p className="text-sm text-slate-300 leading-relaxed">{diagnostic.saude_financeira.interpretacao}</p>
+                <div style={{
+                  background: C.elevated, border: `1px solid ${C.border}`,
+                  borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '12px 16px',
+                }}>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
+                    {diagnostic.saude_financeira.interpretacao}
+                  </p>
                 </div>
               )}
             </div>
@@ -315,34 +416,54 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
           {/* Matriz de Risco */}
           {diagnostic.matriz_risco?.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-base">⚠️</span>
-                <span className="font-display font-bold text-white">Matriz de Risco</span>
-                <span className="text-xs text-slate-600 ml-1">ranqueada por impacto</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: C.redBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill={C.red}>
+                    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                  </svg>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>Matriz de Risco</span>
+                <span style={{ fontSize: 11, color: C.text3, marginLeft: 2 }}>ranqueada por impacto</span>
               </div>
-              <div className="space-y-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {diagnostic.matriz_risco.map((r: any, i: number) => {
-                  const riskColor = r.impacto === 'critico' ? '#FF4D4D' : r.impacto === 'alto' ? '#FB923C' : '#F0B429'
+                  const riskColor = r.impacto === 'critico' ? C.red : r.impacto === 'alto' ? C.orange : C.gold
                   const isOpen = expandedRisk === i
                   return (
-                    <div key={i} className="bg-[#111114] border border-[#2A2A30] rounded-xl overflow-hidden">
-                      <button onClick={() => setExpandedRisk(isOpen ? null : i)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#16161A] transition-colors text-left">
-                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                          style={{ background: `${riskColor}18`, color: riskColor }}>
+                    <div key={i} style={{
+                      background: C.surface, border: `1px solid ${isOpen ? riskColor + '40' : C.border}`,
+                      borderRadius: 12, overflow: 'hidden', transition: 'border-color 0.2s',
+                    }}>
+                      <button onClick={() => setExpandedRisk(isOpen ? null : i)} style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                      }}>
+                        <span style={{
+                          width: 26, height: 26, borderRadius: '50%',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 11, fontWeight: 800, flexShrink: 0,
+                          background: `${riskColor}18`, color: riskColor,
+                        }}>
                           {i + 1}
                         </span>
-                        <span className="text-sm font-semibold text-white flex-1">{r.risco}</span>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span style={{ fontSize: 13, fontWeight: 600, color: C.text1, flex: 1 }}>{r.risco}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                           <RiskBadge level={r.probabilidade} />
                           <RiskBadge level={r.impacto} />
-                          <span className="text-slate-600 text-[10px] ml-1">{isOpen ? '▲' : '▼'}</span>
+                          <span style={{ color: C.text3, fontSize: 10, marginLeft: 4 }}>{isOpen ? '▲' : '▼'}</span>
                         </div>
                       </button>
                       {isOpen && (
-                        <div className="px-4 pb-3 border-t border-[#1E1E24] pt-2.5 flex items-start gap-2 animate-fade-up">
-                          <span className="text-[#22C55E] text-xs mt-0.5 flex-shrink-0">→</span>
-                          <span className="text-xs text-slate-400 leading-relaxed">{r.mitigacao}</span>
+                        <div style={{
+                          padding: '10px 16px 14px',
+                          borderTop: `1px solid rgba(99,120,255,0.08)`,
+                          display: 'flex', alignItems: 'flex-start', gap: 8,
+                        }}>
+                          <span style={{ color: C.green, fontSize: 12, marginTop: 1, flexShrink: 0 }}>→</span>
+                          <span style={{ fontSize: 12, color: C.text2, lineHeight: 1.6 }}>{r.mitigacao}</span>
                         </div>
                       )}
                     </div>
@@ -354,40 +475,59 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
 
           {/* Prontidão para Escalar */}
           {diagnostic.prontidao_para_escalar && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🚀</span>
-                  <span className="font-display font-bold text-white">Prontidão para Escalar</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-24 h-2 bg-[#1E1E24] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full"
-                      style={{
-                        width: `${diagnostic.prontidao_para_escalar.score}%`,
-                        background: diagnostic.prontidao_para_escalar.pode_escalar_agora ? '#22C55E' : '#F0B429',
-                      }} />
+            <div style={{
+              background: C.surface, border: `1px solid ${C.border}`,
+              borderRadius: 16, padding: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: 8,
+                    background: C.blueBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill={C.blue}>
+                      <path d="M12 2.5c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1 14.5v-5.5l4.5 2.75L11 17z"/>
+                    </svg>
                   </div>
-                  <span className="text-xs font-bold" style={{ color: diagnostic.prontidao_para_escalar.pode_escalar_agora ? '#22C55E' : '#F0B429' }}>
-                    {diagnostic.prontidao_para_escalar.score}/100
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold"
-                    style={{
-                      color: diagnostic.prontidao_para_escalar.pode_escalar_agora ? '#22C55E' : '#F0B429',
-                      background: diagnostic.prontidao_para_escalar.pode_escalar_agora ? 'rgba(34,197,94,0.1)' : 'rgba(240,180,41,0.1)',
-                    }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>Prontidão para Escalar</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 80, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 99,
+                        width: `${diagnostic.prontidao_para_escalar.score}%`,
+                        background: diagnostic.prontidao_para_escalar.pode_escalar_agora ? C.green : C.gold,
+                        transition: 'width 1s ease',
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: diagnostic.prontidao_para_escalar.pode_escalar_agora ? C.green : C.gold }}>
+                      {diagnostic.prontidao_para_escalar.score}/100
+                    </span>
+                  </div>
+                  <span style={{
+                    padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700,
+                    color: diagnostic.prontidao_para_escalar.pode_escalar_agora ? C.green : C.gold,
+                    background: diagnostic.prontidao_para_escalar.pode_escalar_agora ? C.greenBg : C.goldBg,
+                    border: `1px solid ${diagnostic.prontidao_para_escalar.pode_escalar_agora ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                  }}>
                     {diagnostic.prontidao_para_escalar.pode_escalar_agora ? '✓ Pode escalar' : '⚠ Não escalar ainda'}
                   </span>
                 </div>
               </div>
 
               {diagnostic.prontidao_para_escalar.prerequisitos_faltando?.length > 0 && (
-                <div className="mb-4">
-                  <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">Pré-requisitos faltando antes de escalar:</div>
-                  <div className="flex flex-wrap gap-1.5">
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                    Pré-requisitos faltando antes de escalar:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {diagnostic.prontidao_para_escalar.prerequisitos_faltando.map((p: string, i: number) => (
-                      <span key={i} className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full"
-                        style={{ background: 'rgba(255,77,77,0.08)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>
+                      <span key={i} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        fontSize: 11, padding: '4px 10px', borderRadius: 99,
+                        background: C.redBg, color: C.red, border: '1px solid rgba(239,68,68,0.25)',
+                      }}>
                         ✕ {p}
                       </span>
                     ))}
@@ -395,27 +535,43 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
                 </div>
               )}
 
-              <button onClick={() => setShowQuandoEscalar(v => !v)}
-                className="w-full flex items-center justify-between bg-[#16161A] rounded-xl px-3 py-2.5 hover:bg-[#1A1A20] transition-colors text-left border border-[#2A2A30]">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider">📅 Quando e como escalar</span>
-                <span className="text-[10px] text-slate-600">{showQuandoEscalar ? '▲' : '▼ ver'}</span>
+              <button onClick={() => setShowQuandoEscalar(v => !v)} style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: C.elevated, border: `1px solid ${C.border}`, borderRadius: 10,
+                padding: '10px 14px', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <span style={{ fontSize: 10, color: C.text2, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill={C.text2}>
+                    <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
+                  </svg>
+                  Quando e como escalar
+                </span>
+                <span style={{ fontSize: 10, color: C.text3 }}>{showQuandoEscalar ? '▲' : '▼ ver'}</span>
               </button>
               {showQuandoEscalar && (
-                <div className="bg-[#16161A] rounded-xl px-3 py-2.5 animate-fade-up border border-[#2A2A30]">
-                  <p className="text-sm text-slate-300">{diagnostic.prontidao_para_escalar.quando_escalar}</p>
+                <div style={{
+                  background: C.elevated, border: `1px solid ${C.border}`,
+                  borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '12px 14px',
+                }}>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0, lineHeight: 1.6 }}>
+                    {diagnostic.prontidao_para_escalar.quando_escalar}
+                  </p>
                 </div>
               )}
 
               {diagnostic.prontidao_para_escalar.projecao_escala && (
-                <div className="grid grid-cols-3 gap-3 mt-3">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 14 }}>
                   {[
-                    { label: 'Budget 2×', value: `R$${(diagnostic.prontidao_para_escalar.projecao_escala.budget_2x || 0).toLocaleString('pt-BR')}`, color: '#38BDF8' },
-                    { label: 'Leads proj.', value: (diagnostic.prontidao_para_escalar.projecao_escala.leads_projetados || 0).toLocaleString('pt-BR'), color: '#A78BFA' },
-                    { label: 'Receita proj.', value: `R$${(diagnostic.prontidao_para_escalar.projecao_escala.receita_projetada || 0).toLocaleString('pt-BR')}`, color: '#22C55E' },
+                    { label: 'Budget 2×', value: `R$${(diagnostic.prontidao_para_escalar.projecao_escala.budget_2x || 0).toLocaleString('pt-BR')}`, color: C.blue },
+                    { label: 'Leads proj.', value: (diagnostic.prontidao_para_escalar.projecao_escala.leads_projetados || 0).toLocaleString('pt-BR'), color: C.purpleL },
+                    { label: 'Receita proj.', value: `R$${(diagnostic.prontidao_para_escalar.projecao_escala.receita_projetada || 0).toLocaleString('pt-BR')}`, color: C.green },
                   ].map((m) => (
-                    <div key={m.label} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-3 text-center">
-                      <div className="text-[10px] text-slate-500 mb-0.5">{m.label}</div>
-                      <div className="font-bold text-sm" style={{ color: m.color }}>{m.value}</div>
+                    <div key={m.label} style={{
+                      background: C.elevated, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 12, textAlign: 'center',
+                    }}>
+                      <div style={{ fontSize: 10, color: C.text3, marginBottom: 4 }}>{m.label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: m.color }}>{m.value}</div>
                     </div>
                   ))}
                 </div>
@@ -425,31 +581,50 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
 
           {/* Diagnóstico do Funil */}
           {diagnostic.diagnostico_funil && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-base">🔬</span>
-                <span className="font-display font-bold text-white">Diagnóstico do Funil</span>
-                <span className="text-xs px-2 py-0.5 rounded-full ml-1"
-                  style={{
-                    color: diagnostic.diagnostico_funil.gargalo_principal === 'trafego' ? '#FF4D4D' : '#F0B429',
-                    background: diagnostic.diagnostico_funil.gargalo_principal === 'trafego' ? 'rgba(255,77,77,0.1)' : 'rgba(240,180,41,0.1)',
-                  }}>
+            <div style={{
+              background: C.surface, border: `1px solid ${C.border}`,
+              borderRadius: 16, padding: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: C.blueBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill={C.blue}>
+                    <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+                  </svg>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>Diagnóstico do Funil</span>
+                <span style={{
+                  fontSize: 11, padding: '3px 10px', borderRadius: 99, marginLeft: 4,
+                  color: diagnostic.diagnostico_funil.gargalo_principal === 'trafego' ? C.red : C.gold,
+                  background: diagnostic.diagnostico_funil.gargalo_principal === 'trafego' ? C.redBg : C.goldBg,
+                  border: `1px solid ${diagnostic.diagnostico_funil.gargalo_principal === 'trafego' ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
+                }}>
                   Gargalo: {diagnostic.diagnostico_funil.gargalo_principal}
                 </span>
               </div>
-              <div className="space-y-2 mb-4">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
                 {diagnostic.diagnostico_funil.etapas?.map((e: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between gap-3 p-3 bg-[#16161A] rounded-xl">
-                    <span className="text-sm text-white font-medium min-w-0 flex-1">{e.etapa}</span>
-                    <span className="text-xs text-slate-500 flex-1 hidden md:block">{e.observacao}</span>
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                    padding: '10px 14px', background: C.elevated, borderRadius: 10,
+                    borderBottom: `1px solid rgba(99,120,255,0.08)`,
+                  }}>
+                    <span style={{ fontSize: 13, color: C.text1, fontWeight: 500, flex: 1, minWidth: 0 }}>{e.etapa}</span>
+                    <span style={{ fontSize: 11, color: C.text3, flex: 1, display: 'none' }}>{e.observacao}</span>
                     <StatusDot status={e.status} />
                   </div>
                 ))}
               </div>
               {diagnostic.diagnostico_funil.impacto_financeiro && (
-                <div className="bg-[#16161A] rounded-xl p-3">
-                  <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Impacto Financeiro</div>
-                  <p className="text-sm text-slate-300">{diagnostic.diagnostico_funil.impacto_financeiro}</p>
+                <div style={{ background: C.elevated, borderRadius: 10, padding: 12 }}>
+                  <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                    Impacto Financeiro
+                  </div>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0, lineHeight: 1.6 }}>
+                    {diagnostic.diagnostico_funil.impacto_financeiro}
+                  </p>
                 </div>
               )}
             </div>
@@ -457,31 +632,50 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
 
           {/* Recomendação Principal */}
           {diagnostic.recomendacao_principal && (
-            <div className="rounded-2xl p-5" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.25)' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-base">🎯</span>
-                <span className="font-display font-bold text-white">Recomendação Principal</span>
-                <span className="text-xs text-slate-600">uma ação que muda tudo</span>
+            <div style={{
+              background: `linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(124,58,237,0.06) 100%)`,
+              border: `1px solid rgba(245,158,11,0.25)`,
+              borderRadius: 16, padding: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: C.goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill={C.gold}>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+                  </svg>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>Recomendação Principal</span>
+                <span style={{ fontSize: 11, color: C.text3 }}>uma ação que muda tudo</span>
               </div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-base font-bold text-[#F0B429]">{diagnostic.recomendacao_principal.titulo}</div>
-                <button onClick={() => setShowRecoDesc(v => !v)}
-                  className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors px-2 py-1 rounded-lg border border-[#2A2A30]">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: C.gold }}>{diagnostic.recomendacao_principal.titulo}</div>
+                <button onClick={() => setShowRecoDesc(v => !v)} style={{
+                  fontSize: 11, color: C.text2, background: 'none',
+                  border: `1px solid ${C.border}`, borderRadius: 8,
+                  padding: '4px 10px', cursor: 'pointer',
+                }}>
                   {showRecoDesc ? '▲ ocultar' : '▼ ver detalhe'}
                 </button>
               </div>
               {showRecoDesc && (
-                <p className="text-sm text-slate-300 leading-relaxed mb-4 animate-fade-up">{diagnostic.recomendacao_principal.descricao}</p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, marginBottom: 14, marginTop: 0 }}>
+                  {diagnostic.recomendacao_principal.descricao}
+                </p>
               )}
-              <div className="grid md:grid-cols-3 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
                 {[
-                  { label: '⚡ Esta semana', text: diagnostic.recomendacao_principal.acao_semana_1, color: '#FF4D4D' },
-                  { label: '📅 Mês 1', text: diagnostic.recomendacao_principal.acao_mes_1, color: '#F0B429' },
-                  { label: '📈 Trimestre', text: diagnostic.recomendacao_principal.acao_trimestre, color: '#22C55E' },
+                  { label: 'Esta semana', text: diagnostic.recomendacao_principal.acao_semana_1, color: C.red, bg: C.redBg, border: 'rgba(239,68,68,0.2)' },
+                  { label: 'Mês 1', text: diagnostic.recomendacao_principal.acao_mes_1, color: C.gold, bg: C.goldBg, border: 'rgba(245,158,11,0.2)' },
+                  { label: 'Trimestre', text: diagnostic.recomendacao_principal.acao_trimestre, color: C.green, bg: C.greenBg, border: 'rgba(34,197,94,0.2)' },
                 ].map((a) => (
-                  <div key={a.label} className="bg-[#16161A] rounded-xl p-3 border border-[#2A2A30]">
-                    <div className="text-xs font-bold mb-1.5" style={{ color: a.color }}>{a.label}</div>
-                    <p className="text-xs text-slate-400 leading-relaxed">{a.text}</p>
+                  <div key={a.label} style={{
+                    background: a.bg, border: `1px solid ${a.border}`,
+                    borderRadius: 10, padding: 12,
+                  }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: a.color, marginBottom: 6 }}>{a.label}</div>
+                    <p style={{ fontSize: 12, color: C.text2, lineHeight: 1.5, margin: 0 }}>{a.text}</p>
                   </div>
                 ))}
               </div>
@@ -490,31 +684,52 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
 
           {/* Benchmark do nicho */}
           {diagnostic.benchmark_comparativo && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-base">📊</span>
-                <span className="font-display font-bold text-white">Benchmark do Nicho — {clientData?.niche}</span>
+            <div style={{
+              background: C.surface, border: `1px solid ${C.border}`,
+              borderRadius: 16, padding: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: 'rgba(167,139,250,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill={C.purpleL}>
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                  </svg>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>
+                  Benchmark do Nicho — {clientData?.niche}
+                </span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 16 }}>
                 {[
-                  { label: 'CPL atual', value: diagnostic.benchmark_comparativo.cpl_atual > 0 ? `R$${diagnostic.benchmark_comparativo.cpl_atual}` : '—', color: '#38BDF8' },
-                  { label: 'CPL benchmark', value: `R$${diagnostic.benchmark_comparativo.cpl_benchmark}`, color: '#F0B429' },
-                  { label: 'ROAS break-even', value: `${diagnostic.benchmark_comparativo.roas_break_even}×`, color: '#A78BFA' },
-                  { label: 'ROAS bom (nicho)', value: `${diagnostic.benchmark_comparativo.roas_bom_nicho}×`, color: '#22C55E' },
+                  { label: 'CPL atual', value: diagnostic.benchmark_comparativo.cpl_atual > 0 ? `R$${diagnostic.benchmark_comparativo.cpl_atual}` : '—', color: C.blue },
+                  { label: 'CPL benchmark', value: `R$${diagnostic.benchmark_comparativo.cpl_benchmark}`, color: C.gold },
+                  { label: 'ROAS break-even', value: `${diagnostic.benchmark_comparativo.roas_break_even}×`, color: C.purpleL },
+                  { label: 'ROAS bom (nicho)', value: `${diagnostic.benchmark_comparativo.roas_bom_nicho}×`, color: C.green },
                 ].map((m) => (
-                  <div key={m.label} className="text-center p-3 bg-[#16161A] rounded-xl">
-                    <div className="text-[10px] text-slate-500 mb-0.5">{m.label}</div>
-                    <div className="font-bold text-sm" style={{ color: m.color }}>{m.value}</div>
+                  <div key={m.label} style={{
+                    textAlign: 'center', padding: '12px 10px',
+                    background: C.elevated, borderRadius: 10,
+                    border: `1px solid ${C.border}`,
+                  }}>
+                    <div style={{ fontSize: 10, color: C.text3, marginBottom: 6 }}>{m.label}</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: m.color }}>{m.value}</div>
                   </div>
                 ))}
               </div>
               {diagnostic.benchmark_comparativo.melhores_canais?.length > 0 && (
-                <div className="mb-3">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Melhores canais para o nicho</div>
-                  <div className="flex flex-wrap gap-2">
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                    Melhores canais para o nicho
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {diagnostic.benchmark_comparativo.melhores_canais.map((canal: string, i: number) => (
-                      <span key={i} className="px-3 py-1 rounded-full text-xs font-semibold"
-                        style={{ background: 'rgba(167,139,250,0.1)', color: '#A78BFA', border: '1px solid rgba(167,139,250,0.25)' }}>
+                      <span key={i} style={{
+                        padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600,
+                        background: 'rgba(167,139,250,0.1)', color: C.purpleL,
+                        border: '1px solid rgba(167,139,250,0.25)',
+                      }}>
                         {i === 0 ? '★ ' : ''}{canal}
                       </span>
                     ))}
@@ -522,10 +737,10 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
                 </div>
               )}
               {diagnostic.benchmark_comparativo.insights_nicho?.length > 0 && (
-                <div className="space-y-1.5">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {diagnostic.benchmark_comparativo.insights_nicho.map((ins: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2 text-xs text-slate-500">
-                      <span className="text-[#F0B429] mt-0.5 flex-shrink-0">→</span>
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: C.text2 }}>
+                      <span style={{ color: C.gold, marginTop: 1, flexShrink: 0 }}>→</span>
                       {ins}
                     </div>
                   ))}
@@ -536,17 +751,34 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
         </div>
       )}
 
+      {/* Estado vazio */}
       {!diagnostic && !loading && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-5xl mb-4 opacity-20">🎯</div>
-          <div className="font-display text-lg font-bold text-white mb-2">Diagnóstico Estratégico</div>
-          <p className="text-slate-500 text-sm max-w-md mb-4">
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', padding: '60px 20px', textAlign: 'center',
+        }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: 20, marginBottom: 20,
+            background: 'rgba(124,58,237,0.08)', border: `1px solid rgba(124,58,237,0.15)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill={C.purpleL} opacity={0.5}>
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+            </svg>
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: C.text1, marginBottom: 8 }}>Diagnóstico Estratégico</div>
+          <p style={{ fontSize: 13, color: C.text2, maxWidth: 400, marginBottom: 16, lineHeight: 1.6 }}>
             Análise da saúde financeira do negócio: LTV:CAC, ROAS break-even, matriz de risco e prontidão para escalar.
-            Diferente da Auditoria, que foca nas campanhas — aqui o foco é no <strong className="text-slate-400">modelo de negócio</strong>.
+            Diferente da Auditoria, que foca nas campanhas — aqui o foco é no{' '}
+            <span style={{ color: C.text1, fontWeight: 600 }}>modelo de negócio</span>.
           </p>
           {!clientData?.ticketPrice && (
-            <p className="text-xs text-[#F0B429] bg-[#F0B42910] border border-[#F0B42925] rounded-lg px-4 py-2 max-w-sm">
-              💡 Dica: adicione ticket médio e margem bruta no perfil do cliente para um diagnóstico financeiro mais preciso.
+            <p style={{
+              fontSize: 12, color: C.gold, maxWidth: 360,
+              background: C.goldBg, border: `1px solid rgba(245,158,11,0.25)`,
+              borderRadius: 10, padding: '10px 16px',
+            }}>
+              Dica: adicione ticket médio e margem bruta no perfil do cliente para um diagnóstico financeiro mais preciso.
             </p>
           )}
         </div>

@@ -150,7 +150,7 @@ export function AlertsPanel({ clientName, niche }: Props) {
             fontSize: '9px', fontWeight: 700, lineHeight: 1,
             padding: '2px 4px', borderRadius: '999px',
             minWidth: '14px', textAlign: 'center',
-            border: '1.5px solid #0A0A0B',
+            border: '1.5px solid #080D1A',
           }}>
             {unread > 9 ? '9+' : unread}
           </span>
@@ -162,7 +162,7 @@ export function AlertsPanel({ clientName, niche }: Props) {
         <div ref={dropdownRef} style={{
           position: 'fixed', top: dropdownPos.top, right: dropdownPos.right, zIndex: 9999,
           width: '380px', maxHeight: '520px',
-          background: '#111114', border: '1px solid rgba(255,255,255,0.08)',
+          background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '14px', boxShadow: '0 16px 48px rgba(0,0,0,0.8)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>

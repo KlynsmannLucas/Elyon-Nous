@@ -77,7 +77,7 @@ function GeneratingScreen({ clientName, niche }: { clientName: string; niche: st
               <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold transition-all ${
                 i < currentStep ? 'bg-[#22C55E] text-black' :
                 i === currentStep ? 'bg-[#F0B429] text-black' :
-                'bg-[#2A2A30] text-slate-600'
+                'bg-[rgba(99,120,255,0.12)] text-slate-600'
               }`}>
                 {i < currentStep ? '✓' : i + 1}
               </span>
@@ -168,7 +168,7 @@ function ClientSelector({
   ]
 
   return (
-    <div className="min-h-screen bg-[#080A14] animate-fade-in">
+    <div className="min-h-screen bg-[#080D1A] animate-fade-in">
       <div className="max-w-2xl mx-auto px-6 pt-10 pb-8">
 
         {/* Header: Logo + logout */}
@@ -182,7 +182,7 @@ function ClientSelector({
           <a
             href="/api/auth/signout"
             title="Sair da conta"
-            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-red-400 transition-colors px-3 py-2 rounded-xl border border-[#2A2A30] hover:border-red-400/30"
+            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-red-400 transition-colors px-3 py-2 rounded-xl border border-[rgba(99,120,255,0.12)] hover:border-red-400/30"
             style={{ textDecoration: 'none' }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -195,7 +195,7 @@ function ClientSelector({
         </div>
 
         {/* Card do perfil do usuário */}
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 mb-8">
+        <div className="bg-[#0F1629] border border-[rgba(99,120,255,0.12)] rounded-2xl p-5 mb-8">
           <div className="flex items-center gap-4 mb-5">
             {/* Avatar */}
             <div
@@ -228,7 +228,7 @@ function ClientSelector({
               <a
                 key={link.href}
                 href={link.href}
-                className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-[#16161A] border border-[#2A2A30] hover:border-[rgba(240,180,41,0.3)] hover:bg-[rgba(240,180,41,0.04)] transition-all text-center group"
+                className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-[#131E35] border border-[rgba(99,120,255,0.12)] hover:border-[rgba(240,180,41,0.3)] hover:bg-[rgba(240,180,41,0.04)] transition-all text-center group"
               >
                 <span className="text-lg">{link.icon}</span>
                 <span className="text-[10px] text-slate-500 group-hover:text-slate-300 transition-colors leading-tight">{link.label}</span>
@@ -252,7 +252,7 @@ function ClientSelector({
               {savedClients.map((sc) => (
                 <div
                   key={sc.id}
-                  className="flex items-center gap-4 bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 hover:border-[rgba(240,180,41,0.3)] transition-all group"
+                  className="flex items-center gap-4 bg-[#0F1629] border border-[rgba(99,120,255,0.12)] rounded-2xl p-4 hover:border-[rgba(240,180,41,0.3)] transition-all group"
                 >
                   {/* Ícone + info */}
                   <button
@@ -323,7 +323,7 @@ function ClientSelector({
           <a
             href="/dashboard?new=1"
             className="w-full flex items-center justify-center gap-3 border border-dashed rounded-2xl p-5 transition-all hover:border-[rgba(240,180,41,0.3)] hover:text-slate-300"
-            style={{ borderColor: '#2A2A30', color: '#64748B', textDecoration: 'none', display: 'flex' }}
+            style={{ borderColor: 'rgba(99,120,255,0.12)', color: '#64748B', textDecoration: 'none', display: 'flex' }}
           >
             <span className="text-xl">+</span>
             <span className="text-sm font-semibold">Novo cliente</span>
@@ -729,7 +729,7 @@ export default function DashboardBody() {
           <p style={{ color: '#64748B', fontSize: 14, marginBottom: 24 }}>
             Disponível no plano <strong style={{ color: '#F0B429' }}>{req.name}</strong> — {req.price}
           </p>
-          <div style={{ background: '#0F1221', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 12, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
+          <div style={{ background: '#0F1629', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 12, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
             {info.items.map((item) => (
               <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', color: '#94A3B8', fontSize: 13 }}>
                 <span style={{ color: '#22C55E', fontSize: 12 }}>✓</span>
@@ -820,7 +820,7 @@ export default function DashboardBody() {
 
   // ── Aguardando Clerk carregar ──
   if (!isLoaded && !clerkTimeout) return (
-    <div style={{ minHeight: '100vh', background: '#080A14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: '#080D1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: '#64748B', fontSize: 14 }}>Carregando...</p>
     </div>
   )
@@ -828,7 +828,7 @@ export default function DashboardBody() {
   // ── Clerk falhou a inicializar em 5s — mostra tela de reconexão ──
   if (clerkTimeout && !isLoaded) {
     return (
-      <div className="min-h-screen bg-[#080A14] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#080D1A] flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
           <span className="font-display font-bold text-2xl block mb-6" style={{
             background: 'linear-gradient(135deg, #F0B429, #FFD166)',
@@ -844,7 +844,7 @@ export default function DashboardBody() {
             >
               Recarregar
             </button>
-            <a href="/sign-in" className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-[#2A2A30] text-slate-400 hover:text-white transition-colors">
+            <a href="/sign-in" className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-[rgba(99,120,255,0.12)] text-slate-400 hover:text-white transition-colors">
               Fazer login
             </a>
           </div>
@@ -862,7 +862,7 @@ export default function DashboardBody() {
   // ── Sem acesso (trial expirado + sem plano) ──
   if (isLoaded && !hasAccess) {
     return (
-      <div className="min-h-screen bg-[#080A14] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#080D1A] flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <span className="font-display font-bold text-3xl mb-6 block" style={{
             background: 'linear-gradient(135deg, #F0B429, #FFD166)',
@@ -870,7 +870,7 @@ export default function DashboardBody() {
           }}>
             ELYON
           </span>
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-8 mb-4">
+          <div className="bg-[#0F1629] border border-[rgba(99,120,255,0.12)] rounded-2xl p-8 mb-4">
             <div className="text-4xl mb-4">🔒</div>
             <h2 className="font-display text-2xl font-bold text-white mb-3">
               Seu período gratuito encerrou
@@ -898,7 +898,7 @@ export default function DashboardBody() {
             )}
             <a
               href="/api/auth/signout"
-              className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 border border-[#2A2A30] transition-colors flex items-center justify-center"
+              className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 border border-[rgba(99,120,255,0.12)] transition-colors flex items-center justify-center"
               style={{ textDecoration: 'none' }}
             >
               Sair da conta
@@ -948,7 +948,7 @@ export default function DashboardBody() {
   // ── Wizard ──
   if (view === 'wizard') {
     return (
-      <div className="min-h-screen bg-[#080A14] animate-fade-in">
+      <div className="min-h-screen bg-[#080D1A] animate-fade-in">
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-8">
           <div className="text-center mb-12">
             <span className="font-display font-bold text-3xl" style={{
@@ -978,7 +978,7 @@ export default function DashboardBody() {
   // ── Gerando estratégia ──
   if (isGenerating && clientData) {
     return (
-      <div className="min-h-screen bg-[#080A14] animate-fade-in pt-16">
+      <div className="min-h-screen bg-[#080D1A] animate-fade-in pt-16">
         <GeneratingScreen clientName={clientData.clientName} niche={clientData.niche} />
       </div>
     )
@@ -987,7 +987,7 @@ export default function DashboardBody() {
   // ── Erro ──
   if (genError) {
     return (
-      <div className="min-h-screen bg-[#080A14] flex items-center justify-center">
+      <div className="min-h-screen bg-[#080D1A] flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="text-4xl mb-4">⚠️</div>
           <h3 className="font-display text-xl font-bold text-white mb-2">Erro ao gerar estratégia</h3>
@@ -1003,7 +1003,7 @@ export default function DashboardBody() {
 
   // ── Dashboard completo ──
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#080A14', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', background: '#080D1A', overflow: 'hidden' }}>
       {showTermsModal && (
         <TermsModal onAccept={() => {
           localStorage.setItem('elyon_terms_v1', '1')
@@ -1030,7 +1030,7 @@ export default function DashboardBody() {
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(v => !v)}
         />
-        <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px', background: '#080A14' }}>
+        <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px', background: '#080D1A' }}>
           <OnboardingFlow onNavigate={setActiveTab} />
           <div key={activeTab} className="animate-fade-up" style={{ padding: '24px 28px 0' }}>
             {renderTab()}

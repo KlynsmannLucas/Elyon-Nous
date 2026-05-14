@@ -6,12 +6,39 @@ import { StatCard } from './StatCard'
 import { strategyData } from '@/lib/mockData'
 import { useAppStore } from '@/lib/store'
 
+const C = {
+  bg:       '#080D1A',
+  surface:  '#0F1629',
+  elevated: '#131E35',
+  border:   'rgba(99,120,255,0.1)',
+  purple:   '#7C3AED',
+  purpleL:  '#A78BFA',
+  green:    '#22C55E',
+  greenBg:  'rgba(34,197,94,0.1)',
+  red:      '#EF4444',
+  redBg:    'rgba(239,68,68,0.1)',
+  blue:     '#38BDF8',
+  blueBg:   'rgba(56,189,248,0.1)',
+  gold:     '#F59E0B',
+  goldBg:   'rgba(245,158,11,0.1)',
+  orange:   '#F97316',
+  text1:    '#F1F5F9',
+  text2:    'rgba(255,255,255,0.5)',
+  text3:    'rgba(255,255,255,0.25)',
+}
+
+const card: React.CSSProperties = {
+  background: C.surface,
+  border: `1px solid ${C.border}`,
+  borderRadius: 14,
+  padding: 20,
+}
+
 interface Props {
   strategy: Record<string, any>
   analysis: Record<string, any>
 }
 
-// ── Chips inline compactos ────────────────────────────────────────────────────
 function ChipList({ items, color, icon, limit = 4 }: { items: string[]; color: string; icon: string; limit?: number }) {
   const [showAll, setShowAll] = useState(false)
   if (!items?.length) return null
@@ -19,26 +46,30 @@ function ChipList({ items, color, icon, limit = 4 }: { items: string[]; color: s
   const extra   = items.length - limit
 
   return (
-    <div className="flex flex-wrap gap-1.5 items-center">
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
       {visible.map((item, i) => (
-        <span key={i}
-          className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full leading-tight"
-          style={{ background: `${color}10`, color, border: `1px solid ${color}25` }}>
-          <span className="flex-shrink-0">{icon}</span>
+        <span key={i} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          fontSize: 11, padding: '4px 10px', borderRadius: 20,
+          background: `${color}18`, color, border: `1px solid ${color}30`,
+        }}>
+          <span style={{ flexShrink: 0 }}>{icon}</span>
           {item}
         </span>
       ))}
       {!showAll && extra > 0 && (
-        <button onClick={() => setShowAll(true)}
-          className="text-[11px] px-2.5 py-1 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.04)', color: '#64748B', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <button onClick={() => setShowAll(true)} style={{
+          fontSize: 11, padding: '4px 10px', borderRadius: 20, cursor: 'pointer',
+          background: 'rgba(255,255,255,0.04)', color: C.text3, border: '1px solid rgba(255,255,255,0.08)',
+        }}>
           +{extra} mais
         </button>
       )}
       {showAll && items.length > limit && (
-        <button onClick={() => setShowAll(false)}
-          className="text-[11px] px-2.5 py-1 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.04)', color: '#64748B', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <button onClick={() => setShowAll(false)} style={{
+          fontSize: 11, padding: '4px 10px', borderRadius: 20, cursor: 'pointer',
+          background: 'rgba(255,255,255,0.04)', color: C.text3, border: '1px solid rgba(255,255,255,0.08)',
+        }}>
           ver menos
         </button>
       )}
@@ -46,31 +77,37 @@ function ChipList({ items, color, icon, limit = 4 }: { items: string[]; color: s
   )
 }
 
-// ── Card de fase do funil colapsável ──────────────────────────────────────────
 function FunnelStageCard({ label, icon, goal, tactics, color }: {
   label: string; icon: string; goal: string; tactics: string[]; color: string
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
-      <button onClick={() => setOpen(v => !v)}
-        className="w-full px-5 py-4 text-left hover:bg-[#16161A] transition-colors">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{icon}</span>
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color }}>{label}</span>
+    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+      <button onClick={() => setOpen(v => !v)} style={{
+        width: '100%', padding: '16px 20px', textAlign: 'left',
+        background: open ? `${color}08` : 'transparent', cursor: 'pointer', border: 'none',
+        transition: 'background 0.2s',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>{icon}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color }}>
+              {label}
+            </span>
           </div>
-          <span className="text-slate-600 text-xs">{open ? '▲' : '▼'}</span>
+          <span style={{ color: C.text3, fontSize: 10 }}>{open ? '▲' : '▼'}</span>
         </div>
-        <p className="text-xs text-slate-400 mt-2 leading-relaxed">{goal}</p>
+        <p style={{ fontSize: 12, color: C.text2, marginTop: 8, lineHeight: 1.6 }}>{goal}</p>
       </button>
       {open && (
-        <div className="px-5 pb-4 border-t border-[#1E1E24] pt-3">
-          <div className="flex flex-wrap gap-1.5">
+        <div style={{ padding: '12px 20px 16px', borderTop: `1px solid ${C.border}` }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {tactics.map((t, i) => (
-              <span key={i}
-                className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full"
-                style={{ background: `${color}10`, color, border: `1px solid ${color}25` }}>
+              <span key={i} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 11, padding: '4px 10px', borderRadius: 20,
+                background: `${color}15`, color, border: `1px solid ${color}30`,
+              }}>
                 → {t}
               </span>
             ))}
@@ -81,19 +118,17 @@ function FunnelStageCard({ label, icon, goal, tactics, color }: {
   )
 }
 
-// ── Badge de prioridade ───────────────────────────────────────────────────────
 function PriorityBadge({ priority }: { priority: string | number }) {
   const p = typeof priority === 'number' ? priority : Number(String(priority).match(/^\d+$/) ? priority : 2)
   const map = [
-    { label: '🥇 Alta',  color: '#F0B429' },
-    { label: '🥈 Média', color: '#94A3B8' },
-    { label: '🥉 Baixa', color: '#64748B' },
+    { label: '🥇 Alta',  color: C.gold },
+    { label: '🥈 Média', color: C.text2 },
+    { label: '🥉 Baixa', color: C.text3 },
   ]
   const { label, color } = map[(p - 1)] ?? map[1]
-  return <span className="text-xs font-semibold" style={{ color }}>{label}</span>
+  return <span style={{ fontSize: 12, fontWeight: 600, color }}>{label}</span>
 }
 
-// ── Pill de saúde de funil ────────────────────────────────────────────────────
 function FunnelHealthRow({ funnel_health }: { funnel_health: Record<string, any> }) {
   const [active, setActive] = useState<string | null>(null)
   const stages = [
@@ -101,27 +136,28 @@ function FunnelHealthRow({ funnel_health }: { funnel_health: Record<string, any>
     { key: 'mofu', label: 'MOFU',  short: 'Nutrição'  },
     { key: 'bofu', label: 'BOFU',  short: 'Conversão' },
   ]
-  const color  = (s: string) => s === 'ok' ? '#22C55E' : s === 'atenção' ? '#F0B429' : '#FF4D4D'
+  const color  = (s: string) => s === 'ok' ? C.green : s === 'atenção' ? C.gold : C.red
   const emoji  = (s: string) => s === 'ok' ? '🟢' : s === 'atenção' ? '🟡' : '🔴'
 
   return (
     <div>
-      <div className="flex gap-2 flex-wrap mb-3">
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         {stages.map(({ key, label, short }) => {
-          const s   = funnel_health[key]
+          const s = funnel_health[key]
           if (!s) return null
-          const c   = color(s.status)
+          const c = color(s.status)
           const isActive = active === key
           return (
             <button key={key} onClick={() => setActive(isActive ? null : key)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
               style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                cursor: 'pointer', transition: 'all 0.2s',
                 background: isActive ? `${c}18` : `${c}0D`,
-                color: c,
-                border: `1px solid ${isActive ? c : `${c}30`}`,
+                color: c, border: `1px solid ${isActive ? c : `${c}30`}`,
               }}>
               {emoji(s.status)} {label}: {s.status === 'ok' ? 'Saudável' : s.status === 'atenção' ? 'Atenção' : 'Crítico'}
-              <span className="text-[10px] opacity-60 ml-0.5">({short})</span>
+              <span style={{ fontSize: 10, opacity: 0.6 }}>({short})</span>
             </button>
           )
         })}
@@ -130,13 +166,15 @@ function FunnelHealthRow({ funnel_health }: { funnel_health: Record<string, any>
         const s = funnel_health[active]
         const c = color(s.status)
         return (
-          <div className="rounded-xl px-4 py-3 text-xs leading-relaxed animate-fade-up"
-            style={{ background: `${c}08`, border: `1px solid ${c}20` }}>
-            <span className="font-semibold" style={{ color: c }}>Problema: </span>
-            <span className="text-slate-400">{s.issue}</span>
-            <span className="mx-2 text-slate-600">·</span>
-            <span className="font-semibold" style={{ color: c }}>Ação: </span>
-            <span className="text-slate-300">{s.action}</span>
+          <div style={{
+            borderRadius: 10, padding: '12px 16px', fontSize: 12, lineHeight: 1.6,
+            background: `${c}08`, border: `1px solid ${c}20`,
+          }}>
+            <span style={{ fontWeight: 600, color: c }}>Problema: </span>
+            <span style={{ color: C.text2 }}>{s.issue}</span>
+            <span style={{ margin: '0 8px', color: C.text3 }}>·</span>
+            <span style={{ fontWeight: 600, color: c }}>Ação: </span>
+            <span style={{ color: C.text1 }}>{s.action}</span>
           </div>
         )
       })()}
@@ -144,51 +182,56 @@ function FunnelHealthRow({ funnel_health }: { funnel_health: Record<string, any>
   )
 }
 
-// ── Plano 90 dias com tabs ────────────────────────────────────────────────────
 function Plan90Days({ plan }: { plan: any[] }) {
   const [activeMonth, setActiveMonth] = useState(0)
   const [openWeek,   setOpenWeek]     = useState<number | null>(0)
   const month = plan[activeMonth]
   if (!month) return null
-
   const weeks = [month.week_1, month.week_2, month.week_3, month.week_4].filter(Boolean)
 
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
-      {/* Tab header */}
-      <div className="flex border-b border-[#2A2A30]">
+    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}` }}>
         {plan.map((m, i) => (
           <button key={i} onClick={() => { setActiveMonth(i); setOpenWeek(0) }}
-            className="flex-1 py-3 text-xs font-bold transition-all"
             style={{
-              color:      activeMonth === i ? '#F5A500' : '#475569',
-              background: activeMonth === i ? 'rgba(245,165,0,0.06)' : 'transparent',
-              borderBottom: activeMonth === i ? '2px solid #F5A500' : '2px solid transparent',
+              flex: 1, padding: '12px 0', fontSize: 12, fontWeight: 700,
+              cursor: 'pointer', border: 'none', transition: 'all 0.2s',
+              color:      activeMonth === i ? C.gold : C.text3,
+              background: activeMonth === i ? `${C.gold}08` : 'transparent',
+              borderBottom: activeMonth === i ? `2px solid ${C.gold}` : '2px solid transparent',
             }}>
             Mês {m.month}
           </button>
         ))}
       </div>
-      {/* Goal */}
-      <div className="px-5 py-3 border-b border-[#1E1E24]">
-        <span className="text-[10px] text-slate-600 uppercase tracking-wider">Objetivo · </span>
-        <span className="text-xs text-slate-300 font-semibold">{month.goal}</span>
+      <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}` }}>
+        <span style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Objetivo · </span>
+        <span style={{ fontSize: 12, color: C.text1, fontWeight: 600 }}>{month.goal}</span>
       </div>
-      {/* Semanas colapsáveis */}
-      <div className="divide-y divide-[#1E1E24]">
+      <div>
         {weeks.map((week: string[], wi: number) => (
-          <div key={wi}>
+          <div key={wi} style={{ borderBottom: wi < weeks.length - 1 ? `1px solid ${C.border}` : 'none' }}>
             <button onClick={() => setOpenWeek(openWeek === wi ? null : wi)}
-              className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-[#16161A] transition-colors text-left">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Semana {wi + 1}</span>
-              <span className="text-slate-600 text-[10px]">{openWeek === wi ? '▲' : `${week.length} ações ▼`}</span>
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 20px', cursor: 'pointer', border: 'none', background: 'transparent', textAlign: 'left',
+              }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: C.text2, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Semana {wi + 1}
+              </span>
+              <span style={{ color: C.text3, fontSize: 10 }}>
+                {openWeek === wi ? '▲' : `${week.length} ações ▼`}
+              </span>
             </button>
             {openWeek === wi && (
-              <div className="px-5 pb-3 flex flex-wrap gap-1.5 animate-fade-up">
+              <div style={{ padding: '0 20px 14px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {week.map((action: string, ai: number) => (
-                  <span key={ai}
-                    className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full"
-                    style={{ background: 'rgba(245,165,0,0.08)', color: '#F5A500', border: '1px solid rgba(245,165,0,0.2)' }}>
+                  <span key={ai} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    fontSize: 11, padding: '4px 10px', borderRadius: 20,
+                    background: `${C.gold}10`, color: C.gold, border: `1px solid ${C.gold}28`,
+                  }}>
                     · {action}
                   </span>
                 ))}
@@ -201,7 +244,6 @@ function Plan90Days({ plan }: { plan: any[] }) {
   )
 }
 
-// ── Ações prioritárias com limite + expandir ──────────────────────────────────
 function KeyActionsSection({ actions }: { actions: string[] }) {
   const [showAll, setShowAll] = useState(false)
   const limit   = 5
@@ -209,27 +251,46 @@ function KeyActionsSection({ actions }: { actions: string[] }) {
   const extra   = actions.length - limit
 
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-      <div className="font-display font-bold text-white mb-3">⚡ Ações Prioritárias</div>
-      <div className="flex flex-col gap-2">
+    <div style={card}>
+      <div style={{ fontWeight: 700, color: C.text1, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{
+          width: 28, height: 28, borderRadius: 8, background: `${C.gold}18`,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+        }}>⚡</span>
+        Ações Prioritárias
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {visible.map((action: string, i: number) => (
-          <div key={i} className="flex items-center gap-3 px-3 py-2.5 bg-[#16161A] rounded-xl">
-            <span className="w-5 h-5 rounded-full bg-[#F0B429] text-black text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '10px 14px', background: C.elevated, borderRadius: 10,
+          }}>
+            <span style={{
+              width: 22, height: 22, borderRadius: 6, background: `${C.gold}20`,
+              color: C.gold, fontSize: 10, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
               {i + 1}
             </span>
-            <span className="text-xs text-slate-300">{action}</span>
+            <span style={{ fontSize: 12, color: C.text1 }}>{action}</span>
           </div>
         ))}
       </div>
       {!showAll && extra > 0 && (
-        <button onClick={() => setShowAll(true)}
-          className="mt-3 w-full text-[11px] text-slate-500 hover:text-slate-300 transition-colors py-2 rounded-xl border border-[#2A2A30] hover:border-[#3A3A42]">
+        <button onClick={() => setShowAll(true)} style={{
+          marginTop: 10, width: '100%', fontSize: 11, color: C.text3,
+          padding: '8px 0', borderRadius: 10, cursor: 'pointer',
+          background: 'transparent', border: `1px solid ${C.border}`, transition: 'all 0.2s',
+        }}>
           Ver todas (+{extra} ações) ▼
         </button>
       )}
       {showAll && actions.length > limit && (
-        <button onClick={() => setShowAll(false)}
-          className="mt-3 w-full text-[11px] text-slate-500 hover:text-slate-300 transition-colors py-2 rounded-xl border border-[#2A2A30]">
+        <button onClick={() => setShowAll(false)} style={{
+          marginTop: 10, width: '100%', fontSize: 11, color: C.text3,
+          padding: '8px 0', borderRadius: 10, cursor: 'pointer',
+          background: 'transparent', border: `1px solid ${C.border}`,
+        }}>
           Ver menos ▲
         </button>
       )}
@@ -237,30 +298,38 @@ function KeyActionsSection({ actions }: { actions: string[] }) {
   )
 }
 
-// ── Seção colapsável genérica ─────────────────────────────────────────────────
-function CollapsibleSection({ title, defaultOpen = true, children }: {
-  title: React.ReactNode; defaultOpen?: boolean; children: React.ReactNode
+function CollapsibleSection({ title, icon, defaultOpen = true, children }: {
+  title: string; icon?: string; defaultOpen?: boolean; children: React.ReactNode
 }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
       <button onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#16161A] transition-colors text-left">
-        <div className="font-display font-bold text-white">{title}</div>
-        <span className="text-slate-600 text-xs ml-4 flex-shrink-0">{open ? '▲' : '▼'}</span>
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 20px', cursor: 'pointer', border: 'none', background: 'transparent', textAlign: 'left',
+        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {icon && (
+            <span style={{
+              width: 30, height: 30, borderRadius: 8, background: C.elevated,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+            }}>{icon}</span>
+          )}
+          <span style={{ fontWeight: 700, color: C.text1, fontSize: 14 }}>{title}</span>
+        </div>
+        <span style={{ color: C.text3, fontSize: 11, flexShrink: 0, marginLeft: 12 }}>{open ? '▲' : '▼'}</span>
       </button>
-      {open && <div className="px-5 pb-5">{children}</div>}
+      {open && <div style={{ padding: '0 20px 20px' }}>{children}</div>}
     </div>
   )
 }
 
-// ── Componente principal ──────────────────────────────────────────────────────
 export function TabStrategy({ strategy, analysis }: Props) {
   const { clientData, auditCache, connectedAccounts } = useAppStore()
   const hasRealData   = strategy && strategy.priority_ranking?.length > 0
   const hasGrowthData = strategy?.growth_diagnosis || strategy?.funnel_strategy
 
-  // Verifica se há dados reais do Meta Ads no cache de auditoria
   const cacheKey        = clientData?.clientName || ''
   const latestAudit     = auditCache[cacheKey]?.[0]?.audit
   const realMetrics     = latestAudit?._realMetrics
@@ -283,16 +352,18 @@ export function TabStrategy({ strategy, analysis }: Props) {
   const aiInsight = hasRealData ? strategy.recommendation : strategyData.aiInsight
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Banner de qualidade dos dados */}
       {hasRealMetrics ? (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
-          style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
-          <span className="w-2 h-2 rounded-full bg-[#22C55E] flex-shrink-0" style={{ boxShadow: '0 0 6px #22C55E' }} />
-          <div className="flex-1">
-            <span className="text-[#22C55E] font-semibold text-xs">Estratégia baseada em dados reais do Meta Ads</span>
-            <span className="text-slate-500 text-xs ml-2">
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12,
+          background: C.greenBg, border: `1px solid rgba(34,197,94,0.25)`,
+        }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.green, flexShrink: 0, boxShadow: `0 0 6px ${C.green}` }} />
+          <div style={{ flex: 1 }}>
+            <span style={{ color: C.green, fontWeight: 600, fontSize: 12 }}>Estratégia baseada em dados reais do Meta Ads</span>
+            <span style={{ color: C.text3, fontSize: 12, marginLeft: 8 }}>
               · Gasto: R${realMetrics.totalSpend?.toLocaleString('pt-BR') || '0'}
               {realMetrics.totalLeads > 0 && ` · ${realMetrics.totalLeads} leads`}
               {realMetrics.avgCPL && ` · CPL real: R$${realMetrics.avgCPL}`}
@@ -300,78 +371,95 @@ export function TabStrategy({ strategy, analysis }: Props) {
           </div>
         </div>
       ) : metaConnected ? (
-        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm"
-          style={{ background: 'rgba(240,180,41,0.06)', border: '1px solid rgba(240,180,41,0.2)' }}>
-          <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-[#F0B429] flex-shrink-0" />
-            <span className="text-[#F0B429] font-semibold text-xs">Estratégia baseada em estimativas do nicho</span>
-            <span className="text-slate-500 text-xs">· Execute a análise Meta Ads para usar dados reais</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          padding: '10px 16px', borderRadius: 12,
+          background: C.goldBg, border: `1px solid rgba(245,158,11,0.25)`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.gold, flexShrink: 0 }} />
+            <span style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}>Estratégia baseada em estimativas do nicho</span>
+            <span style={{ color: C.text3, fontSize: 12 }}>· Execute a análise Meta Ads para usar dados reais</span>
           </div>
-          <a href="#anuncios" className="text-xs text-[#F0B429] underline hover:no-underline flex-shrink-0">
+          <a href="#anuncios" style={{ fontSize: 12, color: C.gold, flexShrink: 0 }}>
             Analisar conta →
           </a>
         </div>
       ) : (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
-          style={{ background: 'rgba(100,116,139,0.06)', border: '1px solid rgba(100,116,139,0.15)' }}>
-          <span className="w-2 h-2 rounded-full bg-slate-500 flex-shrink-0" />
-          <span className="text-slate-500 text-xs">Estratégia baseada em estimativas do nicho · Conecte o Meta Ads para calibrar com dados reais</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12,
+          background: 'rgba(100,116,139,0.06)', border: '1px solid rgba(100,116,139,0.15)',
+        }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.text3, flexShrink: 0 }} />
+          <span style={{ color: C.text3, fontSize: 12 }}>
+            Estratégia baseada em estimativas do nicho · Conecte o Meta Ads para calibrar com dados reais
+          </span>
         </div>
       )}
 
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Budget total"  value={totalBudget} color="#F0B429" />
-        <StatCard label="Canais ativos" value={String(channels.length)} color="#22C55E" />
-        <StatCard label="Score Growth"  value={hasRealData ? `${strategy.intelligence_score}/100` : '—'} color="#A78BFA" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        <StatCard label="Budget total"  value={totalBudget} color={C.gold} />
+        <StatCard label="Canais ativos" value={String(channels.length)} color={C.green} />
+        <StatCard label="Score Growth"  value={hasRealData ? `${strategy.intelligence_score}/100` : '—'} color={C.purpleL} />
       </div>
 
-      {/* Insight principal — compacto */}
+      {/* Insight principal */}
       {aiInsight && (
-        <div className="rounded-2xl px-5 py-4 flex items-start gap-3" style={{
-          background: 'linear-gradient(135deg, rgba(240,180,41,0.07), rgba(240,180,41,0.02))',
-          border: '1px solid rgba(240,180,41,0.2)',
+        <div style={{
+          borderRadius: 14, padding: '16px 20px',
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))',
+          border: `1px solid rgba(245,158,11,0.22)`,
         }}>
-          <span className="text-xl flex-shrink-0">🧠</span>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            background: `${C.gold}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+          }}>🧠</div>
           <div>
-            <div className="text-[10px] text-[#F0B429] font-semibold uppercase tracking-widest mb-1">Head of Growth</div>
-            <p className="text-slate-300 text-xs leading-relaxed">{aiInsight}</p>
+            <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+              Head of Growth
+            </div>
+            <p style={{ fontSize: 13, color: C.text1, lineHeight: 1.65, margin: 0 }}>{aiInsight}</p>
           </div>
         </div>
       )}
 
-      {/* ── Diagnóstico de Crescimento ──────────────────────────────────── */}
+      {/* Diagnóstico de Crescimento */}
       {hasGrowthData && strategy.growth_diagnosis && (
-        <CollapsibleSection title="🔍 Diagnóstico de Crescimento">
-
-          {/* Problema principal */}
-          <div className="mb-4 p-3 rounded-xl flex items-start gap-2"
-            style={{ background: 'rgba(255,77,77,0.06)', border: '1px solid rgba(255,77,77,0.18)' }}>
-            <span className="text-base flex-shrink-0">🚨</span>
-            <p className="text-xs text-slate-300 leading-relaxed">{strategy.growth_diagnosis.main_problem}</p>
+        <CollapsibleSection title="Diagnóstico de Crescimento" icon="🔍">
+          <div style={{
+            marginBottom: 14, padding: '10px 14px', borderRadius: 10,
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+            background: C.redBg, border: `1px solid rgba(239,68,68,0.2)`,
+          }}>
+            <span style={{ fontSize: 16, flexShrink: 0 }}>🚨</span>
+            <p style={{ fontSize: 12, color: C.text1, lineHeight: 1.6, margin: 0 }}>
+              {strategy.growth_diagnosis.main_problem}
+            </p>
           </div>
-
-          <div className="space-y-3">
-            {/* Desperdícios */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {strategy.growth_diagnosis.waste_analysis?.length > 0 && (
               <div>
-                <div className="text-[10px] font-semibold text-[#F0B429] uppercase tracking-wider mb-2">💸 Desperdícios</div>
-                <ChipList items={strategy.growth_diagnosis.waste_analysis} color="#F0B429" icon="!" limit={4} />
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                  💸 Desperdícios
+                </div>
+                <ChipList items={strategy.growth_diagnosis.waste_analysis} color={C.gold} icon="!" limit={4} />
               </div>
             )}
-
-            {/* Gargalos */}
             {strategy.growth_diagnosis.growth_blockers?.length > 0 && (
               <div>
-                <div className="text-[10px] font-semibold text-[#FF4D4D] uppercase tracking-wider mb-2">🚧 Gargalos</div>
-                <ChipList items={strategy.growth_diagnosis.growth_blockers} color="#FF4D4D" icon="→" limit={4} />
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.red, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                  🚧 Gargalos
+                </div>
+                <ChipList items={strategy.growth_diagnosis.growth_blockers} color={C.red} icon="→" limit={4} />
               </div>
             )}
-
-            {/* Saúde do Funil — pills clicáveis */}
             {strategy.growth_diagnosis.funnel_health && (
               <div>
-                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Saúde do Funil</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                  Saúde do Funil
+                </div>
                 <FunnelHealthRow funnel_health={strategy.growth_diagnosis.funnel_health} />
               </div>
             )}
@@ -379,130 +467,158 @@ export function TabStrategy({ strategy, analysis }: Props) {
         </CollapsibleSection>
       )}
 
-      {/* ── Estratégia de Funil (colapsável por fase) ───────────────────── */}
+      {/* Estratégia de Funil */}
       {hasGrowthData && strategy.funnel_strategy && (
         <div>
-          <div className="font-display font-bold text-white mb-3 flex items-center gap-2">
-            🎯 Estratégia de Funil
-            <span className="text-[10px] text-slate-600 font-normal">clique na fase para ver táticas</span>
+          <div style={{ fontWeight: 700, color: C.text1, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              width: 30, height: 30, borderRadius: 8, background: C.elevated,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+            }}>🎯</span>
+            <span style={{ fontSize: 14 }}>Estratégia de Funil</span>
+            <span style={{ fontSize: 10, color: C.text3, fontWeight: 400 }}>clique na fase para ver táticas</span>
           </div>
-          <div className="grid md:grid-cols-3 gap-3">
-            <FunnelStageCard label="TOFU — Atração"    icon="📣" color="#38BDF8"
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <FunnelStageCard label="TOFU — Atração"   icon="📣" color={C.blue}
               goal={strategy.funnel_strategy.tofu?.goal    || ''} tactics={strategy.funnel_strategy.tofu?.tactics    || []} />
-            <FunnelStageCard label="MOFU — Nutrição"   icon="💬" color="#A78BFA"
+            <FunnelStageCard label="MOFU — Nutrição"  icon="💬" color={C.purpleL}
               goal={strategy.funnel_strategy.mofu?.goal    || ''} tactics={strategy.funnel_strategy.mofu?.tactics    || []} />
-            <FunnelStageCard label="BOFU — Conversão"  icon="💰" color="#22C55E"
+            <FunnelStageCard label="BOFU — Conversão" icon="💰" color={C.green}
               goal={strategy.funnel_strategy.bofu?.goal    || ''} tactics={strategy.funnel_strategy.bofu?.tactics    || []} />
           </div>
         </div>
       )}
 
-      {/* ── Distribuição por Canal ─────────────────────────────────────── */}
-      <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#2A2A30] flex items-center justify-between">
+      {/* Distribuição por Canal */}
+      <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+        <div style={{
+          padding: '16px 20px', borderBottom: `1px solid ${C.border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
           <div>
-            <h3 className="font-display font-bold text-white">Distribuição por Canal</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">Budget, CPL estimado e prioridade</p>
+            <h3 style={{ fontWeight: 700, color: C.text1, fontSize: 14, margin: 0 }}>Distribuição por Canal</h3>
+            <p style={{ fontSize: 11, color: C.text3, marginTop: 4, marginBottom: 0 }}>Budget, CPL estimado e prioridade</p>
           </div>
         </div>
-        <div className="grid grid-cols-4 px-5 py-2.5 text-[10px] text-slate-600 uppercase tracking-wider border-b border-[#1E1E24]">
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+          padding: '10px 20px',
+          fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em',
+          borderBottom: `1px solid ${C.border}`,
+        }}>
           <span>Canal</span><span>Prioridade</span><span>Budget/mês</span><span>CPL est.</span>
         </div>
         {channels.map((ch: any, i: number) => (
-          <div key={ch.name}
-            className="grid grid-cols-4 px-5 py-3 items-center border-b border-[#1E1E24] last:border-0 hover:bg-[#16161A] transition-colors animate-fade-up"
-            style={{ animationDelay: `${i * 0.08}s` }}>
+          <div key={ch.name} style={{
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+            padding: '12px 20px', alignItems: 'center',
+            borderBottom: i < channels.length - 1 ? `1px solid ${C.border}` : 'none',
+            transition: 'background 0.15s',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.background = C.elevated)}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
             <div>
-              <div className="font-semibold text-white text-sm">{ch.name}</div>
+              <div style={{ fontWeight: 600, color: C.text1, fontSize: 13 }}>{ch.name}</div>
               {hasRealData && ch.rationale && (
-                <div className="text-[10px] text-slate-600 mt-0.5 max-w-[160px] truncate" title={ch.rationale}>{ch.rationale}</div>
+                <div style={{ fontSize: 10, color: C.text3, marginTop: 2, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  title={ch.rationale}>{ch.rationale}</div>
               )}
             </div>
             <PriorityBadge priority={ch.priority} />
             <div>
-              <span className="text-[#F0B429] font-bold text-sm">{ch.budget}</span>
-              {hasRealData && ch.budgetPct && <span className="text-[11px] text-slate-600 ml-1">({ch.budgetPct}%)</span>}
+              <span style={{ color: C.gold, fontWeight: 700, fontSize: 13 }}>{ch.budget}</span>
+              {hasRealData && ch.budgetPct && <span style={{ fontSize: 11, color: C.text3, marginLeft: 4 }}>({ch.budgetPct}%)</span>}
             </div>
-            <span className="text-slate-300 text-sm">{ch.cpl}</span>
+            <span style={{ color: C.text1, fontSize: 13 }}>{ch.cpl}</span>
           </div>
         ))}
       </div>
 
-      {/* ── Otimização e Escala ────────────────────────────────────────── */}
+      {/* Otimização e Escala */}
       {hasGrowthData && strategy.optimization_scale && (
-        <CollapsibleSection title="📈 Otimização e Escala">
-          <div className="grid md:grid-cols-3 gap-5">
+        <CollapsibleSection title="Otimização e Escala" icon="📈">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             <div>
-              <div className="text-[10px] font-semibold text-[#22C55E] uppercase tracking-wider mb-2">🚀 Escalar</div>
-              <ChipList items={strategy.optimization_scale.scale_actions || []} color="#22C55E" icon="↑" />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.green, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>🚀 Escalar</div>
+              <ChipList items={strategy.optimization_scale.scale_actions || []} color={C.green} icon="↑" />
             </div>
             <div>
-              <div className="text-[10px] font-semibold text-[#FF4D4D] uppercase tracking-wider mb-2">✂️ Cortar</div>
-              <ChipList items={strategy.optimization_scale.cut_immediately || []} color="#FF4D4D" icon="✕" />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.red, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>✂️ Cortar</div>
+              <ChipList items={strategy.optimization_scale.cut_immediately || []} color={C.red} icon="✕" />
             </div>
             <div>
-              <div className="text-[10px] font-semibold text-[#A78BFA] uppercase tracking-wider mb-2">🧪 Testes A/B</div>
-              <ChipList items={strategy.optimization_scale.ab_tests || []} color="#A78BFA" icon="⚡" />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.purpleL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>🧪 Testes A/B</div>
+              <ChipList items={strategy.optimization_scale.ab_tests || []} color={C.purpleL} icon="⚡" />
             </div>
           </div>
           {strategy.optimization_scale.cpl_target && (
-            <div className="mt-4 inline-flex items-center gap-2 text-xs text-slate-400 bg-[#16161A] rounded-lg px-4 py-2">
-              <span className="text-[#F0B429]">🎯</span>
-              CPL alvo: <strong className="text-white">R${strategy.optimization_scale.cpl_target}</strong>
+            <div style={{
+              marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 8,
+              fontSize: 12, color: C.text2,
+              background: C.elevated, borderRadius: 10, padding: '8px 16px',
+            }}>
+              <span style={{ color: C.gold }}>🎯</span>
+              CPL alvo: <strong style={{ color: C.text1 }}>R${strategy.optimization_scale.cpl_target}</strong>
             </div>
           )}
         </CollapsibleSection>
       )}
 
-      {/* ── Posicionamento de Marca ────────────────────────────────────── */}
+      {/* Posicionamento de Marca */}
       {hasGrowthData && strategy.brand_positioning && (
-        <CollapsibleSection title="🏆 Posicionamento de Marca" defaultOpen={false}>
-          <div className="grid md:grid-cols-3 gap-5">
+        <CollapsibleSection title="Posicionamento de Marca" icon="🏆" defaultOpen={false}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             <div>
-              <div className="text-[10px] font-semibold text-[#F0B429] uppercase tracking-wider mb-2">Autoridade</div>
-              <ChipList items={strategy.brand_positioning.authority_strategies || []} color="#F0B429" icon="→" />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Autoridade</div>
+              <ChipList items={strategy.brand_positioning.authority_strategies || []} color={C.gold} icon="→" />
             </div>
             <div>
-              <div className="text-[10px] font-semibold text-[#38BDF8] uppercase tracking-wider mb-2">Comunicação</div>
-              <ChipList items={strategy.brand_positioning.communication_adjustments || []} color="#38BDF8" icon="→" />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.blue, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Comunicação</div>
+              <ChipList items={strategy.brand_positioning.communication_adjustments || []} color={C.blue} icon="→" />
             </div>
             <div>
-              <div className="text-[10px] font-semibold text-[#A78BFA] uppercase tracking-wider mb-2">Percepção de Valor</div>
-              <ChipList items={strategy.brand_positioning.value_perception || []} color="#A78BFA" icon="→" />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.purpleL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Percepção de Valor</div>
+              <ChipList items={strategy.brand_positioning.value_perception || []} color={C.purpleL} icon="→" />
             </div>
           </div>
         </CollapsibleSection>
       )}
 
-      {/* ── Visão 360° ────────────────────────────────────────────────── */}
+      {/* Visão 360° */}
       {hasGrowthData && strategy.vision_360 && (
-        <CollapsibleSection title="🌐 Visão 360°" defaultOpen={false}>
-          <div className="grid md:grid-cols-3 gap-5">
+        <CollapsibleSection title="Visão 360°" icon="🌐" defaultOpen={false}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             <div>
-              <div className="text-[10px] font-semibold text-[#22C55E] uppercase tracking-wider mb-2">Site / Conversão</div>
-              <ChipList items={strategy.vision_360.website_improvements || []} color="#22C55E" icon="→" />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.green, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Site / Conversão</div>
+              <ChipList items={strategy.vision_360.website_improvements || []} color={C.green} icon="→" />
             </div>
             <div>
-              <div className="text-[10px] font-semibold text-[#F0B429] uppercase tracking-wider mb-2">Marketing + Vendas</div>
-              <ChipList items={strategy.vision_360.sales_alignment || []} color="#F0B429" icon="→" />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Marketing + Vendas</div>
+              <ChipList items={strategy.vision_360.sales_alignment || []} color={C.gold} icon="→" />
             </div>
             <div>
-              <div className="text-[10px] font-semibold text-[#38BDF8] uppercase tracking-wider mb-2">Fora dos Anúncios</div>
-              <ChipList items={strategy.vision_360.off_ads_opportunities || []} color="#38BDF8" icon="→" />
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.blue, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Fora dos Anúncios</div>
+              <ChipList items={strategy.vision_360.off_ads_opportunities || []} color={C.blue} icon="→" />
             </div>
           </div>
         </CollapsibleSection>
       )}
 
-      {/* ── Plano 90 dias com tabs ─────────────────────────────────────── */}
+      {/* Plano 90 dias */}
       {hasRealData && strategy.plan_90_days?.length > 0 && (
         <div>
-          <div className="font-display font-bold text-white mb-3">📅 Plano de 90 Dias</div>
+          <div style={{ fontWeight: 700, color: C.text1, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              width: 30, height: 30, borderRadius: 8, background: C.elevated,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+            }}>📅</span>
+            <span style={{ fontSize: 14 }}>Plano de 90 Dias</span>
+          </div>
           <Plan90Days plan={strategy.plan_90_days} />
         </div>
       )}
 
-      {/* ── Ações prioritárias ────────────────────────────────────────── */}
+      {/* Ações prioritárias */}
       {hasRealData && strategy.key_actions?.length > 0 && (
         <KeyActionsSection actions={strategy.key_actions} />
       )}
