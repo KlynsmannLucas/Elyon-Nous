@@ -354,6 +354,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Período de avaliação encerrado.' }, { status: 402 })
     }
 
+    const { checkAndDeductCredits } = await import('@/lib/credits')
+    const creditResult = await checkAndDeductCredits(userId, plan || 'free', 'audit')
+    if (!creditResult.allowed) {
+      return NextResponse.json({ success: false, error: creditResult.error }, { status: 402 })
+    }
+
     const body = await req.json()
     const {
       clientName: _cn,

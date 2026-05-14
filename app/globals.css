@@ -4,30 +4,30 @@
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 4px; height: 4px; }
-::-webkit-scrollbar-track  { background: #030305; }
-::-webkit-scrollbar-thumb  { background: #2A2A30; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #3A3A42; }
+::-webkit-scrollbar-track  { background: #080A14; }
+::-webkit-scrollbar-thumb  { background: #1E2035; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #2A2D4A; }
 
 /* ── Text selection ──────────────────────────────────────────────────────── */
-::selection { background: rgba(240,180,41,0.25); color: #FFD166; }
+::selection { background: rgba(124,58,237,0.3); color: #C4B5FD; }
 
 /* ── Base ────────────────────────────────────────────────────────────────── */
 html { scroll-behavior: smooth; }
 
 body {
-  background-color: #030305;
+  background-color: #080A14;
   color: #E2E8F0;
   font-family: var(--font-dm-sans), sans-serif;
   -webkit-font-smoothing: antialiased;
   background-image:
-    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
-  background-size: 44px 44px;
+    linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 
 /* ── Focus ring ──────────────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid rgba(245,165,0,0.5);
+  outline: 2px solid rgba(124,58,237,0.5);
   outline-offset: 2px;
 }
 
@@ -95,27 +95,27 @@ body {
 
 /* ── Card base ───────────────────────────────────────────────────────────── */
 .card {
-  background: #0C0C12;
+  background: #0F1221;
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 16px;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .card:hover {
-  border-color: rgba(255,255,255,0.1);
+  border-color: rgba(124,58,237,0.2);
 }
 
 /* ── Interactive card ────────────────────────────────────────────────────── */
 .card-interactive {
-  background: #0C0C12;
+  background: #0F1221;
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 16px;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
   cursor: pointer;
 }
 .card-interactive:hover {
-  border-color: rgba(255,255,255,0.12);
+  border-color: rgba(124,58,237,0.25);
   transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(124,58,237,0.1);
 }
 
 /* ── Hover lift ──────────────────────────────────────────────────────────── */
@@ -138,6 +138,16 @@ body {
 .gold-glow   { box-shadow: 0 0 24px rgba(240,180,41,0.2); }
 .gold-glow-sm{ box-shadow: 0 0 12px rgba(240,180,41,0.15); }
 
+/* ── Purple utilities ────────────────────────────────────────────────────── */
+.text-purple-gradient {
+  background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.purple-glow    { box-shadow: 0 0 24px rgba(124,58,237,0.25); }
+.purple-glow-sm { box-shadow: 0 0 12px rgba(124,58,237,0.18); }
+
 /* ── Sidebar transition ──────────────────────────────────────────────────── */
 .sidebar-transition {
   transition: width 0.22s cubic-bezier(0.4,0,0.2,1);
@@ -148,9 +158,9 @@ body {
 
 /* ── Glass surface ───────────────────────────────────────────────────────── */
 .glass {
-  background: rgba(12,12,18,0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(8,10,20,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 /* ── Status dot ──────────────────────────────────────────────────────────── */
@@ -170,7 +180,7 @@ body {
 
 /* ── Input base ──────────────────────────────────────────────────────────── */
 .input-base {
-  background: #111118;
+  background: #0F1221;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
   color: #E2E8F0;
@@ -180,7 +190,27 @@ body {
   outline: none;
 }
 .input-base:focus {
-  border-color: rgba(245,165,0,0.4);
+  border-color: rgba(124,58,237,0.4);
+}
+
+/* ── Gradient border card ────────────────────────────────────────────────── */
+.card-purple-glow {
+  background: #0F1221;
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 16px;
+  box-shadow: 0 0 0 1px rgba(124,58,237,0.05) inset;
+}
+
+/* ── Sidebar nav item ────────────────────────────────────────────────────── */
+.nav-item {
+  transition: all 0.12s ease;
+  border-radius: 8px;
+}
+.nav-item:hover { background: rgba(124,58,237,0.06); }
+.nav-item.active {
+  background: rgba(124,58,237,0.15);
+  color: #A78BFA;
+  border: 1px solid rgba(124,58,237,0.25);
 }
 
 /* ── Text clamping ───────────────────────────────────────────────────────── */

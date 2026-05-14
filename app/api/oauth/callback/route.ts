@@ -32,7 +32,10 @@ export async function GET(req: NextRequest) {
     let accountName = ''
     let allAccounts: { id: string; name: string }[] = []
 
-    const appOrigin = new URL(req.url).origin
+    let appOrigin = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/$/, '')
+    if (!appOrigin.startsWith('http://') && !appOrigin.startsWith('https://')) {
+      appOrigin = appOrigin ? `https://${appOrigin}` : new URL(req.url).origin
+    }
 
     // ── META ────────────────────────────────────────────────────────────────────
     if (platform === 'meta') {

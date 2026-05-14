@@ -25,6 +25,7 @@ import { TabAssets }       from '@/components/dashboard/TabAssets'
 import { TabConcorrentes } from '@/components/dashboard/TabConcorrentes'
 import { TabCampanha }     from '@/components/dashboard/TabCampanha'
 import { TabRelatorios }   from '@/components/dashboard/TabRelatorios'
+import { TabFinanceiro }   from '@/components/dashboard/TabFinanceiro'
 import { TabCRO }              from '@/components/dashboard/TabCRO'
 import { TabBudgetAllocator } from '@/components/dashboard/TabBudgetAllocator'
 import { TabChannelMix }     from '@/components/dashboard/TabChannelMix'
@@ -167,7 +168,7 @@ function ClientSelector({
   ]
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] animate-fade-in">
+    <div className="min-h-screen bg-[#080A14] animate-fade-in">
       <div className="max-w-2xl mx-auto px-6 pt-10 pb-8">
 
         {/* Header: Logo + logout */}
@@ -728,7 +729,7 @@ export default function DashboardBody() {
           <p style={{ color: '#64748B', fontSize: 14, marginBottom: 24 }}>
             Disponível no plano <strong style={{ color: '#F0B429' }}>{req.name}</strong> — {req.price}
           </p>
-          <div style={{ background: '#111114', border: '1px solid #2A2A30', borderRadius: 12, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
+          <div style={{ background: '#0F1221', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 12, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
             {info.items.map((item) => (
               <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', color: '#94A3B8', fontSize: 13 }}>
                 <span style={{ color: '#22C55E', fontSize: 12 }}>✓</span>
@@ -794,6 +795,7 @@ export default function DashboardBody() {
       case 'concorrentes':  return wrap('Radar de Concorrentes', <TabConcorrentes clientData={clientData} />)
       case 'campanha':      return wrap('Campanha Campeã',       <TabCampanha />)
       case 'relatorios':    return wrap('Relatórios',            <TabRelatorios />)
+      case 'financeiro':    return wrap('Painel Financeiro',     <TabFinanceiro />)
     }
   }
 
@@ -818,7 +820,7 @@ export default function DashboardBody() {
 
   // ── Aguardando Clerk carregar ──
   if (!isLoaded && !clerkTimeout) return (
-    <div style={{ minHeight: '100vh', background: '#0A0A0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: '#080A14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: '#64748B', fontSize: 14 }}>Carregando...</p>
     </div>
   )
@@ -826,7 +828,7 @@ export default function DashboardBody() {
   // ── Clerk falhou a inicializar em 5s — mostra tela de reconexão ──
   if (clerkTimeout && !isLoaded) {
     return (
-      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#080A14] flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
           <span className="font-display font-bold text-2xl block mb-6" style={{
             background: 'linear-gradient(135deg, #F0B429, #FFD166)',
@@ -860,7 +862,7 @@ export default function DashboardBody() {
   // ── Sem acesso (trial expirado + sem plano) ──
   if (isLoaded && !hasAccess) {
     return (
-      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#080A14] flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <span className="font-display font-bold text-3xl mb-6 block" style={{
             background: 'linear-gradient(135deg, #F0B429, #FFD166)',
@@ -946,7 +948,7 @@ export default function DashboardBody() {
   // ── Wizard ──
   if (view === 'wizard') {
     return (
-      <div className="min-h-screen bg-[#0A0A0B] animate-fade-in">
+      <div className="min-h-screen bg-[#080A14] animate-fade-in">
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-8">
           <div className="text-center mb-12">
             <span className="font-display font-bold text-3xl" style={{
@@ -976,7 +978,7 @@ export default function DashboardBody() {
   // ── Gerando estratégia ──
   if (isGenerating && clientData) {
     return (
-      <div className="min-h-screen bg-[#0A0A0B] animate-fade-in pt-16">
+      <div className="min-h-screen bg-[#080A14] animate-fade-in pt-16">
         <GeneratingScreen clientName={clientData.clientName} niche={clientData.niche} />
       </div>
     )
@@ -985,7 +987,7 @@ export default function DashboardBody() {
   // ── Erro ──
   if (genError) {
     return (
-      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+      <div className="min-h-screen bg-[#080A14] flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="text-4xl mb-4">⚠️</div>
           <h3 className="font-display text-xl font-bold text-white mb-2">Erro ao gerar estratégia</h3>
@@ -1001,7 +1003,7 @@ export default function DashboardBody() {
 
   // ── Dashboard completo ──
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#030305', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', background: '#080A14', overflow: 'hidden' }}>
       {showTermsModal && (
         <TermsModal onAccept={() => {
           localStorage.setItem('elyon_terms_v1', '1')
@@ -1028,9 +1030,9 @@ export default function DashboardBody() {
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(v => !v)}
         />
-        <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px' }}>
+        <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px', background: '#080A14' }}>
           <OnboardingFlow onNavigate={setActiveTab} />
-          <div key={activeTab} className="animate-fade-up" style={{ padding: '0 28px 0' }}>
+          <div key={activeTab} className="animate-fade-up" style={{ padding: '24px 28px 0' }}>
             {renderTab()}
           </div>
         </main>

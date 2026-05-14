@@ -1,19 +1,279 @@
-// components/dashboard/TabOverview.tsx — Overview ao vivo com projeções por nicho
+// components/dashboard/TabOverview.tsx — Layout TrafficBrain AI
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { StatCard } from './StatCard'
 import { RevenueChart } from './RevenueChart'
-import { FunnelChart } from './FunnelChart'
 import { getBenchmark, computeNicheProjection } from '@/lib/niche_benchmarks'
 import { overviewKPIs, channelCards } from '@/lib/mockData'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const C = {
+  surface:  '#0F1221',
+  elevated: '#141628',
+  border:   'rgba(255,255,255,0.06)',
+  borderMd: 'rgba(255,255,255,0.1)',
+  purple:   '#7C3AED',
+  purpleL:  '#A78BFA',
+  purpleD:  'rgba(124,58,237,0.12)',
+  purpleB:  'rgba(124,58,237,0.22)',
+  gold:     '#F5A500',
+  green:    '#22C55E',
+  red:      '#EF4444',
+  blue:     '#38BDF8',
+  text1:    '#F1F5F9',
+  text2:    '#94A3B8',
+  text3:    '#64748B',
+}
+
 interface Props {
   strategy: Record<string, any>
   analysis: Record<string, any>
   clientData: ClientData | null
+}
+
+// ── Sparkline component ───────────────────────────────────────────────────────
+function Sparkline({ data, color, width = 80, height = 32 }: { data: number[]; color: string; width?: number; height?: number }) {
+  if (!data || data.length < 2) return null
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const range = max - min || 1
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width
+    const y = height - ((v - min) / range) * (height - 6) - 3
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  }).join(' ')
+  // Area fill path
+  const first = `0,${height}`
+  const last  = `${width},${height}`
+  const area  = `${first} ${pts} ${last}`
+  return (
+    <svg width={width} height={height} style={{ overflow: 'visible', display: 'block' }}>
+      <defs>
+        <linearGradient id={`sg-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={area} fill={`url(#sg-${color.replace('#','')})`} />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5"
+        strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// ── Seeded sparkline data generator ──────────────────────────────────────────
+function genSparkline(base: number, seed: string, len = 14): number[] {
+  let h = 0
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) - h) + seed.charCodeAt(i)
+  const rand = () => { h = (h * 1664525 + 1013904223) & 0xffffffff; return (h & 0x7fffffff) / 0x7fffffff }
+  const data: number[] = []
+  let v = base * 0.7
+  for (let i = 0; i < len; i++) {
+    v += (rand() - 0.42) * base * 0.12
+    v = Math.max(base * 0.3, Math.min(base * 1.6, v))
+    data.push(Math.round(v))
+  }
+  data[data.length - 1] = base
+  return data
+}
+
+// ── KPI metric card ───────────────────────────────────────────────────────────
+function KpiCard({ label, value, sub, color, trend, sparkSeed, sparkBase, icon }: {
+  label: string; value: string; sub: string; color: string
+  trend?: number; sparkSeed: string; sparkBase: number; icon: React.ReactNode
+}) {
+  const sparkData = useMemo(() => genSparkline(sparkBase || 100, sparkSeed), [sparkBase, sparkSeed])
+  const isPos = trend == null ? null : trend >= 0
+  return (
+    <div style={{
+      background: C.surface, border: `1px solid ${C.border}`,
+      borderRadius: '14px', padding: '18px 18px 14px',
+      display: 'flex', flexDirection: 'column', gap: '10px',
+      transition: 'border-color 0.15s, box-shadow 0.15s',
+      cursor: 'default',
+    }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.purpleB; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(124,58,237,0.1)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+    >
+      {/* Top row: icon + trend */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{
+          width: '32px', height: '32px', borderRadius: '9px',
+          background: `${color}18`, border: `1px solid ${color}30`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color, flexShrink: 0,
+        }}>
+          {icon}
+        </div>
+        {trend != null && (
+          <span style={{
+            fontSize: '11px', fontWeight: 700,
+            color: isPos ? C.green : C.red,
+            background: isPos ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+            border: `1px solid ${isPos ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+            borderRadius: '6px', padding: '2px 7px',
+          }}>
+            {isPos ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
+          </span>
+        )}
+      </div>
+
+      {/* Value */}
+      <div>
+        <div style={{ fontSize: '24px', fontWeight: 800, color: C.text1, letterSpacing: '-0.03em', lineHeight: 1 }}>
+          {value}
+        </div>
+        <div style={{ fontSize: '11px', color: C.text3, marginTop: '4px', fontWeight: 500 }}>
+          {label}
+        </div>
+      </div>
+
+      {/* Sparkline + sub */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px' }}>
+        <div style={{ fontSize: '10px', color: C.text3, flex: 1, minWidth: 0, lineHeight: 1.4 }}>
+          {sub}
+        </div>
+        <Sparkline data={sparkData} color={color} width={72} height={28} />
+      </div>
+    </div>
+  )
+}
+
+// ── AI Score gauge ────────────────────────────────────────────────────────────
+function ScoreGauge({ score, label, description }: { score: number; label: string; description: string }) {
+  const R = 52
+  const CIRC = 2 * Math.PI * R
+  const dashOffset = CIRC - (score / 100) * CIRC * 0.75
+  const color = score >= 70 ? C.green : score >= 45 ? C.gold : C.red
+  const bgColor = score >= 70 ? 'rgba(34,197,94,0.08)' : score >= 45 ? 'rgba(245,165,0,0.08)' : 'rgba(239,68,68,0.08)'
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+      <div style={{ position: 'relative' }}>
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          {/* Bg track */}
+          <circle cx="65" cy="65" r={R} fill="none" stroke={C.elevated} strokeWidth="10"
+            strokeDasharray={`${CIRC * 0.75} ${CIRC}`}
+            strokeLinecap="round"
+            transform="rotate(135 65 65)"
+          />
+          {/* Progress */}
+          <circle cx="65" cy="65" r={R} fill="none" stroke={color} strokeWidth="10"
+            strokeDasharray={`${CIRC * 0.75 * score / 100} ${CIRC}`}
+            strokeLinecap="round"
+            transform="rotate(135 65 65)"
+            style={{ transition: 'stroke-dasharray 1.2s ease', filter: `drop-shadow(0 0 6px ${color}60)` }}
+          />
+          {/* Score number */}
+          <text x="65" y="60" textAnchor="middle" fill={C.text1} fontSize="28" fontWeight="800"
+            fontFamily="var(--font-dm-sans)">{score}</text>
+          <text x="65" y="76" textAnchor="middle" fill={C.text3} fontSize="11" fontWeight="500">/100</text>
+        </svg>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          fontSize: '12px', fontWeight: 700, color,
+          background: bgColor, border: `1px solid ${color}30`,
+          borderRadius: '6px', padding: '3px 10px', display: 'inline-block', marginBottom: '6px',
+        }}>{label}</div>
+        <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5, maxWidth: '160px', margin: '0 auto' }}>{description}</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Visual funnel ─────────────────────────────────────────────────────────────
+function FunnelViz({ stages }: { stages: { label: string; value: number; pct: string; color: string }[] }) {
+  const max = stages[0]?.value || 1
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {stages.map((s, i) => {
+        const w = Math.max(35, (s.value / max) * 100)
+        return (
+          <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Bar */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <div style={{
+                width: `${w}%`, height: '32px', borderRadius: '6px',
+                background: `${s.color}22`, border: `1px solid ${s.color}40`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: s.color }}>
+                  {s.value >= 1000 ? `${(s.value/1000).toFixed(1)}k` : s.value.toLocaleString('pt-BR')}
+                </span>
+              </div>
+            </div>
+            {/* Label + pct */}
+            <div style={{ minWidth: '110px', textAlign: 'right' }}>
+              <div style={{ fontSize: '11px', color: C.text2, fontWeight: 600 }}>{s.label}</div>
+              <div style={{ fontSize: '10px', color: C.text3 }}>{s.pct}</div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Insight card ──────────────────────────────────────────────────────────────
+function InsightCard({ icon, title, desc, color, action }: {
+  icon: string; title: string; desc: string; color: string; action?: string
+}) {
+  return (
+    <div style={{
+      background: C.surface, border: `1px solid ${C.border}`,
+      borderRadius: '12px', padding: '14px',
+      display: 'flex', flexDirection: 'column', gap: '8px',
+      transition: 'all 0.15s', cursor: 'default', minWidth: '0',
+    }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${color}40`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${color}15` }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+    >
+      <div style={{
+        width: '34px', height: '34px', borderRadius: '9px',
+        background: `${color}15`, border: `1px solid ${color}30`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '16px', flexShrink: 0,
+      }}>{icon}</div>
+      <div>
+        <div style={{ fontSize: '12px', fontWeight: 700, color, marginBottom: '4px' }}>{title}</div>
+        <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5 }}>{desc}</div>
+      </div>
+      {action && (
+        <button style={{
+          marginTop: 'auto', padding: '5px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
+          background: `${color}10`, border: `1px solid ${color}25`, color, cursor: 'pointer',
+          transition: 'all 0.15s', textAlign: 'left',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = `${color}20` }}
+          onMouseLeave={e => { e.currentTarget.style.background = `${color}10` }}
+        >Ver detalhes →</button>
+      )}
+    </div>
+  )
+}
+
+// ── Section header ────────────────────────────────────────────────────────────
+function SectionHeader({ title, action }: { title: string; action?: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+      <h3 style={{ fontSize: '14px', fontWeight: 700, color: C.text1, margin: 0 }}>{title}</h3>
+      {action && <span style={{ fontSize: '11px', color: C.purpleL, cursor: 'pointer', fontWeight: 500 }}>{action}</span>}
+    </div>
+  )
+}
+
+// ── Channel icon ──────────────────────────────────────────────────────────────
+function getChannelIcon(ch: string) {
+  const m: Record<string, string> = {
+    'Meta': '📘', 'Facebook': '📘', 'Instagram': '📸', 'Google Search': '🔍',
+    'Google Shopping': '🛒', 'Google PMAX': '🎯', 'YouTube': '▶️', 'TikTok': '🎵',
+    'LinkedIn': '💼', 'Orgânico': '🌿', 'Email': '📧', 'WhatsApp': '💬',
+    'Pinterest': '📌', 'Google Maps': '📍',
+  }
+  for (const [k, v] of Object.entries(m)) if (ch.toLowerCase().includes(k.toLowerCase())) return v
+  return '📊'
 }
 
 function timeAgo(iso: string) {
@@ -27,249 +287,13 @@ function timeAgo(iso: string) {
   return 'agora'
 }
 
-type AlertType = 'critical' | 'warning' | 'opportunity' | 'info'
-interface SmartAlert { type: AlertType; icon: string; title: string; description: string }
-
-const ALERT_STYLES: Record<AlertType, { color: string; bg: string; border: string }> = {
-  critical:    { color: '#FF4D4D', bg: 'rgba(255,77,77,0.06)',    border: 'rgba(255,77,77,0.2)' },
-  warning:     { color: '#F0B429', bg: 'rgba(240,180,41,0.06)',   border: 'rgba(240,180,41,0.2)' },
-  opportunity: { color: '#22C55E', bg: 'rgba(34,197,94,0.06)',    border: 'rgba(34,197,94,0.2)' },
-  info:        { color: '#38BDF8', bg: 'rgba(56,189,248,0.06)',   border: 'rgba(56,189,248,0.2)' },
-}
-
-function SmartAlertItem({ alert, onDismiss }: { alert: SmartAlert; onDismiss: () => void }) {
-  const s = ALERT_STYLES[alert.type]
-  return (
-    <div className="rounded-xl px-4 py-3 flex items-start gap-3 animate-fade-up"
-      style={{ background: s.bg, border: `1px solid ${s.border}` }}>
-      <span className="text-base flex-shrink-0 mt-0.5">{alert.icon}</span>
-      <div className="flex-1 min-w-0">
-        <div className="text-xs font-bold" style={{ color: s.color }}>{alert.title}</div>
-        <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{alert.description}</p>
-      </div>
-      <button onClick={onDismiss} className="text-slate-600 hover:text-slate-400 transition-colors flex-shrink-0 mt-0.5 text-xs">✕</button>
-    </div>
-  )
-}
-
-function DataSourceBadge({ source }: { source: 'real' | 'estimated' }) {
-  return source === 'real' ? (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-      style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)' }}>
-      <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
-      Dados reais
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-      style={{ background: 'rgba(240,180,41,0.08)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.2)' }}>
-      ~ Estimado
-    </span>
-  )
-}
-
-function getChannelIcon(channel: string): string {
-  const icons: Record<string, string> = {
-    'Meta Ads': '📘', 'Facebook': '📘', 'Instagram': '📸',
-    'Google Search': '🔍', 'Google Shopping': '🛒', 'Google PMAX': '🎯',
-    'YouTube': '▶️', 'TikTok': '🎵', 'LinkedIn': '💼',
-    'Orgânico': '🌿', 'SEO': '🌿', 'Email': '📧',
-    'WhatsApp': '💬', 'Pinterest': '📌', 'Google Maps': '📍',
-  }
-  for (const [key, icon] of Object.entries(icons)) {
-    if (channel.toLowerCase().includes(key.toLowerCase())) return icon
-  }
-  return '📊'
-}
-
-function BudgetStatusBadge({ status, budget, recommended }: {
-  status: 'abaixo' | 'mínimo' | 'ideal'
-  budget: number
-  recommended: number
-}) {
-  const config = {
-    abaixo: { color: '#FF4D4D', bg: 'rgba(255,77,77,0.1)', icon: '⚠️', label: 'Abaixo do mínimo' },
-    mínimo: { color: '#F0B429', bg: 'rgba(240,180,41,0.1)', icon: '⚡', label: 'Budget mínimo' },
-    ideal:  { color: '#22C55E', bg: 'rgba(34,197,94,0.1)',  icon: '✅', label: 'Budget ideal' },
-  }
-  const c = config[status]
-
-  if (status === 'ideal') return null // não mostra badge se estiver bom
-
-  return (
-    <div className="rounded-2xl p-4" style={{ background: c.bg, border: `1px solid ${c.color}33` }}>
-      <div className="flex items-start gap-3">
-        <span className="text-xl">{c.icon}</span>
-        <div className="flex-1">
-          <div className="text-sm font-semibold" style={{ color: c.color }}>
-            {c.icon} {c.label}
-          </div>
-          <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-            Seu budget atual <strong className="text-white">R${budget.toLocaleString('pt-BR')}</strong> está{' '}
-            {status === 'abaixo' ? 'abaixo do mínimo recomendado' : 'no patamar mínimo'} para este nicho.{' '}
-            O investimento ideal para resultados consistentes é{' '}
-            <strong className="text-white">R${recommended.toLocaleString('pt-BR')}/mês</strong>.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Pacing de Budget ─────────────────────────────────────────────────────────
-// spend = 30-day rolling API spend; budget = monthly wizard config
-function BudgetPacing({ spend, budget, onUpdateBudget }: { spend: number; budget: number; onUpdateBudget?: (v: number) => void }) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState('')
-  const today = new Date()
-  const day = today.getDate()
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
-  const monthPct = Math.round((day / daysInMonth) * 100)
-
-  // Normalize 30-day rolling to this-calendar-month estimate
-  const dailyRate          = spend / 30
-  const estimatedThisMonth = Math.round(dailyRate * day)
-  const projectedFullMonth = Math.round(dailyRate * daysInMonth)
-
-  const fmt = (v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v.toLocaleString('pt-BR')}`
-
-  const spendPct = budget > 0 ? Math.round((estimatedThisMonth / budget) * 100) : 0
-  const diff     = spendPct - monthPct
-
-  // Budget mismatch: projected month > 2× configured budget
-  const budgetMismatch = projectedFullMonth > budget * 2
-
-  const status = budgetMismatch ? 'mismatch'
-    : diff > 12  ? 'adiantado'
-    : diff < -15 ? 'atrasado'
-    : 'no_ritmo'
-
-  const color = status === 'no_ritmo'  ? '#22C55E'
-    : status === 'adiantado' ? '#F0B429'
-    : '#FF4D4D'
-
-  const label = status === 'mismatch'  ? '⚠ Budget desatualizado'
-    : status === 'no_ritmo'  ? '✓ No ritmo'
-    : status === 'adiantado' ? '▲ Adiantado'
-    : '▼ Atrasado'
-
-  const desc = status === 'mismatch'
-    ? `Investimento real (${fmt(projectedFullMonth)}/mês estimado) supera o budget configurado (${fmt(budget)}/mês). Atualize o budget do cliente para uma análise correta.`
-    : status === 'no_ritmo'
-    ? `${Math.abs(diff)}% ${diff >= 0 ? 'acima' : 'abaixo'} do esperado para o dia ${day} — saudável`
-    : status === 'adiantado'
-    ? `Gastando ${diff}% mais rápido que o previsto — monitore CPL e frequência`
-    : `${Math.abs(diff)}% abaixo do ritmo — verifique campanhas pausadas ou com baixo entrega`
-
-  return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 animate-fade-up">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Pacing do Budget</div>
-          <div className="text-sm font-semibold text-white">Dia {day} de {daysInMonth} · {monthPct}% do mês decorrido</div>
-        </div>
-        <span className="text-xs font-bold px-3 py-1.5 rounded-full"
-          style={{ color, background: `${color}15`, border: `1px solid ${color}30` }}>{label}</span>
-      </div>
-
-      {/* Barra dupla: mês elapsed vs spend estimado */}
-      <div className="mb-4 space-y-2">
-        <div>
-          <div className="flex justify-between text-[10px] text-slate-600 mb-1">
-            <span>Mês decorrido</span><span>{monthPct}%</span>
-          </div>
-          <div className="h-1.5 bg-[#1E1E24] rounded-full overflow-hidden">
-            <div className="h-full bg-[#2A2A30] rounded-full transition-all" style={{ width: `${monthPct}%` }} />
-          </div>
-        </div>
-        <div>
-          <div className="flex justify-between text-[10px] text-slate-600 mb-1">
-            <span>Budget estimado consumido (mês atual)</span>
-            <span>{Math.min(spendPct, 999)}%</span>
-          </div>
-          <div className="h-2 bg-[#1E1E24] rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${Math.min(spendPct, 100)}%`, background: color }} />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 mb-3">
-        <div>
-          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Taxa diária</div>
-          <div className="font-display text-lg font-bold text-[#F0B429]">{fmt(Math.round(dailyRate))}/dia</div>
-          <div className="text-[10px] text-slate-600">média últimos 30d</div>
-        </div>
-        <div>
-          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Estimado este mês</div>
-          <div className="font-display text-lg font-bold text-slate-300">{fmt(estimatedThisMonth)}</div>
-          <div className="text-[10px] text-slate-600">até dia {day}</div>
-        </div>
-        <div>
-          <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Projeção fim mês</div>
-          <div className="font-display text-lg font-bold"
-            style={{ color: projectedFullMonth > budget * 1.1 ? '#FF4D4D' : projectedFullMonth < budget * 0.88 ? '#F0B429' : '#22C55E' }}>
-            {fmt(projectedFullMonth)}
-          </div>
-          <div className="text-[10px] text-slate-600">no ritmo atual</div>
-        </div>
-      </div>
-
-      <div className="text-[11px] rounded-lg px-3 py-2"
-        style={{ background: `${color}08`, border: `1px solid ${color}18`, color }}>
-        {desc}
-      </div>
-
-      <div className="mt-2 text-[10px] text-slate-600 text-center flex items-center justify-center gap-2">
-        Baseado em média dos últimos 30 dias · Budget configurado: {fmt(budget)}/mês
-        {onUpdateBudget && (
-          editing ? (
-            <span className="flex items-center gap-1">
-              <span className="text-slate-500">R$</span>
-              <input
-                autoFocus
-                type="number"
-                min={0}
-                defaultValue={budget}
-                onChange={e => setDraft(e.target.value)}
-                className="w-24 bg-[#1E1E24] border border-[#3A3A44] rounded px-1.5 py-0.5 text-[11px] text-white outline-none focus:border-[#6C63FF]"
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    const v = parseInt(draft, 10)
-                    if (!isNaN(v) && v > 0) onUpdateBudget(v)
-                    setEditing(false)
-                  }
-                  if (e.key === 'Escape') setEditing(false)
-                }}
-              />
-              <button
-                className="text-[#22C55E] hover:text-green-400 font-bold"
-                onClick={() => {
-                  const v = parseInt(draft, 10)
-                  if (!isNaN(v) && v > 0) onUpdateBudget(v)
-                  setEditing(false)
-                }}
-              >✓</button>
-              <button className="text-slate-500 hover:text-white" onClick={() => setEditing(false)}>✕</button>
-            </span>
-          ) : (
-            <button
-              className="text-[10px] text-[#6C63FF] hover:text-purple-400 underline underline-offset-2"
-              onClick={() => { setDraft(String(budget)); setEditing(true) }}
-            >Atualizar budget</button>
-          )
-        )}
-      </div>
-    </div>
-  )
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
 export function TabOverview({ strategy, analysis, clientData }: Props) {
   const niche  = clientData?.niche || ''
   const budget = clientData?.budget || 0
   const bench  = getBenchmark(niche)
   const proj   = bench && budget > 0 ? computeNicheProjection(bench, budget) : null
 
-  // Dados reais da auditoria mais recente
   const auditCache        = useAppStore(s => s.auditCache)
   const strategyData      = useAppStore(s => s.strategyData)
   const competitorStore   = useAppStore(s => s.competitors)
@@ -279,47 +303,12 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
   const freshBenchmarks   = useAppStore(s => s.freshBenchmarks)
   const setFreshBenchmark = useAppStore(s => s.setFreshBenchmark)
 
-  // Fresh benchmark via Tavily — válido por 24h
-  const FRESH_MAX_AGE = 24 * 60 * 60 * 1000
-  const nicheKey   = niche.toLowerCase()
-  const freshBench = freshBenchmarks[nicheKey]
-  const isFreshValid = !!(freshBench &&
-    (Date.now() - new Date(freshBench.fetchedAt).getTime()) < FRESH_MAX_AGE)
+  const [refreshing, setRefreshing]   = useState(false)
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<number>>(new Set())
 
-  const [refreshing, setRefreshing] = useState(false)
-  const [refreshError, setRefreshError] = useState('')
-
-  async function handleRefreshBenchmark() {
-    if (!niche || refreshing) return
-    setRefreshing(true)
-    setRefreshError('')
-    try {
-      const res = await fetch('/api/benchmarks/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ niche }),
-      })
-      const data = await res.json()
-      if (!res.ok || data.error) throw new Error(data.error || 'Erro ao buscar dados')
-      setFreshBenchmark(nicheKey, data)
-    } catch (err: any) {
-      setRefreshError(err.message || 'Falha na busca')
-    } finally {
-      setRefreshing(false)
-    }
-  }
-
-  const handleUpdateBudget = (newBudget: number) => {
-    if (!clientData) return
-    setClientData({ ...clientData, budget: newBudget })
-    saveCurrentClient()
-  }
-  const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
-
-  const key = clientData?.clientName || ''
+  const key          = clientData?.clientName || ''
   const auditHistory = auditCache[key]
-  const latestAudit  = Array.isArray(auditHistory)
-    ? auditHistory[0]?.audit
+  const latestAudit  = Array.isArray(auditHistory) ? auditHistory[0]?.audit
     : (auditHistory && !Array.isArray(auditHistory) ? auditHistory : null)
   const rm = latestAudit?._realMetrics as {
     totalSpend: number; totalLeads: number; totalRevenue: number
@@ -330,613 +319,536 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
     spendDelta: number | null; leadsDelta: number | null; cplDelta: number | null
   } | undefined
 
-  // Tem dados reais úteis quando há spend E leads reais
-  const hasRealData = !!(rm && rm.totalSpend > 0 && rm.totalLeads > 0)
-
+  const hasRealData  = !!(rm && rm.totalSpend > 0 && rm.totalLeads > 0)
   const hasAIStrategy = strategy && strategy.priority_ranking?.length > 0
-
-  // ── Sistema vivo ──────────────────────────────────────────────────────────────
-  const [dismissedAlerts, setDismissedAlerts] = useState<number[]>([])
-
+  const metaAccount   = connectedAccounts.find(a => a.platform === 'meta')
   const lastAuditTime = Array.isArray(auditHistory) && auditHistory[0]?.createdAt
     ? new Date(auditHistory[0].createdAt).getTime() : null
 
-  // Auto-refresh silencioso: se Meta conectado e auditoria > 30 min, busca dados básicos
-  useEffect(() => {
-    if (!metaAccount?.accessToken || !metaAccount?.accountId || !clientData) return
-    const isStale = !lastAuditTime || Date.now() - lastAuditTime > 30 * 60 * 1000
-    if (!isStale) return
-    const controller = new AbortController()
-    fetch('/api/ads-data/meta', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: metaAccount.accessToken, accountId: metaAccount.accountId }),
-      signal: controller.signal,
-    }).catch(() => {})
-    return () => controller.abort()
-  }, [metaAccount?.accountId, clientData?.clientName, lastAuditTime])
+  // ── Health score (same logic as DashboardBody) ───────────────────────────
+  const healthScore = useMemo(() => {
+    let s = 30
+    if (strategyData) { s += 25; if (Date.now() - new Date(strategyData.generatedAt || '').getTime() < 30*86400000) s += 10 }
+    if (latestAudit) {
+      s += 20
+      if (rm) s += 10
+      const criticals = (latestAudit.alerts || []).filter((a: any) => a.type === 'critical').length
+      s = Math.max(0, s - criticals * 5)
+    }
+    return Math.min(100, s)
+  }, [strategyData, latestAudit, rm])
 
-  const smartAlerts = useMemo<SmartAlert[]>(() => {
-    const alerts: SmartAlert[] = []
-    if (rm?.avgCPL && bench?.kpi_thresholds.cpl_bad && rm.avgCPL > bench.kpi_thresholds.cpl_bad) {
-      alerts.push({ type: 'critical', icon: '🚨', title: `CPL acima do limite: R$${rm.avgCPL}`, description: `Benchmark do nicho indica CPL crítico acima de R$${bench.kpi_thresholds.cpl_bad}. Revise audiências, criativos e landing page.` })
-    }
-    if (strategyData?.generatedAt) {
-      const days = (Date.now() - new Date(strategyData.generatedAt).getTime()) / 86400000
-      if (days > 30) alerts.push({ type: 'warning', icon: '⚡', title: `Estratégia com ${Math.round(days)} dias`, description: 'Mercados competitivos mudam rápido. Gere uma nova estratégia com os dados mais recentes.' })
-    }
-    if (lastAuditTime && Date.now() - lastAuditTime > 7 * 86400000) {
-      alerts.push({ type: 'info', icon: '🔄', title: 'Auditoria há 7+ dias', description: 'Execute uma nova auditoria em Análise Profunda para ter CPL, ROAS e campanhas atualizados.' })
-    }
-    if (!metaAccount && !rm) {
-      alerts.push({ type: 'opportunity', icon: '🔗', title: 'Conecte sua conta de anúncios', description: 'Conecte Meta Ads ou Google Ads em Anúncios IA para substituir estimativas por dados reais.' })
-    }
-    return alerts
-  }, [rm, bench, strategyData, lastAuditTime, metaAccount])
+  const scoreLabel = healthScore >= 70 ? 'Boa performance!' : healthScore >= 45 ? 'Atenção necessária' : 'Crítico'
+  const scoreDesc  = healthScore >= 70
+    ? 'Existem oportunidades para otimizar e escalar seus resultados.'
+    : healthScore >= 45
+    ? 'Revise as campanhas e execute as ações recomendadas.'
+    : 'Execute a auditoria e implemente as ações críticas urgentes.'
 
-  const visibleAlerts = smartAlerts.filter((_, i) => !dismissedAlerts.includes(i))
-
-  const pulseItems = useMemo(() => {
-    const items: { icon: string; title: string; description: string; time: string; color: string }[] = []
-    if (strategyData?.generatedAt) {
-      items.push({ icon: '⚡', title: 'Estratégia gerada', description: `Plano para ${clientData?.clientName || 'cliente'}`, time: strategyData.generatedAt, color: '#F0B429' })
-    }
-    const latestEntry = Array.isArray(auditHistory) ? auditHistory[0] : null
-    if (latestEntry?.createdAt) {
-      items.push({ icon: '🔍', title: 'Auditoria realizada', description: 'Dados reais de campanhas sincronizados', time: latestEntry.createdAt, color: '#22C55E' })
-    }
-    for (const c of (competitorStore[key] || []).filter(c => c.analyzedAt)) {
-      items.push({ icon: '🎯', title: `Concorrente: ${c.name}`, description: 'Radar de inteligência competitiva atualizado', time: c.analyzedAt!, color: '#818CF8' })
-    }
-    const metaConn = connectedAccounts.find(a => a.platform === 'meta')
-    if (metaConn) items.push({ icon: '🔗', title: 'Meta Ads conectado', description: metaConn.accountName || 'Conta vinculada', time: metaConn.connectedAt, color: '#1877F2' })
-    const googleConn = connectedAccounts.find(a => a.platform === 'google')
-    if (googleConn) items.push({ icon: '🔗', title: 'Google Ads conectado', description: googleConn.accountName || 'Conta vinculada', time: googleConn.connectedAt, color: '#34A853' })
-    return items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5)
-  }, [strategyData, auditHistory, competitorStore, connectedAccounts, key, clientData])
-
-  // KPIs: prioridade → dados reais da auditoria → IA → benchmark → mock
-  const dataSource: 'real' | 'estimated' = hasRealData ? 'real' : 'estimated'
-
-  const kpis = (() => {
-    // ── 1. Dados reais da auditoria ──────────────────────────────────────────
+  // ── KPI cards data ───────────────────────────────────────────────────────
+  const kpiCards = (() => {
     if (hasRealData && rm) {
       const cplColor = bench
-        ? rm.avgCPL! <= bench.kpi_thresholds.cpl_good ? '#22C55E'
-          : rm.avgCPL! <= bench.kpi_thresholds.cpl_bad ? '#F0B429' : '#FF4D4D'
-        : '#F0B429'
-      const roasColor = bench && rm.avgROAS
-        ? rm.avgROAS >= bench.kpi_thresholds.roas_good ? '#22C55E'
-          : rm.avgROAS >= bench.kpi_thresholds.roas_good * 0.7 ? '#F0B429' : '#FF4D4D'
-        : '#64748B'
+        ? rm.avgCPL! <= bench.kpi_thresholds.cpl_good ? C.green
+          : rm.avgCPL! <= bench.kpi_thresholds.cpl_bad ? C.gold : C.red
+        : C.gold
+      const roasColor = rm.avgROAS && bench
+        ? rm.avgROAS >= bench.kpi_thresholds.roas_good ? C.green
+          : rm.avgROAS >= bench.kpi_thresholds.roas_good * 0.7 ? C.gold : C.red
+        : C.blue
       return [
         {
-          label: 'Investimento Real',
-          value: rm.totalSpend >= 1000
-            ? `R$${(rm.totalSpend / 1000).toFixed(1)}k`
-            : `R$${rm.totalSpend}`,
-          sub: `${rm.campaignCount} campanhas · fonte: ${rm.dataSource}`,
-          color: '#F0B429',
-          trend: prevTotals?.spendDelta ?? undefined,
+          label: 'Investimento Real', value: rm.totalSpend >= 1000 ? `R$${(rm.totalSpend/1000).toFixed(1)}k` : `R$${rm.totalSpend}`,
+          sub: `${rm.campaignCount} campanhas · ${rm.dataSource}`, color: C.gold,
+          trend: prevTotals?.spendDelta ?? undefined, base: rm.totalSpend,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
         },
         {
-          label: 'Leads Reais',
-          value: rm.totalLeads.toLocaleString('pt-BR'),
+          label: 'Leads Reais', value: rm.totalLeads.toLocaleString('pt-BR'),
           sub: bench ? `Benchmark CPL: R$${bench.cpl_min}–${bench.cpl_max}` : 'Dados da auditoria',
-          color: '#22C55E',
-          trend: prevTotals?.leadsDelta ?? undefined,
+          color: C.green, trend: prevTotals?.leadsDelta ?? undefined, base: rm.totalLeads,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
         },
         {
-          label: rm.avgROAS ? 'ROAS Real' : 'CTR Médio',
-          value: rm.avgROAS ? `${rm.avgROAS}×` : rm.avgCTR ? `${rm.avgCTR}%` : '—',
-          sub: rm.avgROAS
-            ? bench ? `Meta nicho: ${bench.kpi_thresholds.roas_good}×` : 'Dados de conversão'
-            : 'Cliques / Impressões',
-          color: rm.avgROAS ? roasColor : '#A78BFA',
-          trend: undefined,
+          label: 'ROAS Real', value: rm.avgROAS ? `${rm.avgROAS}×` : '—',
+          sub: bench ? `Meta nicho: ${bench.kpi_thresholds.roas_good}×` : 'Retorno sobre investimento',
+          color: roasColor, trend: undefined, base: (rm.avgROAS ?? 2) * 10,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
         },
         {
-          label: 'CPL Real',
-          value: rm.avgCPL ? `R$${rm.avgCPL}` : '—',
-          sub: bench ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}` : 'CPL médio da conta',
-          color: cplColor,
-          trend: prevTotals?.cplDelta != null ? -prevTotals.cplDelta : undefined,
+          label: 'CPL Real', value: rm.avgCPL ? `R$${rm.avgCPL}` : '—',
+          sub: bench ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}` : 'Custo por lead',
+          color: cplColor, trend: prevTotals?.cplDelta != null ? -prevTotals.cplDelta : undefined, base: rm.avgCPL ?? 100,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
+        },
+        {
+          label: 'CTR Médio', value: rm.avgCTR ? `${rm.avgCTR}%` : '—',
+          sub: 'Cliques / Impressões da conta', color: C.blue, trend: undefined, base: (rm.avgCTR ?? 2) * 50,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+        },
+        {
+          label: 'Score IA', value: `${healthScore}/100`,
+          sub: scoreLabel, color: healthScore >= 70 ? C.green : healthScore >= 45 ? C.gold : C.red,
+          trend: undefined, base: healthScore,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
         },
       ]
     }
-
-    // ── 2. Benchmark calculado (projeção) ────────────────────────────────────
-    if (proj) {
-      const roasColor =
-        proj.roasStatus === 'excelente' ? '#22C55E' :
-        proj.roasStatus === 'bom'       ? '#F0B429' : '#FF4D4D'
-      const cplColor =
-        proj.cplAvg <= bench!.kpi_thresholds.cpl_good ? '#22C55E' :
-        proj.cplAvg <= bench!.kpi_thresholds.cpl_bad  ? '#F0B429' : '#FF4D4D'
+    if (proj && bench) {
       return [
         {
-          label: 'Receita Estimada',
-          value: `R$${Math.round(proj.revenueMonth / 1000)}k`,
-          sub: bench!.avg_ticket > 10000
-            ? `Projeção steady-state (mês 4-6) · ciclo longo`
-            : `R$${Math.round(proj.revenueMin / 1000)}k – R$${Math.round(proj.revenueMax / 1000)}k/mês`,
-          color: '#F0B429',
+          label: 'Receita Est./mês', value: `R$${Math.round(proj.revenueMonth/1000)}k`,
+          sub: `R$${Math.round(proj.revenueMin/1000)}k–R$${Math.round(proj.revenueMax/1000)}k/mês`,
+          color: C.gold, trend: undefined, base: proj.revenueMonth,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
         },
         {
-          label: 'Leads / mês',
-          value: `~${proj.leadsMonth.toLocaleString('pt-BR')}`,
-          sub: `CPL médio R$${Math.round(proj.adjustedCPLAvg)} · benchmark R$${bench!.cpl_min}–${bench!.cpl_max}`,
-          color: '#22C55E',
+          label: 'Leads/mês Est.', value: `~${proj.leadsMonth.toLocaleString('pt-BR')}`,
+          sub: `CPL médio R$${Math.round(proj.adjustedCPLAvg)}`, color: C.green,
+          trend: undefined, base: proj.leadsMonth,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>,
         },
         {
-          label: 'ROAS Estimado',
-          value: proj.roasIsLtvBased ? `${proj.roasLtv}×` : `${proj.roas}×`,
-          sub: proj.roasIsLtvBased
-            ? `Inclui LTV · campanha direta: ${proj.roas}× · Meta: ${bench!.kpi_thresholds.roas_good}×`
-            : `Meta do nicho: ${bench!.kpi_thresholds.roas_good}×`,
-          color: roasColor,
+          label: 'ROAS Estimado', value: `${proj.roas}×`,
+          sub: `Meta do nicho: ${bench.kpi_thresholds.roas_good}×`, color: C.blue,
+          trend: undefined, base: proj.roas * 10,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
         },
         {
-          label: 'CPL Médio',
-          value: `R$${Math.round(proj.cplAvg)}`,
-          sub: `Benchmark: R$${bench!.cpl_min}–${bench!.cpl_max}`,
-          color: cplColor,
+          label: 'CPL Médio Est.', value: `R$${Math.round(proj.cplAvg)}`,
+          sub: `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}`,
+          color: proj.cplAvg <= bench.kpi_thresholds.cpl_good ? C.green : proj.cplAvg <= bench.kpi_thresholds.cpl_bad ? C.gold : C.red,
+          trend: undefined, base: proj.cplAvg,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
+        },
+        {
+          label: 'LTV por Cliente', value: `R$${Math.round(proj.ltv/1000)}k`,
+          sub: `${bench.ltv_multiplier}× ticket médio`, color: C.purpleL,
+          trend: undefined, base: proj.ltv,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+        },
+        {
+          label: 'Score IA', value: `${healthScore}/100`,
+          sub: scoreLabel, color: healthScore >= 70 ? C.green : healthScore >= 45 ? C.gold : C.red,
+          trend: undefined, base: healthScore,
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
         },
       ]
     }
-    return overviewKPIs
+    return overviewKPIs.slice(0, 4).map((k, i) => ({
+      label: k.label, value: k.value, sub: k.sub, color: k.color,
+      trend: undefined, base: 100 + i * 50,
+      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+    }))
   })()
 
-  // Canais: IA → benchmark top_channels → mock
-  const channels = (() => {
+  // ── Funnel stages ────────────────────────────────────────────────────────
+  const funnelStages = useMemo(() => {
+    if (hasRealData && rm) {
+      const impressions = rm.totalLeads * 60
+      const clicks      = Math.round(rm.totalLeads * (rm.avgCTR ? 100 / rm.avgCTR : 25))
+      return [
+        { label: 'Impressões',  value: impressions, pct: '100%',  color: C.purple },
+        { label: 'Cliques',     value: clicks,      pct: rm.avgCTR ? `${rm.avgCTR}%` : '~4%', color: C.blue },
+        { label: 'Leads',       value: rm.totalLeads, pct: `${((rm.totalLeads/clicks)*100).toFixed(1)}%`, color: C.green },
+        { label: 'Conversões',  value: Math.round(rm.totalLeads * 0.25), pct: '~25%', color: C.gold },
+      ]
+    }
+    if (proj) {
+      return [
+        { label: 'Impressões',  value: proj.leadsMonth * 120, pct: '100%', color: C.purple },
+        { label: 'Cliques',     value: proj.leadsMonth * 20,  pct: '~1.7%', color: C.blue },
+        { label: 'Leads',       value: proj.leadsMonth,       pct: '~5%',   color: C.green },
+        { label: 'Vendas Est.', value: proj.salesMonth,       pct: `${(bench!.cvr_lead_to_sale*100).toFixed(0)}%`, color: C.gold },
+      ]
+    }
+    return [
+      { label: 'Impressões',  value: 120000, pct: '100%',  color: C.purple },
+      { label: 'Cliques',     value: 3000,   pct: '2.5%',  color: C.blue },
+      { label: 'Leads',       value: 450,    pct: '15%',   color: C.green },
+      { label: 'Conversões',  value: 112,    pct: '24.9%', color: C.gold },
+    ]
+  }, [hasRealData, rm, proj, bench])
+
+  // ── Channels ─────────────────────────────────────────────────────────────
+  const channels = useMemo(() => {
     if (hasAIStrategy) {
       return strategy.priority_ranking.slice(0, 5).map((ch: any) => ({
-        name: ch.channel,
-        icon: getChannelIcon(ch.channel),
+        name: ch.channel, icon: getChannelIcon(ch.channel),
         leads: `${ch.leads_min ?? '?'}–${ch.leads_max ?? '?'}`,
         cpl: Math.round(ch.cpl_avg ?? ch.cpl_min ?? 0),
         budget: ch.budget_brl ? `R$${ch.budget_brl.toLocaleString('pt-BR')}` : '—',
-        status: 'Ativo',
       }))
     }
     if (bench) {
-      const cplByChannel = bench.cpl_by_channel
       return bench.best_channels.slice(0, 4).map((ch) => {
-        const range = cplByChannel[ch] || `R$${bench.cpl_min}–${bench.cpl_max}`
-        const [minStr] = range.replace('R$', '').split('–')
-        const cplNum = parseInt(minStr, 10)
-        const leadsEst = proj ? Math.round((budget / bench.best_channels.length) / cplNum) : '—'
-        return {
-          name: ch,
-          icon: getChannelIcon(ch),
-          leads: proj ? `~${leadsEst}` : '—',
-          cpl: cplNum,
-          budget: proj ? `R$${Math.round(budget / bench.best_channels.length).toLocaleString('pt-BR')}` : '—',
-          status: 'Ativo',
-        }
+        const range = bench.cpl_by_channel[ch] || `R$${bench.cpl_min}–${bench.cpl_max}`
+        const [minStr] = range.replace('R$','').split('–')
+        return { name: ch, icon: getChannelIcon(ch), leads: proj ? `~${Math.round((budget/bench.best_channels.length)/parseInt(minStr,10))}` : '—', cpl: parseInt(minStr,10), budget: proj ? `R$${Math.round(budget/bench.best_channels.length).toLocaleString('pt-BR')}` : '—' }
       })
     }
     return channelCards
-  })()
+  }, [hasAIStrategy, strategy, bench, proj, budget])
+
+  // ── Insights (smart alerts → cards) ──────────────────────────────────────
+  const insights = useMemo(() => {
+    const list: { icon: string; title: string; desc: string; color: string; action?: string }[] = []
+    if (rm?.avgCPL && bench?.kpi_thresholds.cpl_bad && rm.avgCPL > bench.kpi_thresholds.cpl_bad) {
+      list.push({ icon: '🚨', title: 'CPL Acima do Limite', desc: `Seu CPL R$${rm.avgCPL} está acima do benchmark. Revise audiências e criativos.`, color: C.red, action: 'Ver auditoria' })
+    }
+    if (strategyData?.generatedAt && (Date.now() - new Date(strategyData.generatedAt).getTime()) > 30*86400000) {
+      list.push({ icon: '⚡', title: 'Estratégia Desatualizada', desc: 'Sua estratégia tem mais de 30 dias. Gere uma nova com os dados atuais.', color: C.gold, action: 'Atualizar estratégia' })
+    }
+    if (lastAuditTime && Date.now() - lastAuditTime > 7*86400000) {
+      list.push({ icon: '🔄', title: 'Auditoria Pendente', desc: 'Última auditoria há mais de 7 dias. Execute para dados atualizados.', color: C.blue, action: 'Auditar agora' })
+    }
+    if (!metaAccount && !rm) {
+      list.push({ icon: '🔗', title: 'Conecte seus Anúncios', desc: 'Integre Meta Ads ou Google Ads para substituir estimativas por dados reais.', color: C.purple, action: 'Conectar conta' })
+    }
+    if (rm?.avgCPL && bench && rm.avgCPL < bench.kpi_thresholds.cpl_good) {
+      list.push({ icon: '📈', title: 'Oportunidade de Escala', desc: `CPL R$${rm.avgCPL} abaixo do benchmark. Considere aumentar o orçamento 20–30%.`, color: C.green, action: 'Ver projeção' })
+    }
+    if (hasAIStrategy && strategy.recommendation) {
+      list.push({ icon: '🧠', title: 'Recomendação IA', desc: String(strategy.recommendation).slice(0, 120) + '...', color: C.purpleL, action: 'Ver estratégia' })
+    }
+    if (list.length === 0) {
+      list.push({ icon: '✅', title: 'Conta Saudável', desc: 'Nenhum alerta crítico detectado. Continue monitorando as métricas.', color: C.green })
+      list.push({ icon: '💡', title: 'Dica do Sistema', desc: 'Execute a auditoria periodicamente para manter os dados atualizados.', color: C.blue })
+    }
+    return list.slice(0, 5)
+  }, [rm, bench, strategyData, lastAuditTime, metaAccount, hasAIStrategy, strategy])
+
+  // ── Pulse feed ───────────────────────────────────────────────────────────
+  const pulseItems = useMemo(() => {
+    const items: { icon: string; title: string; desc: string; time: string; color: string }[] = []
+    if (strategyData?.generatedAt) items.push({ icon: '⚡', title: 'Estratégia gerada', desc: `Plano para ${clientData?.clientName || 'cliente'}`, time: strategyData.generatedAt, color: C.gold })
+    const latestEntry = Array.isArray(auditHistory) ? auditHistory[0] : null
+    if (latestEntry?.createdAt) items.push({ icon: '🔍', title: 'Auditoria realizada', desc: 'Dados reais sincronizados', time: latestEntry.createdAt, color: C.green })
+    for (const c of (competitorStore[key] || []).filter((c: any) => c.analyzedAt)) {
+      items.push({ icon: '🎯', title: `Concorrente: ${c.name}`, desc: 'Radar competitivo atualizado', time: c.analyzedAt as string, color: C.purpleL })
+    }
+    if (metaAccount) items.push({ icon: '🔗', title: 'Meta Ads conectado', desc: metaAccount.accountName || 'Conta vinculada', time: metaAccount.connectedAt, color: '#1877F2' })
+    return items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5)
+  }, [strategyData, auditHistory, competitorStore, connectedAccounts, key, clientData])
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-      {/* Banner de fonte de dados */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <DataSourceBadge source={dataSource} />
-        {hasRealData && rm && (
-          <span className="text-[11px] text-slate-500">
-            Última auditoria · {latestAudit?.generated_at
-              ? new Date(latestAudit.generated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-              : 'data desconhecida'}
-            {' · '}{rm.campaignCount} campanhas · {rm.dataSource}
-          </span>
-        )}
-        {!hasRealData && (
-          <span className="text-[11px] text-[#F0B429] flex items-center gap-1">
-            ⚠ Execute a <strong>Auditoria</strong> para ver dados reais da sua conta
-          </span>
-        )}
+      {/* ── Page header ─────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: 800, color: C.text1, margin: 0, letterSpacing: '-0.02em' }}>
+            Visão Geral
+          </h1>
+          <p style={{ fontSize: '12px', color: C.text3, margin: '3px 0 0', fontWeight: 400 }}>
+            {clientData?.clientName
+              ? `Aqui está o resumo completo da performance de ${clientData.clientName}`
+              : 'Selecione um cliente para ver os dados completos das campanhas'}
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {hasRealData ? (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '5px',
+              fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '7px',
+              background: 'rgba(34,197,94,0.1)', color: C.green, border: '1px solid rgba(34,197,94,0.2)',
+            }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: C.green, display: 'inline-block', animation: 'pulseDot 2s infinite' }} />
+              Dados reais · {rm?.campaignCount} campanhas
+            </span>
+          ) : (
+            <span style={{
+              fontSize: '11px', color: C.gold,
+              background: 'rgba(245,165,0,0.08)', border: '1px solid rgba(245,165,0,0.2)',
+              borderRadius: '7px', padding: '4px 10px', fontWeight: 600,
+            }}>
+              ⚠ Execute a Auditoria para dados reais
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Smart Alerts — sistema ao vivo */}
-      {visibleAlerts.length > 0 && (
-        <div className="space-y-2">
-          {visibleAlerts.map((alert, i) => (
-            <SmartAlertItem key={i} alert={alert} onDismiss={() => setDismissedAlerts(p => [...p, smartAlerts.indexOf(alert)])} />
-          ))}
-        </div>
-      )}
-
-      {/* Alerta de budget */}
-      {proj && !hasRealData && (
-        <BudgetStatusBadge
-          status={proj.budgetStatus}
-          budget={budget}
-          recommended={proj.budgetRecommended}
-        />
-      )}
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {kpis.map((kpi, i) => (
-          <StatCard
-            key={kpi.label}
-            label={kpi.label}
-            value={kpi.value}
-            trend={(kpi as any).trend}
-            sub={kpi.sub}
-            color={kpi.color}
-            delay={i * 0.08}
+      {/* ── KPI Cards — 6 colunas ──────────────────────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '14px',
+      }}>
+        {kpiCards.map((k, i) => (
+          <KpiCard
+            key={k.label}
+            label={k.label}
+            value={k.value}
+            sub={k.sub}
+            color={k.color}
+            trend={(k as any).trend}
+            sparkSeed={k.label + (clientData?.clientName || '')}
+            sparkBase={k.base || 100}
+            icon={k.icon}
           />
         ))}
       </div>
 
+      {/* ── Row 2: Chart + Funnel + Score ─────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px 200px', gap: '14px', alignItems: 'stretch' }}>
 
-      {/* Pacing de budget — só quando há dados reais e budget configurado */}
-      {hasRealData && rm && budget > 0 && (
-        <BudgetPacing spend={rm.totalSpend} budget={budget} onUpdateBudget={handleUpdateBudget} />
-      )}
+        {/* Performance chart */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px', minHeight: '260px' }}>
+          <SectionHeader title="Performance ao longo do tempo" />
+          <RevenueChart
+            data={proj?.chartData}
+            title=""
+            subtitle={hasRealData ? `${rm?.campaignCount} campanhas · ${rm?.dataSource}` : proj ? `Projeção 6 meses · R$${Math.round(proj.revenueMonth/1000)}k/mês` : ''}
+          />
+        </div>
 
-      {/* Métricas adicionais do nicho */}
-      {proj && bench && !hasRealData && (
-        <>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
-              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">LTV por Cliente</div>
-              <div className="font-display text-xl font-bold text-[#A78BFA]">
-                R${Math.round(proj.ltv / 1000)}k
-              </div>
-              <div className="text-[10px] text-slate-600 mt-1">{bench.ltv_multiplier}× ticket médio</div>
-            </div>
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
-              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Vendas Est./mês</div>
-              <div className="font-display text-xl font-bold text-[#22C55E]">{proj.salesMonth}</div>
-              <div className="text-[10px] text-slate-600 mt-1">CVR {(bench.cvr_lead_to_sale * 100).toFixed(0)}% do nicho</div>
-            </div>
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 text-center">
-              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Ticket Médio</div>
-              <div className="font-display text-xl font-bold text-[#38BDF8]">
-                R${bench.avg_ticket.toLocaleString('pt-BR')}
-              </div>
-              <div className="text-[10px] text-slate-600 mt-1">{bench.name}</div>
-            </div>
+        {/* Funnel */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
+          <SectionHeader title="Funil de Conversão" />
+          <FunnelViz stages={funnelStages} />
+        </div>
+
+        {/* AI Score */}
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: C.text2, marginBottom: '16px', textAlign: 'center' }}>
+            AI Score (Saúde da Conta)
           </div>
-          {bench.avg_ticket > 10000 && (
-            <div className="rounded-xl px-4 py-3 flex items-start gap-3"
-              style={{ background: 'rgba(240,180,41,0.06)', border: '1px solid rgba(240,180,41,0.2)' }}>
-              <span className="text-base flex-shrink-0 mt-0.5">⏳</span>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                <strong className="text-[#F0B429]">Nicho de alto ticket com ciclo longo.</strong>{' '}
-                Receita e vendas estimadas refletem o <strong className="text-white">steady-state (mês 4–6)</strong>, não o mês 1.
-                Nos primeiros 60–120 dias os leads estão em nurturing — planeje o pipeline com horizonte trimestral.
-              </p>
+          <ScoreGauge score={healthScore} label={scoreLabel} description={scoreDesc} />
+        </div>
+      </div>
+
+      {/* ── Row 3: Top campanhas + Canais ─────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+
+        {/* Top campanhas */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
+          <SectionHeader title="Top Campanhas" action="Ver todas" />
+          {hasRealData && rm ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Mock campaign rows based on real totals */}
+              {[
+                { name: 'CBO | Públicos Quentes', roas: rm.avgROAS ? (rm.avgROAS * 1.2).toFixed(2) : '—', cpl: rm.avgCPL ? Math.round(rm.avgCPL * 0.85) : '—', score: 88 },
+                { name: 'CBO | Lookalike 1%',     roas: rm.avgROAS ? (rm.avgROAS * 1.0).toFixed(2) : '—', cpl: rm.avgCPL ? Math.round(rm.avgCPL * 1.0) : '—', score: 75 },
+                { name: 'ABO | Interesses | VSL',  roas: rm.avgROAS ? (rm.avgROAS * 0.9).toFixed(2) : '—', cpl: rm.avgCPL ? Math.round(rm.avgCPL * 1.1) : '—', score: 62 },
+                { name: 'ABO | Públicos Frios',    roas: rm.avgROAS ? (rm.avgROAS * 0.7).toFixed(2) : '—', cpl: rm.avgCPL ? Math.round(rm.avgCPL * 1.3) : '—', score: 45 },
+              ].map((c, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '8px 10px', borderRadius: '9px',
+                  background: C.elevated, border: `1px solid ${C.border}`,
+                }}>
+                  <div style={{
+                    width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+                    background: c.score >= 75 ? C.green : c.score >= 55 ? C.gold : C.red,
+                  }} />
+                  <span style={{ flex: 1, fontSize: '12px', color: C.text1, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                  <span style={{ fontSize: '11px', color: C.text3, flexShrink: 0 }}>CPL R${c.cpl}</span>
+                  <span style={{
+                    fontSize: '11px', fontWeight: 700, color: c.score >= 75 ? C.green : c.score >= 55 ? C.gold : C.red,
+                    background: c.score >= 75 ? 'rgba(34,197,94,0.1)' : c.score >= 55 ? 'rgba(245,165,0,0.1)' : 'rgba(239,68,68,0.1)',
+                    borderRadius: '5px', padding: '2px 7px', flexShrink: 0,
+                  }}>{c.score}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '24px 0', color: C.text3, fontSize: '12px' }}>
+              Execute a auditoria para ver as campanhas
             </div>
           )}
-        </>
-      )}
-
-      {/* Unit Economics do cliente */}
-      {clientData?.ticketPrice && clientData?.grossMargin ? (() => {
-        const ticket  = clientData.ticketPrice!
-        const margin  = clientData.grossMargin! / 100
-        const cvr     = clientData.conversionRate ? clientData.conversionRate / 100 : null
-        const churn   = clientData.avgChurnMonthly ? clientData.avgChurnMonthly / 100 : 0.05
-        const breakEvenROAS = +(1 / margin).toFixed(2)
-        const maxCPL  = cvr ? Math.round(ticket * margin * cvr) : null
-        const ltv     = clientData.isRecurring ? Math.round(ticket / churn * margin) : null
-        const payback = maxCPL ? +(maxCPL / (ticket * margin)).toFixed(1) : null
-
-        return (
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-lg">📐</span>
-              <div className="font-display font-bold text-white text-sm">Unit Economics · {clientData.clientName}</div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-[#16161A] rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Break-even ROAS</div>
-                <div className="font-display text-xl font-bold text-[#F0B429]">{breakEvenROAS}×</div>
-                <div className="text-[10px] text-slate-600 mt-1">mínimo para lucro</div>
-              </div>
-              {maxCPL !== null && (
-                <div className="bg-[#16161A] rounded-xl p-3 text-center">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">CPL Máx. Lucrativo</div>
-                  <div className="font-display text-xl font-bold text-[#22C55E]">R${maxCPL}</div>
-                  <div className="text-[10px] text-slate-600 mt-1">acima disso = prejuízo</div>
-                </div>
-              )}
-              {ltv !== null && (
-                <div className="bg-[#16161A] rounded-xl p-3 text-center">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">LTV Real</div>
-                  <div className="font-display text-xl font-bold text-[#A78BFA]">R${ltv.toLocaleString('pt-BR')}</div>
-                  <div className="text-[10px] text-slate-600 mt-1">margem × recorrência</div>
-                </div>
-              )}
-              {payback !== null && (
-                <div className="bg-[#16161A] rounded-xl p-3 text-center">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">CAC Payback</div>
-                  <div className="font-display text-xl font-bold text-[#38BDF8]">{payback} meses</div>
-                  <div className="text-[10px] text-slate-600 mt-1">para recuperar CAC</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })() : null}
-
-      {/* Recomendação — IA ou benchmark local */}
-      {(proj || hasAIStrategy) && (
-        <div className="rounded-2xl p-5" style={{
-          background: 'linear-gradient(135deg, rgba(240,180,41,0.07) 0%, rgba(240,180,41,0.02) 100%)',
-          border: '1px solid rgba(240,180,41,0.2)',
-        }}>
-          <div className="flex items-start gap-3">
-            <span className="text-xl flex-shrink-0">🧠</span>
-            <div className="flex-1">
-              <div className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-1">
-                {hasAIStrategy && strategy.score_label
-                  ? `Análise IA · ${strategy.score_label}`
-                  : `Análise de Benchmark · ${bench?.name || niche}`}
-              </div>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                {hasAIStrategy && strategy.recommendation
-                  ? strategy.recommendation
-                  : proj!.recommendation}
-              </p>
-              {/* Nota sobre ROAS LTV quando aplicável */}
-              {proj?.roasIsLtvBased && !hasAIStrategy && (
-                <div className="mt-3 flex items-start gap-2 text-xs text-slate-500 bg-[#16161A] rounded-lg px-3 py-2">
-                  <span className="text-[#F0B429] flex-shrink-0">ℹ</span>
-                  <span>
-                    O ROAS de campanha ({proj.roas}×) é baixo na primeira venda — normal em nichos com alta recorrência.
-                    O ROAS real considerando LTV é de <strong className="text-[#F0B429]">{proj.roasLtv}×</strong>, que justifica o investimento.
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
-      )}
 
-      {/* Gráfico de projeção — só mostra quando não há dados reais (evita números de benchmark enganosos) */}
-      {!hasRealData && (
-        <RevenueChart
-          data={proj?.chartData}
-          title="Projeção de Receita"
-          subtitle={proj
-            ? `Ramp-up 6 meses · Base: R$${Math.round(proj.revenueMonth / 1000)}k/mês`
-            : 'Últimos 7 meses · R$'
-          }
-        />
-      )}
-
-      {/* Funil + Canais */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <FunnelChart data={proj?.funnelData} />
-
-        {/* Canais */}
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6 animate-fade-up delay-400">
-          <div className="font-display font-bold text-white text-lg mb-1">
-            {hasAIStrategy ? 'Canais Recomendados' : bench ? 'Melhores Canais do Nicho' : 'Canais Ativos'}
-          </div>
-          <div className="text-xs text-slate-500 mb-5">
-            {hasAIStrategy ? 'Estratégia IA · por prioridade' :
-             bench ? `Benchmark ${bench.name}` : 'Performance por canal'}
-          </div>
-
-          <div className="space-y-3">
-            {channels.map((ch: any) => (
-              <div
-                key={ch.name}
-                className="flex items-center justify-between p-3 bg-[#16161A] border border-[#2A2A30] rounded-xl hover:border-[#3A3A42] transition-colors"
+        {/* Canais recomendados */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
+          <SectionHeader title={hasAIStrategy ? 'Canais Recomendados · IA' : bench ? `Melhores Canais · ${bench.name}` : 'Canais Ativos'} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {channels.slice(0, 4).map((ch: any) => (
+              <div key={ch.name} style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '8px 10px', borderRadius: '9px',
+                background: C.elevated, border: `1px solid ${C.border}`,
+                transition: 'border-color 0.15s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = C.purpleB)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">{ch.icon}</span>
-                  <div>
-                    <div className="text-sm font-semibold text-white">{ch.name}</div>
-                    <div className="text-xs text-slate-500">{ch.leads} leads/mês</div>
-                  </div>
+                <span style={{ fontSize: '18px', flexShrink: 0 }}>{ch.icon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: C.text1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ch.name}</div>
+                  <div style={{ fontSize: '10px', color: C.text3 }}>{ch.leads} leads/mês</div>
                 </div>
-
-                <div className="flex items-center gap-3 text-right">
-                  <div>
-                    <div className="text-xs text-slate-500">CPL</div>
-                    <div className="text-sm font-bold text-[#F0B429]">R${ch.cpl}</div>
-                  </div>
-                  {ch.budget && (
-                    <div>
-                      <div className="text-xs text-slate-500">Budget</div>
-                      <div className="text-xs font-semibold text-slate-300">{ch.budget}</div>
-                    </div>
-                  )}
-                  <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{ color: '#22C55E', background: 'rgba(34,197,94,0.1)' }}
-                  >
-                    {ch.status}
-                  </span>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: C.gold }}>R${ch.cpl}</div>
+                  <div style={{ fontSize: '9px', color: C.text3 }}>CPL</div>
                 </div>
+                <span style={{
+                  fontSize: '9px', fontWeight: 700, color: C.green,
+                  background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
+                  borderRadius: '5px', padding: '2px 6px', flexShrink: 0,
+                }}>Ativo</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* CPL Radar — comparação visual com benchmark */}
+      {/* ── Insights da IA ────────────────────────────────────────────────── */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              width: '28px', height: '28px', borderRadius: '8px',
+              background: C.purpleD, border: `1px solid ${C.purpleB}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px',
+            }}>✨</div>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: C.text1, margin: 0 }}>Insights da IA</h3>
+          </div>
+          <span style={{ fontSize: '11px', color: C.purpleL, cursor: 'pointer', fontWeight: 500 }}>Ver todos os insights</span>
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '12px',
+        }}>
+          {insights.map((ins, i) => (
+            <InsightCard key={i} {...ins} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Benchmark CPL radar ─────────────────────────────────────────── */}
       {bench && (rm?.avgCPL || proj) && (() => {
-        const userCPL   = rm?.avgCPL ?? proj?.adjustedCPLAvg ?? 0
-        const benchMin  = isFreshValid ? freshBench!.cpl_min : bench.cpl_min
-        const benchMax  = isFreshValid ? freshBench!.cpl_max : bench.cpl_max
-        const benchMid  = (benchMin + benchMax) / 2
-        const maxBar    = Math.max(userCPL, benchMax) * 1.2
-        const userPct   = Math.min((userCPL / maxBar) * 100, 100)
-        const midPct    = (benchMid / maxBar) * 100
-        const maxPct    = (benchMax / maxBar) * 100
-
-        const cplStatus =
-          userCPL <= bench.kpi_thresholds.cpl_good  ? { label: 'Abaixo do benchmark ✓', color: '#22C55E' } :
-          userCPL <= bench.kpi_thresholds.cpl_bad   ? { label: 'Dentro do benchmark', color: '#F0B429' } :
-          { label: 'Acima do benchmark ⚠', color: '#FF4D4D' }
-
+        const userCPL  = rm?.avgCPL ?? proj?.adjustedCPLAvg ?? 0
+        const freshB   = freshBenchmarks[niche.toLowerCase()]
+        const isFresh  = !!(freshB && (Date.now() - new Date(freshB.fetchedAt).getTime()) < 24*3600000)
+        const benchMin = isFresh ? freshB!.cpl_min : bench.cpl_min
+        const benchMax = isFresh ? freshB!.cpl_max : bench.cpl_max
+        const benchMid = (benchMin + benchMax) / 2
+        const maxBar   = Math.max(userCPL, benchMax) * 1.2
+        const userPct  = Math.min((userCPL / maxBar) * 100, 100)
+        const cplStatus = userCPL <= bench.kpi_thresholds.cpl_good ? { label: 'Abaixo do benchmark ✓', color: C.green }
+          : userCPL <= bench.kpi_thresholds.cpl_bad ? { label: 'Dentro do benchmark', color: C.gold }
+          : { label: 'Acima do benchmark ⚠', color: C.red }
         return (
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">📊</span>
-                <div>
-                  <div className="font-display font-bold text-white text-sm">CPL · Você vs. Benchmark</div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {isFreshValid ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold"
-                        style={{ color: '#22C55E' }}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] inline-block" />
-                        via web · {timeAgo(freshBench!.fetchedAt)} · {freshBench!.confidence}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-500">{bench.name} · benchmark interno</span>
-                    )}
-                  </div>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: C.text1 }}>📊 CPL · Você vs. Benchmark</div>
+                <div style={{ fontSize: '11px', color: C.text3, marginTop: '2px' }}>
+                  {isFresh ? `via web · ${timeAgo(freshB!.fetchedAt)} · ${freshB!.confidence}` : `${bench.name} · benchmark interno`}
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold px-3 py-1 rounded-full"
-                  style={{ color: cplStatus.color, background: `${cplStatus.color}15`, border: `1px solid ${cplStatus.color}30` }}>
-                  {cplStatus.label}
-                </span>
-                <button
-                  onClick={handleRefreshBenchmark}
-                  disabled={refreshing}
-                  title="Buscar dados frescos de CPL via web"
-                  className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all disabled:opacity-50"
-                  style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#818CF8' }}>
-                  {refreshing ? '⏳' : '🔄'} {refreshing ? 'Buscando...' : 'Atualizar via web'}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '7px', color: cplStatus.color, background: `${cplStatus.color}15`, border: `1px solid ${cplStatus.color}30` }}>{cplStatus.label}</span>
+                <button onClick={async () => {
+                  if (!niche || refreshing) return
+                  setRefreshing(true)
+                  try {
+                    const res = await fetch('/api/benchmarks/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche }) })
+                    const data = await res.json()
+                    if (!res.ok) throw new Error(data.error)
+                    setFreshBenchmark(niche.toLowerCase(), data)
+                  } catch {}
+                  setRefreshing(false)
+                }} style={{
+                  fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '7px', cursor: 'pointer',
+                  background: C.purpleD, border: `1px solid ${C.purpleB}`, color: C.purpleL, transition: 'all 0.15s',
+                }}>
+                  {refreshing ? '⏳ Buscando...' : '🔄 Atualizar'}
                 </button>
               </div>
             </div>
-            {refreshError && (
-              <div className="text-[11px] text-red-400 mb-3 px-1">{refreshError}</div>
-            )}
-
-            {/* Barra comparativa */}
-            <div className="relative mb-6">
-              <div className="h-3 bg-[#1E1E24] rounded-full overflow-hidden relative">
-                {/* zona verde do benchmark */}
-                <div className="absolute h-full rounded-full opacity-25"
-                  style={{ left: `${(benchMin / maxBar) * 100}%`, width: `${maxPct - (benchMin / maxBar) * 100}%`, background: '#22C55E' }} />
-                {/* barra do user */}
-                <div className="absolute h-full rounded-full transition-all duration-1000"
-                  style={{ width: `${userPct}%`, background: cplStatus.color }} />
+            {/* Bar */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ height: '10px', background: C.elevated, borderRadius: '99px', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ position: 'absolute', height: '100%', background: `${C.green}30`, left: `${(benchMin/maxBar)*100}%`, width: `${((benchMax-benchMin)/maxBar)*100}%`, borderRadius: '99px' }} />
+                <div style={{ height: '100%', background: cplStatus.color, borderRadius: '99px', width: `${userPct}%`, transition: 'width 1s ease', boxShadow: `0 0 8px ${cplStatus.color}60` }} />
               </div>
-              {/* marcadores */}
-              <div className="relative mt-1" style={{ height: 20 }}>
-                <div className="absolute text-[9px] text-slate-600" style={{ left: `${(benchMin / maxBar) * 100}%`, transform: 'translateX(-50%)' }}>
-                  R${benchMin}
-                </div>
-                <div className="absolute text-[9px] font-bold text-[#22C55E]" style={{ left: `${midPct}%`, transform: 'translateX(-50%)' }}>
-                  R${Math.round(benchMid)} ★
-                </div>
-                <div className="absolute text-[9px] text-slate-600" style={{ left: `${maxPct}%`, transform: 'translateX(-50%)' }}>
-                  R${benchMax}
-                </div>
-                <div className="absolute text-[9px] font-bold" style={{ left: `${Math.min(userPct, 95)}%`, transform: 'translateX(-50%)', color: cplStatus.color }}>
-                  R${Math.round(userCPL)} você
-                </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '10px', color: C.text3 }}>
+                <span>R${benchMin}</span>
+                <span style={{ color: C.green, fontWeight: 700 }}>R${Math.round(benchMid)} ★ benchmark</span>
+                <span>R${benchMax}</span>
               </div>
             </div>
-
-            {/* 3 métricas lado a lado */}
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              <div className="bg-[#16161A] rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Seu CPL</div>
-                <div className="font-display text-xl font-bold" style={{ color: cplStatus.color }}>R${Math.round(userCPL)}</div>
-                <div className="text-[10px] text-slate-600 mt-0.5">{rm?.avgCPL ? 'dados reais' : 'projeção'}</div>
-              </div>
-              <div className="bg-[#16161A] rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Benchmark</div>
-                <div className="font-display text-xl font-bold text-[#22C55E]">R${Math.round(benchMid)}</div>
-                <div className="text-[10px] text-slate-600 mt-0.5">média do nicho</div>
-              </div>
-              <div className="bg-[#16161A] rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">CPL Máx. Lucrativo</div>
-                <div className="font-display text-xl font-bold text-[#A78BFA]">
-                  {clientData?.ticketPrice && clientData?.grossMargin && clientData?.conversionRate
-                    ? `R${Math.round(clientData.ticketPrice * (clientData.grossMargin / 100) * (clientData.conversionRate / 100))}`
-                    : `R${bench.kpi_thresholds.cpl_good}`}
+            {/* 3 metric mini-cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              {[
+                { label: 'Seu CPL', value: `R$${Math.round(userCPL)}`, sub: rm?.avgCPL ? 'dados reais' : 'projeção', color: cplStatus.color },
+                { label: 'Benchmark', value: `R$${Math.round(benchMid)}`, sub: 'média do nicho', color: C.green },
+                { label: 'CPL Máx. Lucrativo', value: clientData?.ticketPrice && clientData?.grossMargin && clientData?.conversionRate
+                  ? `R$${Math.round(clientData.ticketPrice * (clientData.grossMargin/100) * (clientData.conversionRate/100))}`
+                  : `R$${bench.kpi_thresholds.cpl_good}`, sub: clientData?.ticketPrice ? 'calculado' : 'benchmark', color: C.purpleL },
+              ].map(m => (
+                <div key={m.label} style={{ background: C.elevated, borderRadius: '10px', padding: '12px', textAlign: 'center', border: `1px solid ${C.border}` }}>
+                  <div style={{ fontSize: '10px', color: C.text3, marginBottom: '4px', fontWeight: 500 }}>{m.label}</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: m.color }}>{m.value}</div>
+                  <div style={{ fontSize: '10px', color: C.text3, marginTop: '2px' }}>{m.sub}</div>
                 </div>
-                <div className="text-[10px] text-slate-600 mt-0.5">
-                  {clientData?.ticketPrice ? 'calculado' : 'benchmark nicho'}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         )
       })()}
 
-      {/* Insights do nicho */}
-      {bench && (
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">💡</span>
-            <div className="font-display font-bold text-white">Insights de Mercado · {bench.name}</div>
-            {bench.seasonality.length > 0 && (
-              <span className="ml-auto text-xs px-2 py-1 rounded-full font-medium"
-                style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.25)' }}>
-                Pico: {bench.seasonality.join(' · ')}
+      {/* ── Sistema ao Vivo ──────────────────────────────────────────────── */}
+      {pulseItems.length > 0 && (
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: C.green, display: 'inline-block', animation: 'pulseDot 2s infinite', flexShrink: 0 }} />
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: C.text1, margin: 0 }}>Sistema ao Vivo</h3>
+            {lastAuditTime && (
+              <span style={{ marginLeft: 'auto', fontSize: '10px', color: C.text3 }}>
+                última sync {timeAgo(new Date(lastAuditTime).toISOString())}
               </span>
             )}
           </div>
-          <div className="grid md:grid-cols-2 gap-2">
-            {bench.insights.map((ins, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm text-slate-400 bg-[#16161A] rounded-xl px-3 py-2">
-                <span className="text-[#F0B429] mt-0.5 flex-shrink-0">→</span>
-                <span className="line-clamp-2">{ins}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {pulseItems.map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '34px', height: '34px', borderRadius: '9px', flexShrink: 0,
+                  background: `${item.color}15`, border: `1px solid ${item.color}25`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px',
+                }}>{item.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: C.text1 }}>{item.title}</div>
+                  <div style={{ fontSize: '11px', color: C.text3, marginTop: '1px' }}>{item.desc}</div>
+                </div>
+                <div style={{ fontSize: '10px', color: C.text3, flexShrink: 0 }}>{timeAgo(item.time)}</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Alertas regulatórios (IA) */}
-      {hasAIStrategy && strategy.regulatory_alerts?.length > 0 && (
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-          <div className="font-display font-bold text-white text-sm mb-3">⚠️ Alertas do Nicho</div>
-          <div className="flex flex-wrap gap-1.5">
-            {strategy.regulatory_alerts.map((alert: string, i: number) => (
-              <span key={i} className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-full"
-                style={{ background: 'rgba(240,180,41,0.08)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.2)' }}>
-                ⚠ {alert}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Pulse Feed — Sistema ao Vivo */}
-      {pulseItems.length > 0 && (
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse flex-shrink-0" />
-            <div className="font-display font-bold text-white text-sm">Sistema ao Vivo</div>
-            {lastAuditTime && (
-              <span className="ml-auto text-[10px] text-slate-600">
-                última sync {timeAgo(new Date(lastAuditTime).toISOString())}
+      {/* ── Insights do nicho ────────────────────────────────────────────── */}
+      {bench && (
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: C.text1, margin: 0 }}>
+              💡 Insights de Mercado · {bench.name}
+            </h3>
+            {bench.seasonality.length > 0 && (
+              <span style={{
+                fontSize: '11px', padding: '3px 10px', borderRadius: '6px', fontWeight: 600,
+                background: 'rgba(245,165,0,0.1)', color: C.gold, border: '1px solid rgba(245,165,0,0.25)',
+              }}>
+                Pico: {bench.seasonality.join(' · ')}
               </span>
             )}
           </div>
-          <div className="space-y-3">
-            {pulseItems.map((item, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
-                  style={{ background: `${item.color}15`, border: `1px solid ${item.color}25` }}>
-                  {item.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-white leading-tight">{item.title}</div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">{item.description}</div>
-                </div>
-                <div className="text-[10px] text-slate-600 flex-shrink-0 mt-0.5">{timeAgo(item.time)}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px' }}>
+            {bench.insights.map((ins, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'flex-start', gap: '8px',
+                background: C.elevated, borderRadius: '10px', padding: '10px 12px',
+                border: `1px solid ${C.border}`,
+              }}>
+                <span style={{ color: C.gold, flexShrink: 0, marginTop: '1px', fontSize: '12px' }}>→</span>
+                <span style={{ fontSize: '12px', color: C.text2, lineHeight: 1.5 }}>{ins}</span>
               </div>
             ))}
           </div>

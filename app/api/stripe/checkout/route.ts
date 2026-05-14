@@ -29,7 +29,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Plano "${plan}" não está configurado. Contate o suporte.` }, { status: 400 })
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'https://elyonnous.com'
+    let appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/$/, '')
+    if (!appUrl.startsWith('http://') && !appUrl.startsWith('https://')) {
+      appUrl = appUrl ? `https://${appUrl}` : 'https://elyonnous.com'
+    }
     const email  = user?.emailAddresses?.[0]?.emailAddress
 
     // Reutiliza customer existente se já tiver stripeCustomerId salvo no Clerk

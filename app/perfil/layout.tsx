@@ -22,12 +22,16 @@ export default async function PerfilLayout({ children }: { children: React.React
       ? u.createdAt
       : new Date(u.createdAt as any).getTime()
 
+    const userEmail   = u.emailAddresses[0]?.emailAddress ?? ''
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+    const isAdmin     = adminEmails.includes(userEmail.toLowerCase())
+
     userData = {
       id:        userId,
       firstName: u.firstName,
       lastName:  u.lastName,
-      email:     u.emailAddresses[0]?.emailAddress ?? '',
-      plan:      (u.publicMetadata as any)?.plan ?? null,
+      email:     userEmail,
+      plan:      isAdmin ? 'avancada' : ((u.publicMetadata as any)?.plan ?? null),
       createdAt: createdAtMs,
     }
   } catch (e: any) {

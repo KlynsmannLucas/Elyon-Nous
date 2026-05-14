@@ -1,7 +1,5 @@
-// components/dashboard/StatCard.tsx — KPI card com trend badge + sparkline opcional
+// components/dashboard/StatCard.tsx
 'use client'
-
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 
 interface StatCardProps {
   label: string
@@ -10,74 +8,85 @@ interface StatCardProps {
   sub?: string
   color?: string
   delay?: number
-  sparkline?: number[]  // ex: [120, 135, 128, 160, 155, 180]
+  sparkline?: number[]
   icon?: string
 }
 
-export function StatCard({ label, value, trend, sub, color = '#F0B429', delay = 0, sparkline, icon }: StatCardProps) {
-  const isPositive  = trend !== undefined && trend >= 0
-  const trendColor  = isPositive ? '#22C55E' : '#FF4D4D'
-  const trendBg     = isPositive ? 'rgba(34,197,94,0.1)' : 'rgba(255,77,77,0.1)'
-  const trendArrow  = isPositive ? '↑' : '↓'
+function MiniSparkline({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) return null
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const range = max - min || 1
+  const W = 80, H = 28
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * W
+    const y = H - ((v - min) / range) * (H - 4) - 2
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  }).join(' ')
+  return (
+    <svg width={W} height={H} style={{ overflow: 'visible', display: 'block' }}>
+      <defs>
+        <linearGradient id={`sc-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={`0,${H} ${pts} ${W},${H}`} fill={`url(#sc-${color.replace('#','')})`} />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5"
+        strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
-  const sparkData = sparkline?.map((v, i) => ({ v, i }))
+export function StatCard({ label, value, trend, sub, color = '#7C3AED', delay = 0, sparkline, icon }: StatCardProps) {
+  const isPos   = trend !== undefined && trend >= 0
+  const tColor  = isPos ? '#22C55E' : '#EF4444'
+  const tBg     = isPos ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'
+  const tBorder = isPos ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'
 
   return (
-    <div
-      className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 animate-fade-up hover:border-[#3A3A42] transition-all hover:-translate-y-px"
-      style={{ animationDelay: `${delay}s`, transition: 'border-color 0.15s, transform 0.15s, box-shadow 0.15s' }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+    <div style={{
+      background: '#0F1221',
+      border: '1px solid rgba(255,255,255,0.06)',
+      borderRadius: '14px', padding: '18px',
+      display: 'flex', flexDirection: 'column', gap: '10px',
+      animationDelay: `${delay}s`,
+      transition: 'border-color 0.15s, box-shadow 0.15s',
+    }}
+      className="animate-fade-up"
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(124,58,237,0.25)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(124,58,237,0.1)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
     >
-      {/* Label row */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-xs text-slate-500 uppercase tracking-widest font-semibold">
-          {icon && <span className="mr-1.5">{icon}</span>}{label}
+      {/* Top row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{
+          fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)',
+          textTransform: 'uppercase', letterSpacing: '0.08em',
+        }}>
+          {icon && <span style={{ marginRight: '5px' }}>{icon}</span>}{label}
         </div>
         {trend !== undefined && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-            style={{ color: trendColor, background: trendBg }}>
-            {trendArrow} {Math.abs(trend).toFixed(1)}%
+          <span style={{
+            fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px',
+            color: tColor, background: tBg, border: `1px solid ${tBorder}`,
+          }}>
+            {isPos ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
           </span>
         )}
       </div>
 
       {/* Value */}
-      <div className="font-display text-2xl font-bold mb-1" style={{ color }}>
+      <div style={{ fontSize: '24px', fontWeight: 800, color, letterSpacing: '-0.03em', lineHeight: 1 }}>
         {value}
       </div>
 
-      {/* Sub-label */}
-      {sub && <div className="text-xs text-slate-600 mb-2">{sub}</div>}
-
-      {/* Sparkline */}
-      {sparkData && sparkData.length > 2 && (
-        <div className="mt-3 -mx-1">
-          <ResponsiveContainer width="100%" height={36}>
-            <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 2 }}>
-              <defs>
-                <linearGradient id={`spark-${label.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor={color} stopOpacity={0.25} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0}    />
-                </linearGradient>
-              </defs>
-              <Area
-                type="monotone"
-                dataKey="v"
-                stroke={color}
-                strokeWidth={1.5}
-                fill={`url(#spark-${label.replace(/\s/g, '')})`}
-                dot={false}
-                activeDot={{ r: 3, fill: color, strokeWidth: 0 }}
-              />
-              <Tooltip
-                contentStyle={{ display: 'none' }}
-                cursor={{ stroke: color, strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.4 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      {/* Sub + sparkline */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px' }}>
+        {sub && <div style={{ fontSize: '11px', color: '#64748B', flex: 1, minWidth: 0, lineHeight: 1.4 }}>{sub}</div>}
+        {sparkline && sparkline.length > 2 && (
+          <MiniSparkline data={sparkline} color={color} />
+        )}
+      </div>
     </div>
   )
 }

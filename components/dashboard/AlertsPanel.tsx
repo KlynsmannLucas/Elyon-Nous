@@ -24,11 +24,11 @@ export function AlertsPanel({ clientName, niche }: Props) {
   const [loading, setLoading] = useState(false)
   const [readIds, setReadIds] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<'all' | Alert['type']>('all')
-  const panelRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const lastClientRef = useRef<string>('')
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
 
-  const connectedAccounts = useAppStore(s => s.connectedAccounts)
-  const auditCache        = useAppStore(s => s.auditCache)
+  const auditCache = useAppStore(s => s.auditCache)
 
   const fetchAlerts = useCallback(async () => {
     if (!clientName || !niche) return
@@ -80,12 +80,14 @@ export function AlertsPanel({ clientName, niche }: Props) {
     if (open) fetchAlerts()
   }, [open])
 
-  // Fecha ao clicar fora
+  // Fecha ao clicar fora (dropdown é fixed, então verifica button + dropdown separado)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+      const target = e.target as Node
+      const insideButton = buttonRef.current?.contains(target)
+      const insideDropdown = dropdownRef.current?.contains(target)
+      if (!insideButton && !insideDropdown) setOpen(false)
     }
     if (open) document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -106,10 +108,17 @@ export function AlertsPanel({ clientName, niche }: Props) {
   const badgeColor = criticalCount > 0 ? '#FF4D4D' : summary.warning > 0 ? '#F0B429' : '#22C55E'
 
   return (
-    <div ref={panelRef} style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }}>
       {/* Bell button */}
       <button
-        onClick={() => setOpen(v => !v)}
+        ref={buttonRef}
+        onClick={() => {
+          if (!open && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect()
+            setDropdownPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right })
+          }
+          setOpen(v => !v)
+        }}
         title="Alertas proativos"
         style={{
           width: '30px', height: '30px', borderRadius: '7px', flexShrink: 0,
@@ -148,13 +157,13 @@ export function AlertsPanel({ clientName, niche }: Props) {
         )}
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown — position:fixed to escape topbar backdropFilter stacking context */}
       {open && (
-        <div style={{
-          position: 'absolute', right: 0, top: '38px', zIndex: 200,
+        <div ref={dropdownRef} style={{
+          position: 'fixed', top: dropdownPos.top, right: dropdownPos.right, zIndex: 9999,
           width: '380px', maxHeight: '520px',
           background: '#111114', border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '14px', boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+          borderRadius: '14px', boxShadow: '0 16px 48px rgba(0,0,0,0.8)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
           {/* Header */}

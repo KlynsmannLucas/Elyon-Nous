@@ -102,6 +102,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const { checkAndDeductCredits } = await import('@/lib/credits')
+  const creditResult = await checkAndDeductCredits(userId, plan || 'free', 'nous_chat')
+  if (!creditResult.allowed) {
+    return NextResponse.json({ success: false, error: creditResult.error }, { status: 402 })
+  }
+
   try {
     const { message: _msg, context, history, niche: _ni, city } = await req.json()
     const message = sanitizeText(_msg, 600)

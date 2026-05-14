@@ -583,6 +583,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const { checkAndDeductCredits } = await import('@/lib/credits')
+  const creditResult = await checkAndDeductCredits(userId, plan || 'free', 'strategy')
+  if (!creditResult.allowed) {
+    return new Response(
+      `data: ${JSON.stringify({ success: false, error: creditResult.error })}\n\n`,
+      { status: 402, headers: { 'Content-Type': 'text/event-stream' } }
+    )
+  }
+
   const body = await req.json()
   const encoder = new TextEncoder()
   let pingTimer: ReturnType<typeof setInterval> | null = null
