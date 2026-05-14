@@ -23,10 +23,10 @@ const ASSET_TYPES: Array<{ key: ClientAsset['type']; label: string; icon: string
 ]
 
 const TYPE_COLOR: Record<ClientAsset['type'], string> = {
-  logo:      '#F0B429',
+  logo:      '#A78BFA',
   product:   '#38BDF8',
   lifestyle: '#22C55E',
-  banner:    '#A78BFA',
+  banner:    '#7C3AED',
   other:     '#64748B',
 }
 
@@ -86,7 +86,16 @@ export function TabAssets({ clientData }: Props) {
 
   if (!clientData) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh] text-slate-500 text-sm">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '50vh',
+          color: '#64748B',
+          fontSize: '13px',
+        }}
+      >
         Configure um cliente primeiro para gerenciar os assets.
       </div>
     )
@@ -122,44 +131,112 @@ export function TabAssets({ clientData }: Props) {
   }))
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div style={{ maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* Header */}
       <div>
-        <h2 className="font-display text-2xl font-bold text-white mb-1">Assets da Empresa</h2>
-        <p className="text-slate-500 text-sm">
+        <h2
+          style={{
+            fontSize: '20px',
+            fontWeight: 800,
+            color: '#F1F5F9',
+            margin: 0,
+            marginBottom: '4px',
+          }}
+        >
+          Assets da Empresa
+        </h2>
+        <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
           Logo, imagens e criativos de {clientData.clientName} — usados para gerar anúncios no Meta Ads
         </p>
       </div>
 
       {/* Contadores por tipo */}
-      <div className="grid grid-cols-5 gap-3">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: '12px',
+        }}
+      >
         {byType.map((t) => (
-          <button key={t.key} onClick={() => setFilterType(filterType === t.key ? 'all' : t.key)}
-            className="rounded-xl p-3 text-center transition-all"
+          <button
+            key={t.key}
+            onClick={() => setFilterType(filterType === t.key ? 'all' : t.key)}
+            onMouseEnter={e => {
+              e.currentTarget.style.opacity = '0.88'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.opacity = '1'
+            }}
             style={{
-              background: filterType === t.key ? `${TYPE_COLOR[t.key]}12` : '#111114',
-              border: `1px solid ${filterType === t.key ? TYPE_COLOR[t.key] + '40' : '#2A2A30'}`,
-            }}>
-            <div className="text-xl mb-1">{t.icon}</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: TYPE_COLOR[t.key] }}>{t.label}</div>
-            <div className="text-lg font-display font-bold text-white">{t.count}</div>
+              borderRadius: '10px',
+              padding: '12px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              background: filterType === t.key ? `${TYPE_COLOR[t.key]}12` : '#0F1629',
+              border: `1px solid ${filterType === t.key ? TYPE_COLOR[t.key] + '40' : 'rgba(255,255,255,0.06)'}`,
+            }}
+          >
+            <div style={{ fontSize: '20px', marginBottom: '4px' }}>{t.icon}</div>
+            <div
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: TYPE_COLOR[t.key],
+              }}
+            >
+              {t.label}
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#F1F5F9' }}>{t.count}</div>
           </button>
         ))}
       </div>
 
       {/* Upload area */}
-      <div className="rounded-2xl p-5" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Tipo de asset a enviar</div>
-        <div className="flex flex-wrap gap-2 mb-4">
+      <div
+        style={{
+          borderRadius: '14px',
+          padding: '20px',
+          background: '#0F1629',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            color: '#94A3B8',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            marginBottom: '12px',
+          }}
+        >
+          Tipo de asset a enviar
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
           {ASSET_TYPES.map((t) => (
-            <button key={t.key} onClick={() => setSelectedType(t.key)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+            <button
+              key={t.key}
+              onClick={() => setSelectedType(t.key)}
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '10px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
                 background: selectedType === t.key ? `${TYPE_COLOR[t.key]}15` : 'transparent',
-                border: `1px solid ${selectedType === t.key ? TYPE_COLOR[t.key] + '50' : '#2A2A30'}`,
+                border: `1px solid ${selectedType === t.key ? TYPE_COLOR[t.key] + '50' : 'rgba(255,255,255,0.06)'}`,
                 color: selectedType === t.key ? TYPE_COLOR[t.key] : '#64748B',
-              }}>
+              }}
+            >
               {t.icon} {t.label}
             </button>
           ))}
@@ -171,19 +248,31 @@ export function TabAssets({ clientData }: Props) {
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
           onClick={() => fileRef.current?.click()}
-          className="rounded-xl border-2 border-dashed p-10 text-center cursor-pointer transition-all"
           style={{
-            borderColor: dragOver ? '#F0B429' : '#2A2A30',
-            background: dragOver ? 'rgba(240,180,41,0.04)' : 'transparent',
-          }}>
-          <input ref={fileRef} type="file" multiple accept="image/*" className="hidden"
-            onChange={(e) => handleFiles(e.target.files)} />
-          <div className="text-3xl mb-3">{uploading ? '⏳' : '📤'}</div>
-          <div className="text-sm font-semibold text-white mb-1">
+            borderRadius: '10px',
+            border: `2px dashed ${dragOver ? '#7C3AED' : 'rgba(255,255,255,0.10)'}`,
+            padding: '40px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+            background: dragOver ? 'rgba(124,58,237,0.06)' : 'transparent',
+          }}
+        >
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+          <div style={{ fontSize: '28px', marginBottom: '10px' }}>{uploading ? '⏳' : '📤'}</div>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: '#F1F5F9', marginBottom: '4px' }}>
             {uploading ? 'Processando...' : 'Arraste imagens ou clique para selecionar'}
           </div>
-          <div className="text-xs text-slate-500">
-            PNG, JPG, SVG, WebP · máx 5 MB por arquivo · tipo: <span style={{ color: TYPE_COLOR[selectedType] }}>
+          <div style={{ fontSize: '11px', color: '#64748B' }}>
+            PNG, JPG, SVG, WebP · máx 5 MB por arquivo · tipo:{' '}
+            <span style={{ color: TYPE_COLOR[selectedType] }}>
               {ASSET_TYPES.find(t => t.key === selectedType)?.label}
             </span>
           </div>
@@ -193,45 +282,148 @@ export function TabAssets({ clientData }: Props) {
       {/* Grid de assets */}
       {(clientAssets[key] || []).length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs text-slate-500">
-              {filterType === 'all' ? `${totalCount} assets` : `${assets.length} ${ASSET_TYPES.find(t => t.key === filterType)?.label}`}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '12px',
+            }}
+          >
+            <span style={{ fontSize: '11px', color: '#64748B' }}>
+              {filterType === 'all'
+                ? `${totalCount} assets`
+                : `${assets.length} ${ASSET_TYPES.find(t => t.key === filterType)?.label}`}
             </span>
             {filterType !== 'all' && (
-              <button onClick={() => setFilterType('all')} className="text-xs text-slate-600 hover:text-slate-300">
+              <button
+                onClick={() => setFilterType('all')}
+                onMouseEnter={e => { e.currentTarget.style.color = '#94A3B8' }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#64748B' }}
+                style={{
+                  fontSize: '12px',
+                  color: '#64748B',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'color 0.15s',
+                }}
+              >
                 Ver todos ×
               </button>
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: '16px',
+            }}
+          >
             {assets.map((asset) => (
-              <div key={asset.id} className="rounded-2xl overflow-hidden group relative"
-                style={{ background: '#111114', border: `1px solid ${activeAssetId === asset.id ? '#F0B42940' : '#2A2A30'}` }}>
+              <div
+                key={asset.id}
+                style={{
+                  borderRadius: '14px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  background: '#0F1629',
+                  border: `1px solid ${activeAssetId === asset.id ? 'rgba(124,58,237,0.40)' : 'rgba(255,255,255,0.06)'}`,
+                }}
+              >
                 {/* Preview */}
-                <div className="relative aspect-video bg-[#0A0A0B] flex items-center justify-center overflow-hidden">
-                  <img src={asset.dataUrl} alt={asset.name}
-                    className="object-contain w-full h-full p-2" />
-                  <span className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded"
-                    style={{ background: `${TYPE_COLOR[asset.type]}20`, color: TYPE_COLOR[asset.type], border: `1px solid ${TYPE_COLOR[asset.type]}30` }}>
+                <div
+                  style={{
+                    position: 'relative',
+                    aspectRatio: '16/9',
+                    background: '#080D1A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <img
+                    src={asset.dataUrl}
+                    alt={asset.name}
+                    style={{ objectFit: 'contain', width: '100%', height: '100%', padding: '8px', boxSizing: 'border-box' }}
+                  />
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: '6px',
+                      background: `${TYPE_COLOR[asset.type]}20`,
+                      color: TYPE_COLOR[asset.type],
+                      border: `1px solid ${TYPE_COLOR[asset.type]}30`,
+                    }}
+                  >
                     {ASSET_TYPES.find(t => t.key === asset.type)?.icon} {asset.type}
                   </span>
                   <button
                     onClick={() => removeClientAsset(key, asset.id)}
-                    className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                    style={{ background: 'rgba(255,77,77,0.9)', color: '#fff' }}>
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      background: 'rgba(239,68,68,0.90)',
+                      color: '#fff',
+                      border: 'none',
+                    }}
+                  >
                     ✕
                   </button>
                 </div>
                 {/* Info + generate button */}
-                <div className="p-3">
-                  <div className="text-xs text-white font-medium truncate mb-1">{asset.name}</div>
-                  <div className="text-[10px] text-slate-600 mb-2">{formatSize(asset.sizeKb)}</div>
+                <div style={{ padding: '12px' }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: '#F1F5F9',
+                      fontWeight: 500,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    {asset.name}
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#64748B', marginBottom: '8px' }}>
+                    {formatSize(asset.sizeKb)}
+                  </div>
                   <button
                     onClick={() => generateCopy(asset)}
                     disabled={generating && activeAssetId === asset.id}
-                    className="w-full py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}>
+                    onMouseEnter={e => { if (!(generating && activeAssetId === asset.id)) e.currentTarget.style.opacity = '0.85' }}
+                    onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+                    style={{
+                      width: '100%',
+                      padding: '6px 0',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: generating && activeAssetId === asset.id ? 'not-allowed' : 'pointer',
+                      opacity: generating && activeAssetId === asset.id ? 0.5 : 1,
+                      transition: 'opacity 0.15s',
+                      background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+                      border: 'none',
+                      color: '#fff',
+                    }}
+                  >
                     {generating && activeAssetId === asset.id ? '⏳ Gerando...' : '⚡ Gerar Copy com IA'}
                   </button>
                 </div>
@@ -241,78 +433,211 @@ export function TabAssets({ clientData }: Props) {
 
           {/* Copy generation results */}
           {activeAssetId && (variants.length > 0 || generating || copyError) && (
-            <div className="rounded-2xl p-5" style={{ background: '#0D0D10', border: '1px solid #F0B42930' }}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-display font-bold text-white text-sm flex items-center gap-2">
+            <div
+              style={{
+                borderRadius: '14px',
+                padding: '20px',
+                marginTop: '24px',
+                background: '#0F1629',
+                border: '1px solid rgba(124,58,237,0.22)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '16px',
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#F1F5F9',
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
                   <span>⚡</span> Copy gerada com IA
-                  <span className="text-[10px] text-slate-500 font-normal">— pronta para usar no Meta Ads</span>
+                  <span style={{ fontSize: '10px', color: '#64748B', fontWeight: 400 }}>
+                    — pronta para usar no Meta Ads
+                  </span>
                 </h3>
-                <button onClick={() => { setActiveAssetId(null); setVariants([]) }}
-                  className="text-slate-600 hover:text-slate-400 text-xs">fechar ×</button>
+                <button
+                  onClick={() => { setActiveAssetId(null); setVariants([]) }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#94A3B8' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#64748B' }}
+                  style={{
+                    color: '#64748B',
+                    fontSize: '12px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'color 0.15s',
+                  }}
+                >
+                  fechar ×
+                </button>
               </div>
 
               {copyError && (
-                <div className="text-red-400 text-xs bg-red-900/20 rounded-xl px-4 py-3">{copyError}</div>
+                <div
+                  style={{
+                    fontSize: '12px',
+                    color: '#EF4444',
+                    background: 'rgba(239,68,68,0.12)',
+                    borderRadius: '10px',
+                    padding: '10px 16px',
+                    marginBottom: '12px',
+                  }}
+                >
+                  {copyError}
+                </div>
               )}
 
               {generating && (
-                <div className="flex items-center gap-3 text-slate-400 text-sm py-4">
-                  <span className="animate-pulse">⚡</span>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    color: '#94A3B8',
+                    fontSize: '13px',
+                    padding: '16px 0',
+                  }}
+                >
+                  <span>⚡</span>
                   Analisando o asset e gerando 3 variações de copy específicas para {clientData?.niche}...
                 </div>
               )}
 
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {variants.map((v, i) => {
                   const angleColors: Record<string, string> = {
-                    dor: '#FF4D4D', aspiração: '#38BDF8', 'prova social': '#22C55E',
-                    urgência: '#F0B429', oferta: '#A78BFA',
+                    dor: '#EF4444',
+                    aspiração: '#38BDF8',
+                    'prova social': '#22C55E',
+                    urgência: '#F59E0B',
+                    oferta: '#A78BFA',
                   }
                   const ac = angleColors[v.angle] || '#64748B'
                   return (
-                    <div key={i} className="rounded-xl p-4" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: `${ac}15`, color: ac, border: `1px solid ${ac}30` }}>
+                    <div
+                      key={i}
+                      style={{
+                        borderRadius: '10px',
+                        padding: '16px',
+                        background: '#131E35',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '8px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '999px',
+                            background: `${ac}15`,
+                            color: ac,
+                            border: `1px solid ${ac}30`,
+                          }}
+                        >
                           {v.angle}
                         </span>
-                        <span className="text-[10px] text-slate-600">Variação {i + 1}</span>
+                        <span style={{ fontSize: '10px', color: '#64748B' }}>Variação {i + 1}</span>
                       </div>
-                      <div className="space-y-2">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {/* Headline */}
-                        <div className="flex items-start justify-between gap-2">
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                           <div>
-                            <div className="text-[10px] text-slate-500 uppercase mb-0.5">Headline</div>
-                            <div className="text-sm font-bold text-white">{v.headline}</div>
+                            <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', marginBottom: '2px' }}>
+                              Headline
+                            </div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: '#F1F5F9' }}>{v.headline}</div>
                           </div>
-                          <button onClick={() => copyToClipboard(v.headline, `h-${i}`)}
-                            className="text-[10px] px-2 py-1 rounded-lg flex-shrink-0 transition-all"
-                            style={{ background: copied === `h-${i}` ? '#22C55E20' : '#2A2A30', color: copied === `h-${i}` ? '#22C55E' : '#64748B' }}>
+                          <button
+                            onClick={() => copyToClipboard(v.headline, `h-${i}`)}
+                            style={{
+                              fontSize: '10px',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              flexShrink: 0,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                              background: copied === `h-${i}` ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
+                              border: copied === `h-${i}` ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                              color: copied === `h-${i}` ? '#22C55E' : '#64748B',
+                            }}
+                          >
                             {copied === `h-${i}` ? '✓' : 'Copiar'}
                           </button>
                         </div>
                         {/* Primary text */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <div className="text-[10px] text-slate-500 uppercase mb-0.5">Texto Principal</div>
-                            <div className="text-xs text-slate-300 leading-relaxed">{v.primaryText}</div>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', marginBottom: '2px' }}>
+                              Texto Principal
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#94A3B8', lineHeight: 1.6 }}>{v.primaryText}</div>
                           </div>
-                          <button onClick={() => copyToClipboard(v.primaryText, `p-${i}`)}
-                            className="text-[10px] px-2 py-1 rounded-lg flex-shrink-0 transition-all"
-                            style={{ background: copied === `p-${i}` ? '#22C55E20' : '#2A2A30', color: copied === `p-${i}` ? '#22C55E' : '#64748B' }}>
+                          <button
+                            onClick={() => copyToClipboard(v.primaryText, `p-${i}`)}
+                            style={{
+                              fontSize: '10px',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              flexShrink: 0,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                              background: copied === `p-${i}` ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
+                              border: copied === `p-${i}` ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                              color: copied === `p-${i}` ? '#22C55E' : '#64748B',
+                            }}
+                          >
                             {copied === `p-${i}` ? '✓' : 'Copiar'}
                           </button>
                         </div>
                         {/* CTA */}
-                        <div className="flex items-center gap-2 pt-1">
-                          <span className="text-[10px] text-slate-500 uppercase">CTA:</span>
-                          <span className="text-[11px] font-bold px-3 py-1 rounded-full"
-                            style={{ background: '#F0B42915', color: '#F0B429', border: '1px solid #F0B42930' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '4px' }}>
+                          <span style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase' }}>CTA:</span>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '3px 12px',
+                              borderRadius: '999px',
+                              background: 'rgba(124,58,237,0.10)',
+                              color: '#A78BFA',
+                              border: '1px solid rgba(124,58,237,0.22)',
+                            }}
+                          >
                             {v.cta}
                           </span>
-                          <button onClick={() => copyToClipboard(`${v.headline}\n\n${v.primaryText}\n\nCTA: ${v.cta}`, `all-${i}`)}
-                            className="ml-auto text-[10px] px-2 py-1 rounded-lg transition-all"
-                            style={{ background: copied === `all-${i}` ? '#22C55E20' : '#2A2A30', color: copied === `all-${i}` ? '#22C55E' : '#64748B' }}>
+                          <button
+                            onClick={() => copyToClipboard(`${v.headline}\n\n${v.primaryText}\n\nCTA: ${v.cta}`, `all-${i}`)}
+                            style={{
+                              marginLeft: 'auto',
+                              fontSize: '10px',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                              background: copied === `all-${i}` ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
+                              border: copied === `all-${i}` ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                              color: copied === `all-${i}` ? '#22C55E' : '#64748B',
+                            }}
+                          >
                             {copied === `all-${i}` ? '✓ Copiado!' : 'Copiar tudo'}
                           </button>
                         </div>
@@ -328,18 +653,38 @@ export function TabAssets({ clientData }: Props) {
 
       {/* Empty state */}
       {(clientAssets[key] || []).length === 0 && (
-        <div className="rounded-2xl p-12 text-center" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-          <div className="text-4xl mb-4 opacity-30">🖼️</div>
-          <div className="text-slate-500 text-sm">Nenhum asset enviado ainda.</div>
-          <div className="text-slate-600 text-xs mt-1">Envie logo, fotos de produto ou criativos para gerar copy com IA.</div>
+        <div
+          style={{
+            borderRadius: '14px',
+            padding: '48px',
+            textAlign: 'center',
+            background: '#0F1629',
+            border: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <div style={{ fontSize: '36px', marginBottom: '16px', opacity: 0.3 }}>🖼️</div>
+          <div style={{ fontSize: '13px', color: '#64748B' }}>Nenhum asset enviado ainda.</div>
+          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px', opacity: 0.7 }}>
+            Envie logo, fotos de produto ou criativos para gerar copy com IA.
+          </div>
         </div>
       )}
 
-      <div className="rounded-xl px-4 py-3 text-xs text-slate-500"
-        style={{ background: 'rgba(240,180,41,0.04)', border: '1px solid rgba(240,180,41,0.1)' }}>
-        <span className="text-yellow-400 font-semibold">⚡ Como funciona:</span>{' '}
+      {/* Info footer */}
+      <div
+        style={{
+          borderRadius: '10px',
+          padding: '10px 16px',
+          fontSize: '12px',
+          color: '#94A3B8',
+          background: 'rgba(124,58,237,0.06)',
+          border: '1px solid rgba(124,58,237,0.15)',
+        }}
+      >
+        <span style={{ color: '#A78BFA', fontWeight: 600 }}>⚡ Como funciona:</span>{' '}
         Clique em "Gerar Copy com IA" em qualquer imagem. A IA cria 3 variações de headline + texto + CTA
-        específicas para o nicho {clientData?.niche} — prontas para colar no Meta Ads. Gere a Persona IA primeiro para resultados ainda mais precisos.
+        específicas para o nicho {clientData?.niche} — prontas para colar no Meta Ads. Gere a Persona IA primeiro
+        para resultados ainda mais precisos.
       </div>
     </div>
   )

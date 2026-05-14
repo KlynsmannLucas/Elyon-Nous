@@ -13,7 +13,7 @@ const PLATFORMS = [
   { key: 'facebook',  label: 'Facebook',   icon: '👥', color: '#1877F2' },
   { key: 'linkedin',  label: 'LinkedIn',   icon: '💼', color: '#0A66C2' },
   { key: 'youtube',   label: 'YouTube',    icon: '▶️', color: '#FF0000' },
-  { key: 'email',     label: 'E-mail',     icon: '✉️', color: '#F0B429' },
+  { key: 'email',     label: 'E-mail',     icon: '✉️', color: '#7C3AED' },
 ]
 
 const THEME_SUGGESTIONS = [
@@ -44,13 +44,20 @@ function CopyButton({ text }: { text: string }) {
     setTimeout(() => setCopied(false), 2000)
   }
   return (
-    <button onClick={handleCopy}
-      className="text-[10px] px-2 py-0.5 rounded-md transition-all flex-shrink-0"
+    <button
+      onClick={handleCopy}
       style={{
+        fontSize: '10px',
+        padding: '2px 8px',
+        borderRadius: '6px',
+        flexShrink: 0,
+        cursor: 'pointer',
+        transition: 'all 0.15s',
         background: copied ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
-        border: copied ? '1px solid rgba(34,197,94,0.3)' : '1px solid #2A2A30',
-        color: copied ? '#4ADE80' : '#64748B',
-      }}>
+        border: copied ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+        color: copied ? '#22C55E' : '#64748B',
+      }}
+    >
       {copied ? '✓ Copiado' : 'Copiar'}
     </button>
   )
@@ -58,68 +65,181 @@ function CopyButton({ text }: { text: string }) {
 
 function PostCard({ post, index, platform }: { post: Post; index: number; platform: string }) {
   const pl = PLATFORMS.find(p => p.key === platform)
-  const color = pl?.color || '#F0B429'
+  const color = pl?.color || '#7C3AED'
   const fullText = `${post.gancho}\n\n${post.legenda}\n\n${post.cta}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`
 
   return (
-    <div className="rounded-2xl overflow-hidden animate-fade-up" style={{ border: '1px solid #2A2A30', background: '#111114' }}>
+    <div
+      style={{
+        background: '#0F1629',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '14px',
+        overflow: 'hidden',
+      }}
+    >
       {/* Header */}
-      <div className="px-4 py-3 flex items-center justify-between"
-        style={{ background: `${color}10`, borderBottom: '1px solid #1E1E24' }}>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-            style={{ background: `${color}20`, color, border: `1px solid ${color}30` }}>
+      <div
+        style={{
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: `${color}10`,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              fontSize: '10px',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '999px',
+              background: `${color}20`,
+              color,
+              border: `1px solid ${color}30`,
+            }}
+          >
             {post.tipo}
           </span>
-          <span className="text-xs text-slate-500">Ideia {index + 1}</span>
+          <span style={{ fontSize: '11px', color: '#64748B' }}>Ideia {index + 1}</span>
         </div>
         <CopyButton text={fullText} />
       </div>
 
-      <div className="p-4 space-y-3">
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {/* Gancho */}
         <div>
-          <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color }}>
+          <div
+            style={{
+              fontSize: '10px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: '4px',
+              color,
+            }}
+          >
             🎯 Gancho
           </div>
-          <p className="text-sm font-semibold text-white leading-snug">{post.gancho}</p>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: '#F1F5F9', lineHeight: 1.4, margin: 0 }}>
+            {post.gancho}
+          </p>
         </div>
 
         {/* Estrutura */}
         <div>
-          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">📐 Estrutura</div>
-          <p className="text-xs text-slate-400 leading-relaxed">{post.estrutura}</p>
+          <div
+            style={{
+              fontSize: '10px',
+              fontWeight: 700,
+              color: '#64748B',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: '4px',
+            }}
+          >
+            📐 Estrutura
+          </div>
+          <p style={{ fontSize: '11px', color: '#94A3B8', lineHeight: 1.6, margin: 0 }}>{post.estrutura}</p>
         </div>
 
         {/* Legenda */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">✍️ Legenda</div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '4px',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                color: '#64748B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}
+            >
+              ✍️ Legenda
+            </div>
             <CopyButton text={post.legenda} />
           </div>
-          <div className="rounded-xl p-3 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"
-            style={{ background: '#0C0C0F', border: '1px solid #1E1E24' }}>
+          <div
+            style={{
+              borderRadius: '10px',
+              padding: '10px 12px',
+              fontSize: '11px',
+              color: '#94A3B8',
+              lineHeight: 1.6,
+              whiteSpace: 'pre-wrap',
+              background: '#080D1A',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
             {post.legenda}
           </div>
         </div>
 
         {/* CTA */}
-        <div className="rounded-xl px-3 py-2 flex items-center justify-between"
-          style={{ background: `${color}08`, border: `1px solid ${color}20` }}>
+        <div
+          style={{
+            borderRadius: '10px',
+            padding: '8px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: `${color}08`,
+            border: `1px solid ${color}20`,
+          }}
+        >
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color }}>CTA</div>
-            <p className="text-xs text-slate-300">{post.cta}</p>
+            <div
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                marginBottom: '2px',
+                color,
+              }}
+            >
+              CTA
+            </div>
+            <p style={{ fontSize: '11px', color: '#94A3B8', margin: 0 }}>{post.cta}</p>
           </div>
         </div>
 
         {/* Hashtags */}
         {post.hashtags?.length > 0 && (
           <div>
-            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5"># Hashtags</div>
-            <div className="flex flex-wrap gap-1">
+            <div
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                color: '#64748B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                marginBottom: '6px',
+              }}
+            >
+              # Hashtags
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
               {post.hashtags.map((h, i) => (
-                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-md"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid #2A2A30', color: '#94A3B8' }}>
+                <span
+                  key={i}
+                  style={{
+                    fontSize: '10px',
+                    padding: '2px 6px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    color: '#94A3B8',
+                  }}
+                >
                   #{h.replace(/^#/, '')}
                 </span>
               ))}
@@ -170,52 +290,136 @@ export function TabConteudo({ clientData }: Props) {
 
   if (!clientData) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh] text-slate-500 text-sm">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '50vh',
+          color: '#64748B',
+          fontSize: '13px',
+        }}
+      >
         Configure um cliente primeiro para gerar conteúdo.
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-6">
-        <h2 className="font-display text-xl font-bold text-white">Gerador de Conteúdo</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
+    <div style={{ maxWidth: '720px' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '24px' }}>
+        <h2
+          style={{
+            fontSize: '20px',
+            fontWeight: 800,
+            color: '#F1F5F9',
+            margin: 0,
+            marginBottom: '4px',
+          }}
+        >
+          Gerador de Conteúdo
+        </h2>
+        <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
           IA cria 3 ideias prontas para usar — gancho, legenda, CTA e hashtags adaptados à plataforma e persona
         </p>
       </div>
 
       {/* Persona ativa */}
       {generatedPersona ? (
-        <div className="rounded-xl px-4 py-3 mb-5 flex items-center gap-3"
-          style={{ background: 'rgba(240,180,41,0.04)', border: '1px solid rgba(240,180,41,0.15)' }}>
-          <span className="text-base">👤</span>
-          <div className="flex-1 min-w-0">
-            <span className="text-xs text-[#F0B429] font-semibold">Persona ativa: </span>
-            <span className="text-xs text-slate-300">{generatedPersona.name} · {generatedPersona.profession}</span>
+        <div
+          style={{
+            borderRadius: '10px',
+            padding: '10px 16px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            background: 'rgba(124,58,237,0.10)',
+            border: '1px solid rgba(124,58,237,0.22)',
+          }}
+        >
+          <span style={{ fontSize: '16px' }}>👤</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: '11px', color: '#A78BFA', fontWeight: 600 }}>Persona ativa: </span>
+            <span style={{ fontSize: '11px', color: '#94A3B8' }}>
+              {generatedPersona.name} · {generatedPersona.profession}
+            </span>
           </div>
-          <span className="text-[10px] text-slate-500 flex-shrink-0">conteúdo será personalizado</span>
+          <span style={{ fontSize: '10px', color: '#64748B', flexShrink: 0 }}>conteúdo será personalizado</span>
         </div>
       ) : (
-        <div className="rounded-xl px-4 py-3 mb-5 text-xs text-slate-500"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #2A2A30' }}>
-          💡 Gere uma persona na aba <span className="text-slate-300 font-medium">Persona IA</span> para conteúdo ainda mais personalizado
+        <div
+          style={{
+            borderRadius: '10px',
+            padding: '10px 16px',
+            marginBottom: '20px',
+            fontSize: '11px',
+            color: '#64748B',
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          💡 Gere uma persona na aba{' '}
+          <span style={{ color: '#94A3B8', fontWeight: 500 }}>Persona IA</span>{' '}
+          para conteúdo ainda mais personalizado
         </div>
       )}
 
       {/* Seletor de plataforma */}
-      <div className="rounded-2xl p-5 mb-5" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Plataforma</div>
-        <div className="grid grid-cols-3 gap-2">
+      <div
+        style={{
+          borderRadius: '14px',
+          padding: '20px',
+          marginBottom: '20px',
+          background: '#0F1629',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            color: '#94A3B8',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            marginBottom: '12px',
+          }}
+        >
+          Plataforma
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '8px',
+          }}
+        >
           {PLATFORMS.map(pl => (
-            <button key={pl.key} onClick={() => setPlatform(pl.key)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all"
+            <button
+              key={pl.key}
+              onClick={() => setPlatform(pl.key)}
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                borderRadius: '10px',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
                 background: platform === pl.key ? `${pl.color}12` : 'transparent',
-                border: platform === pl.key ? `1px solid ${pl.color}40` : '1px solid #1E1E24',
-              }}>
-              <span className="text-base">{pl.icon}</span>
-              <span className="text-xs font-semibold" style={{ color: platform === pl.key ? pl.color : '#94A3B8' }}>
+                border: platform === pl.key ? `1px solid ${pl.color}40` : '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>{pl.icon}</span>
+              <span
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: platform === pl.key ? pl.color : '#94A3B8',
+                }}
+              >
                 {pl.label}
               </span>
             </button>
@@ -224,22 +428,78 @@ export function TabConteudo({ clientData }: Props) {
       </div>
 
       {/* Tema */}
-      <div className="rounded-2xl p-5 mb-5" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Tema do Conteúdo</div>
+      <div
+        style={{
+          borderRadius: '14px',
+          padding: '20px',
+          marginBottom: '20px',
+          background: '#0F1629',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            color: '#94A3B8',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            marginBottom: '12px',
+          }}
+        >
+          Tema do Conteúdo
+        </div>
         <input
           value={theme}
           onChange={e => setTheme(e.target.value)}
           placeholder="Ex: Como perder 5kg em 30 dias sem dieta radical"
-          className="w-full bg-transparent rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 outline-none mb-3"
-          style={{ border: '1px solid #2A2A30' }}
+          style={{
+            background: '#131E35',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '10px',
+            color: '#F1F5F9',
+            fontSize: '13px',
+            padding: '8px 12px',
+            outline: 'none',
+            width: '100%',
+            boxSizing: 'border-box',
+            marginBottom: '12px',
+          }}
           onKeyDown={e => e.key === 'Enter' && handleGenerate()}
         />
-        <div className="text-[10px] text-slate-600 mb-2">Sugestões rápidas:</div>
-        <div className="flex flex-wrap gap-1.5">
+        <div
+          style={{
+            fontSize: '10px',
+            color: '#64748B',
+            marginBottom: '8px',
+          }}
+        >
+          Sugestões rápidas:
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {THEME_SUGGESTIONS.map(s => (
-            <button key={s} onClick={() => setTheme(s)}
-              className="text-[10px] px-2.5 py-1 rounded-full transition-all hover:border-slate-500"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #2A2A30', color: '#94A3B8' }}>
+            <button
+              key={s}
+              onClick={() => setTheme(s)}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
+                e.currentTarget.style.color = '#F1F5F9'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
+                e.currentTarget.style.color = '#94A3B8'
+              }}
+              style={{
+                fontSize: '10px',
+                padding: '4px 10px',
+                borderRadius: '999px',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                color: '#94A3B8',
+              }}
+            >
               {s}
             </button>
           ))}
@@ -247,28 +507,73 @@ export function TabConteudo({ clientData }: Props) {
       </div>
 
       {error && (
-        <div className="rounded-xl px-4 py-3 mb-4 text-xs text-red-400"
-          style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.2)' }}>
+        <div
+          style={{
+            borderRadius: '10px',
+            padding: '10px 16px',
+            marginBottom: '16px',
+            fontSize: '12px',
+            color: '#EF4444',
+            background: 'rgba(239,68,68,0.06)',
+            border: '1px solid rgba(239,68,68,0.2)',
+          }}
+        >
           {error}
         </div>
       )}
 
-      <button onClick={handleGenerate} disabled={loading || !theme.trim()}
-        className="w-full py-3.5 rounded-xl font-bold text-sm text-black mb-6 disabled:opacity-40 transition-opacity hover:opacity-90"
-        style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
+      <button
+        onClick={handleGenerate}
+        disabled={loading || !theme.trim()}
+        onMouseEnter={e => { if (!loading && theme.trim()) e.currentTarget.style.opacity = '0.88' }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+        style={{
+          width: '100%',
+          padding: '12px',
+          borderRadius: '10px',
+          fontWeight: 700,
+          fontSize: '13px',
+          color: '#fff',
+          marginBottom: '24px',
+          cursor: loading || !theme.trim() ? 'not-allowed' : 'pointer',
+          opacity: loading || !theme.trim() ? 0.4 : 1,
+          transition: 'opacity 0.15s',
+          background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+          border: 'none',
+        }}
+      >
         {loading
           ? '⚡ Gerando conteúdo...'
           : `✨ Gerar 3 Ideias para ${PLATFORMS.find(p => p.key === platform)?.label}`}
       </button>
 
       {posts.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#94A3B8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}
+            >
               3 Ideias prontas para usar
             </div>
-            <button onClick={() => setPosts([])}
-              className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors">
+            <button
+              onClick={() => setPosts([])}
+              onMouseEnter={e => { e.currentTarget.style.color = '#94A3B8' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#64748B' }}
+              style={{
+                fontSize: '10px',
+                color: '#64748B',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'color 0.15s',
+              }}
+            >
               Limpar
             </button>
           </div>

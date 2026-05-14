@@ -89,8 +89,9 @@ function KpiCard({ label, value, sub, color, trend, sparkSeed, sparkBase, icon }
   return (
     <div style={{
       background: C.surface, border: `1px solid ${C.border}`,
-      borderRadius: '14px', padding: '18px 18px 14px',
+      borderRadius: '14px', padding: '22px 22px 18px',
       display: 'flex', flexDirection: 'column', gap: '10px',
+      minHeight: '140px',
       transition: 'border-color 0.15s, box-shadow 0.15s',
       cursor: 'default',
     }}
@@ -125,7 +126,7 @@ function KpiCard({ label, value, sub, color, trend, sparkSeed, sparkBase, icon }
         <div style={{ fontSize: '24px', fontWeight: 800, color: C.text1, letterSpacing: '-0.03em', lineHeight: 1 }}>
           {value}
         </div>
-        <div style={{ fontSize: '11px', color: C.text3, marginTop: '4px', fontWeight: 500 }}>
+        <div style={{ fontSize: '9px', color: C.text3, marginTop: '4px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           {label}
         </div>
       </div>
@@ -359,7 +360,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
       return [
         {
           label: 'Investimento Real', value: rm.totalSpend >= 1000 ? `R$${(rm.totalSpend/1000).toFixed(1)}k` : `R$${rm.totalSpend}`,
-          sub: `${rm.campaignCount} campanhas · ${rm.dataSource}`, color: C.gold,
+          sub: `${rm.campaignCount} campanhas · ${rm.dataSource}`, color: C.red,
           trend: prevTotals?.spendDelta ?? undefined, base: rm.totalSpend,
           icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
         },
@@ -383,7 +384,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         },
         {
           label: 'CTR Médio', value: rm.avgCTR ? `${rm.avgCTR}%` : '—',
-          sub: 'Cliques / Impressões da conta', color: C.blue, trend: undefined, base: (rm.avgCTR ?? 2) * 50,
+          sub: 'Cliques / Impressões da conta', color: C.purpleL, trend: undefined, base: (rm.avgCTR ?? 2) * 50,
           icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
         },
         {
@@ -399,7 +400,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         {
           label: 'Receita Est./mês', value: `R$${Math.round(proj.revenueMonth/1000)}k`,
           sub: `R$${Math.round(proj.revenueMin/1000)}k–R$${Math.round(proj.revenueMax/1000)}k/mês`,
-          color: C.gold, trend: undefined, base: proj.revenueMonth,
+          color: C.green, trend: undefined, base: proj.revenueMonth,
           icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
         },
         {

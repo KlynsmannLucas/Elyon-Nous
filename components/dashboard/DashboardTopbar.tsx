@@ -1,7 +1,7 @@
 // components/dashboard/DashboardTopbar.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { TabKey } from './DashboardSidebar'
 import { SIDEBAR_SECTIONS } from './DashboardSidebar'
 import { AlertsPanel } from './AlertsPanel'
@@ -44,24 +44,37 @@ const TAB_SUBTITLES: Partial<Record<TabKey, string>> = {
 export function DashboardTopbar({
   activeTab, clientData, onExport, onReset, onSave, pdfLoading, sidebarCollapsed, onToggleSidebar,
 }: Props) {
-  const [savedFlash, setSavedFlash] = useState(false)
-  const [pdfMenuOpen, setPdfMenuOpen] = useState(false)
+  const [clientMenuOpen, setClientMenuOpen] = useState(false)
+  const [pdfMenuOpen,    setPdfMenuOpen]    = useState(false)
+  const clientMenuRef = useRef<HTMLDivElement>(null)
+
+  // Auto-save on mount and every 60s silently
+  useEffect(() => {
+    onSave()
+    const id = setInterval(() => onSave(), 60_000)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Close client menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (clientMenuRef.current && !clientMenuRef.current.contains(e.target as Node)) {
+        setClientMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const allItems   = SIDEBAR_SECTIONS.flatMap(s => s.items)
   const currentTab = allItems.find(t => t.key === activeTab)
   const subtitle   = TAB_SUBTITLES[activeTab] || ''
 
-  const handleSave = () => {
-    onSave()
-    setSavedFlash(true)
-    setTimeout(() => setSavedFlash(false), 2000)
-  }
-
-  // ── Today's date formatted ────────────────────────────────────────────────
-  const today = new Date()
+  const today        = new Date()
   const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
   const fmt = (d: Date) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const dateRange = `${fmt(firstOfMonth)} — ${fmt(today)}`
+  const dateRange    = `${fmt(firstOfMonth)} — ${fmt(today)}`
 
   return (
     <div style={{
@@ -71,7 +84,7 @@ export function DashboardTopbar({
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
       display: 'flex', alignItems: 'center',
-      padding: '0 20px 0 16px', gap: '12px',
+      padding: '0 20px 0 16px', gap: '10px',
       position: 'relative', zIndex: 10,
     }}>
 
@@ -133,25 +146,61 @@ export function DashboardTopbar({
         <span>{dateRange}</span>
       </div>
 
-      {/* Client pill */}
+      {/* Client pill — click opens dropdown with "Trocar cliente" */}
       {clientData?.clientName && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0,
-          padding: '4px 10px', borderRadius: '7px',
-          background: 'rgba(124,58,237,0.08)',
-          border: '1px solid rgba(124,58,237,0.2)',
-        }}>
-          <div style={{
-            width: '18px', height: '18px', borderRadius: '5px',
-            background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '9px', fontWeight: 700, color: '#fff', flexShrink: 0,
-          }}>
-            {clientData.clientName.charAt(0).toUpperCase()}
-          </div>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#C4B5FD', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {clientData.clientName}
-          </span>
+        <div ref={clientMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={() => setClientMenuOpen(v => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '4px 10px', borderRadius: '7px', cursor: 'pointer',
+              background: 'rgba(124,58,237,0.08)',
+              border: `1px solid ${clientMenuOpen ? 'rgba(124,58,237,0.4)' : 'rgba(124,58,237,0.2)'}`,
+              transition: 'all 0.15s',
+            }}
+          >
+            <div style={{
+              width: '18px', height: '18px', borderRadius: '5px',
+              background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '9px', fontWeight: 700, color: '#fff', flexShrink: 0,
+            }}>
+              {clientData.clientName.charAt(0).toUpperCase()}
+            </div>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#C4B5FD', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {clientData.clientName}
+            </span>
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" style={{ color: 'rgba(196,181,253,0.5)', flexShrink: 0, transform: clientMenuOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.15s' }}>
+              <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+
+          {clientMenuOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 9999,
+              background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '10px', padding: '6px', minWidth: '160px',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+            }}>
+              <button
+                onClick={() => { onReset(); setClientMenuOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  width: '100%', padding: '8px 10px', borderRadius: '7px',
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  color: '#CBD5E1', fontSize: '12px', textAlign: 'left',
+                  transition: 'background 0.12s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.1)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                Trocar cliente
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -161,84 +210,54 @@ export function DashboardTopbar({
       {/* Alerts bell */}
       <AlertsPanel clientName={clientData?.clientName} niche={clientData?.niche} />
 
-      {/* Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-
-        {/* Save */}
-        <button onClick={handleSave} style={{
-          padding: '5px 11px', borderRadius: '7px', cursor: 'pointer',
-          fontSize: '11px', fontWeight: 500, transition: 'all 0.15s',
-          border: savedFlash ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(255,255,255,0.07)',
-          background: savedFlash ? 'rgba(34,197,94,0.08)' : 'transparent',
-          color: savedFlash ? '#22C55E' : 'rgba(255,255,255,0.35)',
-        }}
-          onMouseEnter={e => { if (!savedFlash) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' } }}
-          onMouseLeave={e => { if (!savedFlash) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.35)' } }}
-        >
-          {savedFlash ? '✓ Salvo' : '💾'}
-        </button>
-
-        {/* Reset */}
-        <button onClick={onReset} style={{
-          padding: '5px 10px', borderRadius: '7px', fontSize: '11px',
-          border: '1px solid rgba(255,255,255,0.06)', background: 'transparent',
-          color: 'rgba(255,255,255,0.28)', cursor: 'pointer', transition: 'all 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.28)' }}
-        >
-          Trocar
-        </button>
-
-        {/* PDF */}
-        <div style={{ position: 'relative' }}>
-          <div style={{
-            display: 'flex', borderRadius: '8px', overflow: 'hidden',
-            background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
-            boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
+      {/* PDF export */}
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div style={{
+          display: 'flex', borderRadius: '8px', overflow: 'hidden',
+          background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+          boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
+        }}>
+          <button onClick={() => onExport('full')} disabled={pdfLoading} style={{
+            padding: '5px 12px', background: 'transparent', border: 'none', color: '#fff',
+            fontSize: '11px', fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer',
+            opacity: pdfLoading ? 0.65 : 1, borderRight: '1px solid rgba(255,255,255,0.2)',
+            transition: 'opacity 0.15s', whiteSpace: 'nowrap',
           }}>
-            <button onClick={() => onExport('full')} disabled={pdfLoading} style={{
-              padding: '5px 12px', background: 'transparent', border: 'none', color: '#fff',
-              fontSize: '11px', fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer',
-              opacity: pdfLoading ? 0.65 : 1, borderRight: '1px solid rgba(255,255,255,0.2)',
-              transition: 'opacity 0.15s', whiteSpace: 'nowrap',
-            }}>
-              {pdfLoading ? '⏳' : '↓ PDF'}
-            </button>
-            <button onClick={() => setPdfMenuOpen(v => !v)} disabled={pdfLoading} style={{
-              padding: '5px 8px', background: 'transparent', border: 'none', color: '#fff',
-              fontSize: '10px', fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer',
-              opacity: pdfLoading ? 0.65 : 1,
-              transition: 'transform 0.15s',
-              transform: pdfMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}>▾</button>
-          </div>
-
-          {pdfMenuOpen && (
-            <div className="animate-scale-in" style={{
-              position: 'fixed', top: '60px', right: '20px', zIndex: 9999,
-              background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '12px', padding: '6px', minWidth: '172px',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
-            }}>
-              {[
-                { label: '📄 Relatório completo', mode: 'full' as const },
-                { label: '⚡ Resumo executivo',  mode: 'executive' as const },
-              ].map(({ label, mode }) => (
-                <button key={mode} onClick={() => { onExport(mode); setPdfMenuOpen(false) }} style={{
-                  display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left',
-                  background: 'transparent', border: 'none', color: '#CBD5E1',
-                  fontSize: '12px', cursor: 'pointer', borderRadius: '7px', transition: 'background 0.12s',
-                }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.1)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
+            {pdfLoading ? '⏳' : '↓ PDF'}
+          </button>
+          <button onClick={() => setPdfMenuOpen(v => !v)} disabled={pdfLoading} style={{
+            padding: '5px 8px', background: 'transparent', border: 'none', color: '#fff',
+            fontSize: '10px', fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer',
+            opacity: pdfLoading ? 0.65 : 1,
+            transition: 'transform 0.15s',
+            transform: pdfMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}>▾</button>
         </div>
+
+        {pdfMenuOpen && (
+          <div className="animate-scale-in" style={{
+            position: 'fixed', top: '60px', right: '20px', zIndex: 9999,
+            background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '12px', padding: '6px', minWidth: '172px',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+          }}>
+            {[
+              { label: '📄 Relatório completo', mode: 'full' as const },
+              { label: '⚡ Resumo executivo',  mode: 'executive' as const },
+            ].map(({ label, mode }) => (
+              <button key={mode} onClick={() => { onExport(mode); setPdfMenuOpen(false) }} style={{
+                display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left',
+                background: 'transparent', border: 'none', color: '#CBD5E1',
+                fontSize: '12px', cursor: 'pointer', borderRadius: '7px', transition: 'background 0.12s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.1)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

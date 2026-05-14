@@ -267,7 +267,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
           {SIDEBAR_SECTIONS.map((section) => {
             const isLocked = SECTION_LOCK[section.label] ?? false
             return (
-              <div key={section.label} style={{ marginBottom: collapsed ? '6px' : '18px' }}>
+              <div key={section.label} style={{ marginBottom: collapsed ? '6px' : '20px' }}>
 
                 {/* Section header */}
                 {!collapsed && (
@@ -277,8 +277,8 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                   }}>
                     <span style={{
                       fontSize: '9px', fontWeight: 700,
-                      color: isLocked ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.28)',
-                      letterSpacing: '0.1em', textTransform: 'uppercase',
+                      color: isLocked ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.4)',
+                      letterSpacing: '0.12em', textTransform: 'uppercase',
                       fontFamily: 'var(--font-mono)',
                     }}>
                       {section.label}
@@ -321,7 +321,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                         boxShadow: isActive ? `inset 0 0 0 1px ${PURPLE_B}` : 'none',
                         color: isLocked ? 'rgba(255,255,255,0.2)'
                           : isActive ? '#A78BFA'
-                          : 'rgba(255,255,255,0.45)',
+                          : 'rgba(255,255,255,0.55)',
                         cursor: 'pointer', textAlign: 'left', outline: 'none',
                         transition: 'all 0.12s', position: 'relative',
                         opacity: isLocked ? 0.55 : 1,
@@ -334,7 +334,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                       onMouseLeave={e => {
                         if (isLocked || isActive) return
                         e.currentTarget.style.background = 'transparent'
-                        e.currentTarget.style.color = 'rgba(255,255,255,0.45)'
+                        e.currentTarget.style.color = 'rgba(255,255,255,0.55)'
                       }}
                     >
                       {/* Icon */}

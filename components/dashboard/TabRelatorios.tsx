@@ -24,6 +24,118 @@ interface Props {
   onNavigateToConnections?: () => void
 }
 
+// ── SVG icon helpers ────────────────────────────────────────────────────────
+
+function IconDocument() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="rgba(124,58,237,0.10)" />
+      <path d="M13 10h9l6 6v14a1 1 0 0 1-1 1H13a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1z" stroke="#7C3AED" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+      <path d="M22 10v7h6" stroke="#7C3AED" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+      <line x1="15" y1="22" x2="25" y2="22" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="15" y1="25.5" x2="22" y2="25.5" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconLink({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M7.5 10.5a3.75 3.75 0 0 0 5.303 0l2.25-2.25a3.75 3.75 0 0 0-5.303-5.303L8.625 4.07" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10.5 7.5a3.75 3.75 0 0 0-5.303 0l-2.25 2.25a3.75 3.75 0 0 0 5.303 5.303l1.121-1.122" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconMail({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="4" width="14" height="10" rx="2" stroke="#A78BFA" strokeWidth="1.5" />
+      <path d="M2 6.5l7 4.5 7-4.5" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconEye({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1.5 9s2.7-5.25 7.5-5.25S16.5 9 16.5 9s-2.7 5.25-7.5 5.25S1.5 9 1.5 9z" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="9" r="2.25" stroke="#A78BFA" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+function IconWarning({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1.5l6.5 12H1.5L8 1.5z" stroke="#F59E0B" strokeWidth="1.4" strokeLinejoin="round" />
+      <line x1="8" y1="6" x2="8" y2="9.5" stroke="#F59E0B" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="8" cy="11.5" r="0.7" fill="#F59E0B" />
+    </svg>
+  )
+}
+
+// ── Shared style constants ──────────────────────────────────────────────────
+
+const S = {
+  card: {
+    background: '#0F1629',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: '16px',
+    padding: '22px',
+  } as React.CSSProperties,
+
+  inputBase: {
+    background: '#131E35',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: '10px',
+    color: '#F1F5F9',
+    fontSize: '13px',
+    padding: '8px 12px',
+    outline: 'none',
+    width: '100%',
+    display: 'block',
+  } as React.CSSProperties,
+
+  label: {
+    fontSize: '11px',
+    color: '#94A3B8',
+    marginBottom: '6px',
+    display: 'block',
+  } as React.CSSProperties,
+
+  ctaBtn: {
+    background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+    border: 'none',
+    borderRadius: '10px',
+    color: '#fff',
+    fontSize: '13px',
+    fontWeight: 700,
+    padding: '9px 20px',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    opacity: 1,
+  } as React.CSSProperties,
+
+  ghostBtn: {
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.10)',
+    borderRadius: '10px',
+    color: '#CBD5E1',
+    fontSize: '13px',
+    fontWeight: 700,
+    padding: '9px 20px',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+  } as React.CSSProperties,
+}
+
+// ── Component ────────────────────────────────────────────────────────────────
+
 export function TabRelatorios({ onNavigateToConnections }: Props) {
   const { clientData, auditCache, connectedAccounts } = useAppStore()
 
@@ -167,14 +279,17 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
     }
   }
 
+  // ── Empty state (no client) ────────────────────────────────────────
   if (!clientData) {
     return (
-      <div className="space-y-6">
-        <div><h2 className="font-display text-2xl font-bold text-white mb-1">Relatórios</h2></div>
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-10 text-center">
-          <div className="text-4xl mb-4">📄</div>
-          <h3 className="font-display text-lg font-bold text-white mb-2">Nenhum cliente selecionado</h3>
-          <p className="text-slate-500 text-sm">Selecione um cliente no menu para gerar relatórios.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Relatórios</h2>
+        </div>
+        <div style={{ ...S.card, padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '12px' }}>
+          <IconDocument />
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Nenhum cliente selecionado</h3>
+          <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>Selecione um cliente no menu para gerar relatórios.</p>
         </div>
       </div>
     )
@@ -183,60 +298,86 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
   const hasData = !!rm
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* Header */}
       <div>
-        <h2 className="font-display text-2xl font-bold text-white mb-1">Relatórios</h2>
-        <p className="text-slate-500 text-sm">
+        <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#F1F5F9', margin: '0 0 4px' }}>Relatórios</h2>
+        <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
           Compartilhe relatórios com clientes e configure envios automáticos por email.
         </p>
       </div>
 
+      {/* Warning banner — no data */}
       {!hasData && (
-        <div className="rounded-xl px-4 py-3 text-sm flex items-center gap-3"
-          style={{ background: 'rgba(240,180,41,0.06)', border: '1px solid rgba(240,180,41,0.2)', color: '#F0B429' }}>
-          <span>⚠️</span>
+        <div style={{
+          background: 'rgba(245,158,11,0.08)',
+          border: '1px solid rgba(245,158,11,0.2)',
+          borderRadius: '10px',
+          padding: '10px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          color: '#F59E0B',
+          fontSize: '13px',
+        }}>
+          <IconWarning size={16} />
           <span>Conecte suas contas de anúncio e execute a análise de inteligência para gerar relatórios com dados reais.</span>
           {onNavigateToConnections && (
-            <button onClick={onNavigateToConnections} className="ml-auto text-xs font-bold underline flex-shrink-0">Conectar →</button>
+            <button
+              onClick={onNavigateToConnections}
+              style={{ marginLeft: 'auto', fontSize: '12px', fontWeight: 700, color: '#F59E0B', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', flexShrink: 0 }}
+            >
+              Conectar →
+            </button>
           )}
         </div>
       )}
 
       {/* ── 1. LINK COMPARTILHÁVEL ──────────────────────────────────────── */}
-      <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
-        <h3 className="font-display font-bold text-white mb-1 flex items-center gap-2">
-          <span>🔗</span> Link de Relatório para o Cliente
-        </h3>
-        <p className="text-slate-500 text-xs mb-5 leading-relaxed">
+      <div style={S.card}>
+        {/* Section heading */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <IconLink size={17} />
+          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Link de Relatório para o Cliente</h3>
+        </div>
+        <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 20px', lineHeight: '1.6' }}>
           Gera um link público que o cliente acessa sem precisar fazer login.
           Mostra os KPIs de forma visual e simples, sem jargão técnico.
         </p>
 
-        {/* Branding */}
-        <div className="grid sm:grid-cols-2 gap-4 mb-5">
+        {/* Branding inputs */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Nome da agência (aparece no relatório)</label>
+            <label style={S.label}>Nome da agência (aparece no relatório)</label>
             <input
               value={agencyName}
               onChange={e => setAgencyName(e.target.value)}
               placeholder="Ex: Minha Agência Digital"
-              className="input-base w-full"
+              style={S.inputBase}
             />
           </div>
+
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Cor principal</label>
-            <div className="flex items-center gap-2">
-              <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)}
-                className="w-9 h-9 rounded-lg border border-[#2A2A30] bg-transparent cursor-pointer" />
-              <span className="text-xs text-slate-500 font-mono">{primaryColor}</span>
+            <label style={S.label}>Cor principal</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="color"
+                value={primaryColor}
+                onChange={e => setPrimaryColor(e.target.value)}
+                style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', cursor: 'pointer', padding: '2px' }}
+              />
+              <span style={{ fontSize: '12px', color: '#94A3B8', fontFamily: 'monospace' }}>{primaryColor}</span>
             </div>
           </div>
+
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Expiração do link</label>
-            <select value={expiresInDays} onChange={e => setExpiresInDays(Number(e.target.value))}
-              className="input-base w-full">
+            <label style={S.label}>Expiração do link</label>
+            <select
+              value={expiresInDays}
+              onChange={e => setExpiresInDays(Number(e.target.value))}
+              style={S.inputBase}
+            >
               <option value={7}>7 dias</option>
               <option value={30}>30 dias</option>
               <option value={90}>90 dias</option>
@@ -245,37 +386,89 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
           </div>
         </div>
 
+        {/* Error banner */}
         {shareError && (
-          <div className="rounded-lg px-3 py-2 mb-4 text-sm" style={{ background: 'rgba(255,77,77,0.08)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>
+          <div style={{
+            background: 'rgba(239,68,68,0.08)',
+            border: '1px solid rgba(239,68,68,0.25)',
+            borderRadius: '10px',
+            padding: '9px 14px',
+            fontSize: '13px',
+            color: '#EF4444',
+            marginBottom: '16px',
+          }}>
             {shareError}
           </div>
         )}
 
+        {/* CTA / Result */}
         {!shareResult ? (
-          <button onClick={handleShare} disabled={shareLoading}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #F5A500, #FFD166)', color: '#000' }}>
-            {shareLoading ? '⏳ Gerando...' : '🔗 Gerar link de relatório'}
+          <button
+            onClick={handleShare}
+            disabled={shareLoading}
+            style={{ ...S.ctaBtn, opacity: shareLoading ? 0.5 : 1, cursor: shareLoading ? 'not-allowed' : 'pointer' }}
+          >
+            <IconLink size={15} />
+            {shareLoading ? 'Gerando...' : 'Gerar link de relatório'}
           </button>
         ) : (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="flex-1 rounded-xl px-3 py-2.5 text-xs font-mono truncate"
-                style={{ background: '#16161A', border: '1px solid #2A2A30', color: '#94A3B8' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                flex: 1,
+                background: '#131E35',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '10px',
+                padding: '9px 12px',
+                fontSize: '12px',
+                fontFamily: 'monospace',
+                color: '#94A3B8',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
                 {shareResult.url}
               </div>
-              <button onClick={copyLink}
-                className="flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-                style={{ background: copied ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.06)', color: copied ? '#22C55E' : '#CBD5E1', border: `1px solid ${copied ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}` }}>
+              <button
+                onClick={copyLink}
+                style={{
+                  flexShrink: 0,
+                  padding: '9px 16px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: copied ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.06)',
+                  color: copied ? '#22C55E' : '#CBD5E1',
+                  border: `1px solid ${copied ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.10)'}`,
+                  transition: 'all 0.15s',
+                }}
+              >
                 {copied ? '✓ Copiado' : 'Copiar'}
               </button>
-              <a href={shareResult.url} target="_blank" rel="noopener noreferrer"
-                className="flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none' }}>
+              <a
+                href={shareResult.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  flexShrink: 0,
+                  padding: '9px 16px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  background: 'rgba(255,255,255,0.06)',
+                  color: '#CBD5E1',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  textDecoration: 'none',
+                }}
+              >
                 Abrir →
               </a>
             </div>
-            <button onClick={() => setShareResult(null)} className="text-xs text-slate-600 hover:text-slate-400 transition-colors">
+            <button
+              onClick={() => setShareResult(null)}
+              style={{ background: 'none', border: 'none', fontSize: '12px', color: '#64748B', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+            >
               + Gerar novo link
             </button>
           </div>
@@ -283,115 +476,178 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
       </div>
 
       {/* ── 2. AGENDAMENTO POR EMAIL ────────────────────────────────────── */}
-      <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
-        <h3 className="font-display font-bold text-white mb-1 flex items-center gap-2">
-          <span>📧</span> Relatório Automático por Email
+      <div style={S.card}>
+        {/* Section heading */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <IconMail size={17} />
+          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Relatório Automático por Email</h3>
           {existingSchedule && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full ml-1"
-              style={{ background: existingSchedule.active ? 'rgba(34,197,94,0.1)' : 'rgba(100,116,139,0.1)', color: existingSchedule.active ? '#22C55E' : '#64748B', border: `1px solid ${existingSchedule.active ? 'rgba(34,197,94,0.2)' : 'rgba(100,116,139,0.2)'}` }}>
+            <span style={{
+              fontSize: '10px',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '100px',
+              marginLeft: '4px',
+              background: existingSchedule.active ? 'rgba(34,197,94,0.10)' : 'rgba(100,116,139,0.10)',
+              color: existingSchedule.active ? '#22C55E' : '#64748B',
+              border: `1px solid ${existingSchedule.active ? 'rgba(34,197,94,0.2)' : 'rgba(100,116,139,0.2)'}`,
+            }}>
               {existingSchedule.active ? 'Ativo' : 'Pausado'}
             </span>
           )}
-        </h3>
-        <p className="text-slate-500 text-xs mb-5 leading-relaxed">
+        </div>
+        <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 20px', lineHeight: '1.6' }}>
           Envia automaticamente um resumo de performance para os emails cadastrados.
           Configure a frequência e o dia preferido.
         </p>
 
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Email recipients */}
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Destinatários (separados por vírgula)</label>
+            <label style={S.label}>Destinatários (separados por vírgula)</label>
             <textarea
               value={scheduleEmails}
               onChange={e => setScheduleEmails(e.target.value)}
               placeholder="cliente@empresa.com, gestor@agencia.com"
               rows={2}
-              className="input-base w-full resize-none"
+              style={{ ...S.inputBase, resize: 'none', lineHeight: '1.5' }}
             />
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          {/* Frequency + day row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">Frequência</label>
-              <select value={scheduleFrequency} onChange={e => setScheduleFrequency(e.target.value as any)}
-                className="input-base w-full">
+              <label style={S.label}>Frequência</label>
+              <select
+                value={scheduleFrequency}
+                onChange={e => setScheduleFrequency(e.target.value as 'weekly' | 'monthly')}
+                style={S.inputBase}
+              >
                 <option value="weekly">Semanal</option>
                 <option value="monthly">Mensal</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">
-                {scheduleFrequency === 'weekly' ? 'Dia da semana' : 'Dia do mês'}
-              </label>
+              <label style={S.label}>{scheduleFrequency === 'weekly' ? 'Dia da semana' : 'Dia do mês'}</label>
               {scheduleFrequency === 'weekly' ? (
-                <select value={scheduleDayOfWeek} onChange={e => setScheduleDayOfWeek(Number(e.target.value))}
-                  className="input-base w-full">
+                <select
+                  value={scheduleDayOfWeek}
+                  onChange={e => setScheduleDayOfWeek(Number(e.target.value))}
+                  style={S.inputBase}
+                >
                   {DAY_LABELS.map((d, i) => <option key={i} value={i}>{d}</option>)}
                 </select>
               ) : (
-                <select value={scheduleDayOfWeek} onChange={e => setScheduleDayOfWeek(Number(e.target.value))}
-                  className="input-base w-full">
-                  {[1,5,10,15,20,25,28].map(d => <option key={d} value={d}>Dia {d}</option>)}
+                <select
+                  value={scheduleDayOfWeek}
+                  onChange={e => setScheduleDayOfWeek(Number(e.target.value))}
+                  style={S.inputBase}
+                >
+                  {[1, 5, 10, 15, 20, 25, 28].map(d => <option key={d} value={d}>Dia {d}</option>)}
                 </select>
               )}
             </div>
           </div>
 
+          {/* Active toggle (only when editing existing) */}
           {existingSchedule && (
-            <div className="flex items-center gap-3">
-              <button onClick={() => setScheduleActive(v => !v)}
-                className="w-10 h-5 rounded-full transition-all flex-shrink-0"
-                style={{ background: scheduleActive ? '#22C55E' : '#2A2A30', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '2px', left: scheduleActive ? '22px' : '2px', width: '16px', height: '16px', borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                onClick={() => setScheduleActive(v => !v)}
+                style={{
+                  width: '40px',
+                  height: '22px',
+                  borderRadius: '11px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: scheduleActive ? '#22C55E' : 'rgba(255,255,255,0.10)',
+                  position: 'relative',
+                  flexShrink: 0,
+                  transition: 'background 0.15s',
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  top: '3px',
+                  left: scheduleActive ? '21px' : '3px',
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
+                  background: '#fff',
+                  transition: 'left 0.15s',
+                }} />
               </button>
-              <span className="text-xs text-slate-400">
+              <span style={{ fontSize: '12px', color: '#94A3B8' }}>
                 {scheduleActive ? 'Relatório automático ativado' : 'Relatório automático pausado'}
               </span>
             </div>
           )}
 
+          {/* Feedback message */}
           {scheduleMsg && (
-            <div className="rounded-lg px-3 py-2 text-xs"
-              style={{ background: scheduleMsg.startsWith('✓') ? 'rgba(34,197,94,0.08)' : 'rgba(255,77,77,0.08)', color: scheduleMsg.startsWith('✓') ? '#22C55E' : '#FF4D4D', border: `1px solid ${scheduleMsg.startsWith('✓') ? 'rgba(34,197,94,0.2)' : 'rgba(255,77,77,0.2)'}` }}>
+            <div style={
+              scheduleMsg.startsWith('✓')
+                ? { background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '10px', padding: '9px 14px', fontSize: '12px', color: '#22C55E' }
+                : { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '10px', padding: '9px 14px', fontSize: '12px', color: '#EF4444' }
+            }>
               {scheduleMsg}
             </div>
           )}
 
-          <button onClick={handleSaveSchedule} disabled={scheduleSaving}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#CBD5E1' }}>
-            {scheduleSaving ? '⏳ Salvando...' : existingSchedule ? '💾 Atualizar agendamento' : '📅 Criar agendamento'}
-          </button>
+          {/* Save button */}
+          <div>
+            <button
+              onClick={handleSaveSchedule}
+              disabled={scheduleSaving}
+              style={{ ...S.ctaBtn, opacity: scheduleSaving ? 0.5 : 1, cursor: scheduleSaving ? 'not-allowed' : 'pointer' }}
+            >
+              <IconMail size={15} />
+              {scheduleSaving ? 'Salvando...' : existingSchedule ? 'Atualizar agendamento' : 'Criar agendamento'}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* ── 3. PRÉVIA DO RELATÓRIO ──────────────────────────────────────── */}
-      <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
-        <h3 className="font-display font-bold text-white mb-4 flex items-center gap-2">
-          <span>👁️</span> Prévia do Relatório
-        </h3>
+      <div style={S.card}>
+        {/* Section heading */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <IconEye size={17} />
+          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Prévia do Relatório</h3>
+        </div>
+
         {hasData ? (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
               {[
-                { label: 'Investimento', value: `R$${rm?.totalSpend?.toFixed(0) || 0}`, color: '#F0B429' },
+                { label: 'Investimento', value: `R$${rm?.totalSpend?.toFixed(0) || 0}`, color: '#F59E0B' },
                 { label: 'Leads', value: String(rm?.totalLeads || rm?.leads || '—'), color: '#38BDF8' },
                 { label: 'CPL Médio', value: (rm?.avgCPL || rm?.cpl) > 0 ? `R$${rm?.avgCPL || rm?.cpl}` : '—', color: '#A78BFA' },
                 { label: 'ROAS', value: (rm?.avgROAS || rm?.roas) > 0 ? `${rm?.avgROAS || rm?.roas}×` : '—', color: '#22C55E' },
               ].map(k => (
-                <div key={k.label} className="bg-[#16161A] rounded-xl px-3 py-2.5 text-center">
-                  <div className="text-[10px] text-slate-600 uppercase mb-1">{k.label}</div>
-                  <div className="text-base font-bold" style={{ color: k.color }}>{k.value}</div>
+                <div key={k.label} style={{
+                  background: '#131E35',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>{k.label}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: k.color }}>{k.value}</div>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-slate-600">
+            <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
               O cliente verá esses dados de forma visual e simplificada, sem métricas técnicas complexas.
             </p>
           </div>
         ) : (
-          <div className="text-sm text-slate-600 text-center py-6">
-            Execute a análise Meta ou Google Intelligence para gerar a prévia.
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '32px 0', textAlign: 'center' }}>
+            <IconEye size={32} />
+            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Nenhum dado disponível</h4>
+            <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
+              Execute a análise Meta ou Google Intelligence para gerar a prévia.
+            </p>
           </div>
         )}
       </div>

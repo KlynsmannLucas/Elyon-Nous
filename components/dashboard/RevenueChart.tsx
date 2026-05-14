@@ -1,6 +1,7 @@
-// components/dashboard/RevenueChart.tsx — Gráfico de projeção de receita
+// components/dashboard/RevenueChart.tsx
 'use client'
 
+import { useState } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -19,17 +20,28 @@ interface Props {
   subtitle?: string
 }
 
+const PURPLE  = '#7C3AED'
+const PURPLE_L = '#A78BFA'
+const C_BORDER = 'rgba(255,255,255,0.05)'
+const C_TEXT2  = '#94A3B8'
+const C_TEXT3  = '#64748B'
+
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-[#16161A] border border-[#2A2A30] rounded-xl px-4 py-3 shadow-card text-sm">
-      <div className="text-slate-400 mb-2 font-semibold">{label}</div>
+    <div style={{
+      background: '#0F1629', border: '1px solid rgba(124,58,237,0.25)',
+      borderRadius: '10px', padding: '10px 14px',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+      fontSize: '12px', minWidth: '160px',
+    }}>
+      <div style={{ color: C_TEXT2, marginBottom: '8px', fontWeight: 600 }}>{label}</div>
       {payload.map((p: any) => (
-        <div key={p.dataKey} className="flex items-center gap-2 mb-1">
-          <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-slate-300">{p.name}:</span>
-          <span className="font-bold" style={{ color: p.color }}>
-            R${p.value.toLocaleString('pt-BR')}
+        <div key={p.dataKey} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+          <span style={{ color: C_TEXT3, flex: 1 }}>{p.name}:</span>
+          <span style={{ fontWeight: 700, color: p.color }}>
+            R${(p.value as number).toLocaleString('pt-BR')}
           </span>
         </div>
       ))}
@@ -37,70 +49,111 @@ function CustomTooltip({ active, payload, label }: any) {
   )
 }
 
-export function RevenueChart({ data, title, subtitle }: Props) {
-  // Se não passou dados reais, usa mock
-  const chartData: ChartPoint[] = data && data.length > 0
-    ? data
-    : revenueChartData.map((d) => ({ month: d.month, projetado: d.real, meta: d.meta }))
+type Period = 'Diário' | 'Semanal' | 'Mensal'
 
+function scalePeriod(data: ChartPoint[], period: Period): ChartPoint[] {
+  if (period === 'Mensal') return data
+  if (period === 'Semanal') return data.map(d => ({ ...d, projetado: Math.round(d.projetado / 4), meta: Math.round(d.meta / 4) }))
+  return data.map(d => ({ ...d, projetado: Math.round(d.projetado / 30), meta: Math.round(d.meta / 30) }))
+}
+
+export function RevenueChart({ data, title, subtitle }: Props) {
+  const [period, setPeriod] = useState<Period>('Mensal')
+
+  const baseData: ChartPoint[] = data && data.length > 0
+    ? data
+    : revenueChartData.map(d => ({ month: d.month, projetado: d.real, meta: d.meta }))
+
+  const chartData = scalePeriod(baseData, period)
   const hasRealData = !!(data && data.length > 0)
 
+  const PERIODS: Period[] = ['Diário', 'Semanal', 'Mensal']
+
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6 animate-fade-up delay-200">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{
+      background: '#0F1629', border: `1px solid ${C_BORDER}`,
+      borderRadius: '16px', padding: '22px',
+    }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
         <div>
-          <div className="font-display font-bold text-white text-lg">
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', marginBottom: '2px' }}>
             {title || 'Receita Real vs Meta'}
           </div>
-          <div className="text-xs text-slate-500 mt-0.5">
-            {subtitle || (hasRealData ? 'Projeção 6 meses com ramp-up · R$' : 'Últimos 7 meses · R$')}
+          <div style={{ fontSize: '11px', color: C_TEXT3 }}>
+            {subtitle || (hasRealData ? 'Projeção com ramp-up · R$' : 'Últimos meses · R$')}
           </div>
         </div>
-        <div className="flex items-center gap-4 text-xs">
-          <span className="flex items-center gap-1.5 text-slate-400">
-            <span className="w-3 h-0.5 bg-[#F0B429] rounded-full inline-block" />
-            {hasRealData ? 'Projetado' : 'Real'}
-          </span>
-          <span className="flex items-center gap-1.5 text-slate-400">
-            <span className="w-3 h-0.5 bg-[#A78BFA] rounded-full inline-block" style={{ borderTop: '2px dashed #A78BFA' }} />
-            Meta
-          </span>
+
+        {/* Legend + period toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          {/* Legend */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: C_TEXT2 }}>
+              <span style={{ width: '20px', height: '2px', background: PURPLE, borderRadius: '2px', display: 'inline-block' }} />
+              {hasRealData ? 'Projetado' : 'Real'}
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: C_TEXT2 }}>
+              <span style={{ width: '20px', height: '0', borderTop: `2px dashed ${PURPLE_L}`, display: 'inline-block' }} />
+              Meta
+            </span>
+          </div>
+
+          {/* Period toggle */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '2px',
+            background: 'rgba(255,255,255,0.04)', border: `1px solid ${C_BORDER}`,
+            borderRadius: '8px', padding: '3px',
+          }}>
+            {PERIODS.map(p => (
+              <button key={p} onClick={() => setPeriod(p)} style={{
+                padding: '3px 10px', borderRadius: '5px', border: 'none',
+                fontSize: '10px', fontWeight: 600, cursor: 'pointer',
+                transition: 'all 0.15s',
+                background: period === p ? 'rgba(124,58,237,0.2)' : 'transparent',
+                color: period === p ? PURPLE_L : C_TEXT3,
+              }}>
+                {p}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id="gradReal" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#F0B429" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="#F0B429" stopOpacity={0.0} />
+            <linearGradient id="gradProj" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor={PURPLE} stopOpacity={0.3} />
+              <stop offset="100%" stopColor={PURPLE} stopOpacity={0.0} />
             </linearGradient>
             <linearGradient id="gradMeta" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#A78BFA" stopOpacity={0.15} />
-              <stop offset="100%" stopColor="#A78BFA" stopOpacity={0.0} />
+              <stop offset="0%"   stopColor={PURPLE_L} stopOpacity={0.12} />
+              <stop offset="100%" stopColor={PURPLE_L} stopOpacity={0.0} />
             </linearGradient>
           </defs>
 
-          <CartesianGrid stroke="#1E1E24" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="0" vertical={false} />
           <XAxis
             dataKey="month"
-            tick={{ fill: '#64748B', fontSize: 11 }}
+            tick={{ fill: C_TEXT3, fontSize: 10 }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: '#64748B', fontSize: 10 }}
+            tick={{ fill: C_TEXT3, fontSize: 10 }}
             axisLine={false}
             tickLine={false}
+            width={52}
             tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(124,58,237,0.2)', strokeWidth: 1 }} />
 
           <Area
             type="monotone"
             dataKey="meta"
             name="Meta"
-            stroke="#A78BFA"
+            stroke={PURPLE_L}
             strokeWidth={1.5}
             strokeDasharray="6 3"
             fill="url(#gradMeta)"
@@ -109,11 +162,11 @@ export function RevenueChart({ data, title, subtitle }: Props) {
             type="monotone"
             dataKey="projetado"
             name={hasRealData ? 'Projetado' : 'Real'}
-            stroke="#F0B429"
+            stroke={PURPLE}
             strokeWidth={2.5}
-            fill="url(#gradReal)"
-            dot={{ fill: '#F0B429', r: 3 }}
-            activeDot={{ fill: '#FFD166', r: 5 }}
+            fill="url(#gradProj)"
+            dot={{ fill: PURPLE, r: 3 }}
+            activeDot={{ fill: PURPLE_L, r: 5, stroke: 'rgba(124,58,237,0.3)', strokeWidth: 4 }}
           />
         </AreaChart>
       </ResponsiveContainer>

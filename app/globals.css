@@ -2,6 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens ───────────────────────────────────────────────────────── */
+:root {
+  /* Colors */
+  --c-bg:       #080D1A;
+  --c-surface:  #0F1629;
+  --c-elevated: #131E35;
+  --c-border:   rgba(99,120,255,0.10);
+  --c-border-hi: rgba(124,58,237,0.25);
+
+  /* Primary */
+  --c-purple:   #7C3AED;
+  --c-purple-hi: #A78BFA;
+  --c-purple-bg: rgba(124,58,237,0.08);
+
+  /* Status */
+  --c-green:  #22C55E;
+  --c-red:    #EF4444;
+  --c-amber:  #F59E0B;
+  --c-blue:   #3B82F6;
+
+  /* Text */
+  --c-text-1: #F1F5F9;
+  --c-text-2: #94A3B8;
+  --c-text-3: rgba(255,255,255,0.35);
+
+  /* Border-radius scale */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+
+  /* Typography scale */
+  --t-10: 10px;
+  --t-11: 11px;
+  --t-12: 12px;
+  --t-13: 13px;
+  --t-14: 14px;
+  --t-16: 16px;
+  --t-18: 18px;
+  --t-22: 22px;
+  --t-28: 28px;
+  --t-36: 36px;
+}
+
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track  { background: #080D1A; }
@@ -128,7 +173,12 @@ body {
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
-/* ── Gold utilities ──────────────────────────────────────────────────────── */
+/* ── Shadow utilities ────────────────────────────────────────────────────── */
+.shadow-card       { box-shadow: 0 2px 12px rgba(0,0,0,0.35); }
+.shadow-card-hover { box-shadow: 0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(124,58,237,0.12); }
+.shadow-modal      { box-shadow: 0 20px 60px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.06); }
+
+/* ── Gold utilities (data display only — not for CTAs) ───────────────────── */
 .text-gold-gradient {
   background: linear-gradient(135deg, #F0B429 0%, #FFD166 100%);
   -webkit-background-clip: text;
