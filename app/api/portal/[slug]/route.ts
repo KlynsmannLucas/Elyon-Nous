@@ -17,32 +17,25 @@ export async function GET(
 
   const { data, error } = await supabaseAdmin
     .from('report_shares')
-    .select('share_token, client_name, report_data, created_at')
-    .eq('share_token', slug)
-    .eq('report_data->>type', 'portal')
+    .select('token, client_name, report_data, created_at')
+    .eq('token', slug)
     .maybeSingle()
 
-  if (error || !data) {
+  if (error || !data || data.report_data?.type !== 'portal') {
     return NextResponse.json({ error: 'Portal não encontrado' }, { status: 404 })
   }
 
-  // Registra visualização (best-effort, fire-and-forget)
-  void supabaseAdmin
-    .from('report_shares')
-    .update({ viewed_at: new Date().toISOString() })
-    .eq('share_token', slug)
-
   return NextResponse.json({
-    slug:        data.share_token,
-    clientName:  data.client_name,
-    agencyName:  data.report_data?.agencyName || 'Agência',
-    showMetrics: data.report_data?.showMetrics ?? true,
-    showStrategy:data.report_data?.showStrategy ?? true,
-    showActions: data.report_data?.showActions ?? false,
-    niche:       data.report_data?.niche || '',
-    budget:      data.report_data?.budget || 0,
-    revenue:     data.report_data?.revenue || 0,
-    createdAt:   data.created_at,
+    slug:         data.token,
+    clientName:   data.client_name,
+    agencyName:   data.report_data?.agencyName || 'Agência',
+    showMetrics:  data.report_data?.showMetrics ?? true,
+    showStrategy: data.report_data?.showStrategy ?? true,
+    showActions:  data.report_data?.showActions ?? false,
+    niche:        data.report_data?.niche || '',
+    budget:       data.report_data?.budget || 0,
+    revenue:      data.report_data?.revenue || 0,
+    createdAt:    data.created_at,
   })
 }
 
@@ -60,7 +53,7 @@ export async function DELETE(
   const { error } = await supabaseAdmin
     .from('report_shares')
     .delete()
-    .eq('share_token', slug)
+    .eq('token', slug)
     .eq('user_id', userId)
 
   if (error) return NextResponse.json({ error: 'Erro ao remover portal' }, { status: 500 })
