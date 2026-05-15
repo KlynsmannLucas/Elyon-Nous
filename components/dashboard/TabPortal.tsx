@@ -41,21 +41,23 @@ export function TabPortal({ clientData }: Props) {
 
   const myPortals = clientPortalsSaved.filter(p => p.clientName === (clientData?.clientName || ''))
 
+  // Codifica UTF-8 corretamente (btoa nativo não suporta acentos)
+  const encodePayload = (obj: object): string =>
+    btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+
   // Gera a URL completa com dados embutidos, mesmo para portais antigos sem dataParam
   const getPortalUrl = (portal: ClientPortal): string => {
-    const dp = portal.dataParam ?? (() => {
-      const payload = {
-        cn: portal.clientName,
-        an: portal.agencyName,
-        sm: portal.showMetrics,
-        ss: portal.showStrategy,
-        sa: portal.showActions,
-        ni: portal.niche || clientData?.niche || '',
-        b:  portal.budget || clientData?.budget || 0,
-        r:  portal.revenue || clientData?.monthlyRevenue || 0,
-      }
-      return btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-    })()
+    const dp = portal.dataParam ?? encodePayload({
+      cn: portal.clientName,
+      an: portal.agencyName,
+      sm: portal.showMetrics,
+      ss: portal.showStrategy,
+      sa: portal.showActions,
+      ni: portal.niche || clientData?.niche || '',
+      b:  portal.budget || clientData?.budget || 0,
+      r:  portal.revenue || clientData?.monthlyRevenue || 0,
+    })
     return `${BASE_URL}/portal/${portal.slug}?d=${dp}`
   }
 
@@ -80,7 +82,7 @@ export function TabPortal({ clientData }: Props) {
         b:  clientData.budget || 0,
         r:  clientData.monthlyRevenue || 0,
       }
-      const dataParam = btoa(JSON.stringify(payload))
+      const dataParam = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
         .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
 
       // Salva no store local com todos os dados embutidos

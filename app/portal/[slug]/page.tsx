@@ -17,8 +17,8 @@ interface PortalData {
 // Decodifica ?d= param (base64 URL-safe auto-contido na URL)
 function decodeDataParam(d: string): PortalData | null {
   try {
-    const base64 = d.replace(/-/g, '+').replace(/_/g, '/')
-    const json = Buffer.from(base64, 'base64').toString('utf8')
+    const base64 = d.replace(/-/g, '+').replace(/_/g, '/') + '=='
+    const json = decodeURIComponent(escape(Buffer.from(base64, 'base64').toString('binary')))
     const p = JSON.parse(json)
     return {
       clientName:   p.cn || '',
