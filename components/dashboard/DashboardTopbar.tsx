@@ -39,6 +39,8 @@ const TAB_SUBTITLES: Partial<Record<TabKey, string>> = {
   mercado:     'Pesquisa de mercado e tendências do setor',
   cenarios:    'Projeções e simulações de crescimento',
   financeiro:  'Honorários, MRR da agência e gestão financeira',
+  checklist:   'Tarefas geradas automaticamente para otimizar hoje',
+  portal:      'Link white-label para o cliente acompanhar resultados',
 }
 
 export function DashboardTopbar({

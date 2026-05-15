@@ -29,6 +29,8 @@ import { TabFinanceiro }   from '@/components/dashboard/TabFinanceiro'
 import { TabCRO }              from '@/components/dashboard/TabCRO'
 import { TabBudgetAllocator } from '@/components/dashboard/TabBudgetAllocator'
 import { TabChannelMix }     from '@/components/dashboard/TabChannelMix'
+import { TabChecklist }      from '@/components/dashboard/TabChecklist'
+import { TabPortal }         from '@/components/dashboard/TabPortal'
 import { NousChat }        from '@/components/dashboard/NousChat'
 import { DashboardSidebar, type TabKey } from '@/components/dashboard/DashboardSidebar'
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar'
@@ -796,6 +798,8 @@ export default function DashboardBody() {
       case 'campanha':      return wrap('Campanha Campeã',       <TabCampanha />)
       case 'relatorios':    return wrap('Relatórios',            <TabRelatorios />)
       case 'financeiro':    return wrap('Painel Financeiro',     <TabFinanceiro />)
+      case 'checklist':     return wrap('Checklist Diário',      <TabChecklist clientData={clientData} />)
+      case 'portal':        return wrap('Portal do Cliente',     <TabPortal    clientData={clientData} />)
     }
   }
 

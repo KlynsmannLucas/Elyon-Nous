@@ -204,6 +204,26 @@ export interface SavedClient {
   savedAt: string
 }
 
+export interface ChecklistItem {
+  id: string
+  category: 'critico' | 'otimizacao' | 'estrategia' | 'monitoramento'
+  title: string
+  description: string
+  priority: 'alta' | 'media' | 'baixa'
+  source: 'alerta' | 'auditoria' | 'estrategia' | 'padrao'
+}
+
+export interface ClientPortal {
+  id: string
+  slug: string
+  clientName: string
+  agencyName: string
+  showMetrics: boolean
+  showStrategy: boolean
+  showActions: boolean
+  createdAt: string
+}
+
 interface AppStore {
   clientData: ClientData | null
   setClientData: (data: ClientData) => void
@@ -296,6 +316,21 @@ interface AppStore {
   nousConversations: Record<string, NousMessage[]>
   addNousMessage: (clientName: string, msg: NousMessage) => void
   clearNousConversation: (clientName: string) => void
+
+  // Checklist diário por cliente
+  checklistCompleted: Record<string, Record<string, boolean>>
+  checklistDate: Record<string, string>
+  toggleChecklistItem: (clientKey: string, itemId: string) => void
+  resetChecklist: (clientKey: string) => void
+
+  // Portais de cliente
+  clientPortalsSaved: ClientPortal[]
+  addClientPortal: (portal: Omit<ClientPortal, 'id' | 'createdAt'>) => void
+  deleteClientPortal: (id: string) => void
+
+  // Morning briefing opt-in
+  briefingEnabled: boolean
+  setBriefingEnabled: (v: boolean) => void
 
   clearAll: () => void
 }
@@ -568,6 +603,36 @@ export const useAppStore = create<AppStore>()(
         return get().strategyTimestamps.filter((t) => t > oneHourAgo).length
       },
 
+      checklistCompleted: {},
+      checklistDate: {},
+      toggleChecklistItem: (clientKey, itemId) =>
+        set((s) => {
+          const prev = s.checklistCompleted[clientKey] || {}
+          return {
+            checklistCompleted: {
+              ...s.checklistCompleted,
+              [clientKey]: { ...prev, [itemId]: !prev[itemId] },
+            },
+          }
+        }),
+      resetChecklist: (clientKey) =>
+        set((s) => ({
+          checklistCompleted: { ...s.checklistCompleted, [clientKey]: {} },
+          checklistDate: { ...s.checklistDate, [clientKey]: new Date().toISOString().split('T')[0] },
+        })),
+
+      clientPortalsSaved: [],
+      addClientPortal: (portal) => {
+        const full: ClientPortal = { ...portal, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+        set((s) => ({ clientPortalsSaved: [full, ...s.clientPortalsSaved] }))
+      },
+      deleteClientPortal: (id) => {
+        set((s) => ({ clientPortalsSaved: s.clientPortalsSaved.filter((p) => p.id !== id) }))
+      },
+
+      briefingEnabled: false,
+      setBriefingEnabled: (v) => set({ briefingEnabled: v }),
+
       clearAll: () => set({
         clientData: null,
         strategyData: null,
@@ -601,6 +666,10 @@ export const useAppStore = create<AppStore>()(
         marketResearchTaskIds:    state.marketResearchTaskIds,
         competitors:              state.competitors,
         nousConversations:        state.nousConversations,
+        checklistCompleted:       state.checklistCompleted,
+        checklistDate:            state.checklistDate,
+        clientPortalsSaved:       state.clientPortalsSaved,
+        briefingEnabled:          state.briefingEnabled,
       }),
     }
   )
