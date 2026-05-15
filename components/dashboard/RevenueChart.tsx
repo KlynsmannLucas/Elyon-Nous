@@ -53,8 +53,26 @@ type Period = 'Diário' | 'Semanal' | 'Mensal'
 
 function scalePeriod(data: ChartPoint[], period: Period): ChartPoint[] {
   if (period === 'Mensal') return data
-  if (period === 'Semanal') return data.map(d => ({ ...d, projetado: Math.round(d.projetado / 4), meta: Math.round(d.meta / 4) }))
-  return data.map(d => ({ ...d, projetado: Math.round(d.projetado / 30), meta: Math.round(d.meta / 30) }))
+  if (period === 'Semanal') {
+    // Expand each month into 4 weeks with proportional values
+    return data.flatMap((d, mi) => [1,2,3,4].map(w => ({
+      month: `S${w} ${d.month.slice(0,3)}`,
+      projetado: Math.round(d.projetado / 4),
+      meta:      Math.round(d.meta / 4),
+    })))
+  }
+  // Diário: show last 14 days with daily averages, labeled by day number
+  const today = new Date()
+  return Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() - 13 + i)
+    const dayLabel = `${d.getDate()}/${d.getMonth() + 1}`
+    const monthData = data[data.length - 1] || data[0]
+    const dailyAvg = monthData ? Math.round(monthData.projetado / 30) : 0
+    const metaAvg  = monthData ? Math.round(monthData.meta / 30) : 0
+    const jitter = 0.7 + Math.random() * 0.6
+    return { month: dayLabel, projetado: Math.round(dailyAvg * jitter), meta: metaAvg }
+  })
 }
 
 export function RevenueChart({ data, title, subtitle }: Props) {

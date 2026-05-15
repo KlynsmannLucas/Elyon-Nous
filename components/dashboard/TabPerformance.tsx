@@ -411,11 +411,12 @@ function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
         </div>
 
         {/* Comparison table */}
-        <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}` }}>
+        <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}`, overflowX: 'auto' }}>
           <div style={{
             display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
-            padding: '10px 16px', background: C.bg,
-            fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em',
+            padding: '12px 16px', background: 'rgba(255,255,255,0.03)',
+            fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.35)',
+            textTransform: 'uppercase', letterSpacing: '0.06em',
           }}>
             <span>Cenário</span>
             <span>CPL</span><span>Leads</span><span>Vendas</span><span>Receita</span><span>ROAS</span>
@@ -427,22 +428,24 @@ function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
               <div key={s.key}
                 style={{
                   display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
-                  padding: '14px 16px', alignItems: 'center',
-                  borderTop: `1px solid ${C.border}`,
+                  padding: '12px 16px', alignItems: 'center',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
                   background:  scenIdx === i ? s.glow : 'transparent',
                   borderLeft:  `3px solid ${scenIdx === i ? s.color : 'transparent'}`,
                   cursor: 'pointer', transition: 'all 0.15s',
                 }}
-                onClick={() => setScenIdx(i as 0|1|2)}>
+                onClick={() => setScenIdx(i as 0|1|2)}
+                onMouseEnter={e => { if (scenIdx !== i) e.currentTarget.style.background = 'rgba(124,58,237,0.04)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = scenIdx === i ? s.glow : 'transparent' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 18 }}>{s.emoji}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: scenIdx === i ? s.color : C.text2 }}>{s.label}</span>
                 </div>
-                <span style={{ fontSize: 12, color: C.text2 }}>R${m.cpl}</span>
-                <span style={{ fontSize: 12, color: C.text2 }}>{m.leads}</span>
-                <span style={{ fontSize: 12, color: C.text2 }}>{m.sales}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: s.color }}>{fmtR(m.revenue)}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: m.roas >= roasGood ? C.green : C.gold }}>{m.roas}×</span>
+                <span style={{ fontSize: 12, color: C.text2, fontFamily: 'var(--font-mono)' }}>R${m.cpl}</span>
+                <span style={{ fontSize: 12, color: C.text2, fontFamily: 'var(--font-mono)' }}>{m.leads}</span>
+                <span style={{ fontSize: 12, color: C.text2, fontFamily: 'var(--font-mono)' }}>{m.sales}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: s.color, fontFamily: 'var(--font-mono)' }}>{fmtR(m.revenue)}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: m.roas >= roasGood ? C.green : C.gold, fontFamily: 'var(--font-mono)' }}>{m.roas}×</span>
               </div>
             )
           })}
@@ -752,11 +755,13 @@ function HistoryTable({ records, onDelete }: { records: CampaignRecord[]; onDele
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
               {['Período', 'Canal', 'Gasto', 'Leads', 'CPL Real', 'Vendas', 'ROAS', 'Resultado', ''].map(h => (
                 <th key={h} style={{
-                  padding: '10px 16px', textAlign: 'left', color: C.text3,
-                  textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500, whiteSpace: 'nowrap', fontSize: 10,
+                  padding: '12px 16px', textAlign: 'left',
+                  fontSize: '10px', fontWeight: 600,
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                  color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap',
                 }}>{h}</th>
               ))}
             </tr>
@@ -767,8 +772,8 @@ function HistoryTable({ records, onDelete }: { records: CampaignRecord[]; onDele
               const outcomeColor = r.outcome === 'vencedora' ? C.green : r.outcome === 'perdedora' ? C.red : C.gold
               const cColor = channelColor(r.channel)
               return (
-                <tr key={r.id} style={{ borderBottom: `1px solid ${C.border}`, transition: 'background 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = C.elevated)}
+                <tr key={r.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', transition: 'background 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.04)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   <td style={{ padding: '12px 16px', color: C.text1, fontWeight: 500, whiteSpace: 'nowrap' }}>{r.period}</td>
                   <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
@@ -777,13 +782,13 @@ function HistoryTable({ records, onDelete }: { records: CampaignRecord[]; onDele
                       background: `${cColor}12`, color: cColor,
                     }}>{r.channel}</span>
                   </td>
-                  <td style={{ padding: '12px 16px', color: C.text2, whiteSpace: 'nowrap' }}>R${r.budgetSpent.toLocaleString('pt-BR')}</td>
-                  <td style={{ padding: '12px 16px', color: C.text2 }}>{r.leads}</td>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, whiteSpace: 'nowrap', color: r.cplReal > 0 ? C.gold : C.text3 }}>
+                  <td style={{ padding: '12px 16px', color: C.text2, whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>R${r.budgetSpent.toLocaleString('pt-BR')}</td>
+                  <td style={{ padding: '12px 16px', color: C.text2, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{r.leads}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)', color: r.cplReal > 0 ? C.gold : C.text3 }}>
                     {r.cplReal > 0 ? `R$${r.cplReal}` : '—'}
                   </td>
-                  <td style={{ padding: '12px 16px', color: C.text2 }}>{r.conversions || '—'}</td>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: roas !== '—' ? C.green : C.text3 }}>
+                  <td style={{ padding: '12px 16px', color: C.text2, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{r.conversions || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right', fontFamily: 'var(--font-mono)', color: roas !== '—' ? C.green : C.text3 }}>
                     {roas !== '—' ? `${roas}×` : '—'}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
@@ -1016,8 +1021,9 @@ export function TabPerformance({ clientData }: Props) {
         </div>
         <div style={{
           display: 'grid', gridTemplateColumns: '5fr 2fr 3fr 2fr',
-          padding: '10px 24px', fontSize: 10, color: C.text3,
-          textTransform: 'uppercase', letterSpacing: '0.08em',
+          padding: '12px 24px', background: 'rgba(255,255,255,0.03)',
+          fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.35)',
+          textTransform: 'uppercase', letterSpacing: '0.06em',
           borderBottom: `1px solid ${C.border}`,
         }}>
           <span>Formato / Ângulo</span>
@@ -1028,11 +1034,11 @@ export function TabPerformance({ clientData }: Props) {
         {content.creatives.map((c, i) => (
           <div key={c.name} style={{
             display: 'grid', gridTemplateColumns: '5fr 2fr 3fr 2fr',
-            padding: '14px 24px', alignItems: 'center',
-            borderBottom: i < content.creatives.length - 1 ? `1px solid ${C.border}` : 'none',
+            padding: '12px 24px', alignItems: 'center',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
             transition: 'background 0.15s',
           }}
-            onMouseEnter={e => (e.currentTarget.style.background = C.elevated)}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.04)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
             <span style={{ fontSize: 13, color: C.text1, fontWeight: 500, lineHeight: 1.4 }}>{c.name}</span>
             <span style={{ fontSize: 12, color: C.text3 }}>{c.channel}</span>

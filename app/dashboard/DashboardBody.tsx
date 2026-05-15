@@ -1018,6 +1018,7 @@ export default function DashboardBody() {
         user={effectiveUser}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
+        hasConnectedAccount={connectedAccounts.length > 0}
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <DashboardTopbar

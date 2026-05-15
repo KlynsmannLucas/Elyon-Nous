@@ -10,15 +10,15 @@ import type { ClientData } from '@/lib/store'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
-  surface:  '#0F1221',
-  elevated: '#141628',
+  surface:  '#0F1629',
+  elevated: '#131E35',
   border:   'rgba(255,255,255,0.06)',
   borderMd: 'rgba(255,255,255,0.1)',
   purple:   '#7C3AED',
   purpleL:  '#A78BFA',
   purpleD:  'rgba(124,58,237,0.12)',
   purpleB:  'rgba(124,58,237,0.22)',
-  gold:     '#F5A500',
+  amber:    '#F59E0B',
   green:    '#22C55E',
   red:      '#EF4444',
   blue:     '#38BDF8',
@@ -147,7 +147,7 @@ function ScoreGauge({ score, label, description }: { score: number; label: strin
   const R = 52
   const CIRC = 2 * Math.PI * R
   const dashOffset = CIRC - (score / 100) * CIRC * 0.75
-  const color = score >= 70 ? C.green : score >= 45 ? C.gold : C.red
+  const color = score >= 70 ? C.green : score >= 45 ? C.amber : C.red
   const bgColor = score >= 70 ? 'rgba(34,197,94,0.08)' : score >= 45 ? 'rgba(245,165,0,0.08)' : 'rgba(239,68,68,0.08)'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -217,6 +217,22 @@ function FunnelViz({ stages }: { stages: { label: string; value: number; pct: st
   )
 }
 
+// ── Insight SVG icons ─────────────────────────────────────────────────────────
+const INSIGHT_ICONS: Record<string, (color: string) => React.ReactNode> = {
+  '🚨': (c) => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  '⚡': (c) => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  '🔄': (c) => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
+  '🔗': (c) => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+  '📈': (c) => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+  '🧠': (c) => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.14z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.14z"/></svg>,
+  '✅': (c) => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  '💡': (c) => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="3"/><path d="M12 6a6 6 0 0 1 6 6c0 2.5-1.5 4.5-3.5 5.5V20H9.5v-2.5C7.5 16.5 6 14.5 6 12a6 6 0 0 1 6-6z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>,
+}
+function getInsightIcon(icon: string, color: string): React.ReactNode {
+  const fn = INSIGHT_ICONS[icon]
+  return fn ? fn(color) : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+}
+
 // ── Insight card ──────────────────────────────────────────────────────────────
 function InsightCard({ icon, title, desc, color, action }: {
   icon: string; title: string; desc: string; color: string; action?: string
@@ -235,8 +251,8 @@ function InsightCard({ icon, title, desc, color, action }: {
         width: '34px', height: '34px', borderRadius: '9px',
         background: `${color}15`, border: `1px solid ${color}30`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '16px', flexShrink: 0,
-      }}>{icon}</div>
+        flexShrink: 0,
+      }}>{getInsightIcon(icon, color)}</div>
       <div>
         <div style={{ fontSize: '12px', fontWeight: 700, color, marginBottom: '4px' }}>{title}</div>
         <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5 }}>{desc}</div>
@@ -351,11 +367,11 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
     if (hasRealData && rm) {
       const cplColor = bench
         ? rm.avgCPL! <= bench.kpi_thresholds.cpl_good ? C.green
-          : rm.avgCPL! <= bench.kpi_thresholds.cpl_bad ? C.gold : C.red
-        : C.gold
+          : rm.avgCPL! <= bench.kpi_thresholds.cpl_bad ? C.amber : C.red
+        : C.amber
       const roasColor = rm.avgROAS && bench
         ? rm.avgROAS >= bench.kpi_thresholds.roas_good ? C.green
-          : rm.avgROAS >= bench.kpi_thresholds.roas_good * 0.7 ? C.gold : C.red
+          : rm.avgROAS >= bench.kpi_thresholds.roas_good * 0.7 ? C.amber : C.red
         : C.blue
       return [
         {
@@ -389,7 +405,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         },
         {
           label: 'Score IA', value: `${healthScore}/100`,
-          sub: scoreLabel, color: healthScore >= 70 ? C.green : healthScore >= 45 ? C.gold : C.red,
+          sub: scoreLabel, color: healthScore >= 70 ? C.green : healthScore >= 45 ? C.amber : C.red,
           trend: undefined, base: healthScore,
           icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
         },
@@ -418,7 +434,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         {
           label: 'CPL Médio Est.', value: `R$${Math.round(proj.cplAvg)}`,
           sub: `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}`,
-          color: proj.cplAvg <= bench.kpi_thresholds.cpl_good ? C.green : proj.cplAvg <= bench.kpi_thresholds.cpl_bad ? C.gold : C.red,
+          color: proj.cplAvg <= bench.kpi_thresholds.cpl_good ? C.green : proj.cplAvg <= bench.kpi_thresholds.cpl_bad ? C.amber : C.red,
           trend: undefined, base: proj.cplAvg,
           icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
         },
@@ -430,7 +446,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         },
         {
           label: 'Score IA', value: `${healthScore}/100`,
-          sub: scoreLabel, color: healthScore >= 70 ? C.green : healthScore >= 45 ? C.gold : C.red,
+          sub: scoreLabel, color: healthScore >= 70 ? C.green : healthScore >= 45 ? C.amber : C.red,
           trend: undefined, base: healthScore,
           icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
         },
@@ -452,7 +468,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         { label: 'Impressões',  value: impressions, pct: '100%',  color: C.purple },
         { label: 'Cliques',     value: clicks,      pct: rm.avgCTR ? `${rm.avgCTR}%` : '~4%', color: C.blue },
         { label: 'Leads',       value: rm.totalLeads, pct: `${((rm.totalLeads/clicks)*100).toFixed(1)}%`, color: C.green },
-        { label: 'Conversões',  value: Math.round(rm.totalLeads * 0.25), pct: '~25%', color: C.gold },
+        { label: 'Conversões',  value: Math.round(rm.totalLeads * 0.25), pct: '~25%', color: C.amber },
       ]
     }
     if (proj) {
@@ -460,14 +476,14 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         { label: 'Impressões',  value: proj.leadsMonth * 120, pct: '100%', color: C.purple },
         { label: 'Cliques',     value: proj.leadsMonth * 20,  pct: '~1.7%', color: C.blue },
         { label: 'Leads',       value: proj.leadsMonth,       pct: '~5%',   color: C.green },
-        { label: 'Vendas Est.', value: proj.salesMonth,       pct: `${(bench!.cvr_lead_to_sale*100).toFixed(0)}%`, color: C.gold },
+        { label: 'Vendas Est.', value: proj.salesMonth,       pct: `${(bench!.cvr_lead_to_sale*100).toFixed(0)}%`, color: C.amber },
       ]
     }
     return [
       { label: 'Impressões',  value: 120000, pct: '100%',  color: C.purple },
       { label: 'Cliques',     value: 3000,   pct: '2.5%',  color: C.blue },
       { label: 'Leads',       value: 450,    pct: '15%',   color: C.green },
-      { label: 'Conversões',  value: 112,    pct: '24.9%', color: C.gold },
+      { label: 'Conversões',  value: 112,    pct: '24.9%', color: C.amber },
     ]
   }, [hasRealData, rm, proj, bench])
 
@@ -498,7 +514,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
       list.push({ icon: '🚨', title: 'CPL Acima do Limite', desc: `Seu CPL R$${rm.avgCPL} está acima do benchmark. Revise audiências e criativos.`, color: C.red, action: 'Ver auditoria' })
     }
     if (strategyData?.generatedAt && (Date.now() - new Date(strategyData.generatedAt).getTime()) > 30*86400000) {
-      list.push({ icon: '⚡', title: 'Estratégia Desatualizada', desc: 'Sua estratégia tem mais de 30 dias. Gere uma nova com os dados atuais.', color: C.gold, action: 'Atualizar estratégia' })
+      list.push({ icon: '⚡', title: 'Estratégia Desatualizada', desc: 'Sua estratégia tem mais de 30 dias. Gere uma nova com os dados atuais.', color: C.amber, action: 'Atualizar estratégia' })
     }
     if (lastAuditTime && Date.now() - lastAuditTime > 7*86400000) {
       list.push({ icon: '🔄', title: 'Auditoria Pendente', desc: 'Última auditoria há mais de 7 dias. Execute para dados atualizados.', color: C.blue, action: 'Auditar agora' })
@@ -522,7 +538,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
   // ── Pulse feed ───────────────────────────────────────────────────────────
   const pulseItems = useMemo(() => {
     const items: { icon: string; title: string; desc: string; time: string; color: string }[] = []
-    if (strategyData?.generatedAt) items.push({ icon: '⚡', title: 'Estratégia gerada', desc: `Plano para ${clientData?.clientName || 'cliente'}`, time: strategyData.generatedAt, color: C.gold })
+    if (strategyData?.generatedAt) items.push({ icon: '⚡', title: 'Estratégia gerada', desc: `Plano para ${clientData?.clientName || 'cliente'}`, time: strategyData.generatedAt, color: C.amber })
     const latestEntry = Array.isArray(auditHistory) ? auditHistory[0] : null
     if (latestEntry?.createdAt) items.push({ icon: '🔍', title: 'Auditoria realizada', desc: 'Dados reais sincronizados', time: latestEntry.createdAt, color: C.green })
     for (const c of (competitorStore[key] || []).filter((c: any) => c.analyzedAt)) {
@@ -559,7 +575,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
             </span>
           ) : (
             <span style={{
-              fontSize: '11px', color: C.gold,
+              fontSize: '11px', color: C.amber,
               background: 'rgba(245,165,0,0.08)', border: '1px solid rgba(245,165,0,0.2)',
               borderRadius: '7px', padding: '4px 10px', fontWeight: 600,
             }}>
@@ -593,15 +609,12 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
       {/* ── Row 2: Chart + Funnel + Score ─────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px 200px', gap: '14px', alignItems: 'stretch' }}>
 
-        {/* Performance chart */}
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px', minHeight: '260px' }}>
-          <SectionHeader title="Performance ao longo do tempo" />
-          <RevenueChart
-            data={proj?.chartData}
-            title=""
-            subtitle={hasRealData ? `${rm?.campaignCount} campanhas · ${rm?.dataSource}` : proj ? `Projeção 6 meses · R$${Math.round(proj.revenueMonth/1000)}k/mês` : ''}
-          />
-        </div>
+        {/* Performance chart — RevenueChart is self-contained card */}
+        <RevenueChart
+          data={proj?.chartData}
+          title="Performance ao longo do tempo"
+          subtitle={hasRealData ? `${rm?.campaignCount} campanhas · ${rm?.dataSource}` : proj ? `Projeção 6 meses · R$${Math.round(proj.revenueMonth/1000)}k/mês` : ''}
+        />
 
         {/* Funnel */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
@@ -643,12 +656,12 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
                 }}>
                   <div style={{
                     width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                    background: c.score >= 75 ? C.green : c.score >= 55 ? C.gold : C.red,
+                    background: c.score >= 75 ? C.green : c.score >= 55 ? C.amber : C.red,
                   }} />
                   <span style={{ flex: 1, fontSize: '12px', color: C.text1, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
                   <span style={{ fontSize: '11px', color: C.text3, flexShrink: 0 }}>CPL R${c.cpl}</span>
                   <span style={{
-                    fontSize: '11px', fontWeight: 700, color: c.score >= 75 ? C.green : c.score >= 55 ? C.gold : C.red,
+                    fontSize: '11px', fontWeight: 700, color: c.score >= 75 ? C.green : c.score >= 55 ? C.amber : C.red,
                     background: c.score >= 75 ? 'rgba(34,197,94,0.1)' : c.score >= 55 ? 'rgba(245,165,0,0.1)' : 'rgba(239,68,68,0.1)',
                     borderRadius: '5px', padding: '2px 7px', flexShrink: 0,
                   }}>{c.score}</span>
@@ -682,7 +695,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
                   <div style={{ fontSize: '10px', color: C.text3 }}>{ch.leads} leads/mês</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: C.gold }}>R${ch.cpl}</div>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: C.amber }}>R${ch.cpl}</div>
                   <div style={{ fontSize: '9px', color: C.text3 }}>CPL</div>
                 </div>
                 <span style={{
@@ -731,7 +744,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         const maxBar   = Math.max(userCPL, benchMax) * 1.2
         const userPct  = Math.min((userCPL / maxBar) * 100, 100)
         const cplStatus = userCPL <= bench.kpi_thresholds.cpl_good ? { label: 'Abaixo do benchmark ✓', color: C.green }
-          : userCPL <= bench.kpi_thresholds.cpl_bad ? { label: 'Dentro do benchmark', color: C.gold }
+          : userCPL <= bench.kpi_thresholds.cpl_bad ? { label: 'Dentro do benchmark', color: C.amber }
           : { label: 'Acima do benchmark ⚠', color: C.red }
         return (
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
@@ -835,7 +848,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
             {bench.seasonality.length > 0 && (
               <span style={{
                 fontSize: '11px', padding: '3px 10px', borderRadius: '6px', fontWeight: 600,
-                background: 'rgba(245,165,0,0.1)', color: C.gold, border: '1px solid rgba(245,165,0,0.25)',
+                background: 'rgba(245,165,0,0.1)', color: C.amber, border: '1px solid rgba(245,165,0,0.25)',
               }}>
                 Pico: {bench.seasonality.join(' · ')}
               </span>
@@ -848,7 +861,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
                 background: C.elevated, borderRadius: '10px', padding: '10px 12px',
                 border: `1px solid ${C.border}`,
               }}>
-                <span style={{ color: C.gold, flexShrink: 0, marginTop: '1px', fontSize: '12px' }}>→</span>
+                <span style={{ color: C.amber, flexShrink: 0, marginTop: '1px', fontSize: '12px' }}>→</span>
                 <span style={{ fontSize: '12px', color: C.text2, lineHeight: 1.5 }}>{ins}</span>
               </div>
             ))}

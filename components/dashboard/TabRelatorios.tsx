@@ -148,7 +148,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
 
   // ── Branding state ──
   const [agencyName,    setAgencyName]    = useState('')
-  const [primaryColor,  setPrimaryColor]  = useState('#F5A500')
+  const [primaryColor,  setPrimaryColor]  = useState('#7C3AED')
 
   // ── Schedule state ──
   const [scheduleEmails,    setScheduleEmails]    = useState('')
@@ -349,8 +349,9 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
         {/* Branding inputs */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
           <div>
-            <label style={S.label}>Nome da agência (aparece no relatório)</label>
+            <label htmlFor="rel-agency-name" style={S.label}>Nome da agência (aparece no relatório)</label>
             <input
+              id="rel-agency-name"
               value={agencyName}
               onChange={e => setAgencyName(e.target.value)}
               placeholder="Ex: Minha Agência Digital"
@@ -359,9 +360,10 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
           </div>
 
           <div>
-            <label style={S.label}>Cor principal</label>
+            <label htmlFor="rel-primary-color" style={S.label}>Cor principal</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input
+                id="rel-primary-color"
                 type="color"
                 value={primaryColor}
                 onChange={e => setPrimaryColor(e.target.value)}
@@ -372,8 +374,9 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
           </div>
 
           <div>
-            <label style={S.label}>Expiração do link</label>
+            <label htmlFor="rel-expires" style={S.label}>Expiração do link</label>
             <select
+              id="rel-expires"
               value={expiresInDays}
               onChange={e => setExpiresInDays(Number(e.target.value))}
               style={S.inputBase}
@@ -504,8 +507,9 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Email recipients */}
           <div>
-            <label style={S.label}>Destinatários (separados por vírgula)</label>
+            <label htmlFor="rel-sched-emails" style={S.label}>Destinatários (separados por vírgula)</label>
             <textarea
+              id="rel-sched-emails"
               value={scheduleEmails}
               onChange={e => setScheduleEmails(e.target.value)}
               placeholder="cliente@empresa.com, gestor@agencia.com"
@@ -517,8 +521,9 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
           {/* Frequency + day row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div>
-              <label style={S.label}>Frequência</label>
+              <label htmlFor="rel-sched-freq" style={S.label}>Frequência</label>
               <select
+                id="rel-sched-freq"
                 value={scheduleFrequency}
                 onChange={e => setScheduleFrequency(e.target.value as 'weekly' | 'monthly')}
                 style={S.inputBase}
@@ -528,9 +533,10 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
               </select>
             </div>
             <div>
-              <label style={S.label}>{scheduleFrequency === 'weekly' ? 'Dia da semana' : 'Dia do mês'}</label>
+              <label htmlFor="rel-sched-day" style={S.label}>{scheduleFrequency === 'weekly' ? 'Dia da semana' : 'Dia do mês'}</label>
               {scheduleFrequency === 'weekly' ? (
                 <select
+                  id="rel-sched-day"
                   value={scheduleDayOfWeek}
                   onChange={e => setScheduleDayOfWeek(Number(e.target.value))}
                   style={S.inputBase}
@@ -539,6 +545,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                 </select>
               ) : (
                 <select
+                  id="rel-sched-day"
                   value={scheduleDayOfWeek}
                   onChange={e => setScheduleDayOfWeek(Number(e.target.value))}
                   style={S.inputBase}

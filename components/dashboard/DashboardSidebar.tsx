@@ -115,9 +115,10 @@ interface Props {
   user: any
   collapsed: boolean
   onToggleCollapse: () => void
+  hasConnectedAccount?: boolean
 }
 
-export function DashboardSidebar({ active, onChange, clientData, userPlan, user, collapsed, onToggleCollapse }: Props) {
+export function DashboardSidebar({ active, onChange, clientData, userPlan, user, collapsed, onToggleCollapse, hasConnectedAccount = false }: Props) {
   const [portalLoading, setPortalLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -356,11 +357,11 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                           </span>
                           {isLocked ? (
                             <span style={{ color: 'rgba(255,255,255,0.15)', flexShrink: 0 }}>{I.lock}</span>
-                          ) : item.badge === 'LIVE' ? (
+                          ) : item.badge === 'LIVE' && hasConnectedAccount ? (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
                               <span className="status-dot-live" style={{ width: '5px', height: '5px' }} />
                             </span>
-                          ) : item.badge ? (
+                          ) : item.badge && item.badge !== 'LIVE' ? (
                             <span style={{
                               fontSize: '8px', fontFamily: 'var(--font-mono)',
                               color: '#A78BFA',
