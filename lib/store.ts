@@ -222,6 +222,10 @@ export interface ClientPortal {
   showStrategy: boolean
   showActions: boolean
   createdAt: string
+  dataParam?: string   // base64-encoded config embutido na URL
+  niche?: string
+  budget?: number
+  revenue?: number
 }
 
 interface AppStore {

@@ -49,26 +49,36 @@ export function TabPortal({ clientData }: Props) {
 
     try {
       const slug = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+      const agency = agencyName.trim()
 
-      // Salva no store local imediatamente (sempre funciona)
-      addClientPortal({ slug, clientName: clientData.clientName, agencyName: agencyName.trim(), showMetrics, showStrategy, showActions })
+      // Gera data param auto-contido na URL (independe do Supabase)
+      const payload = {
+        cn: clientData.clientName,
+        an: agency,
+        sm: showMetrics,
+        ss: showStrategy,
+        sa: showActions,
+        ni: clientData.niche || '',
+        b:  clientData.budget || 0,
+        r:  clientData.monthlyRevenue || 0,
+      }
+      const dataParam = btoa(JSON.stringify(payload))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+
+      // Salva no store local com todos os dados embutidos
+      addClientPortal({
+        slug, clientName: clientData.clientName, agencyName: agency,
+        showMetrics, showStrategy, showActions,
+        dataParam,
+        niche: clientData.niche, budget: clientData.budget, revenue: clientData.monthlyRevenue,
+      })
       setAgencyName('')
 
       // Persiste no Supabase em background (best-effort)
       fetch('/api/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug,
-          clientName: clientData.clientName,
-          agencyName: agencyName.trim(),
-          showMetrics,
-          showStrategy,
-          showActions,
-          niche:   clientData.niche,
-          budget:  clientData.budget,
-          revenue: clientData.monthlyRevenue,
-        }),
+        body: JSON.stringify({ slug, clientName: clientData.clientName, agencyName: agency, showMetrics, showStrategy, showActions, niche: clientData.niche, budget: clientData.budget, revenue: clientData.monthlyRevenue }),
       }).catch(() => {})
     } catch (e: any) {
       setCreateError(e.message)
@@ -78,7 +88,9 @@ export function TabPortal({ clientData }: Props) {
   }
 
   const handleCopy = (portal: ClientPortal) => {
-    const url = `${BASE_URL}/portal/${portal.slug}`
+    const url = portal.dataParam
+      ? `${BASE_URL}/portal/${portal.slug}?d=${portal.dataParam}`
+      : `${BASE_URL}/portal/${portal.slug}`
     navigator.clipboard.writeText(url).then(() => {
       setCopiedId(portal.id)
       setTimeout(() => setCopiedId(null), 2000)
@@ -296,7 +308,7 @@ export function TabPortal({ clientData }: Props) {
                       {copiedId === portal.id ? '✓ Copiado!' : '📋 Copiar link'}
                     </button>
                     <a
-                      href={`/portal/${portal.slug}`}
+                      href={portal.dataParam ? `/portal/${portal.slug}?d=${portal.dataParam}` : `/portal/${portal.slug}`}
                       target="_blank"
                       rel="noreferrer"
                       style={{
