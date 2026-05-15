@@ -137,22 +137,15 @@ interface Props {
 }
 
 export function TabChecklist({ clientData }: Props) {
-  const {
-    auditCache, actionPlanCache, strategyData,
-    checklistCompleted, checklistDate,
-    toggleChecklistItem, resetChecklist,
-    briefingEnabled, setBriefingEnabled,
-  } = useAppStore(s => ({
-    auditCache:           s.auditCache,
-    actionPlanCache:      s.actionPlanCache,
-    strategyData:         s.strategyData,
-    checklistCompleted:   s.checklistCompleted,
-    checklistDate:        s.checklistDate,
-    toggleChecklistItem:  s.toggleChecklistItem,
-    resetChecklist:       s.resetChecklist,
-    briefingEnabled:      s.briefingEnabled,
-    setBriefingEnabled:   s.setBriefingEnabled,
-  }))
+  const auditCache          = useAppStore(s => s.auditCache)
+  const actionPlanCache     = useAppStore(s => s.actionPlanCache)
+  const strategyData        = useAppStore(s => s.strategyData)
+  const checklistCompleted  = useAppStore(s => s.checklistCompleted)
+  const checklistDate       = useAppStore(s => s.checklistDate)
+  const toggleChecklistItem = useAppStore(s => s.toggleChecklistItem)
+  const resetChecklist      = useAppStore(s => s.resetChecklist)
+  const briefingEnabled     = useAppStore(s => s.briefingEnabled)
+  const setBriefingEnabled  = useAppStore(s => s.setBriefingEnabled)
 
   const [briefingSaving, setBriefingSaving] = useState(false)
 

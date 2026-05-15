@@ -27,11 +27,9 @@ interface Props {
 }
 
 export function TabPortal({ clientData }: Props) {
-  const { clientPortalsSaved, addClientPortal, deleteClientPortal } = useAppStore(s => ({
-    clientPortalsSaved: s.clientPortalsSaved,
-    addClientPortal:    s.addClientPortal,
-    deleteClientPortal: s.deleteClientPortal,
-  }))
+  const clientPortalsSaved = useAppStore(s => s.clientPortalsSaved)
+  const addClientPortal    = useAppStore(s => s.addClientPortal)
+  const deleteClientPortal = useAppStore(s => s.deleteClientPortal)
 
   const [agencyName, setAgencyName] = useState('')
   const [showMetrics,   setShowMetrics]   = useState(true)
