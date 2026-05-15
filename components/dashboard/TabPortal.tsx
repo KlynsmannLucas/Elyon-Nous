@@ -41,6 +41,24 @@ export function TabPortal({ clientData }: Props) {
 
   const myPortals = clientPortalsSaved.filter(p => p.clientName === (clientData?.clientName || ''))
 
+  // Gera a URL completa com dados embutidos, mesmo para portais antigos sem dataParam
+  const getPortalUrl = (portal: ClientPortal): string => {
+    const dp = portal.dataParam ?? (() => {
+      const payload = {
+        cn: portal.clientName,
+        an: portal.agencyName,
+        sm: portal.showMetrics,
+        ss: portal.showStrategy,
+        sa: portal.showActions,
+        ni: portal.niche || clientData?.niche || '',
+        b:  portal.budget || clientData?.budget || 0,
+        r:  portal.revenue || clientData?.monthlyRevenue || 0,
+      }
+      return btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+    })()
+    return `${BASE_URL}/portal/${portal.slug}?d=${dp}`
+  }
+
   const handleCreate = async () => {
     if (!clientData) return
     if (!agencyName.trim()) { setCreateError('Informe o nome da sua agência ou empresa.'); return }
@@ -88,9 +106,7 @@ export function TabPortal({ clientData }: Props) {
   }
 
   const handleCopy = (portal: ClientPortal) => {
-    const url = portal.dataParam
-      ? `${BASE_URL}/portal/${portal.slug}?d=${portal.dataParam}`
-      : `${BASE_URL}/portal/${portal.slug}`
+    const url = getPortalUrl(portal)
     navigator.clipboard.writeText(url).then(() => {
       setCopiedId(portal.id)
       setTimeout(() => setCopiedId(null), 2000)
@@ -308,7 +324,7 @@ export function TabPortal({ clientData }: Props) {
                       {copiedId === portal.id ? '✓ Copiado!' : '📋 Copiar link'}
                     </button>
                     <a
-                      href={portal.dataParam ? `/portal/${portal.slug}?d=${portal.dataParam}` : `/portal/${portal.slug}`}
+                      href={getPortalUrl(portal)}
                       target="_blank"
                       rel="noreferrer"
                       style={{
