@@ -24,6 +24,20 @@ function isSensitiveNiche(niche?: string) {
   return SENSITIVE_KEYWORDS.some((k) => n.includes(k))
 }
 
+const C = {
+  surface:  '#0F1629',
+  elevated: '#131E35',
+  border:   'rgba(255,255,255,0.06)',
+  purple:   '#7C3AED',
+  purpleL:  '#A78BFA',
+  purpleD:  'rgba(124,58,237,0.12)',
+  purpleB:  'rgba(124,58,237,0.22)',
+  amber:    '#F59E0B',
+  text1:    '#F1F5F9',
+  text2:    '#94A3B8',
+  text3:    '#64748B',
+}
+
 export function TabAnalise({ clientData, planHasAudit, onUpgrade }: Props) {
   const [mode, setMode] = useState<'auditoria' | 'pipeline'>('auditoria')
   const sensitive = isSensitiveNiche(clientData?.niche)
@@ -32,51 +46,64 @@ export function TabAnalise({ clientData, planHasAudit, onUpgrade }: Props) {
     <div>
       {/* Alerta de conformidade para nichos sensíveis */}
       {sensitive && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-xl mb-5"
-          style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.22)' }}>
-          <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: '12px',
+          padding: '12px 16px', borderRadius: '12px', marginBottom: '20px',
+          background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.22)',
+        }}>
+          <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '2px' }}>⚠️</span>
           <div>
-            <div className="text-xs font-semibold mb-0.5" style={{ color: '#F0B429' }}>
+            <div style={{ fontSize: '12px', fontWeight: 600, color: C.amber, marginBottom: '2px' }}>
               Nicho com restrições de copy nos anúncios
             </div>
-            <div className="text-xs text-slate-400 leading-relaxed">
-              Meta e Google têm políticas específicas para <strong className="text-slate-300">{clientData?.niche}</strong>. Evite termos como "cura", "garantia de resultado" ou promessas de saúde/jurídico. Pergunte à <strong className="text-slate-300">NOUS</strong> por ângulos de copy aprovados para esse nicho.
+            <div style={{ fontSize: '12px', color: C.text2, lineHeight: 1.6 }}>
+              Meta e Google têm políticas específicas para{' '}
+              <strong style={{ color: C.text1 }}>{clientData?.niche}</strong>. Evite termos como "cura",
+              "garantia de resultado" ou promessas de saúde/jurídico. Pergunte à{' '}
+              <strong style={{ color: C.text1 }}>NOUS</strong> por ângulos de copy aprovados para esse nicho.
             </div>
           </div>
         </div>
       )}
 
       {/* Toggle de modo */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex rounded-xl p-1 gap-1" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
-          {[
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{
+          display: 'flex', borderRadius: '12px', padding: '4px', gap: '4px',
+          background: C.elevated, border: `1px solid ${C.border}`,
+        }}>
+          {([
             { key: 'auditoria', label: '🔍 Auditoria Detalhada', sub: '11 seções' },
             { key: 'pipeline',  label: '🤖 Pipeline 360°',       sub: '5 agentes IA' },
-          ].map((m) => (
+          ] as { key: 'auditoria' | 'pipeline'; label: string; sub: string }[]).map((m) => (
             <button
               key={m.key}
               onClick={() => setMode(m.key as typeof mode)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-              style={mode === m.key
-                ? { background: 'rgba(240,180,41,0.12)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.35)' }
-                : { background: 'transparent', color: '#64748B', border: '1px solid transparent' }
-              }
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '8px 16px', borderRadius: '9px', fontWeight: 600,
+                fontSize: '13px', cursor: 'pointer', transition: 'all 0.15s',
+                border: 'none',
+                ...(mode === m.key
+                  ? { background: C.purpleD, color: C.purpleL, outline: `1px solid ${C.purpleB}` }
+                  : { background: 'transparent', color: C.text3, outline: 'none' }),
+              }}
             >
               {m.label}
-              <span
-                className="text-[10px] px-1.5 py-0.5 rounded font-mono"
-                style={mode === m.key
-                  ? { color: '#F0B429', background: 'rgba(240,180,41,0.1)' }
-                  : { color: '#475569', background: '#16161A' }
-                }
-              >
+              <span style={{
+                fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
+                fontFamily: 'monospace',
+                ...(mode === m.key
+                  ? { color: C.purpleL, background: 'rgba(124,58,237,0.1)' }
+                  : { color: '#475569', background: C.surface }),
+              }}>
                 {m.sub}
               </span>
             </button>
           ))}
         </div>
 
-        <div className="text-xs text-slate-600 ml-auto">
+        <div style={{ fontSize: '11px', color: C.text3, marginLeft: 'auto' }}>
           {mode === 'auditoria'
             ? 'Análise manual com upload de CSV · diagnóstico completo em 11 dimensões'
             : 'Pipeline autônomo de 5 agentes IA · análise integrada em 3–5 min'
@@ -85,22 +112,31 @@ export function TabAnalise({ clientData, planHasAudit, onUpgrade }: Props) {
       </div>
 
       {/* Conteúdo do modo selecionado */}
-      <div key={mode} className="animate-fade-up">
+      <div key={mode}>
         {mode === 'auditoria' ? (
           planHasAudit
             ? <TabAuditoria clientData={clientData} />
             : (
-              <div className="flex items-center justify-center min-h-[50vh]">
-                <div className="max-w-sm text-center">
-                  <div className="text-4xl mb-4">🔒</div>
-                  <h3 className="font-display text-xl font-bold text-white mb-2">Auditoria Avançada</h3>
-                  <p className="text-slate-400 text-sm mb-6">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh' }}>
+                <div style={{ maxWidth: '360px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '40px', marginBottom: '16px' }}>🔒</div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 700, color: C.text1, margin: '0 0 8px' }}>
+                    Auditoria Avançada
+                  </h3>
+                  <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 24px', lineHeight: 1.6 }}>
                     Disponível nos planos Profissional e Avançada. Faça upgrade para desbloquear auditoria completa com 11 dimensões e análise de campanhas reais.
                   </p>
                   <button
                     onClick={onUpgrade}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-black text-sm hover:opacity-90"
-                    style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '8px',
+                      padding: '12px 20px', borderRadius: '12px', fontWeight: 700,
+                      fontSize: '13px', color: '#fff', cursor: 'pointer',
+                      background: 'linear-gradient(135deg, #7C3AED, #A78BFA)', border: 'none',
+                      boxShadow: '0 2px 12px rgba(124,58,237,0.35)',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.9' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
                   >
                     ⚡ Fazer upgrade
                   </button>

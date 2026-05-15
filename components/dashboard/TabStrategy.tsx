@@ -10,7 +10,7 @@ const C = {
   bg:       '#080D1A',
   surface:  '#0F1629',
   elevated: '#131E35',
-  border:   'rgba(99,120,255,0.1)',
+  border:   'rgba(255,255,255,0.06)',
   purple:   '#7C3AED',
   purpleL:  '#A78BFA',
   green:    '#22C55E',
@@ -23,7 +23,7 @@ const C = {
   goldBg:   'rgba(245,158,11,0.1)',
   orange:   '#F97316',
   text1:    '#F1F5F9',
-  text2:    'rgba(255,255,255,0.5)',
+  text2:    '#94A3B8',
   text3:    'rgba(255,255,255,0.25)',
 }
 
@@ -197,9 +197,9 @@ function Plan90Days({ plan }: { plan: any[] }) {
             style={{
               flex: 1, padding: '12px 0', fontSize: 12, fontWeight: 700,
               cursor: 'pointer', border: 'none', transition: 'all 0.2s',
-              color:      activeMonth === i ? C.gold : C.text3,
-              background: activeMonth === i ? `${C.gold}08` : 'transparent',
-              borderBottom: activeMonth === i ? `2px solid ${C.gold}` : '2px solid transparent',
+              color:      activeMonth === i ? C.purpleL : C.text3,
+              background: activeMonth === i ? 'rgba(124,58,237,0.08)' : 'transparent',
+              borderBottom: activeMonth === i ? `2px solid ${C.purpleL}` : '2px solid transparent',
             }}>
             Mês {m.month}
           </button>
@@ -230,7 +230,7 @@ function Plan90Days({ plan }: { plan: any[] }) {
                   <span key={ai} style={{
                     display: 'inline-flex', alignItems: 'center', gap: 4,
                     fontSize: 11, padding: '4px 10px', borderRadius: 20,
-                    background: `${C.gold}10`, color: C.gold, border: `1px solid ${C.gold}28`,
+                    background: 'rgba(124,58,237,0.08)', color: C.purpleL, border: '1px solid rgba(124,58,237,0.25)',
                   }}>
                     · {action}
                   </span>
@@ -254,7 +254,7 @@ function KeyActionsSection({ actions }: { actions: string[] }) {
     <div style={card}>
       <div style={{ fontWeight: 700, color: C.text1, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{
-          width: 28, height: 28, borderRadius: 8, background: `${C.gold}18`,
+          width: 28, height: 28, borderRadius: 8, background: 'rgba(124,58,237,0.12)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
         }}>⚡</span>
         Ações Prioritárias
@@ -409,15 +409,15 @@ export function TabStrategy({ strategy, analysis }: Props) {
         <div style={{
           borderRadius: 14, padding: '16px 20px',
           display: 'flex', alignItems: 'flex-start', gap: 12,
-          background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))',
-          border: `1px solid rgba(245,158,11,0.22)`,
+          background: 'linear-gradient(135deg, rgba(124,58,237,0.08), rgba(124,58,237,0.02))',
+          border: `1px solid rgba(124,58,237,0.22)`,
         }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-            background: `${C.gold}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+            background: 'rgba(124,58,237,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
           }}>🧠</div>
           <div>
-            <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+            <div style={{ fontSize: 10, color: C.purpleL, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
               Head of Growth
             </div>
             <p style={{ fontSize: 13, color: C.text1, lineHeight: 1.65, margin: 0 }}>{aiInsight}</p>

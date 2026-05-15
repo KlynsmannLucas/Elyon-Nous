@@ -14,7 +14,7 @@ const C = {
   bg:       '#080D1A',
   surface:  '#0F1629',
   elevated: '#131E35',
-  border:   'rgba(99,120,255,0.1)',
+  border:   'rgba(255,255,255,0.06)',
   purple:   '#7C3AED',
   purpleL:  '#A78BFA',
   green:    '#22C55E',
@@ -27,7 +27,7 @@ const C = {
   goldBg:   'rgba(245,158,11,0.1)',
   orange:   '#F97316',
   text1:    '#F1F5F9',
-  text2:    'rgba(255,255,255,0.5)',
+  text2:    '#94A3B8',
   text3:    'rgba(255,255,255,0.25)',
 }
 
@@ -394,7 +394,7 @@ function FunnelForm({ clientData, onSubmit }: { clientData: ClientData; onSubmit
 
       <button type="submit" style={{
         width: '100%', padding: '14px 0', borderRadius: 12, fontWeight: 700, fontSize: 14,
-        color: '#000', background: 'linear-gradient(135deg, #F59E0B, #FCD34D)',
+        color: '#fff', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
         border: 'none', cursor: 'pointer', letterSpacing: 0.3,
       }}>
         🔬 Diagnosticar Gargalo
@@ -505,7 +505,7 @@ export function TabFunil({ clientData }: Props) {
             onClick={() => { setShowForm(true); setResult(null) }}
             style={{
               fontSize: 12, padding: '7px 14px', borderRadius: 10, fontWeight: 600, cursor: 'pointer',
-              background: C.goldBg, color: C.gold, border: `1px solid rgba(245,158,11,0.25)`,
+              background: 'rgba(124,58,237,0.08)', color: C.purpleL, border: '1px solid rgba(124,58,237,0.25)',
             }}>
             + Nova análise
           </button>

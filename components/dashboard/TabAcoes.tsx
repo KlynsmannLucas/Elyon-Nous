@@ -14,7 +14,7 @@ const C = {
   bg:       '#080D1A',
   surface:  '#0F1629',
   elevated: '#131E35',
-  border:   'rgba(99,120,255,0.1)',
+  border:   'rgba(255,255,255,0.06)',
   purple:   '#7C3AED',
   purpleL:  '#A78BFA',
   green:    '#22C55E',
@@ -27,7 +27,7 @@ const C = {
   goldBg:   'rgba(245,158,11,0.1)',
   orange:   '#F97316',
   text1:    '#F1F5F9',
-  text2:    'rgba(255,255,255,0.5)',
+  text2:    '#94A3B8',
   text3:    'rgba(255,255,255,0.25)',
 }
 
@@ -181,11 +181,11 @@ export function TabAcoes({ clientData, strategyData }: Props) {
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
               borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-              background: 'linear-gradient(135deg, #F59E0B, #FCD34D)', color: '#000',
+              background: 'linear-gradient(135deg, #7C3AED, #A78BFA)', color: '#fff',
               border: 'none', opacity: loading ? 0.6 : 1,
             }}>
             {loading
-              ? (<><span style={{ width: 16, height: 16, borderRadius: 999, border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#000', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Gerando...</>)
+              ? (<><span style={{ width: 16, height: 16, borderRadius: 999, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Gerando...</>)
               : actions.length > 0 ? '🔄 Atualizar plano' : '⚡ Gerar plano de ações'
             }
           </button>
@@ -223,7 +223,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
 
       {loading && (
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 48, textAlign: 'center' }}>
-          <div style={{ width: 48, height: 48, borderRadius: 999, border: `2px solid rgba(245,158,11,0.15)`, borderTopColor: C.gold, margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
+          <div style={{ width: 48, height: 48, borderRadius: 999, border: '2px solid rgba(124,58,237,0.15)', borderTopColor: '#A78BFA', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text1, marginBottom: 6 }}>Consultando especialista sênior...</div>
           <div style={{ fontSize: 12, color: C.text2 }}>Analisando estratégia, auditoria e nicho para criar ações específicas</div>
         </div>
@@ -258,7 +258,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
               <div style={{
                 height: 6, borderRadius: 999, transition: 'width 0.5s ease',
                 width: `${pct}%`,
-                background: pct === 100 ? C.green : 'linear-gradient(90deg, #F59E0B, #FCD34D)',
+                background: pct === 100 ? C.green : 'linear-gradient(90deg, #7C3AED, #A78BFA)',
               }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
@@ -283,7 +283,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                 style={{
                   fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 999, cursor: 'pointer',
                   ...(filtro === f
-                    ? { background: C.goldBg, border: `1px solid rgba(245,158,11,0.4)`, color: C.gold }
+                    ? { background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.3)', color: C.purpleL }
                     : { background: 'transparent', border: `1px solid ${C.border}`, color: C.text2 }),
                 }}>
                 {f === 'todas' ? `Todas (${stats.total})`
