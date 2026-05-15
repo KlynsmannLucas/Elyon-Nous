@@ -48,11 +48,14 @@ export function TabPortal({ clientData }: Props) {
     setCreateError('')
 
     try {
-      // Generate a URL-safe slug
       const slug = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
 
-      // Persist to API (Supabase report_shares)
-      const res = await fetch('/api/portal', {
+      // Salva no store local imediatamente (sempre funciona)
+      addClientPortal({ slug, clientName: clientData.clientName, agencyName: agencyName.trim(), showMetrics, showStrategy, showActions })
+      setAgencyName('')
+
+      // Persiste no Supabase em background (best-effort)
+      fetch('/api/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -62,17 +65,11 @@ export function TabPortal({ clientData }: Props) {
           showMetrics,
           showStrategy,
           showActions,
-          niche:  clientData.niche,
-          budget: clientData.budget,
+          niche:   clientData.niche,
+          budget:  clientData.budget,
           revenue: clientData.monthlyRevenue,
         }),
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error || 'Erro ao criar portal')
-
-      // Save to local store
-      addClientPortal({ slug, clientName: clientData.clientName, agencyName: agencyName.trim(), showMetrics, showStrategy, showActions })
-      setAgencyName('')
+      }).catch(() => {})
     } catch (e: any) {
       setCreateError(e.message)
     } finally {
