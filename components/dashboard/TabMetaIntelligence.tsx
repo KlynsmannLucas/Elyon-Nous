@@ -1,7 +1,7 @@
 // components/dashboard/TabMetaIntelligence.tsx — Ads Manager Professional UI
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, PieChart, Pie, LabelList, ComposedChart, Line,
@@ -85,6 +85,8 @@ interface Totals {
 interface PreviousTotals {
   spend: number; leads: number; cpl: number
   spendDelta: number | null; leadsDelta: number | null; cplDelta: number | null
+  ctrDelta?: number | null; freqDelta?: number | null
+  cpcDelta?: number | null; cpmDelta?: number | null; roasDelta?: number | null
 }
 
 interface IntelligenceData {
@@ -346,44 +348,228 @@ function SortableHeader({ label, sortKey, activeKey, dir, onSort, right }: {
   )
 }
 
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+function Sparkline({ spend30, spend7, height = 28 }: { spend30: number; spend7: number; height?: number }) {
+  const dailyRecent = spend7 / 7
+  const dailyOlder  = spend30 > spend7 ? (spend30 - spend7) / 23 : dailyRecent * 0.7
+  const bars = [
+    dailyOlder * 0.85, dailyOlder * 1.1, dailyOlder * 0.9, dailyOlder,
+    dailyRecent * 0.9, dailyRecent * 1.05, dailyRecent,
+  ]
+  const max = Math.max(...bars, 1)
+  const trend = dailyRecent > dailyOlder * 1.05 ? '#22C55E' : dailyRecent < dailyOlder * 0.9 ? '#FF4D4D' : '#F0B429'
+  return (
+    <svg width={56} height={height} viewBox={`0 0 56 ${height}`} style={{ display: 'block' }}>
+      {bars.map((v, i) => {
+        const barH = Math.max(2, (v / max) * (height - 4))
+        const x = i * 8 + 1
+        return <rect key={i} x={x} y={height - barH - 2} width={6} height={barH} rx={1.5}
+          fill={i >= 4 ? trend : 'rgba(100,116,139,0.35)'}
+        />
+      })}
+    </svg>
+  )
+}
+
+// ── ColumnSelector ─────────────────────────────────────────────────────────────
+type ColKey = 'status' | 'spend' | 'leads' | 'cpl' | 'ctr' | 'freq' | 'cpc' | 'cpm' | 'impressions' | 'roas' | 'score' | 'trend'
+
+const ALL_COLS: { key: ColKey; label: string }[] = [
+  { key: 'status',      label: 'Status' },
+  { key: 'spend',       label: 'Gasto' },
+  { key: 'leads',       label: 'Leads' },
+  { key: 'cpl',         label: 'CPL' },
+  { key: 'ctr',         label: 'CTR' },
+  { key: 'freq',        label: 'Freq' },
+  { key: 'cpc',         label: 'CPC' },
+  { key: 'cpm',         label: 'CPM' },
+  { key: 'impressions', label: 'Impressões' },
+  { key: 'roas',        label: 'ROAS' },
+  { key: 'score',       label: 'Score' },
+  { key: 'trend',       label: 'Tendência' },
+]
+
+const DEFAULT_COLS = new Set<ColKey>(['status', 'spend', 'leads', 'cpl', 'ctr', 'freq', 'roas', 'score', 'trend'])
+
+function ColumnSelector({ visible, onChange }: { visible: Set<ColKey>; onChange: (s: Set<ColKey>) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const fn = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [])
+  const toggle = (k: ColKey) => {
+    const next = new Set(visible)
+    if (next.has(k)) { if (next.size > 3) next.delete(k) } else next.add(k)
+    onChange(next)
+  }
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '4px',
+          fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '7px',
+          background: open ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${open ? 'rgba(124,58,237,0.35)' : 'rgba(255,255,255,0.08)'}`,
+          color: open ? '#A78BFA' : '#64748B', cursor: 'pointer',
+        }}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        Colunas
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 9999,
+          background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '10px', padding: '10px', minWidth: '180px',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+        }}>
+          <div style={{ fontSize: '10px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', padding: '0 4px' }}>
+            Colunas visíveis
+          </div>
+          {ALL_COLS.map(col => (
+            <button key={col.key} onClick={() => toggle(col.key)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                width: '100%', padding: '6px 8px', borderRadius: '6px',
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: visible.has(col.key) ? '#F1F5F9' : '#475569',
+                fontSize: '12px', textAlign: 'left', transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <span style={{
+                width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0,
+                background: visible.has(col.key) ? '#7C3AED' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${visible.has(col.key) ? '#7C3AED' : 'rgba(255,255,255,0.12)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {visible.has(col.key) && <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>✓</span>}
+              </span>
+              {col.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── FilterBar ─────────────────────────────────────────────────────────────────
-function FilterBar({ search, onSearch, status, onStatus, objectives, objective, onObjective }: {
+function FilterBar({ search, onSearch, status, onStatus, objectives, objective, onObjective, performance, onPerformance, freqFilter, onFreqFilter }: {
   search: string; onSearch: (v: string) => void
   status: string; onStatus: (v: string) => void
   objectives?: string[]; objective: string; onObjective: (v: string) => void
+  performance?: string; onPerformance?: (v: string) => void
+  freqFilter?: string; onFreqFilter?: (v: string) => void
 }) {
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const hasAdvancedFilter = (performance && performance !== 'all') || (freqFilter && freqFilter !== 'all')
+
   return (
-    <div className="flex flex-wrap gap-2 items-center p-3 border-b border-[#1E1E24]">
-      <div className="relative flex-1 min-w-[160px] max-w-xs">
-        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs">🔍</span>
-        <input
-          value={search} onChange={e => onSearch(e.target.value)}
-          placeholder="Buscar..."
-          className="w-full pl-7 pr-3 py-1.5 text-xs bg-[#16161A] border border-[#2A2A30] rounded-lg text-slate-300 placeholder-slate-600 focus:outline-none focus:border-[#1877F2]"
-        />
-      </div>
-      {(['all', 'active', 'paused', 'issues'] as const).map(s => {
-        const labels = { all: 'Todos', active: 'Ativos', paused: 'Pausados', issues: 'Problemas' }
-        const colors = { all: '#64748B', active: '#22C55E', paused: '#94A3B8', issues: '#FF4D4D' }
-        const isActive = status === s
-        return (
-          <button key={s} onClick={() => onStatus(s)}
-            className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
+    <div style={{ borderBottom: '1px solid #1E1E24' }}>
+      {/* Linha principal */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', padding: '10px 12px' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '160px', maxWidth: '240px' }}>
+          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#475569', fontSize: '12px' }}>🔍</span>
+          <input
+            value={search} onChange={e => onSearch(e.target.value)}
+            placeholder="Buscar..."
             style={{
-              color: isActive ? '#0D0D10' : colors[s],
-              background: isActive ? colors[s] : `${colors[s]}12`,
-              border: `1px solid ${colors[s]}35`,
+              width: '100%', paddingLeft: '28px', paddingRight: '10px', paddingTop: '6px', paddingBottom: '6px',
+              fontSize: '12px', background: '#16161A', border: '1px solid #2A2A30', borderRadius: '8px',
+              color: '#CBD5E1', outline: 'none',
+            }}
+          />
+        </div>
+        {(['all', 'active', 'paused', 'issues'] as const).map(s => {
+          const labels = { all: 'Todos', active: 'Ativos', paused: 'Pausados', issues: 'Problemas' }
+          const colors = { all: '#64748B', active: '#22C55E', paused: '#94A3B8', issues: '#FF4D4D' }
+          const isActive = status === s
+          return (
+            <button key={s} onClick={() => onStatus(s)}
+              style={{
+                fontSize: '11px', fontWeight: 600, padding: '5px 12px', borderRadius: '8px',
+                color: isActive ? '#0D0D10' : colors[s],
+                background: isActive ? colors[s] : `${colors[s]}12`,
+                border: `1px solid ${colors[s]}35`, cursor: 'pointer',
+              }}>
+              {labels[s]}
+            </button>
+          )
+        })}
+        {objectives && objectives.length > 1 && (
+          <select value={objective} onChange={e => onObjective(e.target.value)}
+            style={{ fontSize: '12px', background: '#16161A', border: '1px solid #2A2A30', borderRadius: '8px', padding: '5px 8px', color: '#94A3B8', outline: 'none' }}>
+            <option value="">Todos os objetivos</option>
+            {objectives.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        )}
+        {onPerformance && (
+          <button onClick={() => setShowAdvanced(v => !v)}
+            style={{
+              fontSize: '11px', fontWeight: 600, padding: '5px 10px', borderRadius: '8px',
+              color: hasAdvancedFilter ? '#A78BFA' : '#64748B',
+              background: hasAdvancedFilter ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${hasAdvancedFilter ? 'rgba(124,58,237,0.35)' : 'rgba(255,255,255,0.08)'}`,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
             }}>
-            {labels[s]}
+            {hasAdvancedFilter ? '● ' : ''}Filtros {showAdvanced ? '▲' : '▼'}
           </button>
-        )
-      })}
-      {objectives && objectives.length > 1 && (
-        <select value={objective} onChange={e => onObjective(e.target.value)}
-          className="text-xs bg-[#16161A] border border-[#2A2A30] rounded-lg px-2 py-1.5 text-slate-400 focus:outline-none focus:border-[#1877F2]">
-          <option value="">Todos os objetivos</option>
-          {objectives.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
+        )}
+      </div>
+
+      {/* Filtros avançados */}
+      {showAdvanced && onPerformance && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '8px 12px 10px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid #1E1E24' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Performance:</span>
+            {([
+              { k: 'all', label: 'Todos' },
+              { k: 'winning', label: '🏆 Vencedoras' },
+              { k: 'learning', label: '📚 Aprendendo' },
+              { k: 'declining', label: '📉 Problemas' },
+              { k: 'saturated', label: '🔥 Saturadas' },
+            ] as const).map(({ k, label }) => (
+              <button key={k} onClick={() => onPerformance(k)}
+                style={{
+                  fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px',
+                  color: performance === k ? '#0D0D10' : '#64748B',
+                  background: performance === k ? '#A78BFA' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${performance === k ? '#A78BFA' : 'rgba(255,255,255,0.08)'}`,
+                  cursor: 'pointer',
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {onFreqFilter && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Frequência:</span>
+              {([
+                { k: 'all', label: 'Todas' },
+                { k: 'normal', label: '✅ Normal' },
+                { k: 'high', label: '⚠️ Alta' },
+                { k: 'critical', label: '🚨 Crítica' },
+              ] as const).map(({ k, label }) => (
+                <button key={k} onClick={() => onFreqFilter(k)}
+                  style={{
+                    fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px',
+                    color: freqFilter === k ? '#0D0D10' : '#64748B',
+                    background: freqFilter === k ? '#FB923C' : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${freqFilter === k ? '#FB923C' : 'rgba(255,255,255,0.08)'}`,
+                    cursor: 'pointer',
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
@@ -647,115 +833,203 @@ function OpportunitiesPanel({ opportunities }: { opportunities: DetectedOpportun
   )
 }
 
+// ── CampaignRowExpand ─────────────────────────────────────────────────────────
+function CampaignRowExpand({ campaign: c, freqLimit, colSpan }: { campaign: Campaign; freqLimit: number; colSpan: number }) {
+  const score = computeHealthScore(c, freqLimit)
+  return (
+    <tr style={{ background: 'rgba(24,119,242,0.04)', borderBottom: '1px solid rgba(24,119,242,0.12)' }}>
+      <td colSpan={colSpan} style={{ padding: '0 16px 16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '16px', paddingTop: '12px' }}>
+          {/* Sparkline */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '80px' }}>
+            <div style={{ fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tendência 7d</div>
+            <Sparkline spend30={c.spend30} spend7={c.spend7} height={36} />
+            <div style={{ fontSize: '10px', color: '#64748B' }}>
+              {c.spend7 > 0 && c.spend30 > 0 && (() => {
+                const dailyRecent = c.spend7 / 7
+                const dailyOlder  = c.spend30 > c.spend7 ? (c.spend30 - c.spend7) / 23 : dailyRecent
+                const pct = dailyOlder > 0 ? ((dailyRecent - dailyOlder) / dailyOlder * 100).toFixed(0) : null
+                if (!pct) return null
+                const up = +pct > 0
+                return <span style={{ color: up ? '#22C55E' : '#FF4D4D', fontWeight: 700 }}>{up ? '↑' : '↓'}{Math.abs(+pct)}% vs mês</span>
+              })()}
+            </div>
+          </div>
+
+          {/* Métricas rápidas */}
+          <div>
+            <div style={{ fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Resumo</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              {[
+                { label: 'ROAS', value: c.roas30 > 0 ? `${c.roas30}×` : '—', color: '#22C55E' },
+                { label: 'CPC',  value: c.cpc30 > 0 ? `R$${c.cpc30}` : '—', color: '#A78BFA' },
+                { label: 'CPM',  value: c.cpm30 > 0 ? `R$${c.cpm30}` : '—', color: '#38BDF8' },
+                { label: 'Alcance', value: c.reach > 0 ? (c.reach >= 1000 ? `${(c.reach / 1000).toFixed(0)}k` : String(c.reach)) : '—', color: '#94A3B8' },
+              ].map(m => (
+                <div key={m.label} style={{ background: '#111114', borderRadius: '8px', padding: '6px 8px', border: '1px solid #2A2A30' }}>
+                  <div style={{ fontSize: '9px', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>{m.label}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: m.color }}>{m.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Problemas + recomendações */}
+          <div>
+            {c.issues.length > 0 ? (
+              <>
+                <div style={{ fontSize: '10px', color: '#FF4D4D', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Problemas</div>
+                {c.issues.slice(0, 2).map((issue, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '11px', color: '#FCA5A5', marginBottom: '3px' }}>
+                    <span style={{ color: '#FF4D4D', flexShrink: 0 }}>●</span>{issue}
+                  </div>
+                ))}
+              </>
+            ) : c.recommendations.length > 0 ? (
+              <>
+                <div style={{ fontSize: '10px', color: '#22C55E', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Recomendação</div>
+                <div style={{ fontSize: '11px', color: '#86EFAC', lineHeight: 1.4 }}>{c.recommendations[0]}</div>
+              </>
+            ) : (
+              <div style={{ fontSize: '11px', color: '#475569' }}>Score de saúde: <strong style={{ color: scoreColor(score) }}>{score}/100</strong></div>
+            )}
+          </div>
+        </div>
+      </td>
+    </tr>
+  )
+}
+
 // ── Campaigns Table ───────────────────────────────────────────────────────────
 function CampaignsTable({ campaigns, freqLimit, onSelect, onDrillDown }: {
   campaigns: Campaign[]; freqLimit: number
   onSelect: (c: Campaign) => void
   onDrillDown?: (campaignId: string, campaignName: string) => void
 }) {
-  const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: 'spend30', dir: 'desc' })
-  const [search, setSearch] = useState('')
-  const [status, setStatus] = useState('all')
-  const [objective, setObjective] = useState('')
-  const [showExtra, setShowExtra] = useState(false)
+  const [sort, setSort]             = useState<{ key: string; dir: SortDir }>({ key: 'spend30', dir: 'desc' })
+  const [search, setSearch]         = useState('')
+  const [status, setStatus]         = useState('all')
+  const [objective, setObjective]   = useState('')
+  const [performance, setPerf]      = useState('all')
+  const [freqFilter, setFreqFilter] = useState('all')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set(DEFAULT_COLS))
 
   const objectives = useMemo(() => [...new Set(campaigns.map(c => c.objectiveLabel))], [campaigns])
 
   const filtered = useMemo(() => {
     let data = campaigns
-    if (search) data = data.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
-    if (status === 'active') data = data.filter(c => c.status === 'ACTIVE' && c.spend30 > 0)
-    if (status === 'paused') data = data.filter(c => c.status !== 'ACTIVE' || c.spend30 === 0)
-    if (status === 'issues') data = data.filter(c => c.issues.length > 0)
-    if (objective) data = data.filter(c => c.objectiveLabel === objective)
-    return sortData(data, sort.key, sort.dir)
-  }, [campaigns, search, status, objective, sort])
+    if (search)      data = data.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+    if (status === 'active')  data = data.filter(c => c.status === 'ACTIVE' && c.spend30 > 0)
+    if (status === 'paused')  data = data.filter(c => c.status !== 'ACTIVE' || c.spend30 === 0)
+    if (status === 'issues')  data = data.filter(c => c.issues.length > 0)
+    if (objective)            data = data.filter(c => c.objectiveLabel === objective)
+    if (performance === 'winning')  data = data.filter(c => computeHealthScore(c, freqLimit) >= 80 && c.issues.length === 0)
+    if (performance === 'learning') data = data.filter(c => c.learningPhase === 'learning' || c.learningPhase === 'learning_limited')
+    if (performance === 'declining') data = data.filter(c => c.issues.length > 0 || computeHealthScore(c, freqLimit) < 50)
+    if (performance === 'saturated') data = data.filter(c => c.frequency > freqLimit + 1)
+    if (freqFilter === 'normal')   data = data.filter(c => c.frequency > 0 && c.frequency <= freqLimit)
+    if (freqFilter === 'high')     data = data.filter(c => c.frequency > freqLimit && c.frequency <= freqLimit + 2)
+    if (freqFilter === 'critical') data = data.filter(c => c.frequency > freqLimit + 2)
+    return sortData(data, sort.key === '_score' ? 'spend30' : sort.key, sort.dir).map(c =>
+      sort.key === '_score' ? c : c
+    ).sort((a, b) => sort.key === '_score'
+      ? sort.dir === 'desc'
+        ? computeHealthScore(b, freqLimit) - computeHealthScore(a, freqLimit)
+        : computeHealthScore(a, freqLimit) - computeHealthScore(b, freqLimit)
+      : 0
+    )
+  }, [campaigns, search, status, objective, performance, freqFilter, sort, freqLimit])
 
-  const toggleSort = (key: string) => {
-    setSort(s => s.key === key ? { key, dir: s.dir === 'desc' ? 'asc' : 'desc' } : { key, dir: 'desc' })
-  }
+  const toggleSort = (key: string) => setSort(s => s.key === key ? { key, dir: s.dir === 'desc' ? 'asc' : 'desc' } : { key, dir: 'desc' })
+  const ths = (label: string, key: string) => <SortableHeader label={label} sortKey={key} activeKey={sort.key} dir={sort.dir} onSort={toggleSort} right />
 
-  const ths = (label: string, key: string) => (
-    <SortableHeader label={label} sortKey={key} activeKey={sort.key} dir={sort.dir} onSort={toggleSort} right />
-  )
+  const vis = visibleCols
+  const totalCols = 3 + Array.from(vis).filter(k => k !== 'status' && k !== 'trend').length + (vis.has('status') ? 1 : 0) + (vis.has('trend') ? 1 : 0) + 1
 
   return (
     <div>
-      <FilterBar search={search} onSearch={setSearch} status={status} onStatus={setStatus}
-        objectives={objectives} objective={objective} onObjective={setObjective} />
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#1E1E24]">
-        <span className="text-[10px] text-slate-600">{filtered.length} de {campaigns.length} campanhas</span>
-        <button onClick={() => setShowExtra(v => !v)}
-          className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1">
-          {showExtra ? '← Menos colunas' : '+ CPC / CPM / Impressões'}
-        </button>
+      <FilterBar
+        search={search} onSearch={setSearch}
+        status={status} onStatus={setStatus}
+        objectives={objectives} objective={objective} onObjective={setObjective}
+        performance={performance} onPerformance={setPerf}
+        freqFilter={freqFilter} onFreqFilter={setFreqFilter}
+      />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px', borderBottom: '1px solid #1E1E24' }}>
+        <span style={{ fontSize: '10px', color: '#475569' }}>{filtered.length} de {campaigns.length} campanhas</span>
+        <ColumnSelector visible={visibleCols} onChange={setVisibleCols} />
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-xs min-w-[900px]">
+        <table className="w-full text-xs" style={{ minWidth: '800px' }}>
           <thead>
-            <tr className="border-b border-[#1E1E24]">
-              <th className="px-4 py-2.5 text-left text-[10px] text-slate-600 font-semibold uppercase w-8">#</th>
-              <th className="px-3 py-2.5 text-left text-[10px] text-slate-600 font-semibold uppercase">Nome</th>
-              <th className="px-3 py-2.5 text-left text-[10px] text-slate-600 font-semibold uppercase">Status</th>
-              {ths('Gasto', 'spend30')}
-              {ths('Leads', 'leads30')}
-              {ths('CPL', 'cpl30')}
-              {ths('CTR', 'ctr30')}
-              {ths('Freq', 'frequency')}
-              {showExtra && ths('CPC', 'cpc30')}
-              {showExtra && ths('CPM', 'cpm30')}
-              {showExtra && ths('Impressões', 'impressions')}
-              {ths('ROAS', 'roas30')}
-              {ths('Score', '_score')}
-              <th className="px-3 py-2.5 text-left text-[10px] text-slate-600 font-semibold uppercase">Ações</th>
+            <tr style={{ borderBottom: '1px solid #1E1E24' }}>
+              <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', width: '24px' }}>#</th>
+              <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Nome</th>
+              {vis.has('status') && <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Status</th>}
+              {vis.has('spend')       && ths('Gasto', 'spend30')}
+              {vis.has('leads')       && ths('Leads', 'leads30')}
+              {vis.has('cpl')         && ths('CPL', 'cpl30')}
+              {vis.has('ctr')         && ths('CTR', 'ctr30')}
+              {vis.has('freq')        && ths('Freq', 'frequency')}
+              {vis.has('cpc')         && ths('CPC', 'cpc30')}
+              {vis.has('cpm')         && ths('CPM', 'cpm30')}
+              {vis.has('impressions') && ths('Impressões', 'impressions')}
+              {vis.has('roas')        && ths('ROAS', 'roas30')}
+              {vis.has('score')       && ths('Score', '_score')}
+              {vis.has('trend')       && <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>7d</th>}
+              <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#1A1A20]">
+          <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={showExtra ? 14 : 11} className="px-5 py-8 text-center text-slate-600">Nenhuma campanha encontrada.</td></tr>
+              <tr><td colSpan={totalCols} style={{ padding: '32px', textAlign: 'center', color: '#475569' }}>Nenhuma campanha encontrada.</td></tr>
             )}
             {filtered.map((c, i) => {
-              const score = computeHealthScore(c, freqLimit)
-              const sc = scoreColor(score)
+              const score   = computeHealthScore(c, freqLimit)
+              const sc      = scoreColor(score)
+              const isOpen  = expandedId === c.id
               return (
-                <tr key={c.id} className="hover:bg-[#16161A] transition-colors group">
-                  <td className="px-4 py-3 text-slate-600">{i + 1}</td>
-                  <td className="px-3 py-3 max-w-[200px] cursor-pointer" onClick={() => onSelect(c)}>
-                    <div className="font-semibold text-white truncate group-hover:text-blue-400 transition-colors" title={c.name}>{c.name}</div>
-                    <div className="text-[10px] text-slate-600 mt-0.5">{c.objectiveLabel}</div>
-                  </td>
-                  <td className="px-3 py-3"><StatusBadge campaign={c} freqLimit={freqLimit} /></td>
-                  <td className="px-3 py-3 text-right font-semibold text-[#F0B429] tabular-nums">{c.spend30 > 0 ? fmt(c.spend30) : '—'}</td>
-                  <td className="px-3 py-3 text-right text-[#38BDF8] font-semibold tabular-nums">{c.leads30 > 0 ? c.leads30 : '—'}</td>
-                  <td className="px-3 py-3 text-right text-slate-300 tabular-nums">{c.cpl30 > 0 ? `R$${c.cpl30}` : '—'}</td>
-                  <td className="px-3 py-3 text-right tabular-nums">
-                    <span className={c.ctr30 < 0.5 && c.impressions > 500 ? 'text-red-400' : 'text-slate-300'}>{c.ctr30}%</span>
-                  </td>
-                  <td className="px-3 py-3 text-right tabular-nums">
-                    <span className={c.frequency > freqLimit ? 'text-orange-400' : 'text-slate-300'}>{c.frequency > 0 ? `${c.frequency}×` : '—'}</span>
-                  </td>
-                  {showExtra && <td className="px-3 py-3 text-right text-slate-400 tabular-nums">{c.cpc30 > 0 ? `R$${c.cpc30}` : '—'}</td>}
-                  {showExtra && <td className="px-3 py-3 text-right text-slate-400 tabular-nums">{c.cpm30 > 0 ? `R$${c.cpm30}` : '—'}</td>}
-                  {showExtra && <td className="px-3 py-3 text-right text-slate-400 tabular-nums">{c.impressions > 0 ? c.impressions.toLocaleString('pt-BR') : '—'}</td>}
-                  <td className="px-3 py-3 text-right text-[#22C55E] tabular-nums">{c.roas30 > 0 ? `${c.roas30}×` : '—'}</td>
-                  <td className="px-3 py-3 text-right">
-                    <span className="text-xs font-bold tabular-nums" style={{ color: sc }}>{score}</span>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => onSelect(c)} title="Ver detalhes"
-                        className="text-[10px] px-2 py-1 rounded-lg bg-[#1877F2]/20 text-[#60A5FA] hover:bg-[#1877F2]/30 transition-colors">
-                        Detalhes
-                      </button>
-                      {onDrillDown && (
-                        <button onClick={() => onDrillDown(c.id, c.name)} title="Ver Ad Sets desta campanha"
-                          className="text-[10px] px-2 py-1 rounded-lg bg-slate-700/50 text-slate-400 hover:bg-slate-700 transition-colors">
-                          Ad Sets →
+                <>
+                  <tr key={c.id}
+                    style={{ borderBottom: isOpen ? 'none' : '1px solid #1A1A20', background: isOpen ? 'rgba(24,119,242,0.06)' : 'transparent', cursor: 'pointer', transition: 'background 0.15s' }}
+                    onClick={() => setExpandedId(isOpen ? null : c.id)}
+                    onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#16161A' }}
+                    onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent' }}>
+                    <td style={{ padding: '10px 16px', color: '#475569' }}>{i + 1}</td>
+                    <td style={{ padding: '10px 12px', maxWidth: '200px' }}>
+                      <div style={{ fontWeight: 600, color: isOpen ? '#60A5FA' : '#F1F5F9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.name}>{c.name}</div>
+                      <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>{c.objectiveLabel}</div>
+                    </td>
+                    {vis.has('status') && <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()}><StatusBadge campaign={c} freqLimit={freqLimit} /></td>}
+                    {vis.has('spend')       && <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600, color: '#F0B429', fontVariantNumeric: 'tabular-nums' }}>{c.spend30 > 0 ? fmt(c.spend30) : '—'}</td>}
+                    {vis.has('leads')       && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#38BDF8', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{c.leads30 > 0 ? c.leads30 : '—'}</td>}
+                    {vis.has('cpl')         && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#CBD5E1', fontVariantNumeric: 'tabular-nums' }}>{c.cpl30 > 0 ? `R$${c.cpl30}` : '—'}</td>}
+                    {vis.has('ctr')         && <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}><span style={{ color: c.ctr30 < 0.5 && c.impressions > 500 ? '#F87171' : '#CBD5E1' }}>{c.ctr30}%</span></td>}
+                    {vis.has('freq')        && <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}><span style={{ color: c.frequency > freqLimit ? '#FB923C' : '#CBD5E1' }}>{c.frequency > 0 ? `${c.frequency}×` : '—'}</span></td>}
+                    {vis.has('cpc')         && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#94A3B8', fontVariantNumeric: 'tabular-nums' }}>{c.cpc30 > 0 ? `R$${c.cpc30}` : '—'}</td>}
+                    {vis.has('cpm')         && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#94A3B8', fontVariantNumeric: 'tabular-nums' }}>{c.cpm30 > 0 ? `R$${c.cpm30}` : '—'}</td>}
+                    {vis.has('impressions') && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#94A3B8', fontVariantNumeric: 'tabular-nums' }}>{c.impressions > 0 ? c.impressions.toLocaleString('pt-BR') : '—'}</td>}
+                    {vis.has('roas')        && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#22C55E', fontVariantNumeric: 'tabular-nums' }}>{c.roas30 > 0 ? `${c.roas30}×` : '—'}</td>}
+                    {vis.has('score')       && <td style={{ padding: '10px 12px', textAlign: 'right' }}><span style={{ fontSize: '12px', fontWeight: 700, color: sc }}>{score}</span></td>}
+                    {vis.has('trend')       && <td style={{ padding: '10px 12px' }}><Sparkline spend30={c.spend30} spend7={c.spend7} /></td>}
+                    <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button onClick={() => onSelect(c)}
+                          style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(24,119,242,0.15)', color: '#60A5FA', border: 'none', cursor: 'pointer' }}>
+                          Detalhes
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                        {onDrillDown && (
+                          <button onClick={() => onDrillDown(c.id, c.name)}
+                            style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', color: '#94A3B8', border: 'none', cursor: 'pointer' }}>
+                            Ad Sets →
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  {isOpen && <CampaignRowExpand campaign={c} freqLimit={freqLimit} colSpan={totalCols} />}
+                </>
               )
             })}
           </tbody>
@@ -1644,8 +1918,8 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
                   {[
                     { label: 'Investido 30d', value: fmt(data.totals.spend), color: '#F0B429', delta: prev?.spendDelta, invertColor: false, sub: data.totals.activeCampaigns > 0 ? `${data.totals.activeCampaigns} ativa${data.totals.activeCampaigns !== 1 ? 's' : ''}` : undefined, tooltip: 'Valor total investido nos últimos 30 dias' },
                     { label: 'Leads', value: data.totals.leads > 0 ? String(data.totals.leads) : '—', color: '#38BDF8', delta: prev?.leadsDelta, invertColor: false, sub: data.totals.cpl > 0 ? `CPL: R$${data.totals.cpl}` : undefined, tooltip: 'Total de leads gerados (Custo Por Lead médio)' },
-                    { label: 'ROAS', value: data.totals.roas > 0 ? `${data.totals.roas}×` : '—', color: '#22C55E', delta: null, invertColor: false, sub: data.totals.revenue > 0 ? `Receita: ${fmt(data.totals.revenue)}` : undefined, tooltip: 'Retorno sobre investimento em anúncios' },
-                    { label: 'CTR Médio', value: `${data.totals.avgCTR}%`, color: data.totals.avgCTR < 0.5 ? '#FF4D4D' : data.totals.avgCTR >= 1.5 ? '#22C55E' : '#F0B429', delta: null, invertColor: false, sub: `Freq: ${data.totals.avgFrequency}×`, tooltip: 'Taxa de cliques média. Acima de 1% é considerado bom' },
+                    { label: 'ROAS', value: data.totals.roas > 0 ? `${data.totals.roas}×` : '—', color: '#22C55E', delta: prev?.roasDelta ?? null, invertColor: false, sub: data.totals.revenue > 0 ? `Receita: ${fmt(data.totals.revenue)}` : undefined, tooltip: 'Retorno sobre investimento em anúncios' },
+                    { label: 'CTR Médio', value: `${data.totals.avgCTR}%`, color: data.totals.avgCTR < 0.5 ? '#FF4D4D' : data.totals.avgCTR >= 1.5 ? '#22C55E' : '#F0B429', delta: prev?.ctrDelta ?? null, invertColor: false, sub: `Freq: ${data.totals.avgFrequency}×`, tooltip: 'Taxa de cliques média. Acima de 1% é considerado bom' },
                   ].map(kpi => (
                     <div key={kpi.label} title={kpi.tooltip} className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 flex flex-col justify-between cursor-help">
                       <div className="text-[10px] text-slate-600 uppercase tracking-wider">{kpi.label}</div>
@@ -1661,16 +1935,19 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
                 {/* Row 2: métricas secundárias */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                   {[
-                    { label: 'CPC Médio', value: avgCPC > 0 ? `R$${avgCPC}` : '—', color: '#A78BFA', sub: 'Custo por clique', tooltip: 'Custo Por Clique médio de todas as campanhas' },
-                    { label: 'CPM Médio', value: avgCPM > 0 ? `R$${avgCPM}` : '—', color: '#38BDF8', sub: 'A cada 1000 imp.', tooltip: 'Custo Por Mil Impressões médio' },
-                    { label: 'Freq. Média', value: `${data.totals.avgFrequency}×`, color: data.totals.avgFrequency > (freqLimit + 1) ? '#FB923C' : '#94A3B8', sub: `Limite: ${freqLimit}×`, tooltip: `Frequência média. Acima de ${freqLimit}× indica fadiga de anúncio` },
-                    { label: 'Gasto Desperdiçado', value: wastedSpend > 0 ? fmt(wastedSpend) : 'R$0', color: wastedSpend > 100 ? '#FF4D4D' : '#22C55E', sub: wastedSpend > 0 ? 'sem conversão' : 'sem desperdício', tooltip: 'Soma do gasto em campanhas com R$50+ investidos e zero conversões' },
-                    { label: 'C/ Problemas', value: problemCampaigns > 0 ? String(problemCampaigns) : '0', color: problemCampaigns > 0 ? '#F0B429' : '#22C55E', sub: 'campanhas', tooltip: 'Número de campanhas com algum problema detectado' },
-                    { label: 'Criativos Top', value: winnerCreatives > 0 ? String(winnerCreatives) : '0', color: winnerCreatives > 0 ? '#22C55E' : '#64748B', sub: 'vencedores', tooltip: 'Criativos classificados como Melhor Performance' },
+                    { label: 'CPC Médio',  value: avgCPC > 0 ? `R$${avgCPC}` : '—', color: '#A78BFA', delta: prev?.cpcDelta ?? null, invertColor: true, sub: 'Custo por clique', tooltip: 'Custo Por Clique médio de todas as campanhas' },
+                    { label: 'CPM Médio',  value: avgCPM > 0 ? `R$${avgCPM}` : '—', color: '#38BDF8', delta: prev?.cpmDelta ?? null, invertColor: true, sub: 'A cada 1000 imp.', tooltip: 'Custo Por Mil Impressões médio' },
+                    { label: 'Freq. Média',value: `${data.totals.avgFrequency}×`, color: data.totals.avgFrequency > (freqLimit + 1) ? '#FB923C' : '#94A3B8', delta: prev?.freqDelta ?? null, invertColor: true, sub: `Limite: ${freqLimit}×`, tooltip: `Frequência média. Acima de ${freqLimit}× indica fadiga de anúncio` },
+                    { label: 'Gasto Desperdiçado', value: wastedSpend > 0 ? fmt(wastedSpend) : 'R$0', color: wastedSpend > 100 ? '#FF4D4D' : '#22C55E', delta: null, invertColor: true, sub: wastedSpend > 0 ? 'sem conversão' : 'sem desperdício', tooltip: 'Soma do gasto em campanhas com R$50+ investidos e zero conversões' },
+                    { label: 'C/ Problemas',value: problemCampaigns > 0 ? String(problemCampaigns) : '0', color: problemCampaigns > 0 ? '#F0B429' : '#22C55E', delta: null, invertColor: true, sub: 'campanhas', tooltip: 'Número de campanhas com algum problema detectado' },
+                    { label: 'Criativos Top',value: winnerCreatives > 0 ? String(winnerCreatives) : '0', color: winnerCreatives > 0 ? '#22C55E' : '#64748B', delta: null, invertColor: false, sub: 'vencedores', tooltip: 'Criativos classificados como Melhor Performance' },
                   ].map(kpi => (
                     <div key={kpi.label} title={kpi.tooltip} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-3 flex flex-col cursor-help">
                       <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">{kpi.label}</div>
-                      <div className="font-display text-xl font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
+                      <div className="flex items-end gap-1 mt-1">
+                        <div className="font-display text-xl font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
+                        {'delta' in kpi && kpi.delta != null && <DeltaBadge delta={kpi.delta} invertColor={kpi.invertColor} />}
+                      </div>
                       <div className="text-[10px] text-slate-600 mt-0.5">{kpi.sub}</div>
                     </div>
                   ))}

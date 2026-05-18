@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
       // 3 - insights 7d por campanha
       fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,actions&date_preset=last_7d&level=campaign&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 4 - insights período anterior (30-60d)
-      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,actions&time_range=${prevRange}&level=campaign&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,actions,impressions,clicks,frequency&time_range=${prevRange}&level=campaign&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 5 - ad sets (metadados)
       fetch(`${baseUrl}/${act}/adsets?fields=id,name,status,effective_status,optimization_goal,daily_budget,lifetime_budget,campaign_id,targeting&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 6 - insights de ad sets
@@ -471,10 +471,12 @@ export async function POST(req: NextRequest) {
     // ── Totais ────────────────────────────────────────────────────────────────
     const activeCampaigns    = campaigns.filter(c => c.status !== 'PAUSED' && c.spend30 > 0)
     const learningCampaigns  = campaigns.filter(c => c.learningPhase === 'learning' || c.learningPhase === 'learning_limited')
-    const totalSpend         = campaigns.reduce((s, c) => s + c.spend30,   0)
-    const totalLeads         = campaigns.reduce((s, c) => s + c.leads30,   0)
-    const totalRevenue       = campaigns.reduce((s, c) => s + c.revenue30, 0)
-    const totalMessages      = campaigns.reduce((s, c) => s + c.messages30, 0)
+    const totalSpend         = campaigns.reduce((s, c) => s + c.spend30,      0)
+    const totalLeads         = campaigns.reduce((s, c) => s + c.leads30,      0)
+    const totalRevenue       = campaigns.reduce((s, c) => s + c.revenue30,    0)
+    const totalMessages      = campaigns.reduce((s, c) => s + c.messages30,   0)
+    const totalClicks        = campaigns.reduce((s, c) => s + c.clicks,       0)
+    const totalImpressions   = campaigns.reduce((s, c) => s + c.impressions,  0)
     const avgCTR             = activeCampaigns.length > 0 ? activeCampaigns.reduce((s, c) => s + c.ctr30, 0) / activeCampaigns.length : 0
     const avgFrequency       = activeCampaigns.length > 0 ? activeCampaigns.reduce((s, c) => s + c.frequency, 0) / activeCampaigns.length : 0
 
@@ -542,8 +544,23 @@ export async function POST(req: NextRequest) {
     const prevLeads = Object.values(insPrevMap).reduce((s: number, c: any) => {
       return s + extractConversions(c.actions, LEAD_TYPES) + extractConversions(c.actions, MSG_TYPES)
     }, 0)
-    const prevCpl = prevLeads > 0 ? +(prevSpend / prevLeads).toFixed(2) : 0
+    const prevImpressions = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseInt(c.impressions || '0'), 0)
+    const prevClicks      = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseInt(c.clicks || '0'), 0)
+    const prevFreqValues  = Object.values(insPrevMap).map((c: any) => parseFloat(c.frequency || '0')).filter(f => f > 0)
+    const prevCpl         = prevLeads > 0 ? +(prevSpend / prevLeads).toFixed(2) : 0
+    const prevRevenue     = Object.values(insPrevMap).reduce((s: number, c: any) => s + extractRevenue(c.actions, PURCHASE_TYPES), 0)
+    const prevRoas        = prevSpend > 0 && prevRevenue > 0 ? +(prevRevenue / prevSpend).toFixed(2) : 0
+    const prevCTR         = prevImpressions > 0 ? +(prevClicks / prevImpressions * 100).toFixed(2) : 0
+    const prevCPC         = prevClicks > 0 ? +(prevSpend / prevClicks).toFixed(2) : 0
+    const prevCPM         = prevImpressions > 0 ? +(prevSpend / prevImpressions * 1000).toFixed(2) : 0
+    const prevFreq        = prevFreqValues.length > 0 ? +(prevFreqValues.reduce((s, f) => s + f, 0) / prevFreqValues.length).toFixed(1) : 0
+
     const pctDelta = (curr: number, prev: number) => prev > 0 ? +((curr - prev) / prev * 100).toFixed(1) : null
+
+    const currCTR = avgCTR
+    const currCPC = totalClicks > 0 ? +(totalSpend / totalClicks).toFixed(2) : 0
+    const currCPM = totalImpressions > 0 ? +(totalSpend / totalImpressions * 1000).toFixed(2) : 0
+    const currRoas = totalSpend > 0 && totalRevenue > 0 ? +(totalRevenue / totalSpend).toFixed(2) : 0
 
     return NextResponse.json({
       success: true, score, scoreGrade,
@@ -553,7 +570,7 @@ export async function POST(req: NextRequest) {
       geoBreakdown, platformBreakdown, demoBreakdown,
       totals: {
         spend: totalSpend, leads: totalLeads, revenue: totalRevenue, messages: totalMessages,
-        roas:  totalSpend > 0 && totalRevenue > 0 ? +(totalRevenue / totalSpend).toFixed(2) : 0,
+        roas:  currRoas,
         cpl:   totalLeads > 0 ? +(totalSpend / totalLeads).toFixed(2) : totalMessages > 0 ? +(totalSpend / totalMessages).toFixed(2) : 0,
         avgCTR: +avgCTR.toFixed(2), avgFrequency: +avgFrequency.toFixed(1),
         activeCampaigns: activeCampaigns.length,
@@ -567,6 +584,11 @@ export async function POST(req: NextRequest) {
         spendDelta: pctDelta(totalSpend, prevSpend),
         leadsDelta: pctDelta(totalLeads, prevLeads),
         cplDelta:   pctDelta(totalLeads > 0 ? totalSpend / totalLeads : 0, prevCpl),
+        ctrDelta:   pctDelta(currCTR, prevCTR),
+        freqDelta:  pctDelta(avgFrequency, prevFreq),
+        cpcDelta:   pctDelta(currCPC, prevCPC),
+        cpmDelta:   pctDelta(currCPM, prevCPM),
+        roasDelta:  pctDelta(currRoas, prevRoas),
       },
       freqThreshold: freqLimit,
       globalRecs,
