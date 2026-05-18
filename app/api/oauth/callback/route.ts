@@ -75,10 +75,17 @@ export async function GET(req: NextRequest) {
 
     // ── GOOGLE ───────────────────────────────────────────────────────────────
     if (platform === 'google') {
-      const clientId     = process.env.GOOGLE_CLIENT_ID
+      // Usa o mesmo client_id que iniciou o fluxo (NEXT_PUBLIC_ é o mesmo valor,
+      // mas garante consistência caso GOOGLE_CLIENT_ID tenha typo no Vercel)
+      const clientId     = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
       const clientSecret = process.env.GOOGLE_CLIENT_SECRET
       if (!clientId || !clientSecret) throw new Error('Credenciais Google não configuradas no servidor')
-      const redirectUri  = `${appOrigin}/api/oauth/callback`
+      // redirect_uri deve ser idêntico ao que o browser enviou ao Google.
+      // req.url.origin é a URL real recebida pelo servidor (mesmo domínio do browser).
+      const callbackOrigin = new URL(req.url).origin
+      const redirectUri    = `${callbackOrigin}/api/oauth/callback`
+
+      console.info(`[oauth/google] clientId=${clientId?.slice(0, 20)}… redirectUri=${redirectUri}`)
 
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
@@ -98,7 +105,10 @@ export async function GET(req: NextRequest) {
         throw new Error(`Resposta inesperada do Google OAuth (${tokenRes.status}): ${text.slice(0, 200)}`)
       }
       const tokenData = await tokenRes.json()
-      if (tokenData.error) throw new Error(tokenData.error_description || tokenData.error)
+      if (tokenData.error) {
+        console.error(`[oauth/google] Erro token exchange: ${tokenData.error} — ${tokenData.error_description} | redirect_uri=${redirectUri} | clientId_prefix=${clientId?.slice(0, 20)}`)
+        throw new Error(tokenData.error_description || tokenData.error)
+      }
 
       accessToken  = tokenData.access_token
       refreshToken = tokenData.refresh_token || ''    // presente quando prompt=consent
