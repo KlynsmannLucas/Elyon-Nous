@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
       if (!clientId || !clientSecret) throw new Error('Credenciais Meta não configuradas no servidor')
       const redirectUri  = `${appOrigin}/api/oauth/callback`
 
+      // 1. Troca código pelo short-lived token
       const tokenRes = await fetch(
         `https://graph.facebook.com/v19.0/oauth/access_token?` +
         `client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}` +
@@ -60,8 +61,37 @@ export async function GET(req: NextRequest) {
       }
       const tokenData = await tokenRes.json()
       if (tokenData.error) throw new Error(tokenData.error.message)
-      accessToken = tokenData.access_token
+      const shortLivedToken = tokenData.access_token as string
 
+      // 2. Troca pelo long-lived token (~60 dias)
+      const llRes = await fetch(
+        `https://graph.facebook.com/v19.0/oauth/access_token?` +
+        `grant_type=fb_exchange_token` +
+        `&client_id=${clientId}` +
+        `&client_secret=${clientSecret}` +
+        `&fb_exchange_token=${shortLivedToken}`,
+        { signal: AbortSignal.timeout(10_000) }
+      )
+      const llCT = llRes.headers.get('content-type') || ''
+      if (!llCT.includes('application/json') && !llCT.includes('text/javascript')) {
+        // Fallback: usa short-lived se a troca falhar
+        accessToken = shortLivedToken
+        expiresAt   = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
+      } else {
+        const llData = await llRes.json()
+        if (llData.error) {
+          // Fallback: usa short-lived
+          accessToken = shortLivedToken
+          expiresAt   = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
+        } else {
+          accessToken = llData.access_token as string
+          // Meta retorna expires_in em segundos quando disponível, senão assume 60 dias
+          const expiresIn = llData.expires_in ? (llData.expires_in as number) : 60 * 24 * 60 * 60
+          expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
+        }
+      }
+
+      // 3. Busca ad accounts associados
       const accountsRes  = await fetch(
         `https://graph.facebook.com/v19.0/me/adaccounts?fields=id,name&limit=50&access_token=${accessToken}`
       )
@@ -71,6 +101,28 @@ export async function GET(req: NextRequest) {
         name: a.name,
       }))
       if (allAccounts[0]) { accountId = allAccounts[0].id; accountName = allAccounts[0].name }
+
+      // 4. Persiste token no Supabase (criptografado)
+      try {
+        const { userId } = await auth()
+        if (userId) {
+          await saveConnection({
+            userId,
+            platform:     'meta',
+            accessToken,
+            refreshToken: null, // Meta não usa refresh_token
+            accountId:    accountId   || null,
+            accountName:  accountName || null,
+            connectedAt:  new Date().toISOString(),
+            expiresAt:    expiresAt   || null,
+          })
+          console.info(`[oauth] Token Meta salvo no DB para usuário ${userId.slice(0, 8)}… (expira: ${expiresAt})`)
+        }
+      } catch (dbErr: unknown) {
+        // Não bloqueia o fluxo se o DB falhar — o token ainda vai no cookie
+        const msg = dbErr instanceof Error ? dbErr.message : String(dbErr)
+        console.warn('[oauth] Falha ao persistir token Meta no Supabase:', msg)
+      }
     }
 
     // ── GOOGLE ───────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 // Meta Ad Intelligence — campanhas + ad sets + criativos + pixel + breakdowns geográfico/plataforma/demo
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
 
 const OBJECTIVE_LABELS: Record<string, string> = {
   OUTCOME_LEADS:          'Geração de Leads',
@@ -135,9 +136,23 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
 
   try {
-    const { accessToken, accountId, niche = '' } = await req.json()
-    if (!accessToken || !accountId) {
-      return NextResponse.json({ success: false, error: 'Token ou Account ID não fornecido.' }, { status: 400 })
+    const body = await req.json().catch(() => ({}))
+    const niche         = (body.niche as string) || ''
+    const bodyAccountId = body.accountId as string | undefined
+
+    let accessToken: string
+    let accountId: string | null
+    try {
+      const tokenData = await getValidMetaToken(userId)
+      accessToken = tokenData.accessToken
+      accountId   = bodyAccountId || tokenData.accountId
+    } catch (err) {
+      const { error, code } = metaTokenErrorToResponse(err)
+      return NextResponse.json({ success: false, error, code }, { status: 401 })
+    }
+
+    if (!accountId) {
+      return NextResponse.json({ success: false, error: 'Ad Account ID não encontrado', code: 'NO_ACCOUNT_ID' }, { status: 400 })
     }
 
     const freqLimit = freqThreshold(niche)

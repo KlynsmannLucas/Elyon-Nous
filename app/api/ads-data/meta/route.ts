@@ -1,6 +1,7 @@
 // app/api/ads-data/meta/route.ts — Busca campanhas reais do Meta Ads
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
 
 // "lead" é o evento primário. "lead_grouped" agrega múltiplas janelas de atribuição
 // e se sobrepõe com "lead" — usar os dois juntos infla o número. Usar apenas um.
@@ -67,9 +68,22 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
 
   try {
-    const { accessToken, accountId } = await req.json()
-    if (!accessToken || !accountId) {
-      return NextResponse.json({ success: false, error: 'Token ou Account ID não fornecido.' }, { status: 400 })
+    const body = await req.json().catch(() => ({}))
+    const bodyAccountId = (body.accountId as string | undefined)
+
+    let accessToken: string
+    let accountId: string | null
+    try {
+      const tokenData = await getValidMetaToken(userId)
+      accessToken = tokenData.accessToken
+      accountId   = bodyAccountId || tokenData.accountId
+    } catch (err) {
+      const { error, code } = metaTokenErrorToResponse(err)
+      return NextResponse.json({ success: false, error, code }, { status: 401 })
+    }
+
+    if (!accountId) {
+      return NextResponse.json({ success: false, error: 'Ad Account ID não encontrado. Selecione uma conta.', code: 'NO_ACCOUNT_ID' }, { status: 400 })
     }
 
     const today = new Date()
