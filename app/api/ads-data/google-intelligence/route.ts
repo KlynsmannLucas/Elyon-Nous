@@ -136,14 +136,34 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
 
   try {
-    const { accessToken, accountId } = await req.json()
-    if (!accessToken || !accountId) {
-      return NextResponse.json({ success: false, error: 'Token ou Account ID não fornecido.' }, { status: 400 })
-    }
-
     const developerToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN
     if (!developerToken) {
       return NextResponse.json({ success: false, error: 'GOOGLE_ADS_DEVELOPER_TOKEN não configurado.' }, { status: 500 })
+    }
+
+    // accountId opcional no body (seleção manual de conta)
+    const body = await req.json().catch(() => ({}))
+    const bodyAccountId = body.accountId as string | undefined
+
+    // Token lido do Supabase com refresh automático
+    const { getValidGoogleToken, tokenErrorToResponse } = await import('@/services/google/token-manager')
+    let accessToken: string
+    let accountId:   string | null
+    try {
+      const token = await getValidGoogleToken(userId)
+      accessToken = token.accessToken
+      accountId   = bodyAccountId || token.accountId
+    } catch (err) {
+      const { error, code } = tokenErrorToResponse(err)
+      return NextResponse.json({ success: false, error, code }, { status: 401 })
+    }
+
+    if (!accountId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Customer ID do Google Ads não encontrado. Configure nas conexões.',
+        code: 'NO_ACCOUNT_ID',
+      }, { status: 400 })
     }
 
     const cleanId = String(accountId).replace(/-/g, '')

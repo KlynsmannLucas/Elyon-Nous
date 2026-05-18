@@ -1,110 +1,130 @@
 // app/api/ads-data/google/route.ts — Busca campanhas reais do Google Ads
+// Token lido do Supabase via token-manager (com refresh automático).
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { getValidGoogleToken, tokenErrorToResponse } from '@/services/google/token-manager'
+
+const API_VERSIONS = ['v19', 'v18']
+
+async function gaqlSearch(
+  cleanId: string, accessToken: string, developerToken: string, query: string
+): Promise<any[]> {
+  let lastError = ''
+  for (const version of API_VERSIONS) {
+    const res = await fetch(
+      `https://googleads.googleapis.com/${version}/customers/${cleanId}/googleAds:search`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization':     `Bearer ${accessToken}`,
+          'developer-token':   developerToken,
+          'login-customer-id': cleanId,
+          'Content-Type':      'application/json',
+        },
+        body: JSON.stringify({ query }),
+        signal: AbortSignal.timeout(15_000),
+      }
+    )
+    const ct = res.headers.get('content-type') || ''
+    if (!ct.includes('application/json')) {
+      lastError = `HTTP ${res.status} — Customer ID inválido ou sem acesso`
+      continue
+    }
+    const data = await res.json()
+    if (data.error || !res.ok) {
+      lastError = data.error?.message || `HTTP ${res.status}`
+      continue
+    }
+    return data.results || []
+  }
+  throw new Error(lastError || 'Google Ads API indisponível')
+}
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
 
+  const developerToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN
+  if (!developerToken) {
+    return NextResponse.json({ success: false, error: 'GOOGLE_ADS_DEVELOPER_TOKEN não configurado.' }, { status: 500 })
+  }
+
+  // accountId pode vir no body (seleção manual de conta) ou ser inferido do DB
+  const body = await req.json().catch(() => ({}))
+  const bodyAccountId = body.accountId as string | undefined
+
+  let accessToken: string
+  let accountId:   string | null
+
   try {
-    const { accessToken, accountId } = await req.json()
-    if (!accessToken || !accountId) {
-      return NextResponse.json({ success: false, error: 'Token ou Account ID não fornecido.' }, { status: 400 })
-    }
+    const token = await getValidGoogleToken(userId)
+    accessToken = token.accessToken
+    accountId   = bodyAccountId || token.accountId
+  } catch (err) {
+    const { error, code } = tokenErrorToResponse(err)
+    return NextResponse.json({ success: false, error, code }, { status: 401 })
+  }
 
-    const developerToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN
-    if (!developerToken) {
-      return NextResponse.json({ success: false, error: 'GOOGLE_ADS_DEVELOPER_TOKEN não configurado.' }, { status: 500 })
-    }
+  if (!accountId) {
+    return NextResponse.json({
+      success: false,
+      error: 'Customer ID do Google Ads não encontrado. Informe o ID da conta nas configurações.',
+      code: 'NO_ACCOUNT_ID',
+    }, { status: 400 })
+  }
 
-    // Google Ads Query Language (GAQL) — últimos 30 dias
-    const query = `
-      SELECT
-        campaign.id,
-        campaign.name,
-        campaign.status,
-        metrics.cost_micros,
-        metrics.impressions,
-        metrics.clicks,
-        metrics.conversions,
-        metrics.conversions_value,
-        metrics.cost_per_conversion
-      FROM campaign
-      WHERE segments.date DURING LAST_30_DAYS
-        AND campaign.status != 'REMOVED'
-      ORDER BY metrics.cost_micros DESC
-      LIMIT 20
-    `.trim()
+  const cleanId = String(accountId).replace(/-/g, '')
 
-    const cleanId = String(accountId).replace(/-/g, '')
+  const query = `
+    SELECT
+      campaign.id,
+      campaign.name,
+      campaign.status,
+      metrics.cost_micros,
+      metrics.impressions,
+      metrics.clicks,
+      metrics.conversions,
+      metrics.conversions_value,
+      metrics.cost_per_conversion
+    FROM campaign
+    WHERE segments.date DURING LAST_30_DAYS
+      AND campaign.status != 'REMOVED'
+    ORDER BY metrics.cost_micros DESC
+    LIMIT 25
+  `.trim()
 
-    const res = await fetch(
-      `https://googleads.googleapis.com/v18/customers/${cleanId}/googleAds:search`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization':      `Bearer ${accessToken}`,
-          'developer-token':    developerToken,
-          'login-customer-id':  cleanId,
-          'Content-Type':       'application/json',
-        },
-        body: JSON.stringify({ query }),
-        signal: AbortSignal.timeout(15000),
-      }
-    )
+  try {
+    const results = await gaqlSearch(cleanId, accessToken, developerToken, query)
 
-    const contentType = res.headers.get('content-type') || ''
-    if (!contentType.includes('application/json')) {
-      return NextResponse.json({
-        success: false,
-        error: `Google Ads API (HTTP ${res.status}): Customer ID ${cleanId} inválido ou sem acesso. Verifique o ID (10 dígitos sem traços) e se o token OAuth pertence à conta correta.`,
-      }, { status: 400 })
-    }
-
-    const data = await res.json()
-
-    if (data.error || !res.ok) {
-      const msg = data.error?.message || data.error?.details?.[0]?.errors?.[0]?.message || 'Erro na Google Ads API'
-      return NextResponse.json({ success: false, error: msg }, { status: 400 })
-    }
-
-    const campaigns = (data.results || []).map((r: any) => {
+    const campaigns = results.map((r: any) => {
       const campaign = r.campaign
       const metrics  = r.metrics
       const spend    = (metrics.costMicros || 0) / 1_000_000
       const leads    = Math.round(metrics.conversions || 0)
       const revenue  = metrics.conversionsValue || 0
-      const cpl      = leads > 0 ? +(spend / leads).toFixed(2) : 0
-      const roas     = spend > 0 && revenue > 0 ? +(revenue / spend).toFixed(2) : 0
+      const cpl      = leads  > 0 ? +(spend / leads).toFixed(2)   : 0
+      const roas     = spend  > 0 && revenue > 0 ? +(revenue / spend).toFixed(2) : 0
 
       return {
-        id: campaign.id,
-        name: campaign.name,
-        status: campaign.status,
-        spend,
-        impressions: metrics.impressions || 0,
-        clicks: metrics.clicks || 0,
+        id: campaign.id, name: campaign.name, status: campaign.status,
+        spend, impressions: metrics.impressions || 0, clicks: metrics.clicks || 0,
         ctr: metrics.impressions > 0
-          ? +((metrics.clicks / metrics.impressions) * 100).toFixed(2)
-          : 0,
-        leads,
-        cpl,
-        revenue,
-        roas,
-        platform: 'google',
+          ? +((metrics.clicks / metrics.impressions) * 100).toFixed(2) : 0,
+        leads, cpl, revenue, roas, platform: 'google',
       }
     })
 
-    const totals = campaigns.reduce((acc: any, c: any) => ({
-      spend:       acc.spend + c.spend,
+    type TotalsAcc = { spend: number; impressions: number; clicks: number; leads: number; revenue: number; cpl?: number; roas?: number; ctr?: number }
+    const totals = campaigns.reduce<TotalsAcc>((acc, c: any) => ({
+      spend:       acc.spend       + c.spend,
       impressions: acc.impressions + c.impressions,
-      clicks:      acc.clicks + c.clicks,
-      leads:       acc.leads + c.leads,
-      revenue:     acc.revenue + c.revenue,
+      clicks:      acc.clicks      + c.clicks,
+      leads:       acc.leads       + c.leads,
+      revenue:     acc.revenue     + c.revenue,
     }), { spend: 0, impressions: 0, clicks: 0, leads: 0, revenue: 0 })
 
-    totals.cpl  = totals.leads > 0  ? +(totals.spend / totals.leads).toFixed(2) : 0
-    totals.roas = totals.spend > 0 && totals.revenue > 0 ? +(totals.revenue / totals.spend).toFixed(2) : 0
+    totals.cpl  = totals.leads  > 0 ? +(totals.spend / totals.leads).toFixed(2) : 0
+    totals.roas = totals.spend  > 0 && totals.revenue > 0 ? +(totals.revenue / totals.spend).toFixed(2) : 0
     totals.ctr  = totals.impressions > 0 ? +((totals.clicks / totals.impressions) * 100).toFixed(2) : 0
 
     return NextResponse.json({ success: true, campaigns, totals, platform: 'google' })
