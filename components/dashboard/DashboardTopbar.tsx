@@ -6,6 +6,7 @@ import type { TabKey } from './DashboardSidebar'
 import { SIDEBAR_SECTIONS } from './DashboardSidebar'
 import { AlertsPanel } from './AlertsPanel'
 import { CreditsDisplay } from './CreditsDisplay'
+import { useAppStore } from '@/lib/store'
 
 interface Props {
   activeTab: TabKey
@@ -46,9 +47,28 @@ const TAB_SUBTITLES: Partial<Record<TabKey, string>> = {
 export function DashboardTopbar({
   activeTab, clientData, onExport, onReset, onSave, pdfLoading, sidebarCollapsed, onToggleSidebar,
 }: Props) {
-  const [clientMenuOpen, setClientMenuOpen] = useState(false)
-  const [pdfMenuOpen,    setPdfMenuOpen]    = useState(false)
+  const [clientMenuOpen,    setClientMenuOpen]    = useState(false)
+  const [pdfMenuOpen,       setPdfMenuOpen]       = useState(false)
+  const [briefingTooltip,   setBriefingTooltip]   = useState(false)
+  const [briefingSaving,    setBriefingSaving]     = useState(false)
   const clientMenuRef = useRef<HTMLDivElement>(null)
+
+  const briefingEnabled    = useAppStore(s => s.briefingEnabled)
+  const setBriefingEnabled = useAppStore(s => s.setBriefingEnabled)
+
+  const toggleBriefing = async () => {
+    const next = !briefingEnabled
+    setBriefingSaving(true)
+    setBriefingEnabled(next)
+    try {
+      await fetch('/api/briefing-preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: next }),
+      })
+    } catch { /* silently fails — store already updated */ }
+    setBriefingSaving(false)
+  }
 
   // Auto-save on mount and every 60s silently
   useEffect(() => {
@@ -205,6 +225,46 @@ export function DashboardTopbar({
           )}
         </div>
       )}
+
+      {/* Morning briefing toggle */}
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <button
+          onClick={toggleBriefing}
+          disabled={briefingSaving}
+          title={briefingEnabled ? 'Morning briefing ativo — clique para desativar' : 'Ativar morning briefing por email'}
+          onMouseEnter={() => setBriefingTooltip(true)}
+          onMouseLeave={() => setBriefingTooltip(false)}
+          style={{
+            width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
+            border: `1px solid ${briefingEnabled ? 'rgba(52,211,153,0.35)' : 'rgba(255,255,255,0.06)'}`,
+            background: briefingEnabled ? 'rgba(52,211,153,0.1)' : 'transparent',
+            color: briefingEnabled ? '#34D399' : 'rgba(255,255,255,0.3)',
+            cursor: briefingSaving ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.15s',
+            opacity: briefingSaving ? 0.6 : 1,
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+        </button>
+        {briefingTooltip && (
+          <div style={{
+            position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 9999,
+            background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '8px', padding: '6px 10px', whiteSpace: 'nowrap',
+            fontSize: '11px', color: '#CBD5E1',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+          }}>
+            {briefingEnabled
+              ? <><span style={{ color: '#34D399' }}>● </span>Briefing ativo — clique para pausar</>
+              : <><span style={{ color: 'rgba(255,255,255,0.3)' }}>○ </span>Receber briefing diário por email</>
+            }
+          </div>
+        )}
+      </div>
 
       {/* Credits display */}
       <CreditsDisplay />

@@ -155,6 +155,10 @@ function computeHealthScore(c: Campaign, freqLimit: number): number {
   return Math.max(0, Math.min(100, score))
 }
 
+function computeWastedSpend(campaigns: Campaign[]): number {
+  return campaigns.filter(c => c.spend30 > 50 && c.leads30 === 0 && c.purchases30 === 0 && c.messages30 === 0).reduce((s, c) => s + c.spend30, 0)
+}
+
 function sortData<T extends Record<string, any>>(arr: T[], key: string, dir: SortDir): T[] {
   return [...arr].sort((a, b) => {
     const av = a[key]; const bv = b[key]
@@ -266,14 +270,14 @@ function DeltaBadge({ delta, invertColor }: { delta: number | null | undefined; 
 }
 
 // ── InnerTabBar ───────────────────────────────────────────────────────────────
-const INNER_TABS: { key: InnerTab; label: string; icon: string }[] = [
-  { key: 'overview',       label: 'Visão Geral',   icon: '📊' },
-  { key: 'campaigns',      label: 'Campanhas',     icon: '📋' },
-  { key: 'adsets',         label: 'Ad Sets',       icon: '📦' },
-  { key: 'ads',            label: 'Anúncios',      icon: '🖼️' },
-  { key: 'creatives',      label: 'Criativos',     icon: '🎨' },
-  { key: 'problems',       label: 'Problemas',     icon: '🚨' },
-  { key: 'opportunities',  label: 'Oportunidades', icon: '💡' },
+const INNER_TABS: { key: InnerTab; label: string; icon: string; tooltip: string }[] = [
+  { key: 'overview',       label: 'Visão Geral',      icon: '📊', tooltip: 'Resumo geral da conta: pixel, aprendizado, objetivos e gráficos' },
+  { key: 'campaigns',      label: 'Campanhas',        icon: '📋', tooltip: 'Tabela de campanhas com métricas, ordenação e filtros avançados' },
+  { key: 'adsets',         label: 'Ad Sets',          icon: '📦', tooltip: 'Conjuntos de anúncios com públicos, orçamento e performance' },
+  { key: 'ads',            label: 'Anúncios',         icon: '🖼️', tooltip: 'Lista de anúncios ativos com tag de performance' },
+  { key: 'creatives',      label: 'Creative Intel',   icon: '🎨', tooltip: 'Ranking de criativos: vencedores, fadigados e em aprendizado' },
+  { key: 'problems',       label: 'Ações Prioritárias', icon: '🚨', tooltip: 'Problemas detectados automaticamente que precisam de atenção' },
+  { key: 'opportunities',  label: 'Oportunidades',    icon: '💡', tooltip: 'Oportunidades de escala e otimização detectadas pela IA' },
 ]
 
 function InnerTabBar({ active, onChange, counts }: {
@@ -285,8 +289,9 @@ function InnerTabBar({ active, onChange, counts }: {
       {INNER_TABS.map(t => {
         const isActive = t.key === active
         const count = counts[t.key]
+        const isProblems = t.key === 'problems'
         return (
-          <button key={t.key} onClick={() => onChange(t.key)}
+          <button key={t.key} onClick={() => onChange(t.key)} title={t.tooltip}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0"
             style={{
               background: isActive ? 'rgba(24,119,242,0.15)' : 'rgba(255,255,255,0.03)',
@@ -298,8 +303,8 @@ function InnerTabBar({ active, onChange, counts }: {
             {count != null && count > 0 && (
               <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
                 style={{
-                  background: (t.key === 'problems' && count > 0) ? 'rgba(255,77,77,0.2)' : 'rgba(255,255,255,0.1)',
-                  color: (t.key === 'problems' && count > 0) ? '#FF4D4D' : '#94A3B8',
+                  background: (isProblems && count > 0) ? 'rgba(255,77,77,0.2)' : 'rgba(255,255,255,0.1)',
+                  color: (isProblems && count > 0) ? '#FF4D4D' : '#94A3B8',
                 }}>
                 {count}
               </span>
@@ -312,14 +317,29 @@ function InnerTabBar({ active, onChange, counts }: {
 }
 
 // ── SortableHeader ────────────────────────────────────────────────────────────
+const METRIC_TOOLTIPS: Record<string, string> = {
+  spend30: 'Valor total investido nos últimos 30 dias',
+  leads30: 'Leads gerados nos últimos 30 dias',
+  cpl30: 'Custo Por Lead: quanto você paga por cada lead gerado',
+  ctr30: 'Click-Through Rate: % de pessoas que clicaram no anúncio ao vê-lo',
+  cpc30: 'Custo Por Clique: valor médio pago por cada clique',
+  cpm30: 'Custo Por Mil Impressões: quanto custa exibir o anúncio 1.000 vezes',
+  frequency: 'Frequência: quantas vezes em média cada pessoa viu o anúncio',
+  roas30: 'Return on Ad Spend: retorno em receita para cada R$1 investido',
+  impressions: 'Total de vezes que o anúncio foi exibido',
+  reach: 'Número de pessoas únicas que viram o anúncio',
+  _score: 'Health Score: pontuação de saúde calculada automaticamente (0–100)',
+}
+
 function SortableHeader({ label, sortKey, activeKey, dir, onSort, right }: {
   label: string; sortKey: string; activeKey: string; dir: SortDir
   onSort: (key: string) => void; right?: boolean
 }) {
   const isActive = sortKey === activeKey
+  const tooltip = METRIC_TOOLTIPS[sortKey]
   return (
-    <th onClick={() => onSort(sortKey)}
-      className={`px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide cursor-pointer select-none whitespace-nowrap hover:text-slate-300 transition-colors ${right ? 'text-right' : 'text-left'}`}
+    <th onClick={() => onSort(sortKey)} title={tooltip}
+      className={`px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide cursor-pointer select-none whitespace-nowrap hover:text-slate-300 transition-colors ${right ? 'text-right' : 'text-left'} ${tooltip ? 'border-b border-dotted border-slate-700' : ''}`}
       style={{ color: isActive ? '#60A5FA' : '#475569' }}>
       {label}{isActive ? (dir === 'desc' ? ' ↓' : ' ↑') : ''}
     </th>
@@ -406,6 +426,22 @@ function StatCell({ label, value, color }: { label: string; value: string; color
   )
 }
 
+function QuickActions({ name }: { name: string }) {
+  const [copied, setCopied] = useState(false)
+  const copy = () => { navigator.clipboard.writeText(name).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500) }) }
+  return (
+    <div className="flex flex-wrap gap-2 pt-2 border-t border-[#2A2A30]">
+      <div className="text-[10px] text-slate-600 uppercase font-semibold w-full mb-1">Ações rápidas</div>
+      <button onClick={copy} className="text-[11px] px-3 py-1.5 rounded-lg bg-[#16161A] border border-[#2A2A30] text-slate-400 hover:text-white hover:border-slate-500 transition-colors">
+        {copied ? '✅ Copiado!' : '📋 Copiar nome'}
+      </button>
+      <button onClick={() => window.print()} className="text-[11px] px-3 py-1.5 rounded-lg bg-[#16161A] border border-[#2A2A30] text-slate-400 hover:text-white hover:border-slate-500 transition-colors">
+        📤 Exportar
+      </button>
+    </div>
+  )
+}
+
 function CampaignDrawerContent({ campaign: c, freqLimit }: { campaign: Campaign; freqLimit: number }) {
   const score = computeHealthScore(c, freqLimit)
   return (
@@ -450,6 +486,7 @@ function CampaignDrawerContent({ campaign: c, freqLimit }: { campaign: Campaign;
           ))}
         </div>
       )}
+      <QuickActions name={c.name} />
     </>
   )
 }
@@ -611,13 +648,16 @@ function OpportunitiesPanel({ opportunities }: { opportunities: DetectedOpportun
 }
 
 // ── Campaigns Table ───────────────────────────────────────────────────────────
-function CampaignsTable({ campaigns, freqLimit, onSelect }: {
-  campaigns: Campaign[]; freqLimit: number; onSelect: (c: Campaign) => void
+function CampaignsTable({ campaigns, freqLimit, onSelect, onDrillDown }: {
+  campaigns: Campaign[]; freqLimit: number
+  onSelect: (c: Campaign) => void
+  onDrillDown?: (campaignId: string, campaignName: string) => void
 }) {
   const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: 'spend30', dir: 'desc' })
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
   const [objective, setObjective] = useState('')
+  const [showExtra, setShowExtra] = useState(false)
 
   const objectives = useMemo(() => [...new Set(campaigns.map(c => c.objectiveLabel))], [campaigns])
 
@@ -635,16 +675,20 @@ function CampaignsTable({ campaigns, freqLimit, onSelect }: {
     setSort(s => s.key === key ? { key, dir: s.dir === 'desc' ? 'asc' : 'desc' } : { key, dir: 'desc' })
   }
 
-  const ths = (label: string, key: string, right?: boolean) => (
-    <SortableHeader label={label} sortKey={key} activeKey={sort.key} dir={sort.dir} onSort={toggleSort} right={right} />
+  const ths = (label: string, key: string) => (
+    <SortableHeader label={label} sortKey={key} activeKey={sort.key} dir={sort.dir} onSort={toggleSort} right />
   )
 
   return (
     <div>
       <FilterBar search={search} onSearch={setSearch} status={status} onStatus={setStatus}
         objectives={objectives} objective={objective} onObjective={setObjective} />
-      <div className="text-[10px] text-slate-600 px-4 py-2 border-b border-[#1E1E24]">
-        {filtered.length} de {campaigns.length} campanhas
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#1E1E24]">
+        <span className="text-[10px] text-slate-600">{filtered.length} de {campaigns.length} campanhas</span>
+        <button onClick={() => setShowExtra(v => !v)}
+          className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1">
+          {showExtra ? '← Menos colunas' : '+ CPC / CPM / Impressões'}
+        </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs min-w-[900px]">
@@ -653,33 +697,34 @@ function CampaignsTable({ campaigns, freqLimit, onSelect }: {
               <th className="px-4 py-2.5 text-left text-[10px] text-slate-600 font-semibold uppercase w-8">#</th>
               <th className="px-3 py-2.5 text-left text-[10px] text-slate-600 font-semibold uppercase">Nome</th>
               <th className="px-3 py-2.5 text-left text-[10px] text-slate-600 font-semibold uppercase">Status</th>
-              {ths('Gasto', 'spend30', true)}
-              {ths('Leads', 'leads30', true)}
-              {ths('CPL', 'cpl30', true)}
-              {ths('CTR', 'ctr30', true)}
-              {ths('Freq', 'frequency', true)}
-              {ths('ROAS', 'roas30', true)}
-              {ths('Score', '_score', true)}
+              {ths('Gasto', 'spend30')}
+              {ths('Leads', 'leads30')}
+              {ths('CPL', 'cpl30')}
+              {ths('CTR', 'ctr30')}
+              {ths('Freq', 'frequency')}
+              {showExtra && ths('CPC', 'cpc30')}
+              {showExtra && ths('CPM', 'cpm30')}
+              {showExtra && ths('Impressões', 'impressions')}
+              {ths('ROAS', 'roas30')}
+              {ths('Score', '_score')}
+              <th className="px-3 py-2.5 text-left text-[10px] text-slate-600 font-semibold uppercase">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1A1A20]">
             {filtered.length === 0 && (
-              <tr><td colSpan={10} className="px-5 py-8 text-center text-slate-600">Nenhuma campanha encontrada.</td></tr>
+              <tr><td colSpan={showExtra ? 14 : 11} className="px-5 py-8 text-center text-slate-600">Nenhuma campanha encontrada.</td></tr>
             )}
             {filtered.map((c, i) => {
               const score = computeHealthScore(c, freqLimit)
               const sc = scoreColor(score)
               return (
-                <tr key={c.id} onClick={() => onSelect(c)}
-                  className="hover:bg-[#16161A] cursor-pointer transition-colors">
+                <tr key={c.id} className="hover:bg-[#16161A] transition-colors group">
                   <td className="px-4 py-3 text-slate-600">{i + 1}</td>
-                  <td className="px-3 py-3 max-w-[220px]">
-                    <div className="font-semibold text-white truncate" title={c.name}>{c.name}</div>
+                  <td className="px-3 py-3 max-w-[200px] cursor-pointer" onClick={() => onSelect(c)}>
+                    <div className="font-semibold text-white truncate group-hover:text-blue-400 transition-colors" title={c.name}>{c.name}</div>
                     <div className="text-[10px] text-slate-600 mt-0.5">{c.objectiveLabel}</div>
                   </td>
-                  <td className="px-3 py-3">
-                    <StatusBadge campaign={c} freqLimit={freqLimit} />
-                  </td>
+                  <td className="px-3 py-3"><StatusBadge campaign={c} freqLimit={freqLimit} /></td>
                   <td className="px-3 py-3 text-right font-semibold text-[#F0B429] tabular-nums">{c.spend30 > 0 ? fmt(c.spend30) : '—'}</td>
                   <td className="px-3 py-3 text-right text-[#38BDF8] font-semibold tabular-nums">{c.leads30 > 0 ? c.leads30 : '—'}</td>
                   <td className="px-3 py-3 text-right text-slate-300 tabular-nums">{c.cpl30 > 0 ? `R$${c.cpl30}` : '—'}</td>
@@ -689,9 +734,26 @@ function CampaignsTable({ campaigns, freqLimit, onSelect }: {
                   <td className="px-3 py-3 text-right tabular-nums">
                     <span className={c.frequency > freqLimit ? 'text-orange-400' : 'text-slate-300'}>{c.frequency > 0 ? `${c.frequency}×` : '—'}</span>
                   </td>
+                  {showExtra && <td className="px-3 py-3 text-right text-slate-400 tabular-nums">{c.cpc30 > 0 ? `R$${c.cpc30}` : '—'}</td>}
+                  {showExtra && <td className="px-3 py-3 text-right text-slate-400 tabular-nums">{c.cpm30 > 0 ? `R$${c.cpm30}` : '—'}</td>}
+                  {showExtra && <td className="px-3 py-3 text-right text-slate-400 tabular-nums">{c.impressions > 0 ? c.impressions.toLocaleString('pt-BR') : '—'}</td>}
                   <td className="px-3 py-3 text-right text-[#22C55E] tabular-nums">{c.roas30 > 0 ? `${c.roas30}×` : '—'}</td>
                   <td className="px-3 py-3 text-right">
                     <span className="text-xs font-bold tabular-nums" style={{ color: sc }}>{score}</span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => onSelect(c)} title="Ver detalhes"
+                        className="text-[10px] px-2 py-1 rounded-lg bg-[#1877F2]/20 text-[#60A5FA] hover:bg-[#1877F2]/30 transition-colors">
+                        Detalhes
+                      </button>
+                      {onDrillDown && (
+                        <button onClick={() => onDrillDown(c.id, c.name)} title="Ver Ad Sets desta campanha"
+                          className="text-[10px] px-2 py-1 rounded-lg bg-slate-700/50 text-slate-400 hover:bg-slate-700 transition-colors">
+                          Ad Sets →
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )
@@ -861,9 +923,9 @@ function CreativesPanel({ ads }: { ads: AdCreative[] }) {
   if (ads.length === 0) return <div className="py-12 text-center text-slate-600 text-sm">Nenhum criativo disponível.</div>
 
   const tagConfig = {
-    winner: { label: 'Vencedor', color: '#22C55E', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.25)', icon: '🏆' },
-    waste: { label: 'Pausar', color: '#FF4D4D', bg: 'rgba(255,77,77,0.1)', border: 'rgba(255,77,77,0.25)', icon: '⛔' },
-    learning: { label: 'Aprendendo', color: '#38BDF8', bg: 'rgba(56,189,248,0.1)', border: 'rgba(56,189,248,0.25)', icon: '📚' },
+    winner: { label: 'Melhor Performance', color: '#22C55E', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.25)', icon: '🏆' },
+    waste: { label: 'Rec. Pausar', color: '#FF4D4D', bg: 'rgba(255,77,77,0.1)', border: 'rgba(255,77,77,0.25)', icon: '⛔' },
+    learning: { label: 'Em Aprendizado', color: '#38BDF8', bg: 'rgba(56,189,248,0.1)', border: 'rgba(56,189,248,0.25)', icon: '📚' },
     ok: { label: 'Neutro', color: '#64748B', bg: 'rgba(100,116,139,0.1)', border: 'rgba(100,116,139,0.25)', icon: '✓' },
   }
   const counts = { winner: ads.filter(a => a.tag === 'winner').length, waste: ads.filter(a => a.tag === 'waste').length, learning: ads.filter(a => a.tag === 'learning').length }
@@ -874,9 +936,9 @@ function CreativesPanel({ ads }: { ads: AdCreative[] }) {
       <div className="flex gap-2 flex-wrap p-4 border-b border-[#1E1E24]">
         {([
           { key: 'all', label: `Todos (${ads.length})`, color: '#64748B' },
-          { key: 'winner', label: `🏆 Vencedores (${counts.winner})`, color: '#22C55E' },
-          { key: 'waste', label: `⛔ Pausar (${counts.waste})`, color: '#FF4D4D' },
-          { key: 'learning', label: `📚 Aprendendo (${counts.learning})`, color: '#38BDF8' },
+          { key: 'winner', label: `🏆 Melhor Performance (${counts.winner})`, color: '#22C55E' },
+          { key: 'waste', label: `⛔ Rec. Pausar (${counts.waste})`, color: '#FF4D4D' },
+          { key: 'learning', label: `📚 Em Aprendizado (${counts.learning})`, color: '#38BDF8' },
         ] as const).map(f => (
           <button key={f.key} onClick={() => setFilter(f.key as any)}
             className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
@@ -1392,6 +1454,8 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
   const [trackingAudit, setTrackingAudit] = useState<TrackingAudit | null>(null)
   const [trackingLoading, setTrackingLoading] = useState(false)
   const [drawerEntity, setDrawerEntity] = useState<DrawerEntity | null>(null)
+  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null)
+  const [adsetCampaignFilter, setAdsetCampaignFilter] = useState<string>('')
 
   const cacheKey = storeClientData?.clientName || metaAccount?.accountName || metaAccount?.accountId || ''
   const freqLimit = data?.freqThreshold ?? 4
@@ -1440,7 +1504,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
       })
       const json = await res.json()
       if (!json.success) throw new Error(json.error)
-      setData(json); setFetched(true)
+      setData(json); setFetched(true); setLastSyncAt(new Date())
       if (cacheKey) {
         setAuditCache(cacheKey, {
           _intelligenceData: json, _previousTotals: json.previousTotals,
@@ -1519,6 +1583,12 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
                 {data.totals.totalCampaigns} campanhas{data.totals.totalAdSets > 0 && ` · ${data.totals.totalAdSets} ad sets`}{data.totals.totalAds > 0 && ` · ${data.totals.totalAds} criativos`} · últimos 30 dias
               </span>
             )}
+            {lastSyncAt && (
+              <span className="text-[10px] text-slate-600 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                Sincronizado {Math.round((Date.now() - lastSyncAt.getTime()) / 60000) < 1 ? 'agora' : `há ${Math.round((Date.now() - lastSyncAt.getTime()) / 60000)}min`}
+              </span>
+            )}
           </div>
         </div>
         <button onClick={fetchIntelligence} disabled={loading}
@@ -1553,28 +1623,61 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
       {data && !loading && (
         <>
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="md:col-span-1 bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 flex flex-col items-center justify-center text-center">
-              <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">Score da conta</div>
-              <div className="font-display text-5xl font-bold mb-1" style={{ color: sc }}>{data.scoreGrade}</div>
-              <div className="text-xs text-slate-500">{data.score}/100</div>
-            </div>
-            {[
-              { label: 'Investido 30d', value: fmt(data.totals.spend), color: '#F0B429', delta: prev?.spendDelta, invertColor: false, sub: data.totals.activeCampaigns > 0 ? `${data.totals.activeCampaigns} ativa${data.totals.activeCampaigns !== 1 ? 's' : ''}` : undefined },
-              { label: 'Leads', value: data.totals.leads > 0 ? String(data.totals.leads) : '—', color: '#38BDF8', delta: prev?.leadsDelta, invertColor: false, sub: data.totals.cpl > 0 ? `CPL: R$${data.totals.cpl}` : undefined },
-              { label: 'ROAS', value: data.totals.roas > 0 ? `${data.totals.roas}×` : '—', color: '#22C55E', delta: null, invertColor: false, sub: data.totals.revenue > 0 ? `Receita: ${fmt(data.totals.revenue)}` : undefined },
-              { label: 'CTR Médio', value: `${data.totals.avgCTR}%`, color: data.totals.avgCTR < 0.5 ? '#FF4D4D' : data.totals.avgCTR >= 1.5 ? '#22C55E' : '#F0B429', delta: null, invertColor: false, sub: `Freq: ${data.totals.avgFrequency}×` },
-            ].map(kpi => (
-              <div key={kpi.label} className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 flex flex-col justify-between">
-                <div className="text-[10px] text-slate-600 uppercase tracking-wider">{kpi.label}</div>
-                <div className="flex items-end gap-1 mt-2">
-                  <div className="font-display text-2xl font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
-                  {kpi.delta != null && <DeltaBadge delta={kpi.delta} invertColor={kpi.invertColor} />}
+          {(() => {
+            const wastedSpend = computeWastedSpend(data.campaigns)
+            const problemCampaigns = data.campaigns.filter(c => c.issues.length > 0).length
+            const winnerCreatives = (data.ads ?? []).filter(a => a.tag === 'winner').length
+            const avgCPC = data.campaigns.length > 0
+              ? +(data.campaigns.filter(c => c.cpc30 > 0).reduce((s, c) => s + c.cpc30, 0) / Math.max(data.campaigns.filter(c => c.cpc30 > 0).length, 1)).toFixed(2) : 0
+            const avgCPM = data.campaigns.length > 0
+              ? +(data.campaigns.filter(c => c.cpm30 > 0).reduce((s, c) => s + c.cpm30, 0) / Math.max(data.campaigns.filter(c => c.cpm30 > 0).length, 1)).toFixed(2) : 0
+
+            return (
+              <>
+                {/* Row 1: Score + 4 principais */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="md:col-span-1 bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                    <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">Score da conta</div>
+                    <div className="font-display text-5xl font-bold mb-1" style={{ color: sc }}>{data.scoreGrade}</div>
+                    <div className="text-xs text-slate-500">{data.score}/100</div>
+                  </div>
+                  {[
+                    { label: 'Investido 30d', value: fmt(data.totals.spend), color: '#F0B429', delta: prev?.spendDelta, invertColor: false, sub: data.totals.activeCampaigns > 0 ? `${data.totals.activeCampaigns} ativa${data.totals.activeCampaigns !== 1 ? 's' : ''}` : undefined, tooltip: 'Valor total investido nos últimos 30 dias' },
+                    { label: 'Leads', value: data.totals.leads > 0 ? String(data.totals.leads) : '—', color: '#38BDF8', delta: prev?.leadsDelta, invertColor: false, sub: data.totals.cpl > 0 ? `CPL: R$${data.totals.cpl}` : undefined, tooltip: 'Total de leads gerados (Custo Por Lead médio)' },
+                    { label: 'ROAS', value: data.totals.roas > 0 ? `${data.totals.roas}×` : '—', color: '#22C55E', delta: null, invertColor: false, sub: data.totals.revenue > 0 ? `Receita: ${fmt(data.totals.revenue)}` : undefined, tooltip: 'Retorno sobre investimento em anúncios' },
+                    { label: 'CTR Médio', value: `${data.totals.avgCTR}%`, color: data.totals.avgCTR < 0.5 ? '#FF4D4D' : data.totals.avgCTR >= 1.5 ? '#22C55E' : '#F0B429', delta: null, invertColor: false, sub: `Freq: ${data.totals.avgFrequency}×`, tooltip: 'Taxa de cliques média. Acima de 1% é considerado bom' },
+                  ].map(kpi => (
+                    <div key={kpi.label} title={kpi.tooltip} className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 flex flex-col justify-between cursor-help">
+                      <div className="text-[10px] text-slate-600 uppercase tracking-wider">{kpi.label}</div>
+                      <div className="flex items-end gap-1 mt-2">
+                        <div className="font-display text-2xl font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
+                        {kpi.delta != null && <DeltaBadge delta={kpi.delta} invertColor={kpi.invertColor} />}
+                      </div>
+                      {kpi.sub && <div className="text-[10px] text-slate-600 mt-1">{kpi.sub}</div>}
+                    </div>
+                  ))}
                 </div>
-                {kpi.sub && <div className="text-[10px] text-slate-600 mt-1">{kpi.sub}</div>}
-              </div>
-            ))}
-          </div>
+
+                {/* Row 2: métricas secundárias */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                  {[
+                    { label: 'CPC Médio', value: avgCPC > 0 ? `R$${avgCPC}` : '—', color: '#A78BFA', sub: 'Custo por clique', tooltip: 'Custo Por Clique médio de todas as campanhas' },
+                    { label: 'CPM Médio', value: avgCPM > 0 ? `R$${avgCPM}` : '—', color: '#38BDF8', sub: 'A cada 1000 imp.', tooltip: 'Custo Por Mil Impressões médio' },
+                    { label: 'Freq. Média', value: `${data.totals.avgFrequency}×`, color: data.totals.avgFrequency > (freqLimit + 1) ? '#FB923C' : '#94A3B8', sub: `Limite: ${freqLimit}×`, tooltip: `Frequência média. Acima de ${freqLimit}× indica fadiga de anúncio` },
+                    { label: 'Gasto Desperdiçado', value: wastedSpend > 0 ? fmt(wastedSpend) : 'R$0', color: wastedSpend > 100 ? '#FF4D4D' : '#22C55E', sub: wastedSpend > 0 ? 'sem conversão' : 'sem desperdício', tooltip: 'Soma do gasto em campanhas com R$50+ investidos e zero conversões' },
+                    { label: 'C/ Problemas', value: problemCampaigns > 0 ? String(problemCampaigns) : '0', color: problemCampaigns > 0 ? '#F0B429' : '#22C55E', sub: 'campanhas', tooltip: 'Número de campanhas com algum problema detectado' },
+                    { label: 'Criativos Top', value: winnerCreatives > 0 ? String(winnerCreatives) : '0', color: winnerCreatives > 0 ? '#22C55E' : '#64748B', sub: 'vencedores', tooltip: 'Criativos classificados como Melhor Performance' },
+                  ].map(kpi => (
+                    <div key={kpi.label} title={kpi.tooltip} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-3 flex flex-col cursor-help">
+                      <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">{kpi.label}</div>
+                      <div className="font-display text-xl font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
+                      <div className="text-[10px] text-slate-600 mt-0.5">{kpi.sub}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )
+          })()}
 
           {/* Inner Tab Bar */}
           <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
