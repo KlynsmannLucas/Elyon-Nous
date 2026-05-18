@@ -378,6 +378,8 @@ export default function DashboardBody() {
     }
   }, [])
 
+  const [dbSaveError, setDbSaveError] = useState<string | null>(null)
+
   const saveToDb = useCallback((clientName?: string) => {
     const state = useAppStore.getState()
     const { clientData: cd, savedClients: sc, auditCache: ac } = state
@@ -393,7 +395,19 @@ export default function DashboardBody() {
         auditData: ac[name] ?? null,
         extraData: buildExtraData(name),
       }),
-    }).catch(() => {})
+    }).then(async (res) => {
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        const msg = json.error || `Erro ${res.status} ao salvar no banco`
+        console.error('[saveToDb]', msg)
+        setDbSaveError(msg)
+      } else {
+        setDbSaveError(null)
+      }
+    }).catch((e) => {
+      console.error('[saveToDb] Network error:', e)
+      setDbSaveError('Sem conexão — dados salvos localmente')
+    })
   }, [buildExtraData])
 
   const serverUser = useServerUserData()
@@ -442,12 +456,52 @@ export default function DashboardBody() {
       .catch(() => {})
   }, [])
 
+  // Sincroniza clientes do localStorage para o banco quando o DB retorna vazio
+  const syncLocalToDb = useCallback(() => {
+    const state = useAppStore.getState()
+    const localClients = state.savedClients
+    if (localClients.length === 0) return
+    console.info('[clients sync] Sincronizando', localClients.length, 'cliente(s) local → banco...')
+    for (const entry of localClients) {
+      const name = entry.clientData.clientName
+      fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...entry,
+          auditData: state.auditCache[name] ?? null,
+          extraData: buildExtraData(name),
+        }),
+      }).then(async (res) => {
+        if (res.ok) {
+          console.info('[clients sync] Cliente salvo no banco:', name)
+          setDbSaveError(null)
+        } else {
+          const json = await res.json().catch(() => ({}))
+          const msg = json.error || `Erro ${res.status}`
+          console.error('[clients sync] Falha ao salvar:', name, msg)
+          setDbSaveError(msg)
+        }
+      }).catch((e) => {
+        console.error('[clients sync] Rede:', e)
+        setDbSaveError('Banco inacessível — dados salvos localmente')
+      })
+    }
+  }, [buildExtraData])
+
   useEffect(() => {
     fetch('/api/clients')
       .then(r => r.ok ? r.json() : { clients: [] })
       .then(({ clients, _dbError }) => {
-        if (_dbError) console.warn('[clients sync] DB error:', _dbError)
-        if (!Array.isArray(clients) || clients.length === 0) return
+        if (_dbError) {
+          console.warn('[clients sync] DB error:', _dbError)
+          setDbSaveError('Banco de dados indisponível. Verifique a tabela "clients" no Supabase.')
+        }
+        if (!Array.isArray(clients) || clients.length === 0) {
+          // DB vazio: sincroniza dados do localStorage → banco (recuperação de dados existentes)
+          syncLocalToDb()
+          return
+        }
 
         setSavedClients(clients)
 
@@ -1036,6 +1090,15 @@ export default function DashboardBody() {
           onToggleSidebar={() => setSidebarCollapsed(v => !v)}
         />
         <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px', background: '#080D1A' }}>
+          {dbSaveError && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px', background: 'rgba(239,68,68,0.08)', borderBottom: '1px solid rgba(239,68,68,0.2)', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#FCA5A5' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <strong style={{ color: '#EF4444' }}>Banco não sincronizado:</strong> {dbSaveError}
+              </div>
+              <button onClick={() => setDbSaveError(null)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '0 4px' }}>×</button>
+            </div>
+          )}
           <OnboardingFlow onNavigate={setActiveTab} />
           <div key={activeTab} className="animate-fade-up" style={{ padding: '24px 28px 0' }}>
             {renderTab()}
