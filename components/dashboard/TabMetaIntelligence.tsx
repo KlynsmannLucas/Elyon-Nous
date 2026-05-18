@@ -102,6 +102,17 @@ interface IntelligenceData {
   globalRecs: Array<{ type: RecType; title: string; description: string }>
 }
 
+interface TrackingCheckItem {
+  id: string; name: string; description: string
+  status: 'ok' | 'warning' | 'error' | 'not_checked'
+  detail: string | null; actionRequired: string | null
+}
+interface TrackingAudit {
+  overallStatus: 'ok' | 'warning' | 'error' | 'not_checked'
+  checks: TrackingCheckItem[]
+  summary: string
+}
+
 function fmt(n: number) {
   if (n >= 1_000_000) return `R$${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1000)      return `R$${(n / 1000).toFixed(1)}k`
@@ -904,6 +915,57 @@ function CampaignRow({ campaign, freqLimit }: { campaign: Campaign; freqLimit: n
   )
 }
 
+// ── Tracking Audit Panel ──────────────────────────────────────────────────
+const TRACKING_STATUS_ICON:  Record<string, string> = { ok: '✅', warning: '⚠️', error: '❌', not_checked: '⬜' }
+const TRACKING_STATUS_COLOR: Record<string, string> = { ok: '#22C55E', warning: '#F0B429', error: '#FF4D4D', not_checked: '#475569' }
+
+function TrackingAuditPanel({ audit, loading }: { audit: TrackingAudit | null; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 animate-pulse">
+        <div className="h-4 w-32 bg-[#2A2A30] rounded mb-4" />
+        <div className="space-y-2">
+          {[...Array(4)].map((_, i) => <div key={i} className="h-12 bg-[#2A2A30] rounded-lg" />)}
+        </div>
+      </div>
+    )
+  }
+  if (!audit) return null
+  const overallColor = TRACKING_STATUS_COLOR[audit.overallStatus] || '#64748B'
+  const overallLabel = { ok: 'OK', warning: 'Atenção', error: 'Erro', not_checked: 'Parcial' }[audit.overallStatus] || ''
+
+  return (
+    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+      <h3 className="font-display font-bold text-white mb-1 flex items-center gap-2">
+        <span>🔍</span> Rastreamento
+        <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
+          style={{ color: overallColor, background: `${overallColor}18`, border: `1px solid ${overallColor}30` }}>
+          {overallLabel}
+        </span>
+      </h3>
+      <div className="text-[10px] text-slate-600 mb-3">{audit.summary}</div>
+      <div className="space-y-2">
+        {audit.checks.map(c => (
+          <div key={c.id} className="bg-[#16161A] rounded-xl p-3">
+            <div className="flex items-start gap-2">
+              <span className="text-sm flex-shrink-0 mt-0.5">{TRACKING_STATUS_ICON[c.status]}</span>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-slate-300">{c.name}</div>
+                {c.detail && <div className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{c.detail}</div>}
+                {c.actionRequired && c.status !== 'ok' && (
+                  <div className="mt-1.5 text-[10px] text-amber-500 leading-relaxed border-l-2 border-amber-500/30 pl-2">
+                    {c.actionRequired}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 interface Props {
   onNavigateToConnections?: () => void
 }
@@ -914,14 +976,19 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
   const { connectedAccounts, auditCache, setAuditCache, clientData: storeClientData } = useAppStore()
   const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
 
-  const [data,         setData]         = useState<IntelligenceData | null>(null)
-  const [loading,      setLoading]      = useState(false)
-  const [error,        setError]        = useState('')
-  const [fetched,      setFetched]      = useState(false)
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [data,              setData]              = useState<IntelligenceData | null>(null)
+  const [loading,           setLoading]           = useState(false)
+  const [error,             setError]             = useState('')
+  const [fetched,           setFetched]           = useState(false)
+  const [statusFilter,      setStatusFilter]      = useState<StatusFilter>('all')
+  const [allAccounts,       setAllAccounts]       = useState<{ id: string; name: string }[]>([])
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(metaAccount?.accountId || '')
+  const [trackingAudit,     setTrackingAudit]     = useState<TrackingAudit | null>(null)
+  const [trackingLoading,   setTrackingLoading]   = useState(false)
 
   const cacheKey = storeClientData?.clientName || metaAccount?.accountName || metaAccount?.accountId || ''
 
+  // Carrega cache e busca todas as contas disponíveis ao montar
   useEffect(() => {
     if (!fetched && cacheKey) {
       const history = auditCache[cacheKey]
@@ -934,8 +1001,33 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey])
 
+  useEffect(() => {
+    if (!metaAccount) return
+    fetch('/api/meta/ad-accounts')
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && Array.isArray(d.accounts) && d.accounts.length > 0) {
+          setAllAccounts(d.accounts)
+          if (!selectedAccountId) setSelectedAccountId(d.accounts[0].id)
+        }
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metaAccount?.accountId])
+
+  const fetchTrackingAudit = async (accountId: string) => {
+    setTrackingLoading(true)
+    try {
+      const res = await fetch(`/api/meta/tracking-audit?accountId=${accountId}`)
+      const d   = await res.json()
+      if (d.success) setTrackingAudit(d as TrackingAudit)
+    } catch {}
+    finally { setTrackingLoading(false) }
+  }
+
   const fetchIntelligence = async () => {
-    if (!metaAccount?.accessToken || !metaAccount?.accountId) return
+    const accountId = selectedAccountId || metaAccount?.accountId
+    if (!accountId) return
     setLoading(true)
     setError('')
     try {
@@ -943,9 +1035,8 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          accessToken: metaAccount.accessToken,
-          accountId:   metaAccount.accountId,
-          niche:       storeClientData?.niche || '',
+          accountId,
+          niche: storeClientData?.niche || '',
         }),
       })
       const json = await res.json()
@@ -970,6 +1061,9 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
           generated_at: new Date().toISOString(),
         })
       }
+
+      // Busca auditoria de rastreamento em paralelo
+      fetchTrackingAudit(accountId)
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -1013,17 +1107,31 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="font-display text-2xl font-bold text-white mb-1">Meta Ad Intelligence</h2>
-          <p className="text-slate-500 text-sm">
-            Conta: <span className="text-slate-300 font-semibold">{metaAccount.accountName || metaAccount.accountId}</span>
+          <div className="flex items-center gap-3 flex-wrap">
+            {allAccounts.length > 1 ? (
+              <select
+                value={selectedAccountId}
+                onChange={e => { setSelectedAccountId(e.target.value); setFetched(false); setData(null); setTrackingAudit(null) }}
+                className="text-sm font-semibold text-slate-300 bg-[#16161A] border border-[#2A2A30] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#1877F2]"
+              >
+                {allAccounts.map(a => (
+                  <option key={a.id} value={a.id}>{a.name || a.id}</option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-sm text-slate-500">
+                Conta: <span className="text-slate-300 font-semibold">{metaAccount.accountName || metaAccount.accountId}</span>
+              </span>
+            )}
             {data && (
-              <span className="text-slate-600">
-                {' '}· {data.totals.totalCampaigns} campanhas
+              <span className="text-[11px] text-slate-600">
+                {data.totals.totalCampaigns} campanhas
                 {data.totals.totalAdSets > 0 && ` · ${data.totals.totalAdSets} ad sets`}
                 {data.totals.totalAds > 0 && ` · ${data.totals.totalAds} criativos`}
                 {' '}· últimos 30 dias
               </span>
             )}
-          </p>
+          </div>
         </div>
         <button onClick={fetchIntelligence} disabled={loading}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
@@ -1119,9 +1227,10 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
             })()}
           </div>
 
-          {/* Pixel + Aprendizado + Objetivo */}
-          <div className="grid md:grid-cols-3 gap-4">
+          {/* Pixel + Rastreamento + Aprendizado + Objetivo */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             <PixelCard pixel={data.pixel ?? null} />
+            <TrackingAuditPanel audit={trackingAudit} loading={trackingLoading} />
 
             <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
               <h3 className="font-display font-bold text-white mb-4 flex items-center gap-2">
