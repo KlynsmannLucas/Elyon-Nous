@@ -17,13 +17,7 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-
-const PLAN_LIMITS: Record<string, number> = {
-  individual:   1,
-  profissional: 8,
-  avancada:     15,
-}
-const FREE_LIMIT = 1
+import { getPlanLimits } from '@/lib/planUtils'
 
 // GET /api/clients — lista todos os clientes do usuário autenticado
 export async function GET() {
@@ -107,7 +101,7 @@ export async function POST(req: Request) {
 
       const user = await (await clerkClient()).users.getUser(userId)
       const plan = (user.publicMetadata?.plan as string | undefined) ?? ''
-      const limit = PLAN_LIMITS[plan] ?? FREE_LIMIT
+      const limit = getPlanLimits(plan).maxClients
 
       if ((count ?? 0) >= limit) {
         return NextResponse.json(
