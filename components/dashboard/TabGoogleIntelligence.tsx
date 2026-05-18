@@ -457,7 +457,7 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
         body: JSON.stringify({ accountId: resolvedAccountId }),
       })
       const json = await res.json()
-      if (!json.success) throw new Error(json.error)
+      if (!json.success) throw new Error(json.error + (json.code ? `||${json.code}` : ''))
       setData(json); setFetched(true)
     } catch (e: any) {
       setError(e.message)
@@ -510,11 +510,26 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 flex items-center justify-between">
-          <span>{error}</span><button onClick={() => setError('')} className="ml-4">×</button>
-        </div>
-      )}
+      {error && (() => {
+        const isNoConn = error.includes('NO_CONNECTION') || error.includes('não encontrada')
+        const msg = error.split('||')[0]
+        return (
+          <div className="rounded-xl px-4 py-3 text-sm flex items-center justify-between gap-3"
+            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}>
+            <span>{msg}</span>
+            <div className="flex items-center gap-2 shrink-0">
+              {isNoConn && onNavigateToConnections && (
+                <button onClick={onNavigateToConnections}
+                  className="text-xs px-3 py-1.5 rounded-lg font-bold"
+                  style={{ background: 'linear-gradient(135deg,#4285F4,#1a6ae8)', color: '#fff' }}>
+                  Reconectar
+                </button>
+              )}
+              <button onClick={() => setError('')}>×</button>
+            </div>
+          </div>
+        )
+      })()}
 
       {!googleAccount.accountId && (
         <div className="rounded-2xl p-5" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.2)' }}>
