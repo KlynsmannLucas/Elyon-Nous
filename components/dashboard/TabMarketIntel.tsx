@@ -1,7 +1,7 @@
 // components/dashboard/TabMarketIntel.tsx — Inteligência de Mercado e Nicho
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import {
   getBenchmark,
@@ -13,6 +13,8 @@ import {
   BENCHMARKS,
 } from '@/lib/niche_benchmarks'
 import type { ClientData } from '@/lib/store'
+import { DataSourceBadge } from '@/components/dashboard/DataSourceBadge'
+import type { BenchmarkMeta } from '@/lib/benchmark-service'
 
 interface Props {
   clientData: ClientData | null
@@ -192,7 +194,21 @@ function CityIntelCard({ clientData, bench }: { clientData: ClientData; bench: N
 // ── Componente principal ──────────────────────────────────────────────────────
 export function TabMarketIntel({ clientData }: Props) {
   const campaignHistory = useAppStore((s) => s.campaignHistory)
-  const [activeSection, setActiveSection] = useState<'sazonalidade' | 'cidade' | 'maturidade' | 'criativos'>('sazonalidade')
+  const [activeSection, setActiveSection] = useState<'sazonalidade' | 'cidade' | 'maturidade' | 'criativos' | 'auditoria'>('sazonalidade')
+  const [benchMeta, setBenchMeta] = useState<BenchmarkMeta | null>(null)
+  const [auditData, setAuditData] = useState<Array<{ key: string; name: string; dataSource: string; confidence: string | null; updatedAt: string | null; freshDays: number | null }> | null>(null)
+  const [auditLoading, setAuditLoading] = useState(false)
+
+  const bench = clientData ? getBenchmark(clientData.niche) : null
+  const benchKey = bench ? (Object.keys(BENCHMARKS).find((k) => BENCHMARKS[k] === bench) || 'outro') : null
+
+  useEffect(() => {
+    if (!benchKey) return
+    fetch(`/api/benchmarks/niche?key=${encodeURIComponent(benchKey)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.meta) setBenchMeta(data.meta) })
+      .catch(() => {})
+  }, [benchKey])
 
   if (!clientData) {
     return (
@@ -202,7 +218,6 @@ export function TabMarketIntel({ clientData }: Props) {
     )
   }
 
-  const bench = getBenchmark(clientData.niche)
   if (!bench) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] text-slate-500 text-sm">
@@ -211,10 +226,9 @@ export function TabMarketIntel({ clientData }: Props) {
     )
   }
 
-  const benchKey = Object.keys(BENCHMARKS).find((k) => BENCHMARKS[k] === bench) || 'outro'
-
-  const seasonCtx = getSeasonalityContext(benchKey)
-  const proj = computeNicheProjection(bench, clientData.budget, clientData.city, benchKey)
+  const resolvedKey = benchKey ?? 'outro'
+  const seasonCtx = getSeasonalityContext(resolvedKey)
+  const proj = computeNicheProjection(bench, clientData.budget, clientData.city, resolvedKey)
 
   // Estima semanas ativas pela campanha mais antiga
   const oldestCampaign = campaignHistory.length > 0
@@ -229,17 +243,35 @@ export function TabMarketIntel({ clientData }: Props) {
     { key: 'sazonalidade', label: '📅 Sazonalidade', badge: seasonCtx.cheaper ? '🟢 Bom mês' : undefined },
     { key: 'cidade',       label: '📍 Mercado Local' },
     { key: 'maturidade',   label: '📈 Maturidade', badge: maturity.stage === 'fadiga' ? '⚠️ Fadiga' : undefined },
-    { key: 'criativos',    label: '🎨 Ângulos de Criativo' },
+    { key: 'criativos',    label: '🎨 Criativos' },
+    { key: 'auditoria',    label: '🔍 Auditoria' },
   ]
+
+  function loadAudit() {
+    if (auditData || auditLoading) return
+    setAuditLoading(true)
+    fetch('/api/benchmarks/niche?key=__all__')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.niches) setAuditData(d.niches) })
+      .catch(() => {})
+      .finally(() => setAuditLoading(false))
+  }
 
   return (
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h2 className="font-display text-xl font-bold text-white">Inteligência de Mercado</h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Dados exclusivos de sazonalidade, mercado local, maturidade de campanha e ângulos criativos para <strong className="text-slate-300">{clientData.niche}</strong>
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl font-bold text-white">Inteligência de Mercado</h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Sazonalidade, mercado local, maturidade e ângulos criativos para <strong className="text-slate-300">{clientData.niche}</strong>
+            </p>
+          </div>
+          {benchMeta && (
+            <DataSourceBadge meta={benchMeta} className="flex-shrink-0 mt-0.5" />
+          )}
+        </div>
       </div>
 
       {/* Cards de resumo */}
@@ -256,7 +288,11 @@ export function TabMarketIntel({ clientData }: Props) {
         <div className="bg-[#111114] border border-[#2A2A30] rounded-xl p-4 text-center">
           <div className="text-2xl font-bold text-[#F0B429]">R${proj.adjustedCPLAvg}</div>
           <div className="text-[10px] text-slate-500 mt-1">CPL ajustado (mês atual)</div>
-          <div className="text-[10px] text-slate-600 mt-1">base: R${Math.round((bench.cpl_min + bench.cpl_max) / 2)}</div>
+          <div className="text-[10px] mt-1 flex items-center justify-center gap-1"
+            style={{ color: benchMeta?.dataSource === 'real_market_data' ? '#22C55E' : '#64748B' }}>
+            {benchMeta?.dataSource === 'real_market_data' ? '✓ real' : '~ estimado'}
+            <span className="text-slate-600">base: R${Math.round((bench.cpl_min + bench.cpl_max) / 2)}</span>
+          </div>
         </div>
         <div className="bg-[#111114] border border-[#2A2A30] rounded-xl p-4 text-center">
           <div className="text-2xl font-bold" style={{ color: maturity.color }}>{maturity.cplMultiplier.toFixed(2)}×</div>
@@ -283,7 +319,7 @@ export function TabMarketIntel({ clientData }: Props) {
       {/* Tabs de seção */}
       <div className="flex gap-1 mb-5 p-1 rounded-xl" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
         {tabs.map((t) => (
-          <button key={t.key} onClick={() => setActiveSection(t.key as typeof activeSection)}
+          <button key={t.key} onClick={() => { setActiveSection(t.key as typeof activeSection); if (t.key === 'auditoria') loadAudit() }}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-semibold transition-all"
             style={activeSection === t.key
               ? { background: 'rgba(240,180,41,0.12)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.35)' }
@@ -369,6 +405,83 @@ export function TabMarketIntel({ clientData }: Props) {
               style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1E1E24' }}>
               💡 Use os ângulos subexplorados nos seus próximos Testes A/B. Eles têm menor competição e maior potencial de CTR no momento.
             </div>
+          </div>
+        )}
+
+        {activeSection === 'auditoria' && (
+          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="font-display font-bold text-white text-sm">Auditoria de Benchmarks</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">Origem e frescor dos dados por nicho</div>
+              </div>
+              <div className="flex items-center gap-3 text-[10px]">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#22C55E] inline-block" /> Dados reais (Tavily)</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#F0B429] inline-block" /> Estimados (pesquisa)</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#EF4444] inline-block" /> Indisponível</span>
+              </div>
+            </div>
+
+            {auditLoading && (
+              <div className="text-center py-8 text-slate-500 text-xs">Carregando auditoria...</div>
+            )}
+
+            {!auditLoading && auditData && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-[#2A2A30]">
+                      <th className="text-left py-2 px-2 text-slate-500 font-medium">Nicho</th>
+                      <th className="text-left py-2 px-2 text-slate-500 font-medium">Chave</th>
+                      <th className="text-center py-2 px-2 text-slate-500 font-medium">Fonte</th>
+                      <th className="text-center py-2 px-2 text-slate-500 font-medium">Confiança</th>
+                      <th className="text-right py-2 px-2 text-slate-500 font-medium">Atualizado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditData.map(row => {
+                      const color = row.dataSource === 'real_market_data' ? '#22C55E' : row.dataSource === 'estimated_data' ? '#F0B429' : '#EF4444'
+                      const label = row.dataSource === 'real_market_data' ? 'real' : row.dataSource === 'estimated_data' ? 'estimado' : 'indisponível'
+                      return (
+                        <tr key={row.key} className="border-b border-[#1E1E24] hover:bg-white/[0.02] transition-colors">
+                          <td className="py-2 px-2 text-slate-300 max-w-[180px] truncate">{row.name}</td>
+                          <td className="py-2 px-2 font-mono text-[10px] text-slate-600">{row.key}</td>
+                          <td className="py-2 px-2 text-center">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px]"
+                              style={{ background: `${color}12`, color, border: `1px solid ${color}30` }}>
+                              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                              {label}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-center text-slate-500">
+                            {row.confidence ?? '—'}
+                          </td>
+                          <td className="py-2 px-2 text-right text-[10px]">
+                            {row.updatedAt ? (
+                              <span style={{ color: (row.freshDays ?? 99) > 35 ? '#EF4444' : '#22C55E' }}>
+                                {row.freshDays}d atrás
+                              </span>
+                            ) : (
+                              <span className="text-slate-600">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+                <div className="mt-4 flex items-center gap-4 text-[10px] text-slate-600">
+                  <span>Total: {auditData.length} nichos</span>
+                  <span className="text-[#22C55E]">Real: {auditData.filter(r => r.dataSource === 'real_market_data').length}</span>
+                  <span className="text-[#F0B429]">Estimado: {auditData.filter(r => r.dataSource === 'estimated_data').length}</span>
+                  <span className="text-[#EF4444]">Indisponível: {auditData.filter(r => r.dataSource === 'unavailable').length}</span>
+                </div>
+              </div>
+            )}
+
+            {!auditLoading && !auditData && (
+              <div className="text-center py-8 text-slate-500 text-xs">Nenhum dado de auditoria disponível.</div>
+            )}
           </div>
         )}
       </div>

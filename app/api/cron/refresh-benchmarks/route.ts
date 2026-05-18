@@ -6,17 +6,26 @@
 //   { "path": "/api/cron/refresh-benchmarks", "schedule": "0 6 1 * *" }
 //   → Roda às 06:00 UTC no dia 1 de cada mês
 //
-// SQL para criar a tabela (rode no Supabase SQL Editor uma vez):
+// SQL para criar/migrar a tabela (rode no Supabase SQL Editor):
 //   CREATE TABLE IF NOT EXISTS benchmark_cache (
 //     niche_key  TEXT PRIMARY KEY,
 //     niche_name TEXT,
 //     cpl_min    NUMERIC,
 //     cpl_max    NUMERIC,
 //     roas_avg   NUMERIC,
+//     cpc_avg    NUMERIC,
+//     ctr_avg    NUMERIC,
+//     cpm_avg    NUMERIC,
+//     cpa_avg    NUMERIC,
 //     confidence TEXT,
 //     summary    TEXT,
 //     updated_at TIMESTAMPTZ DEFAULT NOW()
 //   );
+//   -- Para adicionar colunas em tabela existente:
+//   ALTER TABLE benchmark_cache ADD COLUMN IF NOT EXISTS cpc_avg NUMERIC;
+//   ALTER TABLE benchmark_cache ADD COLUMN IF NOT EXISTS ctr_avg NUMERIC;
+//   ALTER TABLE benchmark_cache ADD COLUMN IF NOT EXISTS cpm_avg NUMERIC;
+//   ALTER TABLE benchmark_cache ADD COLUMN IF NOT EXISTS cpa_avg NUMERIC;
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
