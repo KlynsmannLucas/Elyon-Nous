@@ -455,6 +455,65 @@ CONTEXTO DO NICHO — PRESTADORES DE SERVIÇO LOCAL:
     },
   },
   {
+    key: 'franquias',
+    label: 'Franquias / Expansão de Negócio',
+    icon: '🏪',
+    title: 'franqueadora ou consultora de expansão por franquia',
+    analystRole: 'Analista especializado em marketing B2B para franqueadoras e expansão de redes no Brasil',
+    fields: [
+      {
+        key: 'modelo_franquia',
+        label: 'Modelo da franquia',
+        type: 'select',
+        options: ['Home Based (sem ponto físico)', 'Quiosque / Loja Express', 'Loja Padrão', 'Microfranquia', 'Master Franquia', 'Franquia Digital / Online', 'Múltiplos formatos'],
+        placeholder: '',
+      },
+      {
+        key: 'setor',
+        label: 'Setor de atuação',
+        type: 'select',
+        options: ['Alimentação / Food Service', 'Beleza e Estética', 'Educação / Cursos', 'Saúde e Bem-Estar', 'Limpeza e Conservação', 'Tecnologia / SaaS', 'Varejo / Moda', 'Serviços Financeiros', 'Pet / Veterinário', 'Fitness / Academia', 'Outro'],
+        placeholder: '',
+      },
+      {
+        key: 'investimento_inicial',
+        label: 'Investimento inicial (R$)',
+        type: 'select',
+        options: ['Até R$20 mil (microfranquia)', 'R$20–50 mil', 'R$50–100 mil', 'R$100–250 mil', 'R$250–500 mil', 'Acima de R$500 mil'],
+        placeholder: '',
+      },
+      {
+        key: 'prazo_retorno',
+        label: 'Prazo estimado de retorno do investimento',
+        type: 'select',
+        options: ['Até 12 meses', '12–18 meses', '18–24 meses', '24–36 meses', 'Acima de 36 meses'],
+        placeholder: '',
+      },
+    ],
+    promptContext: `
+CONTEXTO DO NICHO — FRANQUIAS / EXPANSÃO DE NEGÓCIO:
+- O lead qualificado é o potencial franqueado (PF): perfil empreendedor, 25–55 anos, com capital disponível para investir
+- Ciclo de venda longo (30–90 dias): decisão envolve análise de COF (Circular de Oferta de Franquia), visita à operação, conversa com franqueados ativos
+- O PF compra um sonho de negócio próprio com risco reduzido — o marketing deve vender segurança, suporte e comprovação de resultados
+- ABF (Associação Brasileira de Franchising) — ter Selo ABF é gatilho de confiança para leads mais qualificados
+- Depoimentos de franqueados reais (faturamento, tempo de retorno, suporte) são o maior gatilho de conversão
+- Meta Ads: segmentação por interesse em empreendedorismo, comportamento de pesquisa por franquia, renda presumida
+- Google Ads: palavras-chave como "franquia de [setor]", "quanto custa franquia [marca]", "melhor franquia para investir" têm alta intenção
+- LinkedIn Ads: eficaz para executivos C-level que buscam empreender após demissão ou transição de carreira
+- CPL médio: R$80–R$250 (mas lead tem ticket alto, justificando o investimento)
+- O formulário deve qualificar: capital disponível, cidade de interesse, experiência anterior, motivação para empreender
+- Funil: lead entra → qualificação por telefone/WhatsApp (SDR) → reunião de apresentação → visita à operação → assinatura do contrato
+- Regulamentação: Lei 8.955/94 (Lei de Franquias) e Nova Lei 13.966/2019 — cuidado com promessas de rentabilidade garantida
+`,
+    productPlaceholder: 'Franquia padrão\nMicrofranquia / Home Based\nMaster franquia por estado\nConsultoria de expansão',
+    objectiveLabels: {
+      leads: 'Captar candidatos a franqueados qualificados',
+      vendas: 'Fechar contratos de franquia e ampliar rede',
+      brand: 'Construir autoridade e reconhecimento da marca franqueadora',
+      retencao: 'Engajar e suportar franqueados ativos para reduzir churn',
+    },
+  },
+  {
     key: 'auditoria',
     label: 'Auditoria / Compliance / Riscos',
     icon: '🔎',
@@ -546,6 +605,11 @@ const NICHE_KEYWORD_MAP: Record<string, string> = {
   'auditoria / compliance': 'auditoria', 'auditoria': 'auditoria', 'compliance': 'auditoria',
   'gestão de riscos': 'auditoria', 'controles internos': 'auditoria', 'sox': 'auditoria',
   'due diligence': 'auditoria', 'governança': 'auditoria', 'lgpd': 'auditoria',
+
+  // Franquias
+  'franquias / expansão de negócio': 'franquias', 'franquias': 'franquias', 'franquia': 'franquias',
+  'franqueadora': 'franquias', 'franqueado': 'franquias', 'expansão de negócio': 'franquias',
+  'expansão': 'franquias',
 }
 
 export function getNicheConfig(nicheRaw: string): NicheConfig | null {

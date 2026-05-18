@@ -79,6 +79,12 @@ const NICHE_GROUPS: { label: string; niches: string[] }[] = [
     ],
   },
   {
+    label: '🏪 Franquias e Expansão',
+    niches: [
+      'Franquias / Expansão de Negócio',
+    ],
+  },
+  {
     label: '🎉 Eventos e Lazer',
     niches: [
       'Organização de Eventos', 'Buffet', 'Turismo / Agência de Viagens',

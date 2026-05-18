@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
   const clerkUser = await (await clerkClient()).users.getUser(userId)
   const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
   const hasActivePlan = plan && plan !== 'free'
+  let effectivePlan = plan || 'free'
 
   if (!hasActivePlan) {
     const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
@@ -100,10 +101,11 @@ export async function POST(req: NextRequest) {
     if (!inTrial) {
       return NextResponse.json({ success: false, error: 'Período de avaliação encerrado. Assine um plano para continuar.' }, { status: 402 })
     }
+    effectivePlan = 'trial'
   }
 
   const { checkAndDeductCredits } = await import('@/lib/credits')
-  const creditResult = await checkAndDeductCredits(userId, plan || 'free', 'nous_chat')
+  const creditResult = await checkAndDeductCredits(userId, effectivePlan, 'nous_chat')
   if (!creditResult.allowed) {
     return NextResponse.json({ success: false, error: creditResult.error }, { status: 402 })
   }

@@ -53,6 +53,7 @@ const NICHES_TO_REFRESH: { key: string; name: string; searchTerm: string }[] = [
   { key: 'seguro_residencial',  name: 'Seguro Residencial',              searchTerm: 'seguro residencial casa' },
   { key: 'rh_empresa',          name: 'Empresas de RH',                  searchTerm: 'recursos humanos RH outsourcing recrutamento' },
   { key: 'auditoria',           name: 'Auditoria / Compliance',          searchTerm: 'auditoria compliance governança' },
+  { key: 'franquias',           name: 'Franquias / Expansão de Negócio', searchTerm: 'franquia franqueado expansão negócio Brasil custo investimento' },
 ]
 
 async function tavilyQuery(query: string, apiKey: string): Promise<string> {

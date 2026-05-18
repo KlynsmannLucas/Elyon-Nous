@@ -348,14 +348,16 @@ export async function POST(req: NextRequest) {
     const { clerkClient } = await import('@clerk/nextjs/server')
     const clerkUser = await (await clerkClient()).users.getUser(userId)
     const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
+    const hasActivePlan = plan && plan !== 'free'
     const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
     const inTrial = (Date.now() - createdAtMs) < 14 * 24 * 60 * 60 * 1000
-    if (!plan && !inTrial) {
+    if (!hasActivePlan && !inTrial) {
       return NextResponse.json({ success: false, error: 'Período de avaliação encerrado.' }, { status: 402 })
     }
+    const effectivePlan = hasActivePlan ? plan! : (inTrial ? 'trial' : 'free')
 
     const { checkAndDeductCredits } = await import('@/lib/credits')
-    const creditResult = await checkAndDeductCredits(userId, plan || 'free', 'audit')
+    const creditResult = await checkAndDeductCredits(userId, effectivePlan, 'audit')
     if (!creditResult.allowed) {
       return NextResponse.json({ success: false, error: creditResult.error }, { status: 402 })
     }

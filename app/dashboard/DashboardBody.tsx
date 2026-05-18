@@ -593,6 +593,8 @@ export default function DashboardBody() {
   }, [])
 
   const handleWizardComplete = useCallback(async (importData?: WizardImportData[]) => {
+    // Lê do store diretamente — evita stale closure quando o wizard chama setClientData + onComplete no mesmo tick
+    const clientData = useAppStore.getState().clientData
     if (!clientData) return
 
     if (planLimits.maxStrategiesPerHour > 0 && getStrategyCountLastHour() >= planLimits.maxStrategiesPerHour) {
@@ -607,15 +609,16 @@ export default function DashboardBody() {
     try {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 58000)
+      const { auditCache: ac, campaignHistory: ch, generatedPersona: gp, connectedAccounts: ca } = useAppStore.getState()
       const res = await fetch('/api/strategy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...clientData,
-          campaignHistory,
-          recentAudit: clientData ? auditCache[clientData.clientName]?.[0]?.audit ?? null : null,
-          persona: generatedPersona,
-          metaAccessToken: connectedAccounts.find(a => a.platform === 'meta')?.accessToken ?? null,
+          campaignHistory: ch,
+          recentAudit: ac[clientData.clientName]?.[0]?.audit ?? null,
+          persona: gp,
+          metaAccessToken: ca.find(a => a.platform === 'meta')?.accessToken ?? null,
         }),
         signal: controller.signal,
       })

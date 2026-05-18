@@ -113,6 +113,7 @@ const NICHE_FREQ_THRESHOLD: Record<string, number> = {
   'E-commerce': 5, 'Varejo': 5, 'Infoproduto': 3, 'Curso Online': 3,
   'Clínica / Saúde': 3.5, 'Imóveis': 3, 'Advocacia': 3,
   'Restaurante': 4, 'SaaS / Tech': 4, 'Serviços Locais': 3.5,
+  'Franquia': 3, 'Franquias': 3,
 }
 function freqThreshold(niche: string): number {
   for (const [key, val] of Object.entries(NICHE_FREQ_THRESHOLD)) {
