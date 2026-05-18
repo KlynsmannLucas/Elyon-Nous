@@ -41,9 +41,9 @@ export function TabPortal({ clientData }: Props) {
 
   const myPortals = clientPortalsSaved.filter(p => p.clientName === (clientData?.clientName || ''))
 
-  // Codifica UTF-8 corretamente (btoa nativo não suporta acentos)
+  // Codifica UTF-8 corretamente: encodeURIComponent → btoa (só ASCII)
   const encodePayload = (obj: object): string =>
-    btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+    btoa(encodeURIComponent(JSON.stringify(obj)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
 
   // Gera a URL completa com dados embutidos, mesmo para portais antigos sem dataParam

@@ -55,11 +55,7 @@ const NICHES_TO_REFRESH: { key: string; name: string; searchTerm: string }[] = [
   { key: 'auditoria',           name: 'Auditoria / Compliance',          searchTerm: 'auditoria compliance governança' },
 ]
 
-async function fetchCPLFromTavily(searchTerm: string): Promise<string> {
-  const apiKey = process.env.TAVILY_API_KEY
-  if (!apiKey) return ''
-  const year = new Date().getFullYear()
-  const query = `CPL custo por lead ${searchTerm} Brasil ${year} Meta Ads Google Ads benchmark real`
+async function tavilyQuery(query: string, apiKey: string): Promise<string> {
   try {
     const res = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -86,8 +82,24 @@ async function fetchCPLFromTavily(searchTerm: string): Promise<string> {
   }
 }
 
+async function fetchBenchmarksFromTavily(searchTerm: string): Promise<string> {
+  const apiKey = process.env.TAVILY_API_KEY
+  if (!apiKey) return ''
+  const year = new Date().getFullYear()
+  const [r1, r2] = await Promise.allSettled([
+    tavilyQuery(`CPL custo por lead ROAS ${searchTerm} Brasil ${year} Meta Ads Google Ads benchmark real`, apiKey),
+    tavilyQuery(`CPC CTR CPM CPA ${searchTerm} Brasil ${year} anúncios benchmark tráfego pago`, apiKey),
+  ])
+  return [
+    r1.status === 'fulfilled' ? r1.value : '',
+    r2.status === 'fulfilled' ? r2.value : '',
+  ].filter(Boolean).join('\n\n')
+}
+
 async function extractNumbers(rawText: string, nicheName: string): Promise<{
-  cpl_min: number | null; cpl_max: number | null; roas_avg: number | null; confidence: string
+  cpl_min: number | null; cpl_max: number | null; roas_avg: number | null
+  cpc_avg: number | null; ctr_avg: number | null; cpm_avg: number | null; cpa_avg: number | null
+  confidence: string
 } | null> {
   if (!rawText) return null
   const apiKey = process.env.ANTHROPIC_API_KEY
@@ -97,15 +109,20 @@ async function extractNumbers(rawText: string, nicheName: string): Promise<{
     const client = new Anthropic({ apiKey })
     const res = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 200,
+      max_tokens: 350,
       messages: [{
         role: 'user',
-        content: `Extraia CPL mínimo, CPL máximo e ROAS médio para o nicho "${nicheName}" no Brasil a partir do texto abaixo.
-Retorne APENAS JSON: {"cpl_min": NUMBER_OR_NULL, "cpl_max": NUMBER_OR_NULL, "roas_avg": NUMBER_OR_NULL, "confidence": "alta|media|baixa"}
-Se não encontrar dados confiáveis, retorne {"cpl_min": null, "cpl_max": null, "roas_avg": null, "confidence": "baixa"}
+        content: `Extraia métricas de benchmark de marketing digital para o nicho "${nicheName}" no Brasil.
+Retorne APENAS JSON: {
+  "cpl_min": NUMBER_OR_NULL, "cpl_max": NUMBER_OR_NULL, "roas_avg": NUMBER_OR_NULL,
+  "cpc_avg": NUMBER_OR_NULL, "ctr_avg": NUMBER_OR_NULL, "cpm_avg": NUMBER_OR_NULL, "cpa_avg": NUMBER_OR_NULL,
+  "confidence": "alta|media|baixa"
+}
+Se não encontrar dados confiáveis para um campo, use null. Prefira null a inventar valores.
+cpc_avg = custo por clique em R$, ctr_avg = taxa de cliques em %, cpm_avg = CPM em R$, cpa_avg = CPA em R$.
 
 TEXTO:
-${rawText.slice(0, 800)}`,
+${rawText.slice(0, 1000)}`,
       }],
     })
     const text = (res.content[0] as any).text?.trim() || ''
@@ -137,7 +154,7 @@ export async function GET(req: Request) {
 
   for (const niche of NICHES_TO_REFRESH) {
     try {
-      const raw = await fetchCPLFromTavily(niche.searchTerm)
+      const raw = await fetchBenchmarksFromTavily(niche.searchTerm)
       const extracted = await extractNumbers(raw, niche.name)
 
       if (extracted && (extracted.cpl_min || extracted.cpl_max)) {
@@ -149,6 +166,10 @@ export async function GET(req: Request) {
             cpl_min:    extracted.cpl_min,
             cpl_max:    extracted.cpl_max,
             roas_avg:   extracted.roas_avg,
+            cpc_avg:    extracted.cpc_avg,
+            ctr_avg:    extracted.ctr_avg,
+            cpm_avg:    extracted.cpm_avg,
+            cpa_avg:    extracted.cpa_avg,
             confidence: extracted.confidence,
             summary:    raw.slice(0, 600),
             updated_at: updatedAt,

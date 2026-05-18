@@ -23,6 +23,11 @@ export interface FreshBenchmark {
   roas_avg:   number | null
   confidence: string
   fetchedAt:  string // ISO
+  // Métricas extras (opcionais — disponibilidade depende dos dados encontrados via Tavily)
+  cpc_avg?:   number | null   // Custo por clique médio em R$
+  ctr_avg?:   number | null   // Taxa de cliques média em %
+  cpm_avg?:   number | null   // Custo por mil impressões em R$
+  cpa_avg?:   number | null   // Custo por aquisição/conversão em R$
 }
 
 export interface ConnectedAccount {

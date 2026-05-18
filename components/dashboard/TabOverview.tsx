@@ -803,6 +803,27 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
                 </div>
               ))}
             </div>
+            {/* Métricas extras via Tavily — exibidas apenas quando disponíveis no freshBenchmark */}
+            {isFresh && (freshB!.cpc_avg || freshB!.ctr_avg || freshB!.cpm_avg || freshB!.cpa_avg) && (
+              <div style={{ marginTop: '12px', borderTop: `1px solid ${C.border}`, paddingTop: '12px' }}>
+                <div style={{ fontSize: '10px', color: C.text3, marginBottom: '8px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Métricas de canal · busca web em tempo real
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                  {[
+                    { label: 'CPC médio',   value: freshB!.cpc_avg  ? `R$${freshB!.cpc_avg.toFixed(2)}`  : null },
+                    { label: 'CTR médio',   value: freshB!.ctr_avg  ? `${freshB!.ctr_avg.toFixed(1)}%`   : null },
+                    { label: 'CPM médio',   value: freshB!.cpm_avg  ? `R$${freshB!.cpm_avg.toFixed(2)}`  : null },
+                    { label: 'CPA médio',   value: freshB!.cpa_avg  ? `R$${freshB!.cpa_avg}`             : null },
+                  ].filter(m => m.value !== null).map(m => (
+                    <div key={m.label} style={{ background: C.elevated, borderRadius: '8px', padding: '8px', textAlign: 'center', border: `1px solid ${C.border}` }}>
+                      <div style={{ fontSize: '9px', color: C.text3, marginBottom: '3px', fontWeight: 500 }}>{m.label}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: C.purpleL }}>{m.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )
       })()}
