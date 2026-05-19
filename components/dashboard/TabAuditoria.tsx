@@ -461,15 +461,17 @@ export function TabAuditoria({ clientData }: Props) {
     setAudit(null)
 
     try {
+      // Tokens são buscados server-side via getValidMetaToken/getValidGoogleToken
+      // Só enviamos accountId (opcional) para selecionar conta específica
       const [metaResult, googleResult] = await Promise.all([
-        metaAccount?.accessToken && metaAccount?.accountId
+        metaAccount
           ? fetch('/api/ads-data/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ accessToken: metaAccount.accessToken, accountId: metaAccount.accountId }) })
+              body: JSON.stringify({ accountId: metaAccount.accountId || undefined }) })
               .then(r => r.json()).catch(() => null)
           : Promise.resolve(null),
-        googleAccount?.accessToken && googleAccount?.accountId
+        googleAccount
           ? fetch('/api/ads-data/google', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ accessToken: googleAccount.accessToken, accountId: googleAccount.accountId }) })
+              body: JSON.stringify({ accountId: googleAccount.accountId || undefined }) })
               .then(r => r.json()).catch(() => null)
           : Promise.resolve(null),
       ])
