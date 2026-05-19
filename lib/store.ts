@@ -195,6 +195,7 @@ export interface AuditEntry {
 
 export interface PendingAction {
   id: string
+  dbId?: string             // UUID do Supabase (igual a id quando carregado do banco)
   clientId: string          // userId do Clerk — isolamento multi-usuário
   title: string
   description: string

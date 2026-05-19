@@ -4,6 +4,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
+import { useClientActions } from '@/hooks/useClientActions'
 
 interface Props { clientData: ClientData | null }
 
@@ -366,6 +367,10 @@ export function TabAuditoria({ clientData }: Props) {
   const [datePreset,    setDatePreset]    = useState<string>('last_30d')
 
   const key = clientData?.clientName || ''
+
+  // Hidrata store com dados do Supabase ao montar / trocar cliente
+  // Garante que ações e score sobrevivem a logout/refresh/troca de device
+  useClientActions({ clientName: clientData?.clientName, enabled: !loading })
 
   // Normaliza histórico: suporta formato legado (objeto único) e novo (array)
   const history: import('@/lib/store').AuditEntry[] = (() => {

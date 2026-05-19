@@ -1,9 +1,10 @@
 // components/dashboard/TabAcoes.tsx — Plano de Ações consolidado
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData, StrategyData } from '@/lib/store'
+import { syncActionStatus, useClientActions } from '@/hooks/useClientActions'
 
 interface Props {
   clientData: ClientData | null
@@ -75,6 +76,10 @@ export function TabAcoes({ clientData, strategyData }: Props) {
   const [filtro, setFiltro]   = useState<Filtro>('todas')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [showAuditActions, setShowAuditActions] = useState(true)
+  const [syncError, setSyncError] = useState<string | null>(null)
+
+  // Hidrata store do Supabase ao abrir a aba (cross-device persistence)
+  const { loading: hydrating } = useClientActions({ clientName: clientData?.clientName })
 
   const key             = clientData?.clientName || ''
   const actions         = actionPlanCache[key] || []
@@ -174,6 +179,12 @@ export function TabAcoes({ clientData, strategyData }: Props) {
           <p style={{ fontSize: 13, color: C.text2, margin: 0 }}>
             Ações priorizadas geradas a partir de estratégia + auditoria · {clientData.clientName}
           </p>
+          {hydrating && (
+            <span style={{ fontSize: 10, color: C.text3, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 999, border: '1.5px solid rgba(124,58,237,0.3)', borderTopColor: '#A78BFA', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
+              Sincronizando com a nuvem…
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {actions.length > 0 && (
@@ -291,16 +302,20 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                           opacity: isIgnored ? 0.5 : 1,
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px' }}>
-                            {/* Botão de ciclo de status */}
+                            {/* Botão de ciclo de status — sincroniza com Supabase */}
                             <button
                               title={`Status atual: ${sCfg.label} — clique para avançar`}
                               onClick={() => {
-                                if (isIgnored) {
-                                  updatePendingActionStatus(key, item.id, 'pendente')
-                                } else {
-                                  const next = STATUS_CONFIG[item.status as Status]?.next || 'pendente'
-                                  updatePendingActionStatus(key, item.id, next as any)
-                                }
+                                const next = isIgnored
+                                  ? 'pendente'
+                                  : (STATUS_CONFIG[item.status as Status]?.next || 'pendente')
+                                syncActionStatus(
+                                  item.dbId,
+                                  item.id,
+                                  key,
+                                  next as Status,
+                                  updatePendingActionStatus,
+                                ).catch(() => {})
                               }}
                               style={{
                                 width: 18, height: 18, borderRadius: 999, border: `2px solid ${sCfg.color}`,
@@ -323,8 +338,8 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                   {item.platform === 'meta' ? '📘 Meta' : item.platform === 'google' ? '🔍 Google' : '📡 Ambos'}
                                 </span>
                                 <span style={{ fontSize: 10, color: sCfg.color }}>{sCfg.label}</span>
-                                {(item as any).metric && (
-                                  <span style={{ fontSize: 10, color: C.text3 }}>· {(item as any).metric}</span>
+                                {item.metric && (
+                                  <span style={{ fontSize: 10, color: C.text3 }}>· {item.metric}</span>
                                 )}
                               </div>
                               <span style={{
@@ -339,7 +354,13 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                             {!isIgnored && (
                               <button
                                 title="Ignorar esta ação"
-                                onClick={() => updatePendingActionStatus(key, item.id, 'ignorada')}
+                                onClick={() => syncActionStatus(
+                                  item.dbId,
+                                  item.id,
+                                  key,
+                                  'ignorada',
+                                  updatePendingActionStatus,
+                                ).catch(() => {})}
                                 style={{
                                   width: 18, height: 18, borderRadius: 4, border: `1px solid ${C.border}`,
                                   flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -362,10 +383,10 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                     <p style={{ fontSize: 12, color: C.text1, lineHeight: 1.6, margin: 0 }}>{item.description}</p>
                                   </div>
                                 )}
-                                {(item as any).evidence && (
+                                {item.evidence && (
                                   <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 8, padding: '8px 12px', display: 'flex', gap: 8 }}>
                                     <span style={{ fontSize: 11, color: C.text2 }}>Evidência:</span>
-                                    <span style={{ fontSize: 11, color: C.gold }}>{(item as any).evidence}</span>
+                                    <span style={{ fontSize: 11, color: C.gold }}>{item.evidence}</span>
                                   </div>
                                 )}
                                 {item.impact && (

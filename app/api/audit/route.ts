@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { sanitizeText } from '@/lib/sanitize'
 import { supabaseAdmin } from '@/lib/supabase'
+import { saveAuditReport, upsertPriorityActions, upsertHealthScore } from '@/lib/persistence'
 
 // ── Salva padrões da auditoria diretamente no Supabase (fire-and-forget) ─────
 async function saveAuditMemory(
@@ -851,7 +852,46 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
         const dataSource = hasMeta && hasGoogle ? 'ambos' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'ambos'
         const priorityActions = extractPriorityActions(audit, dataSource, userId, clientName)
 
-        return NextResponse.json({ success: true, audit, source: 'ai', priorityActions })
+        // ── Persiste no Supabase (fire-and-forget — não bloqueia resposta) ───
+        let auditReportId: string | null = null
+        let dbActions: any[] = []
+        try {
+          const dataSrcList = [hasMeta && 'meta', hasGoogle && 'google', hasUpload && 'upload'].filter(Boolean) as string[]
+          auditReportId = await saveAuditReport(userId, clientName, audit, realMetrics, dataSrcList, 'ai')
+          if (auditReportId && priorityActions.length > 0) {
+            const rawForDB = priorityActions.map((a: any) => ({
+              clientId:        userId,
+              title:           a.title,
+              description:     a.description,
+              platform:        a.platform,
+              source:          a.source,
+              priority:        a.priority,
+              urgency:         a.urgency,
+              metric:          a.metric,
+              evidence:        a.evidence,
+              impact:          a.impact,
+              origin:          a.origin,
+              relatedCampaign: a.relatedCampaign,
+              relatedAdSet:    a.relatedAdSet,
+              relatedAd:       a.relatedAd,
+              auditReportId,
+            }))
+            dbActions = await upsertPriorityActions(userId, clientName, rawForDB)
+          }
+          if (audit.health_score) {
+            await upsertHealthScore(userId, clientName, audit.health_score, audit.grade || 'B', 'ai', auditReportId)
+          }
+        } catch (persistErr: any) {
+          console.warn('[audit] Supabase persistence failed (non-fatal):', persistErr.message)
+        }
+
+        // Merge DB IDs into the actions returned to frontend (allows status sync by DB id)
+        const mergedActions = priorityActions.map((a: any) => {
+          const saved = dbActions.find((d: any) => d.title.toLowerCase() === a.title.toLowerCase() && d.platform === a.platform)
+          return saved ? { ...a, dbId: saved.id } : a
+        })
+
+        return NextResponse.json({ success: true, audit, source: 'ai', priorityActions: mergedActions, auditReportId })
 
       } catch (aiError: any) {
         console.warn('Anthropic API falhou na auditoria, usando fallback:', aiError.message)
@@ -870,7 +910,45 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     const fbDataSource = hasMeta && hasGoogle ? 'ambos' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'ambos'
     const priorityActions = extractPriorityActions(audit, fbDataSource, userId, clientName)
 
-    return NextResponse.json({ success: true, audit, source: 'benchmark', priorityActions })
+    // ── Persiste fallback no Supabase ────────────────────────────────────────
+    let fbAuditReportId: string | null = null
+    let fbDbActions: any[] = []
+    try {
+      const fbDataSrcList = [hasMeta && 'meta', hasGoogle && 'google', hasUpload && 'upload'].filter(Boolean) as string[]
+      fbAuditReportId = await saveAuditReport(userId, clientName, audit, realMetrics, fbDataSrcList, 'benchmark')
+      if (fbAuditReportId && priorityActions.length > 0) {
+        const rawForDB = priorityActions.map((a: any) => ({
+          clientId:        userId,
+          title:           a.title,
+          description:     a.description,
+          platform:        a.platform,
+          source:          a.source,
+          priority:        a.priority,
+          urgency:         a.urgency,
+          metric:          a.metric,
+          evidence:        a.evidence,
+          impact:          a.impact,
+          origin:          a.origin,
+          relatedCampaign: a.relatedCampaign,
+          relatedAdSet:    a.relatedAdSet,
+          relatedAd:       a.relatedAd,
+          auditReportId:   fbAuditReportId,
+        }))
+        fbDbActions = await upsertPriorityActions(userId, clientName, rawForDB)
+      }
+      if (audit.health_score) {
+        await upsertHealthScore(userId, clientName, audit.health_score, audit.grade || 'B', 'benchmark', fbAuditReportId)
+      }
+    } catch (persistErr: any) {
+      console.warn('[audit] Supabase persistence failed on fallback (non-fatal):', persistErr.message)
+    }
+
+    const fbMergedActions = priorityActions.map((a: any) => {
+      const saved = fbDbActions.find((d: any) => d.title.toLowerCase() === a.title.toLowerCase() && d.platform === a.platform)
+      return saved ? { ...a, dbId: saved.id } : a
+    })
+
+    return NextResponse.json({ success: true, audit, source: 'benchmark', priorityActions: fbMergedActions, auditReportId: fbAuditReportId })
 
   } catch (error: any) {
     console.error('Audit route error:', error)
