@@ -351,7 +351,7 @@ interface UploadedFile {
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export function TabAuditoria({ clientData }: Props) {
-  const { connectedAccounts, auditCache, setAuditCache, deleteAuditEntry } = useAppStore()
+  const { connectedAccounts, auditCache, setAuditCache, deleteAuditEntry, selectedMetaAccountId, selectedGoogleAccountId } = useAppStore()
   const [audit,         setAudit]         = useState<Record<string, any> | null>(null)
   const [selectedId,    setSelectedId]    = useState<string | null>(null)
   const [loading,       setLoading]       = useState(false)
@@ -466,12 +466,12 @@ export function TabAuditoria({ clientData }: Props) {
       const [metaResult, googleResult] = await Promise.all([
         metaAccount
           ? fetch('/api/ads-data/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ accountId: metaAccount.accountId || undefined }) })
+              body: JSON.stringify({ accountId: selectedMetaAccountId || metaAccount.accountId || undefined }) })
               .then(r => r.json()).catch(() => null)
           : Promise.resolve(null),
         googleAccount
           ? fetch('/api/ads-data/google', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ accountId: googleAccount.accountId || undefined }) })
+              body: JSON.stringify({ accountId: selectedGoogleAccountId || googleAccount.accountId || undefined }) })
               .then(r => r.json()).catch(() => null)
           : Promise.resolve(null),
       ])

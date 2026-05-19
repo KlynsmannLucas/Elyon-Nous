@@ -337,7 +337,7 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
   const [activeSection, setActiveSection] = useState<'progress' | 'summary' | 'problems' | 'actions' | 'report' | 'agents'>('progress')
   const abortRef = useRef<AbortController | null>(null)
 
-  const { auditCache, campaignHistory, connectedAccounts, setAuditCache } = useAppStore()
+  const { auditCache, campaignHistory, connectedAccounts, setAuditCache, selectedMetaAccountId, selectedGoogleAccountId } = useAppStore()
   const clientName  = clientData?.clientName
   const latestAudit = auditCache[clientName]?.[0]?.audit
   // Pipeline results são persistidos como uma entrada especial no auditCache
@@ -379,7 +379,7 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
         const res  = await fetch('/api/ads-data/meta', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accountId: metaAccount.accountId, datePreset: 'last_30d' }),
+          body: JSON.stringify({ accountId: selectedMetaAccountId || metaAccount.accountId, datePreset: 'last_30d' }),
         })
         const data = await res.json()
         if (data.success && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
@@ -406,7 +406,7 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
         const res  = await fetch('/api/ads-data/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accountId: googleAccount.accountId }),
+          body: JSON.stringify({ accountId: selectedGoogleAccountId || googleAccount.accountId }),
         })
         const data = await res.json()
         if (data.success && Array.isArray(data.campaigns) && data.campaigns.length > 0) {

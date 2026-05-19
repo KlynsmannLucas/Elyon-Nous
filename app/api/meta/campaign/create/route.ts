@@ -3,6 +3,7 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { getValidMetaToken } from '@/services/meta/token-manager'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const META_BASE = 'https://graph.facebook.com/v19.0'
@@ -160,9 +161,22 @@ export async function POST(req: NextRequest) {
     return new Response('Não autenticado', { status: 401 })
   }
 
-  const { plan, accessToken, accountId, pageId } = await req.json()
-  if (!plan || !accessToken || !accountId || !pageId) {
+  const { plan, accountId: bodyAccountId, pageId } = await req.json()
+  if (!plan || !pageId) {
     return new Response('Dados incompletos', { status: 400 })
+  }
+
+  let accessToken: string
+  let accountId:   string
+  try {
+    const tokenData = await getValidMetaToken(userId)
+    accessToken = tokenData.accessToken
+    accountId   = bodyAccountId || tokenData.accountId || ''
+  } catch (e: any) {
+    return new Response(e.message || 'Token Meta inválido', { status: 401 })
+  }
+  if (!accountId) {
+    return new Response('Nenhuma conta Meta configurada', { status: 400 })
   }
 
   const encoder = new TextEncoder()

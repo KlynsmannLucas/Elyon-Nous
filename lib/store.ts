@@ -254,6 +254,12 @@ interface AppStore {
   connectAccount: (account: ConnectedAccount) => void
   disconnectAccount: (platform: 'meta' | 'google') => void
 
+  // Ad account selecionado pelo usuário em Meta/Google Ads IA (persiste entre abas)
+  selectedMetaAccountId:   string
+  selectedGoogleAccountId: string
+  setSelectedMetaAccountId:   (id: string) => void
+  setSelectedGoogleAccountId: (id: string) => void
+
   // Histórico de campanhas por cliente
   campaignHistory: CampaignRecord[]
   addCampaign: (record: Omit<CampaignRecord, 'id' | 'createdAt'>) => void
@@ -394,6 +400,11 @@ export const useAppStore = create<AppStore>()(
           }
         })
       },
+
+      selectedMetaAccountId:   '',
+      selectedGoogleAccountId: '',
+      setSelectedMetaAccountId:   (id) => set({ selectedMetaAccountId: id }),
+      setSelectedGoogleAccountId: (id) => set({ selectedGoogleAccountId: id }),
 
       campaignHistory: [],
 
@@ -668,6 +679,8 @@ export const useAppStore = create<AppStore>()(
         clientPortalsSaved:       [],
         strategyTimestamps:       [],
         briefingEnabled:          false,
+        selectedMetaAccountId:    '',
+        selectedGoogleAccountId:  '',
       }),
     }),
     {

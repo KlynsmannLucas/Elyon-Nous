@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { getValidMetaToken } from '@/services/meta/token-manager'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const META_BASE = 'https://graph.facebook.com/v19.0'
@@ -21,9 +22,23 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  const { intent, accessToken, accountId, clientData } = await req.json()
-  if (!intent || !accessToken || !accountId) {
+  const { intent, accountId: bodyAccountId, clientData } = await req.json()
+  if (!intent) {
     return NextResponse.json({ error: 'Dados incompletos' }, { status: 400 })
+  }
+
+  // Busca token server-side — nunca exposto ao cliente
+  let accessToken: string
+  let accountId:   string
+  try {
+    const tokenData = await getValidMetaToken(userId)
+    accessToken = tokenData.accessToken
+    accountId   = bodyAccountId || tokenData.accountId || ''
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || 'Token Meta inválido' }, { status: 401 })
+  }
+  if (!accountId) {
+    return NextResponse.json({ error: 'Nenhuma conta de anúncios Meta configurada' }, { status: 400 })
   }
 
   // Busca páginas do Facebook disponíveis

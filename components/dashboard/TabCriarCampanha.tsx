@@ -110,7 +110,6 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
           intent,
-          accessToken: metaAccount.accessToken,
           accountId:   metaAccount.accountId,
           clientData:  clientData ? {
             clientName:       (clientData as any).clientName,
@@ -146,9 +145,8 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
           plan,
-          accessToken: metaAccount.accessToken,
-          accountId:   metaAccount.accountId,
-          pageId:      selectedPage,
+          accountId: metaAccount.accountId,
+          pageId:    selectedPage,
         }),
       })
 

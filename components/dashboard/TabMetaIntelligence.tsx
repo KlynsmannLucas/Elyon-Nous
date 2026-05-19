@@ -1715,7 +1715,7 @@ interface Props {
 }
 
 export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
-  const { connectedAccounts, auditCache, setAuditCache, clientData: storeClientData } = useAppStore()
+  const { connectedAccounts, auditCache, setAuditCache, clientData: storeClientData, selectedMetaAccountId, setSelectedMetaAccountId } = useAppStore()
   const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
 
   const [data, setData] = useState<IntelligenceData | null>(null)
@@ -1724,7 +1724,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
   const [fetched, setFetched] = useState(false)
   const [innerTab, setInnerTab] = useState<InnerTab>('overview')
   const [allAccounts, setAllAccounts] = useState<{ id: string; name: string }[]>([])
-  const [selectedAccountId, setSelectedAccountId] = useState<string>(metaAccount?.accountId || '')
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(selectedMetaAccountId || metaAccount?.accountId || '')
   const [trackingAudit, setTrackingAudit] = useState<TrackingAudit | null>(null)
   const [trackingLoading, setTrackingLoading] = useState(false)
   const [drawerEntity, setDrawerEntity] = useState<DrawerEntity | null>(null)
@@ -1751,7 +1751,11 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
     fetch('/api/meta/ad-accounts').then(r => r.json()).then(d => {
       if (d.success && Array.isArray(d.accounts) && d.accounts.length > 0) {
         setAllAccounts(d.accounts)
-        if (!selectedAccountId) setSelectedAccountId(d.accounts[0].id)
+        const first = selectedMetaAccountId || d.accounts[0].id
+        if (!selectedAccountId) {
+          setSelectedAccountId(first)
+          setSelectedMetaAccountId(first)
+        }
       }
     }).catch(() => {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1845,7 +1849,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
           <div className="flex items-center gap-3 flex-wrap">
             {allAccounts.length > 1 ? (
               <select value={selectedAccountId}
-                onChange={e => { setSelectedAccountId(e.target.value); setFetched(false); setData(null); setTrackingAudit(null) }}
+                onChange={e => { setSelectedAccountId(e.target.value); setSelectedMetaAccountId(e.target.value); setFetched(false); setData(null); setTrackingAudit(null) }}
                 className="text-sm font-semibold text-slate-300 bg-[#16161A] border border-[#2A2A30] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#1877F2]">
                 {allAccounts.map(a => <option key={a.id} value={a.id}>{a.name || a.id}</option>)}
               </select>
