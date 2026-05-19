@@ -195,14 +195,23 @@ export interface AuditEntry {
 
 export interface PendingAction {
   id: string
+  clientId: string          // userId do Clerk — isolamento multi-usuário
   title: string
   description: string
   platform: 'meta' | 'google' | 'ambos'
   urgency: 'critica' | 'alta' | 'media' | 'baixa'
+  priority: number          // ordenação dentro da mesma urgência (1 = mais urgente)
   impact: string
-  status: 'pendente' | 'em_andamento' | 'concluida'
+  metric?: string           // métrica relacionada: CPL, ROAS, CTR, frequência…
+  evidence?: string         // dado específico que motivou a ação
+  status: 'pendente' | 'em_andamento' | 'concluida' | 'ignorada'
   source: 'auditoria' | 'pipeline' | 'manual'
+  origin: string            // ID da auditoria de origem ou 'manual'
+  relatedCampaign?: string
+  relatedAdSet?: string
+  relatedAd?: string
   createdAt: string
+  updatedAt: string
 }
 
 export interface ClientHealthScore {
@@ -544,19 +553,30 @@ export const useAppStore = create<AppStore>()(
         })),
 
       pendingActionsCache: {},
-      addPendingActions: (clientName, actions) =>
-        set((s) => ({
-          pendingActionsCache: {
-            ...s.pendingActionsCache,
-            [clientName]: actions,
-          },
-        })),
+      addPendingActions: (clientName, newActions) =>
+        set((s) => {
+          const existing = s.pendingActionsCache[clientName] || []
+          // Chave de deduplicação: title (normalizado) + platform + source
+          const dedupKey = (a: PendingAction) =>
+            `${a.title.toLowerCase().trim()}|${a.platform}|${a.source}`
+          // Mantém ações ativas (não-pendentes) — representam trabalho em progresso ou concluído
+          const activeActions = existing.filter((a) => a.status !== 'pendente')
+          const activeKeys = new Set(activeActions.map(dedupKey))
+          // Adiciona novas ações que não colidem com ativas
+          const fresh = newActions.filter((a) => !activeKeys.has(dedupKey(a)))
+          return {
+            pendingActionsCache: {
+              ...s.pendingActionsCache,
+              [clientName]: [...activeActions, ...fresh],
+            },
+          }
+        }),
       updatePendingActionStatus: (clientName, id, status) =>
         set((s) => ({
           pendingActionsCache: {
             ...s.pendingActionsCache,
             [clientName]: (s.pendingActionsCache[clientName] || []).map((a) =>
-              a.id === id ? { ...a, status } : a
+              a.id === id ? { ...a, status, updatedAt: new Date().toISOString() } : a
             ),
           },
         })),

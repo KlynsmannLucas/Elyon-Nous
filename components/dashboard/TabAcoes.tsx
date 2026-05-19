@@ -32,7 +32,7 @@ const C = {
 }
 
 type Prioridade = 'critica' | 'alta' | 'media' | 'baixa'
-type Status = 'pendente' | 'em_andamento' | 'concluida'
+type Status = 'pendente' | 'em_andamento' | 'concluida' | 'ignorada'
 type Filtro = 'todas' | Status
 
 const PRIORIDADE_CONFIG: Record<Prioridade, { label: string; color: string; bg: string; border: string; icon: string }> = {
@@ -43,9 +43,10 @@ const PRIORIDADE_CONFIG: Record<Prioridade, { label: string; color: string; bg: 
 }
 
 const STATUS_CONFIG: Record<Status, { label: string; color: string; next: Status }> = {
-  pendente:     { label: 'Pendente',     color: C.text2, next: 'em_andamento' },
-  em_andamento: { label: 'Em andamento', color: C.gold,  next: 'concluida' },
-  concluida:    { label: 'Concluída',    color: C.green, next: 'pendente' },
+  pendente:     { label: 'Pendente',     color: C.text2,  next: 'em_andamento' },
+  em_andamento: { label: 'Em andamento', color: C.gold,   next: 'concluida' },
+  concluida:    { label: 'Concluída',    color: C.green,  next: 'pendente' },
+  ignorada:     { label: 'Ignorada',     color: C.text3,  next: 'pendente' },
 }
 
 const CATEGORIA_ICON: Record<string, string> = {
@@ -86,16 +87,18 @@ export function TabAcoes({ clientData, strategyData }: Props) {
   // Ações auto-geradas da auditoria
   const pendingActions = pendingActionsCache[key] || []
   const pendingStats = {
-    total:    pendingActions.length,
+    total:    pendingActions.filter(a => a.status !== 'ignorada').length,
     critica:  pendingActions.filter(a => a.urgency === 'critica' && a.status === 'pendente').length,
     pendente: pendingActions.filter(a => a.status === 'pendente').length,
+    ignorada: pendingActions.filter(a => a.status === 'ignorada').length,
   }
 
   const stats = {
-    total:     actions.length,
+    total:     actions.filter((a: any) => a.status !== 'ignorada').length,
     pendente:  actions.filter((a: any) => a.status === 'pendente').length,
     andamento: actions.filter((a: any) => a.status === 'em_andamento').length,
     concluida: actions.filter((a: any) => a.status === 'concluida').length,
+    ignorada:  actions.filter((a: any) => a.status === 'ignorada').length,
   }
   const pct = stats.total > 0 ? Math.round((stats.concluida / stats.total) * 100) : 0
 
@@ -260,7 +263,11 @@ export function TabAcoes({ clientData, strategyData }: Props) {
           {showAuditActions && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {(['critica', 'alta', 'media', 'baixa'] as Prioridade[]).map(urgency => {
-                const items = pendingActions.filter(a => a.urgency === urgency)
+                // Respeita o filtro global: mostra tudo ou filtra por status
+                const items = pendingActions.filter(a =>
+                  a.urgency === urgency &&
+                  (filtro === 'todas' || a.status === filtro)
+                )
                 if (!items.length) return null
                 const cfg = PRIORIDADE_CONFIG[urgency]
                 return (
@@ -274,18 +281,26 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                     {items.map(item => {
                       const sCfg = STATUS_CONFIG[item.status as Status] || STATUS_CONFIG.pendente
                       const isOpen = expanded === item.id
+                      const isIgnored = item.status === 'ignorada'
                       return (
                         <div key={item.id} style={{
                           background: C.elevated, borderRadius: 12, overflow: 'hidden',
-                          border: `1px solid ${C.border}`,
-                          borderLeft: `3px solid ${cfg.color}`,
+                          border: `1px solid ${isIgnored ? 'rgba(255,255,255,0.04)' : C.border}`,
+                          borderLeft: `3px solid ${isIgnored ? C.text3 : cfg.color}`,
                           marginBottom: 6,
+                          opacity: isIgnored ? 0.5 : 1,
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px' }}>
+                            {/* Botão de ciclo de status */}
                             <button
+                              title={`Status atual: ${sCfg.label} — clique para avançar`}
                               onClick={() => {
-                                const next = STATUS_CONFIG[item.status as Status]?.next || 'pendente'
-                                updatePendingActionStatus(key, item.id, next as any)
+                                if (isIgnored) {
+                                  updatePendingActionStatus(key, item.id, 'pendente')
+                                } else {
+                                  const next = STATUS_CONFIG[item.status as Status]?.next || 'pendente'
+                                  updatePendingActionStatus(key, item.id, next as any)
+                                }
                               }}
                               style={{
                                 width: 18, height: 18, borderRadius: 999, border: `2px solid ${sCfg.color}`,
@@ -295,6 +310,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                             >
                               {item.status === 'concluida' && <span style={{ fontSize: 9, color: '#000', fontWeight: 700 }}>✓</span>}
                               {item.status === 'em_andamento' && <span style={{ width: 7, height: 7, borderRadius: 999, background: sCfg.color, display: 'block' }} />}
+                              {item.status === 'ignorada' && <span style={{ fontSize: 8, color: C.text3, fontWeight: 700 }}>–</span>}
                             </button>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
@@ -307,15 +323,31 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                   {item.platform === 'meta' ? '📘 Meta' : item.platform === 'google' ? '🔍 Google' : '📡 Ambos'}
                                 </span>
                                 <span style={{ fontSize: 10, color: sCfg.color }}>{sCfg.label}</span>
+                                {(item as any).metric && (
+                                  <span style={{ fontSize: 10, color: C.text3 }}>· {(item as any).metric}</span>
+                                )}
                               </div>
                               <span style={{
                                 fontSize: 12, fontWeight: 600, color: C.text1,
-                                textDecoration: item.status === 'concluida' ? 'line-through' : 'none',
-                                opacity: item.status === 'concluida' ? 0.5 : 1,
+                                textDecoration: item.status === 'concluida' || isIgnored ? 'line-through' : 'none',
+                                opacity: item.status === 'concluida' || isIgnored ? 0.5 : 1,
                               }}>
                                 {item.title}
                               </span>
                             </div>
+                            {/* Botão ignorar (apenas para ações não-ignoradas) */}
+                            {!isIgnored && (
+                              <button
+                                title="Ignorar esta ação"
+                                onClick={() => updatePendingActionStatus(key, item.id, 'ignorada')}
+                                style={{
+                                  width: 18, height: 18, borderRadius: 4, border: `1px solid ${C.border}`,
+                                  flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  cursor: 'pointer', background: 'transparent', color: C.text3, fontSize: 10,
+                                }}>
+                                ×
+                              </button>
+                            )}
                             <button onClick={() => setExpanded(isOpen ? null : item.id)}
                               style={{ color: C.text3, background: 'none', border: 'none', cursor: 'pointer', fontSize: 11 }}>
                               {isOpen ? '▲' : '▼'}
@@ -330,9 +362,15 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                     <p style={{ fontSize: 12, color: C.text1, lineHeight: 1.6, margin: 0 }}>{item.description}</p>
                                   </div>
                                 )}
+                                {(item as any).evidence && (
+                                  <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 8, padding: '8px 12px', display: 'flex', gap: 8 }}>
+                                    <span style={{ fontSize: 11, color: C.text2 }}>Evidência:</span>
+                                    <span style={{ fontSize: 11, color: C.gold }}>{(item as any).evidence}</span>
+                                  </div>
+                                )}
                                 {item.impact && (
                                   <div style={{ background: C.surface, borderRadius: 8, padding: '8px 12px', display: 'flex', gap: 8 }}>
-                                    <span style={{ fontSize: 11, color: C.text2 }}>Impacto:</span>
+                                    <span style={{ fontSize: 11, color: C.text2 }}>Impacto esperado:</span>
                                     <span style={{ fontSize: 11, fontWeight: 700, color: C.green }}>{item.impact}</span>
                                   </div>
                                 )}
@@ -345,6 +383,11 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                   </div>
                 )
               })}
+              {pendingStats.ignorada > 0 && filtro !== 'ignorada' && (
+                <div style={{ fontSize: 11, color: C.text3, textAlign: 'center', paddingTop: 4 }}>
+                  {pendingStats.ignorada} ação{pendingStats.ignorada > 1 ? 'ões' : ''} ignorada{pendingStats.ignorada > 1 ? 's' : ''} — use o filtro para visualizar
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -405,7 +448,13 @@ export function TabAcoes({ clientData, strategyData }: Props) {
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {(['todas', 'pendente', 'em_andamento', 'concluida'] as const).map((f) => (
+            {([
+              { key: 'todas',        label: `Todas (${stats.total})` },
+              { key: 'pendente',     label: `Pendentes (${stats.pendente})` },
+              { key: 'em_andamento', label: `Em andamento (${stats.andamento})` },
+              { key: 'concluida',    label: `Concluídas (${stats.concluida})` },
+              { key: 'ignorada',     label: `Ignoradas (${stats.ignorada ?? 0})` },
+            ] as { key: Filtro; label: string }[]).map(({ key: f, label }) => (
               <button
                 key={f}
                 onClick={() => setFiltro(f)}
@@ -415,10 +464,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                     ? { background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.3)', color: C.purpleL }
                     : { background: 'transparent', border: `1px solid ${C.border}`, color: C.text2 }),
                 }}>
-                {f === 'todas' ? `Todas (${stats.total})`
-                  : f === 'pendente' ? `Pendentes (${stats.pendente})`
-                  : f === 'em_andamento' ? `Em andamento (${stats.andamento})`
-                  : `Concluídas (${stats.concluida})`}
+                {label}
               </button>
             ))}
           </div>

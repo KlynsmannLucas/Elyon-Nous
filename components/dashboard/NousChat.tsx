@@ -132,13 +132,13 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
     if (strategy?.recommendation) lines.push(`\n=== ESTRATÉGIA GERADA ===\n${strategy.recommendation}`)
     if (strategy?.growth_diagnosis?.main_problem) lines.push(`Problema principal identificado: ${strategy.growth_diagnosis.main_problem}`)
 
-    // Health score do store
-    const clientName = clientData?.clientName
-    const hs = clientName ? clientHealthScores[clientName] : undefined
+    // Health score do store (usa clientName do escopo externo — sem shadowing)
+    const cn = clientData?.clientName
+    const hs = cn ? clientHealthScores[cn] : undefined
     if (hs) lines.push(`\nScore de saúde da conta: ${hs.score}/100 (${hs.grade}) — fonte: ${hs.source}`)
 
     // Último audit
-    const audits = clientName ? auditCache[clientName] : undefined
+    const audits = cn ? auditCache[cn] : undefined
     if (audits && audits.length > 0) {
       const latest = audits[0]
       const audit = latest.audit as any
@@ -158,7 +158,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
     }
 
     // Ações pendentes da auditoria
-    const pendingActions = clientName ? (pendingActionsCache[clientName] || []) : []
+    const pendingActions = cn ? (pendingActionsCache[cn] || []) : []
     const criticalPending = pendingActions.filter(a => a.urgency === 'critica' && a.status === 'pendente')
     if (criticalPending.length > 0) {
       lines.push(`\nAÇÕES CRÍTICAS PENDENTES (${criticalPending.length}): ${criticalPending.slice(0, 3).map(a => a.title).join('; ')}`)

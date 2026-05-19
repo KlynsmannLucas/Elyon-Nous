@@ -483,11 +483,12 @@ export function TabFunil({ clientData }: Props) {
   const auditHistory = auditCache[clientData.clientName]
   const latestAudit  = Array.isArray(auditHistory) ? auditHistory[0]?.audit : auditHistory
   const rm = latestAudit?._realMetrics as any
+  // Só pré-preenche campos que têm dados reais — zeros falsos confundem o diagnóstico
   const auditPrefill = rm && rm.totalSpend > 0 ? {
     investment:  rm.totalSpend,
-    impressions: rm.totalImpressions || 0,
-    clicks:      rm.totalClicks || 0,
-    leads:       rm.totalLeads || 0,
+    impressions: rm.totalImpressions > 0 ? rm.totalImpressions : undefined,
+    clicks:      rm.totalClicks > 0      ? rm.totalClicks      : undefined,
+    leads:       rm.totalLeads > 0       ? rm.totalLeads       : undefined,
   } : undefined
 
   const handleSubmit = (data: Omit<FunnelEntry, 'id' | 'createdAt'>) => {

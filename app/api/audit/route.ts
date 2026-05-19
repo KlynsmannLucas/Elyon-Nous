@@ -327,23 +327,73 @@ function buildFallbackAudit(
   }
 }
 
-function extractPriorityActions(audit: any, platform: string): any[] {
+// Detecta se o texto de uma ação indica problema crítico e sobe a urgência
+function escalateUrgency(text: string, base: string): string {
+  const t = text.toLowerCase()
+  const CRITICAL_SIGNALS = [
+    'tracking', 'pixel', 'sem conversão', 'zero conversão', 'sem leads', 'zero leads',
+    'gasto sem resultado', 'gasto sem conversão', 'desperdício crítico', 'cpl muito acima',
+    'roas negativo', 'roas abaixo de 1', 'cpl crítico', 'pausar urgente', 'parar imediatamente',
+    'evento mal configurado', 'pixel quebrado', 'tracking quebrado', 'sem rastreamento',
+  ]
+  const HIGH_SIGNALS = [
+    'frequência alta', 'fadiga criativa', 'ctr muito baixo', 'cpl acima do benchmark',
+    'roas abaixo', 'sem remarketing', 'landing page', 'lp com problema', 'atendimento lento',
+  ]
+  if (CRITICAL_SIGNALS.some((p) => t.includes(p))) return 'critica'
+  if (base === 'media' && HIGH_SIGNALS.some((p) => t.includes(p))) return 'alta'
+  return base
+}
+
+function extractPriorityActions(audit: any, platform: string, clientId: string, clientName: string): any[] {
   const plan = audit.plano_acao
   if (!plan) return []
   const actions: any[] = []
   const plat = platform as 'meta' | 'google' | 'ambos'
+  const now = new Date().toISOString()
+  const origin = `audit_${now.slice(0, 10)}_${clientName.toLowerCase().replace(/\s+/g, '_')}`
 
-  const toAction = (item: any, urgency: string) => ({
-    id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    title: item.acao || item.titulo || '',
-    description: item.como || item.descricao || '',
-    platform: plat,
-    urgency,
-    impact: item.impacto || '',
-    status: 'pendente',
-    source: 'auditoria',
-    createdAt: new Date().toISOString(),
-  })
+  // Infere a métrica principal a partir do texto da ação
+  const inferMetric = (text: string): string | undefined => {
+    const t = text.toLowerCase()
+    if (t.includes('cpl') || t.includes('custo por lead')) return 'CPL'
+    if (t.includes('roas') || t.includes('retorno')) return 'ROAS'
+    if (t.includes('ctr') || t.includes('clique')) return 'CTR'
+    if (t.includes('frequência') || t.includes('frequencia')) return 'Frequência'
+    if (t.includes('tracking') || t.includes('pixel') || t.includes('conversão')) return 'Tracking'
+    if (t.includes('criativo') || t.includes('anúncio') || t.includes('creative')) return 'Criativo'
+    if (t.includes('orçamento') || t.includes('budget') || t.includes('verba')) return 'Orçamento'
+    return undefined
+  }
+
+  let priority = 1
+  const toAction = (item: any, baseUrgency: string) => {
+    const title = item.acao || item.titulo || ''
+    const description = item.como || item.descricao || ''
+    const impact = item.impacto || ''
+    const fullText = `${title} ${description} ${impact}`
+    const urgency = escalateUrgency(fullText, baseUrgency)
+    return {
+      id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      clientId,
+      title,
+      description,
+      platform: plat,
+      urgency,
+      priority: priority++,
+      impact,
+      metric: inferMetric(fullText),
+      evidence: item.evidencia || item.dado || undefined,
+      status: 'pendente',
+      source: 'auditoria',
+      origin,
+      relatedCampaign: item.campanha || item.campaign || undefined,
+      relatedAdSet:    item.conjunto || item.adset || undefined,
+      relatedAd:       item.anuncio  || item.ad    || undefined,
+      createdAt: now,
+      updatedAt: now,
+    }
+  }
 
   ;(plan.curto || []).forEach((a: any) => actions.push(toAction(a, 'critica')))
   ;(plan.medio || []).forEach((a: any) => actions.push(toAction(a, 'alta')))
@@ -799,7 +849,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
         saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
 
         const dataSource = hasMeta && hasGoogle ? 'ambos' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'ambos'
-        const priorityActions = extractPriorityActions(audit, dataSource)
+        const priorityActions = extractPriorityActions(audit, dataSource, userId, clientName)
 
         return NextResponse.json({ success: true, audit, source: 'ai', priorityActions })
 
@@ -818,7 +868,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
 
     const fbDataSource = hasMeta && hasGoogle ? 'ambos' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'ambos'
-    const priorityActions = extractPriorityActions(audit, fbDataSource)
+    const priorityActions = extractPriorityActions(audit, fbDataSource, userId, clientName)
 
     return NextResponse.json({ success: true, audit, source: 'benchmark', priorityActions })
 

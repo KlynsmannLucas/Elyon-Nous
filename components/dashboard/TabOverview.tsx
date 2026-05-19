@@ -605,11 +605,37 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         ))}
       </div>
 
-      {/* ── Ações críticas pendentes ──────────────────────────────────── */}
+      {/* ── Ações críticas pendentes (ou call-to-action para executar auditoria) ── */}
       {(() => {
         const pending = (pendingActionsCache[key] || []).filter(a => a.status === 'pendente')
         const critical = pending.filter(a => a.urgency === 'critica' || a.urgency === 'alta')
-        if (!critical.length) return null
+        if (!critical.length) {
+          // Mostra call-to-action somente quando não há auditoria e nem dados reais
+          if (!latestAudit && !hasRealData) {
+            return (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '16px',
+                background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.15)',
+                borderRadius: '14px', padding: '16px 20px',
+              }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                  background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px',
+                }}>🔍</div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: C.text1, marginBottom: '2px' }}>
+                    Nenhuma ação prioritária gerada
+                  </div>
+                  <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5 }}>
+                    Execute uma auditoria para gerar ações prioritárias automaticamente com base nos seus dados reais.
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          return null
+        }
         const storedScore = clientHealthScores[key]
         return (
           <div style={{
