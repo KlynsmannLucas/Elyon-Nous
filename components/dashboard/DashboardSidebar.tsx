@@ -11,6 +11,7 @@ export type TabKey =
   | 'persona' | 'conteudo' | 'assets' | 'concorrentes' | 'campanha'
   | 'relatorios' | 'financeiro'
   | 'checklist' | 'portal'
+  | 'memory' | 'workflow'
 
 // ── SVG icons ─────────────────────────────────────────────────────────────────
 const I = {
@@ -65,6 +66,8 @@ const TAB_ICONS: Record<TabKey, JSX.Element> = {
   financeiro:  I.wallet,
   checklist:   I.clipboardList,
   portal:      I.share,
+  memory:      I.activity,
+  workflow:    I.sliders,
 }
 
 export const SIDEBAR_SECTIONS: {
@@ -101,6 +104,8 @@ export const SIDEBAR_SECTIONS: {
   { label: 'Avançado', planLabel: 'Avançada', items: [
     { key: 'budget',      label: 'Alocar Verba',          icon: '💰', badge: 'IA' },
     { key: 'channelmix',  label: 'Mix de Canais',         icon: '🌐', badge: 'IA' },
+    { key: 'memory',      label: 'Memória da Campanha',   icon: '🧠', badge: 'RAG' },
+    { key: 'workflow',    label: 'Workflow Builder',      icon: '⚙️', badge: 'AUTO' },
     { key: 'mercado',     label: 'Pesquisa de Mercado',   icon: '📡' },
     { key: 'cenarios',    label: 'Projeções',             icon: '📈' },
   ]},

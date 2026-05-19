@@ -70,9 +70,56 @@ export function TabBudgetAllocator() {
   })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [activeView, setActiveView] = useState<'table' | 'visual'>('table')
+  const [metaImporting, setMetaImporting] = useState(false)
+  const [metaImportMsg, setMetaImportMsg] = useState('')
 
   const clientData = useAppStore(s => s.clientData)
   const auditCache = useAppStore(s => s.auditCache)
+  const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const metaConnected = connectedAccounts.some(a => a.platform === 'meta')
+
+  async function importFromMeta() {
+    setMetaImporting(true)
+    setMetaImportMsg('')
+    try {
+      const res = await fetch('/api/meta/insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level: 'campaign', datePreset: 'last_30d' }),
+      })
+      if (!res.ok) throw new Error('Erro ao buscar campanhas')
+      const data = await res.json()
+      const rows: any[] = data.data || []
+      if (!rows.length) {
+        setMetaImportMsg('Nenhuma campanha encontrada nos últimos 30 dias.')
+        return
+      }
+      const imported: ManualCampaign[] = rows
+        .filter(r => r._normalized)
+        .map(r => {
+          const n = r._normalized
+          return {
+            id: r.campaign_id || String(Date.now() + Math.random()),
+            name: r.campaign_name || 'Campanha Meta',
+            platform: 'meta' as const,
+            spend: n.spend || 0,
+            leads: n.leads || 0,
+            cpl: n.cpl || 0,
+            ctr: n.ctr || 0,
+            roas: n.roas || 0,
+            dailyBudget: n.spend > 0 ? +(n.spend / 30).toFixed(2) : 0,
+            status: r.status || 'ACTIVE',
+          }
+        })
+      setManualCampaigns(imported)
+      setAllocation(null)
+      setMetaImportMsg(`✓ ${imported.length} campanha${imported.length > 1 ? 's' : ''} importada${imported.length > 1 ? 's' : ''} do Meta Ads`)
+    } catch (e: any) {
+      setMetaImportMsg(e.message || 'Erro ao importar')
+    } finally {
+      setMetaImporting(false)
+    }
+  }
 
   // Pré-preenche budget do cliente
   useEffect(() => {
@@ -220,17 +267,42 @@ export function TabBudgetAllocator() {
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => { setShowAddForm(v => !v); setEditingId(null); setNewCamp({ platform: 'meta', status: 'ACTIVE' }) }}
-            style={{
-              padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
-              background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
-            }}
-          >
-            + Adicionar campanha
-          </button>
+        <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {metaConnected && (
+              <button
+                onClick={importFromMeta}
+                disabled={metaImporting}
+                style={{
+                  padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                  background: metaImporting ? 'rgba(255,255,255,0.03)' : 'rgba(24,119,242,0.10)',
+                  border: `1px solid ${metaImporting ? 'rgba(255,255,255,0.06)' : 'rgba(24,119,242,0.25)'}`,
+                  color: metaImporting ? 'rgba(255,255,255,0.3)' : '#60A5FA',
+                  cursor: metaImporting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {metaImporting ? '⏳ Importando...' : '📘 Importar do Meta'}
+              </button>
+            )}
+            <button
+              onClick={() => { setShowAddForm(v => !v); setEditingId(null); setNewCamp({ platform: 'meta', status: 'ACTIVE' }) }}
+              style={{
+                padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+              }}
+            >
+              + Adicionar campanha
+            </button>
+          </div>
+          {metaImportMsg && (
+            <div style={{
+              fontSize: '11px', fontFamily: 'var(--font-mono)',
+              color: metaImportMsg.startsWith('✓') ? '#22C55E' : '#FF4D4D',
+            }}>
+              {metaImportMsg}
+            </div>
+          )}
         </div>
       </div>
 

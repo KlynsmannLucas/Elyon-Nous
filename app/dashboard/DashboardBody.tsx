@@ -32,6 +32,8 @@ import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { TabChannelMix }     from '@/components/dashboard/TabChannelMix'
 import { TabChecklist }      from '@/components/dashboard/TabChecklist'
 import { TabPortal }         from '@/components/dashboard/TabPortal'
+import { TabMemory }         from '@/components/dashboard/TabMemory'
+import { TabWorkflow }       from '@/components/dashboard/TabWorkflow'
 import { NousChat }        from '@/components/dashboard/NousChat'
 import { DashboardSidebar, type TabKey } from '@/components/dashboard/DashboardSidebar'
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar'
@@ -840,7 +842,7 @@ export default function DashboardBody() {
     }
 
     // Avançado — requer Avançada
-    if (!planLimits.hasAvancadoGroup && (activeTab === 'budget' || activeTab === 'channelmix' || activeTab === 'mercado' || activeTab === 'cenarios' || activeTab === 'inteligencia')) {
+    if (!planLimits.hasAvancadoGroup && (activeTab === 'budget' || activeTab === 'channelmix' || activeTab === 'mercado' || activeTab === 'cenarios' || activeTab === 'inteligencia' || activeTab === 'memory' || activeTab === 'workflow')) {
       return <UpgradeWall group="avancado" />
     }
 
@@ -869,6 +871,8 @@ export default function DashboardBody() {
       case 'financeiro':    return wrap('Painel Financeiro',     <TabFinanceiro />)
       case 'checklist':     return wrap('Checklist Diário',      <TabChecklist clientData={clientData} />)
       case 'portal':        return wrap('Portal do Cliente',     <TabPortal    clientData={clientData} />)
+      case 'memory':        return wrap('Memória da Campanha',   <TabMemory />)
+      case 'workflow':      return wrap('Workflow Builder',      <TabWorkflow />)
     }
   }
 

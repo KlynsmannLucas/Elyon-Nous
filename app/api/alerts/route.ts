@@ -1,7 +1,68 @@
 // app/api/alerts/route.ts — Motor de alertas proativos (AGENT.md: Alert Agent)
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { getBenchmark } from '@/lib/niche_benchmarks'
+
+async function sendAlertEmail(
+  toEmail: string,
+  clientName: string,
+  criticalAlerts: Alert[],
+): Promise<void> {
+  const resendKey = process.env.RESEND_API_KEY
+  if (!resendKey) return
+
+  const alertRows = criticalAlerts.slice(0, 5).map(a => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:13px;font-weight:700;color:#FF4D4D;margin-bottom:3px;">🚨 ${a.title}</div>
+        <div style="font-size:12px;color:#94A3B8;margin-bottom:4px;">${a.message}</div>
+        ${a.action ? `<div style="font-size:11px;color:#F0B429;">→ ${a.action}</div>` : ''}
+      </td>
+    </tr>
+  `).join('')
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#080D1A;font-family:system-ui,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#7C3AED,#A78BFA);display:flex;align-items:center;justify-content:center;font-size:18px;">⚡</div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#F1F5F9;">ELYON — Alerta Crítico</div>
+        <div style="font-size:11px;color:#64748B;">${clientName}</div>
+      </div>
+    </div>
+    <div style="background:#0F1629;border:1px solid rgba(255,77,77,0.25);border-radius:14px;padding:20px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:#FF4D4D;margin-bottom:14px;">
+        ⚠️ ${criticalAlerts.length} alerta${criticalAlerts.length > 1 ? 's' : ''} crítico${criticalAlerts.length > 1 ? 's' : ''} detectado${criticalAlerts.length > 1 ? 's' : ''}
+      </div>
+      <table style="width:100%;border-collapse:collapse;">${alertRows}</table>
+    </div>
+    <div style="text-align:center;margin-top:20px;">
+      <a href="https://elyon.app/dashboard" style="display:inline-block;padding:12px 28px;border-radius:10px;background:linear-gradient(135deg,#F0B429,#FFD166);color:#000;font-weight:700;font-size:14px;text-decoration:none;">
+        Ver no painel →
+      </a>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:11px;color:#334155;">
+      ELYON TrafficBrain · <a href="https://elyon.app" style="color:#64748B;">elyon.app</a>
+    </div>
+  </div>
+</body></html>`
+
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${resendKey}`,
+    },
+    body: JSON.stringify({
+      from: 'ELYON <relatorios@elyon.app>',
+      to: [toEmail],
+      subject: `🚨 ${criticalAlerts.length} alerta${criticalAlerts.length > 1 ? 's' : ''} crítico${criticalAlerts.length > 1 ? 's' : ''} — ${clientName}`,
+      html,
+    }),
+  }).catch(() => {/* silent — email failure não bloqueia resposta */})
+}
 
 export interface Alert {
   id: string
@@ -234,15 +295,28 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
-    const { campaigns = [], audit = null, niche = '', clientData = {} } = body
+    const { campaigns = [], audit = null, niche = '', clientData = {}, sendEmail = false } = body
 
     const alerts = generateAlerts(campaigns, audit, niche, clientData)
+    const criticalAlerts = alerts.filter(a => a.type === 'critical')
+
+    if (sendEmail && criticalAlerts.length > 0) {
+      try {
+        const clerk = await clerkClient()
+        const user = await clerk.users.getUser(userId)
+        const email = user.emailAddresses[0]?.emailAddress
+        if (email) {
+          await sendAlertEmail(email, clientData.clientName || niche || 'Campanha', criticalAlerts)
+        }
+      } catch { /* silent — email failure não bloqueia */ }
+    }
 
     return NextResponse.json({
       alerts,
+      emailSent: sendEmail && criticalAlerts.length > 0,
       summary: {
         total: alerts.length,
-        critical: alerts.filter(a => a.type === 'critical').length,
+        critical: criticalAlerts.length,
         warning: alerts.filter(a => a.type === 'warning').length,
         opportunity: alerts.filter(a => a.type === 'opportunity').length,
         info: alerts.filter(a => a.type === 'info').length,
