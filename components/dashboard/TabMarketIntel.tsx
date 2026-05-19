@@ -198,6 +198,8 @@ export function TabMarketIntel({ clientData }: Props) {
   const [benchMeta, setBenchMeta] = useState<BenchmarkMeta | null>(null)
   const [auditData, setAuditData] = useState<Array<{ key: string; name: string; dataSource: string; confidence: string | null; updatedAt: string | null; freshDays: number | null }> | null>(null)
   const [auditLoading, setAuditLoading] = useState(false)
+  const [refreshingKey, setRefreshingKey] = useState<string | null>(null)
+  const [refreshMsg, setRefreshMsg] = useState<{ key: string; ok: boolean; text: string } | null>(null)
 
   const bench = clientData ? getBenchmark(clientData.niche) : null
   const benchKey = bench ? (Object.keys(BENCHMARKS).find((k) => BENCHMARKS[k] === bench) || 'outro') : null
@@ -247,14 +249,46 @@ export function TabMarketIntel({ clientData }: Props) {
     { key: 'auditoria',    label: '🔍 Auditoria' },
   ]
 
-  function loadAudit() {
-    if (auditData || auditLoading) return
+  function loadAudit(force = false) {
+    if ((auditData && !force) || auditLoading) return
     setAuditLoading(true)
     fetch('/api/benchmarks/niche?key=__all__')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.niches) setAuditData(d.niches) })
       .catch(() => {})
       .finally(() => setAuditLoading(false))
+  }
+
+  async function refreshNiche(key: string, name: string) {
+    if (refreshingKey) return
+    setRefreshingKey(key)
+    setRefreshMsg(null)
+    try {
+      const res = await fetch('/api/benchmarks/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche: name, nicheKey: key }),
+      })
+      const data = await res.json()
+      if (res.ok && data.cpl_min) {
+        setRefreshMsg({ key, ok: true, text: `CPL R$${data.cpl_min}–${data.cpl_max} · confiança ${data.confidence}` })
+        // reload audit table
+        loadAudit(true)
+        // reload badge for current niche
+        if (key === benchKey) {
+          fetch(`/api/benchmarks/niche?key=${encodeURIComponent(key)}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d?.meta) setBenchMeta(d.meta) })
+            .catch(() => {})
+        }
+      } else {
+        setRefreshMsg({ key, ok: false, text: data.error || 'Sem dados suficientes' })
+      }
+    } catch {
+      setRefreshMsg({ key, ok: false, text: 'Erro de conexão' })
+    } finally {
+      setRefreshingKey(null)
+    }
   }
 
   return (
@@ -432,20 +466,28 @@ export function TabMarketIntel({ clientData }: Props) {
                   <thead>
                     <tr className="border-b border-[#2A2A30]">
                       <th className="text-left py-2 px-2 text-slate-500 font-medium">Nicho</th>
-                      <th className="text-left py-2 px-2 text-slate-500 font-medium">Chave</th>
                       <th className="text-center py-2 px-2 text-slate-500 font-medium">Fonte</th>
                       <th className="text-center py-2 px-2 text-slate-500 font-medium">Confiança</th>
                       <th className="text-right py-2 px-2 text-slate-500 font-medium">Atualizado</th>
+                      <th className="text-right py-2 px-2 text-slate-500 font-medium"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {auditData.map(row => {
                       const color = row.dataSource === 'real_market_data' ? '#22C55E' : row.dataSource === 'estimated_data' ? '#F0B429' : '#EF4444'
                       const label = row.dataSource === 'real_market_data' ? 'real' : row.dataSource === 'estimated_data' ? 'estimado' : 'indisponível'
+                      const isRefreshing = refreshingKey === row.key
+                      const msg = refreshMsg?.key === row.key ? refreshMsg : null
                       return (
                         <tr key={row.key} className="border-b border-[#1E1E24] hover:bg-white/[0.02] transition-colors">
-                          <td className="py-2 px-2 text-slate-300 max-w-[180px] truncate">{row.name}</td>
-                          <td className="py-2 px-2 font-mono text-[10px] text-slate-600">{row.key}</td>
+                          <td className="py-2 px-2">
+                            <div className="text-slate-300 text-xs truncate max-w-[200px]">{row.name}</div>
+                            {msg && (
+                              <div className="text-[10px] mt-0.5" style={{ color: msg.ok ? '#22C55E' : '#EF4444' }}>
+                                {msg.ok ? '✓ ' : '✗ '}{msg.text}
+                              </div>
+                            )}
+                          </td>
                           <td className="py-2 px-2 text-center">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px]"
                               style={{ background: `${color}12`, color, border: `1px solid ${color}30` }}>
@@ -453,7 +495,7 @@ export function TabMarketIntel({ clientData }: Props) {
                               {label}
                             </span>
                           </td>
-                          <td className="py-2 px-2 text-center text-slate-500">
+                          <td className="py-2 px-2 text-center text-[10px] text-slate-500">
                             {row.confidence ?? '—'}
                           </td>
                           <td className="py-2 px-2 text-right text-[10px]">
@@ -465,6 +507,20 @@ export function TabMarketIntel({ clientData }: Props) {
                               <span className="text-slate-600">—</span>
                             )}
                           </td>
+                          <td className="py-2 px-2 text-right">
+                            <button
+                              onClick={() => refreshNiche(row.key, row.name)}
+                              disabled={!!refreshingKey}
+                              className="text-[10px] px-2 py-1 rounded-lg transition-all disabled:opacity-40"
+                              style={{
+                                background: isRefreshing ? 'rgba(240,180,41,0.12)' : 'rgba(255,255,255,0.04)',
+                                color: isRefreshing ? '#F0B429' : '#475569',
+                                border: `1px solid ${isRefreshing ? 'rgba(240,180,41,0.3)' : '#2A2A30'}`,
+                              }}
+                            >
+                              {isRefreshing ? '⟳ buscando...' : '↻ atualizar'}
+                            </button>
+                          </td>
                         </tr>
                       )
                     })}
@@ -475,6 +531,7 @@ export function TabMarketIntel({ clientData }: Props) {
                   <span className="text-[#22C55E]">Real: {auditData.filter(r => r.dataSource === 'real_market_data').length}</span>
                   <span className="text-[#F0B429]">Estimado: {auditData.filter(r => r.dataSource === 'estimated_data').length}</span>
                   <span className="text-[#EF4444]">Indisponível: {auditData.filter(r => r.dataSource === 'unavailable').length}</span>
+                  {refreshingKey && <span className="text-[#F0B429] animate-pulse">· atualizando {refreshingKey}...</span>}
                 </div>
               </div>
             )}
