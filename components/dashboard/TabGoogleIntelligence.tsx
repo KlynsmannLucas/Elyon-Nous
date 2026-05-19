@@ -422,29 +422,33 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
   const [manualAccId,   setManualAccId]   = useState('')
   const [accounts,      setAccounts]      = useState<{ id: string; name: string }[]>([])
   const [loadingAccs,   setLoadingAccs]   = useState(false)
-  const [selectedAccId, setSelectedAccId] = useState('')
+  const [selectedAccId, setSelectedAccId] = useState(googleAccount?.accountId || '')
 
-  // Quando não há accountId salvo, busca a lista de contas disponíveis
+  // Sempre busca lista de contas disponíveis para permitir troca
   useEffect(() => {
-    if (!googleAccount || googleAccount.accountId) return
+    if (!googleAccount) return
     setLoadingAccs(true)
     fetch('/api/ads-data/google-accounts')
       .then(r => r.json())
       .then(json => {
         if (json.success && json.accounts?.length > 0) {
           setAccounts(json.accounts)
-          // Auto-seleciona se só há uma conta
-          if (json.accounts.length === 1) {
+          // Pré-seleciona a conta salva, ou a única disponível
+          const saved = googleAccount.accountId
+          if (saved && json.accounts.some((a: { id: string }) => a.id === saved)) {
+            setSelectedAccId(saved)
+          } else if (json.accounts.length === 1) {
             setSelectedAccId(json.accounts[0].id)
           }
         }
       })
       .catch(() => {})
       .finally(() => setLoadingAccs(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [googleAccount?.platform])
 
-  const resolvedAccountId = googleAccount?.accountId
-    || selectedAccId
+  const resolvedAccountId = selectedAccId
+    || googleAccount?.accountId
     || manualAccId.trim().replace(/-/g, '')
 
   const fetchIntelligence = async () => {
@@ -498,10 +502,26 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="font-display text-2xl font-bold text-white mb-1">Google Ads IA</h2>
-          <p className="text-slate-500 text-sm">
-            Conta: <span className="text-slate-300 font-semibold">{googleAccount.accountName || googleAccount.accountId}</span>
-            {data && <span className="text-slate-600"> · {data.totals.totalCampaigns} campanhas · {data.searchTerms.length} termos · últimos 30d</span>}
-          </p>
+          <div className="flex items-center gap-3 flex-wrap">
+            {accounts.length > 1 ? (
+              <select value={selectedAccId}
+                onChange={e => { setSelectedAccId(e.target.value); setFetched(false); setData(null) }}
+                className="text-sm font-semibold text-slate-300 bg-[#16161A] border border-[#2A2A30] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#4285F4]">
+                {accounts.map(a => <option key={a.id} value={a.id}>{a.name || a.id}</option>)}
+              </select>
+            ) : (
+              <span className="text-sm text-slate-500">
+                Conta: <span className="text-slate-300 font-semibold">
+                  {accounts[0]?.name || googleAccount.accountName || googleAccount.accountId}
+                </span>
+              </span>
+            )}
+            {data && (
+              <span className="text-[11px] text-slate-600">
+                {data.totals.totalCampaigns} campanhas · {data.searchTerms.length} termos · últimos 30d
+              </span>
+            )}
+          </div>
         </div>
         <button onClick={fetchIntelligence} disabled={loading}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
@@ -531,74 +551,25 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
         )
       })()}
 
-      {!googleAccount.accountId && (
+      {!googleAccount.accountId && !resolvedAccountId && (
         <div className="rounded-2xl p-5" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.2)' }}>
-          <div className="text-sm font-semibold text-[#F0B429] mb-2">⚠ Customer ID não detectado automaticamente</div>
-
-          {loadingAccs ? (
-            <div className="flex items-center gap-2 text-xs text-slate-500 py-1">
-              <span className="animate-spin">⟳</span> Buscando contas disponíveis…
-            </div>
-          ) : accounts.length > 0 ? (
-            <>
-              <p className="text-xs text-slate-500 mb-3">
-                {accounts.length === 1
-                  ? 'Conta encontrada automaticamente. Confirme e analise.'
-                  : `${accounts.length} contas encontradas. Selecione qual deseja analisar.`}
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                {accounts.length > 1 ? (
-                  <select
-                    value={selectedAccId}
-                    onChange={e => setSelectedAccId(e.target.value)}
-                    className="flex-1 bg-[#111114] border border-[#2A2A30] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4285F4]"
-                  >
-                    <option value="">Selecione uma conta…</option>
-                    {accounts.map(a => (
-                      <option key={a.id} value={a.id}>{a.name} ({a.id})</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="flex-1 bg-[#111114] border border-[#2A2A30] rounded-xl px-4 py-2.5 text-sm text-slate-300">
-                    {accounts[0].name} <span className="text-slate-600">({accounts[0].id})</span>
-                  </div>
-                )}
-                <button
-                  onClick={fetchIntelligence}
-                  disabled={loading || !resolvedAccountId}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40"
-                  style={{ background: 'linear-gradient(135deg, #4285F4, #1a6ae8)', color: '#fff' }}
-                >
-                  {loading ? 'Analisando…' : 'Analisar'}
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="text-xs text-slate-500 mb-3">Insira seu Customer ID (formato: 123-456-7890 ou 1234567890).</p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={manualAccId}
-                  onChange={e => setManualAccId(e.target.value)}
-                  placeholder="ex: 123-456-7890"
-                  className="flex-1 bg-[#111114] border border-[#2A2A30] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#F0B429]"
-                />
-                <button
-                  onClick={fetchIntelligence}
-                  disabled={loading || !manualAccId.trim()}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40"
-                  style={{ background: 'linear-gradient(135deg, #4285F4, #1a6ae8)', color: '#fff' }}
-                >
-                  {loading ? 'Analisando…' : 'Analisar'}
-                </button>
-              </div>
-            </>
-          )}
+          <div className="text-sm font-semibold text-[#F0B429] mb-2">⚠ Customer ID não detectado</div>
+          <p className="text-xs text-slate-500 mb-3">Insira seu Customer ID (formato: 123-456-7890 ou 1234567890).</p>
+          <div className="flex gap-2">
+            <input type="text" value={manualAccId} onChange={e => setManualAccId(e.target.value)}
+              placeholder="ex: 123-456-7890"
+              className="flex-1 bg-[#111114] border border-[#2A2A30] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#F0B429]"
+            />
+            <button onClick={fetchIntelligence} disabled={loading || !manualAccId.trim()}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg, #4285F4, #1a6ae8)', color: '#fff' }}>
+              {loading ? 'Analisando…' : 'Analisar'}
+            </button>
+          </div>
         </div>
       )}
 
-      {!fetched && !loading && googleAccount.accountId && (
+      {!fetched && !loading && resolvedAccountId && (
         <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-10 text-center">
           <div className="text-4xl mb-4">🎯</div>
           <h3 className="font-display text-lg font-bold text-white mb-2">Pronto para analisar</h3>

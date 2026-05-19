@@ -40,13 +40,16 @@ async function callLLMJson<T>(anthropic: Anthropic, prompt: string, maxTokens: n
   if (block.type !== 'text') throw new Error('LLM retornou conteúdo não-texto')
   let str = block.text.trim()
 
-  // Remove markdown fences
-  if (str.startsWith('```')) {
-    str = str.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
-  }
+  // Remove TODAS as markdown fences — independente de posição na string
+  str = str.replace(/```(?:json)?[ \t]*\r?\n?/gi, '').replace(/[ \t]*```[ \t]*/g, '').trim()
+
   // Descarta texto antes do primeiro { ou [
   const firstBrace = str.search(/[\[{]/)
   if (firstBrace > 0) str = str.slice(firstBrace)
+
+  // Descarta texto após o último } ou ]
+  const lastClose = Math.max(str.lastIndexOf('}'), str.lastIndexOf(']'))
+  if (lastClose >= 0 && lastClose < str.length - 1) str = str.slice(0, lastClose + 1)
 
   try { return JSON.parse(str) as T }
   catch {
