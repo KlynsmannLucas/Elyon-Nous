@@ -310,14 +310,16 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
   const bench  = getBenchmark(niche)
   const proj   = bench && budget > 0 ? computeNicheProjection(bench, budget) : null
 
-  const auditCache        = useAppStore(s => s.auditCache)
-  const strategyData      = useAppStore(s => s.strategyData)
-  const competitorStore   = useAppStore(s => s.competitors)
-  const connectedAccounts = useAppStore(s => s.connectedAccounts)
-  const setClientData     = useAppStore(s => s.setClientData)
-  const saveCurrentClient = useAppStore(s => s.saveCurrentClient)
-  const freshBenchmarks   = useAppStore(s => s.freshBenchmarks)
-  const setFreshBenchmark = useAppStore(s => s.setFreshBenchmark)
+  const auditCache          = useAppStore(s => s.auditCache)
+  const strategyData        = useAppStore(s => s.strategyData)
+  const competitorStore     = useAppStore(s => s.competitors)
+  const connectedAccounts   = useAppStore(s => s.connectedAccounts)
+  const setClientData       = useAppStore(s => s.setClientData)
+  const saveCurrentClient   = useAppStore(s => s.saveCurrentClient)
+  const freshBenchmarks     = useAppStore(s => s.freshBenchmarks)
+  const setFreshBenchmark   = useAppStore(s => s.setFreshBenchmark)
+  const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
+  const clientHealthScores  = useAppStore(s => s.clientHealthScores)
 
   const [refreshing, setRefreshing]   = useState(false)
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<number>>(new Set())
@@ -602,6 +604,64 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
           />
         ))}
       </div>
+
+      {/* ── Ações críticas pendentes ──────────────────────────────────── */}
+      {(() => {
+        const pending = (pendingActionsCache[key] || []).filter(a => a.status === 'pendente')
+        const critical = pending.filter(a => a.urgency === 'critica' || a.urgency === 'alta')
+        if (!critical.length) return null
+        const storedScore = clientHealthScores[key]
+        return (
+          <div style={{
+            background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)',
+            borderRadius: '14px', padding: '18px 20px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px' }}>🚨</div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: C.text1 }}>
+                    {critical.length} ação{critical.length > 1 ? 'ões' : ''} de alta prioridade pendente{critical.length > 1 ? 's' : ''}
+                  </div>
+                  {storedScore && (
+                    <div style={{ fontSize: '11px', color: C.text3 }}>Score da conta: {storedScore.score}/100 ({storedScore.grade})</div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {critical.slice(0, 4).map((action) => (
+                <div key={action.id} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '10px',
+                  background: C.surface, borderRadius: '10px', padding: '10px 14px',
+                  border: `1px solid ${action.urgency === 'critica' ? 'rgba(239,68,68,0.2)' : 'rgba(249,115,22,0.2)'}`,
+                  borderLeft: `3px solid ${action.urgency === 'critica' ? C.red : '#F97316'}`,
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: C.text1, marginBottom: '2px' }}>{action.title}</div>
+                    {action.impact && (
+                      <div style={{ fontSize: '10px', color: C.text3 }}>Impacto: {action.impact}</div>
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '99px', flexShrink: 0,
+                    background: action.urgency === 'critica' ? 'rgba(239,68,68,0.12)' : 'rgba(249,115,22,0.12)',
+                    color: action.urgency === 'critica' ? C.red : '#F97316',
+                    border: `1px solid ${action.urgency === 'critica' ? 'rgba(239,68,68,0.3)' : 'rgba(249,115,22,0.3)'}`,
+                  }}>
+                    {action.urgency === 'critica' ? 'CRÍTICA' : 'ALTA'}
+                  </span>
+                </div>
+              ))}
+              {critical.length > 4 && (
+                <div style={{ fontSize: '11px', color: C.text3, textAlign: 'center', paddingTop: '4px' }}>
+                  + {critical.length - 4} ações — veja em Ações Prioritárias
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Row 2: Chart + Funnel + Score ─────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px 200px', gap: '14px', alignItems: 'stretch' }}>

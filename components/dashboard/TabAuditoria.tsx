@@ -351,10 +351,11 @@ interface UploadedFile {
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export function TabAuditoria({ clientData }: Props) {
-  const { connectedAccounts, auditCache, setAuditCache, deleteAuditEntry, selectedMetaAccountId, selectedGoogleAccountId } = useAppStore()
+  const { connectedAccounts, auditCache, setAuditCache, deleteAuditEntry, selectedMetaAccountId, selectedGoogleAccountId, addPendingActions, setClientHealthScore } = useAppStore()
   const [audit,         setAudit]         = useState<Record<string, any> | null>(null)
   const [selectedId,    setSelectedId]    = useState<string | null>(null)
   const [loading,       setLoading]       = useState(false)
+  const [loadingStep,   setLoadingStep]   = useState('')
   const [pdfLoading,    setPdfLoading]    = useState(false)
   const [error,         setError]         = useState('')
   const [source,        setSource]        = useState<'ai' | 'benchmark' | null>(null)
@@ -362,6 +363,7 @@ export function TabAuditoria({ clientData }: Props) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [parseError,    setParseError]    = useState('')
   const [activeAction,  setActiveAction]  = useState<'curto' | 'medio' | 'longo'>('curto')
+  const [datePreset,    setDatePreset]    = useState<string>('last_30d')
 
   const key = clientData?.clientName || ''
 
@@ -457,24 +459,59 @@ export function TabAuditoria({ clientData }: Props) {
   const handleAudit = async () => {
     if (!clientData) return
     setLoading(true)
+    setLoadingStep('Buscando dados das plataformas…')
     setError('')
     setAudit(null)
 
     try {
+      // Busca dados reais das plataformas em paralelo
       // Tokens são buscados server-side via getValidMetaToken/getValidGoogleToken
-      // Só enviamos accountId (opcional) para selecionar conta específica
       const [metaResult, googleResult] = await Promise.all([
         metaAccount
           ? fetch('/api/ads-data/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ accountId: selectedMetaAccountId || metaAccount.accountId || undefined }) })
-              .then(r => r.json()).catch(() => null)
+              body: JSON.stringify({
+                accountId: selectedMetaAccountId || metaAccount.accountId || undefined,
+                datePreset,
+              }) })
+              .then(r => r.json())
+              .catch(() => null)
           : Promise.resolve(null),
         googleAccount
           ? fetch('/api/ads-data/google', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ accountId: selectedGoogleAccountId || googleAccount.accountId || undefined }) })
-              .then(r => r.json()).catch(() => null)
+              body: JSON.stringify({
+                accountId: selectedGoogleAccountId || googleAccount.accountId || undefined,
+                datePreset,
+              }) })
+              .then(r => r.json())
+              .catch(() => null)
           : Promise.resolve(null),
       ])
+
+      // Verifica se as chamadas retornaram erro (sem lançar exceção)
+      const metaError   = metaResult   && !metaResult.success   ? metaResult.error   : null
+      const googleError = googleResult && !googleResult.success ? googleResult.error : null
+
+      // Se ambas falharam e não há upload, reportar erro claro
+      if (metaError && googleError && uploadedFiles.length === 0) {
+        throw new Error(`Meta Ads: ${metaError} | Google Ads: ${googleError}`)
+      }
+
+      setLoadingStep('Normalizando métricas…')
+
+      const metaCampaigns   = metaResult?.success   ? metaResult.campaigns   : []
+      const metaTotals      = metaResult?.success   ? metaResult.totals      : null
+      const googleCampaigns = googleResult?.success ? googleResult.campaigns : []
+      const googleTotals    = googleResult?.success ? googleResult.totals    : null
+
+      // Aviso parcial se uma plataforma falhou mas a outra funcionou
+      const partialWarning = (metaError && !googleError && !uploadedFiles.length)
+        ? `Meta Ads indisponível (${metaError}) — auditando apenas Google Ads.`
+        : (googleError && !metaError && !uploadedFiles.length)
+          ? `Google Ads indisponível (${googleError}) — auditando apenas Meta Ads.`
+          : null
+      if (partialWarning) setError(partialWarning)
+
+      setLoadingStep('Analisando campanhas com IA…')
 
       const res = await fetch('/api/audit', {
         method: 'POST',
@@ -484,10 +521,11 @@ export function TabAuditoria({ clientData }: Props) {
           niche:         clientData.niche,
           budget:        clientData.budget,
           objective:     clientData.objective,
-          metaCampaigns:   metaResult?.campaigns   || [],
-          metaTotals:      metaResult?.totals      || null,
-          googleCampaigns: googleResult?.campaigns || [],
-          googleTotals:    googleResult?.totals    || null,
+          datePreset,
+          metaCampaigns,
+          metaTotals,
+          googleCampaigns,
+          googleTotals,
           uploadedFiles: uploadedFiles.map(f => ({
             filename: f.file.name,
             platform: f.platform,
@@ -496,17 +534,39 @@ export function TabAuditoria({ clientData }: Props) {
         }),
       })
 
+      setLoadingStep('Salvando auditoria…')
       const json = await res.json()
       if (!json.success) throw new Error(json.error)
       setAudit(json.audit)
       setSource(json.source)
-      // Persiste resultado no store para carregar automaticamente ao reabrir a aba
-      if (clientData?.clientName) setAuditCache(clientData.clientName, json.audit)
+      if (!partialWarning) setError('')
+      // Persiste no store (Zustand persist → localStorage)
+      if (clientData?.clientName) {
+        setAuditCache(clientData.clientName, json.audit)
+        if (json.priorityActions?.length) addPendingActions(clientData.clientName, json.priorityActions)
+        if (json.audit.health_score) {
+          setClientHealthScore(
+            clientData.clientName,
+            json.audit.health_score,
+            json.audit.grade || 'B',
+            json.source === 'ai' ? 'ai' : 'benchmark',
+          )
+        }
+      }
 
     } catch (e: any) {
-      setError(e.message || 'Erro ao gerar auditoria.')
+      const msg = e.message || 'Erro ao gerar auditoria.'
+      // Mensagens de erro mais amigáveis
+      const friendly = msg.includes('TOKEN_EXPIRED') ? 'Token da plataforma expirado. Reconecte a conta em Conexões.'
+        : msg.includes('NO_CONNECTION') ? 'Conta não conectada. Vá em Conexões e vincule sua conta.'
+        : msg.includes('NO_ACCOUNT_ID') ? 'ID da conta não encontrado. Selecione a conta correta em Meta Ads IA ou Google Ads IA.'
+        : msg.includes('Unauthorized') || msg.includes('401') ? 'Sessão expirada. Faça login novamente.'
+        : msg.includes('timeout') || msg.includes('Timeout') ? 'A auditoria demorou mais que o esperado. Tente novamente.'
+        : msg
+      setError(friendly)
     } finally {
       setLoading(false)
+      setLoadingStep('')
     }
   }
 
@@ -525,6 +585,20 @@ export function TabAuditoria({ clientData }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Seletor de período */}
+          <select
+            value={datePreset}
+            onChange={e => setDatePreset(e.target.value)}
+            disabled={loading}
+            className="text-xs font-semibold text-slate-300 bg-[#16161A] border border-[#2A2A30] rounded-lg px-3 py-2 focus:outline-none focus:border-[#F0B429] disabled:opacity-50"
+          >
+            <option value="last_7d">Últimos 7 dias</option>
+            <option value="last_30d">Últimos 30 dias</option>
+            <option value="last_90d">Últimos 90 dias</option>
+            <option value="this_month">Este mês</option>
+            <option value="last_month">Mês anterior</option>
+          </select>
+
           {audit && (
             <button
               onClick={async () => {
@@ -549,7 +623,9 @@ export function TabAuditoria({ clientData }: Props) {
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{ background: canAudit ? 'linear-gradient(135deg, #F0B429, #FFD166)' : '#2A2A30', color: canAudit ? '#000' : '#555' }}
           >
-            {loading ? <><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Auditando...</> : '🔍 Iniciar Auditoria'}
+            {loading
+              ? <><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Auditando…</>
+              : '🔍 Iniciar Auditoria'}
           </button>
         </div>
       </div>
@@ -757,6 +833,9 @@ export function TabAuditoria({ clientData }: Props) {
           <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-8 text-center">
             <div className="w-12 h-12 border-2 border-[#F0B429]/20 border-t-[#F0B429] rounded-full animate-spin mx-auto mb-4" />
             <div className="font-display font-bold text-white mb-1">Consultando especialista sênior</div>
+            {loadingStep && (
+              <div className="text-xs font-semibold text-[#F0B429] mb-1">{loadingStep}</div>
+            )}
             <div className="text-xs text-slate-500">Analisando estrutura, performance, tracking, criativos e funil...</div>
           </div>
           {[...Array(4)].map((_, i) => (
@@ -818,6 +897,25 @@ export function TabAuditoria({ clientData }: Props) {
       {/* ══════════════════════ RESULTADO DA AUDITORIA ══════════════════════ */}
       {audit && !loading && (
         <div className="space-y-5 animate-fade-up">
+
+          {/* Banner de aviso quando dados são zerados / sem real data */}
+          {source === 'benchmark' && audit._realMetrics?.totalSpend === 0 && (
+            <div className="flex items-start gap-3 bg-[#F0B429]/06 border border-[#F0B429]/30 rounded-2xl px-5 py-4">
+              <span className="text-lg flex-shrink-0 mt-0.5">⚠️</span>
+              <div>
+                <div className="font-bold text-[#F0B429] text-sm mb-1">Análise por benchmark — sem dados da conta</div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  A conta conectada não retornou dados de performance para o período selecionado.
+                  Para auditoria com seus dados reais:
+                </p>
+                <ul className="mt-2 space-y-1 text-xs text-slate-400">
+                  <li>→ Vá em <strong className="text-slate-200">Meta Ads IA</strong> e selecione a conta que tem campanhas ativas</li>
+                  <li>→ Ou mude o período (ex: "Este mês" → "Últimos 30 dias")</li>
+                  <li>→ Ou importe um relatório CSV/XLSX exportado do Gerenciador de Anúncios</li>
+                </ul>
+              </div>
+            </div>
+          )}
 
           {/* ── Score Hero ── */}
           <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
@@ -964,23 +1062,43 @@ export function TabAuditoria({ clientData }: Props) {
           {audit.performance && (audit.performance.meta || audit.performance.google) && (
             <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
               <SectionHeader num="04" icon="📊" title="Análise de Performance" color="#F0B429" />
+              {/* Aviso quando não há dados reais de performance */}
+              {audit._realMetrics && audit._realMetrics.totalSpend === 0 && audit._realMetrics.totalLeads === 0 && (
+                <div className="mb-4 flex items-start gap-2 bg-[#F0B429]/06 border border-[#F0B429]/25 rounded-xl px-4 py-3 text-[11px] text-[#F0B429]">
+                  <span className="flex-shrink-0 mt-0.5">⚠</span>
+                  <span>
+                    <strong>Sem dados de performance para o período selecionado.</strong>{' '}
+                    A conta conectada pode não ter campanhas ativas neste período, ou a conta selecionada é diferente da que tem os anúncios.
+                    Verifique em <strong>Meta Ads IA</strong> ou <strong>Google Ads IA</strong> qual conta está selecionada, ou importe um relatório CSV.
+                  </span>
+                </div>
+              )}
               <div className="grid md:grid-cols-2 gap-4">
                 {audit.performance.meta && (
                   <PlatformBlock label="Meta Ads" icon="📘" color="#1877F2">
-                    {audit.performance.meta.metricas && (
+                    {audit.performance.meta.metricas && (() => {
+                      const m = audit.performance.meta.metricas
+                      const noData = !m.ctr && !m.cpa && !m.frequencia
+                      return (
+                      <>
                       <div className="grid grid-cols-3 gap-2 mb-3">
                         {[
-                          { label: 'CTR', value: `${audit.performance.meta.metricas.ctr || 0}%`, warn: (audit.performance.meta.metricas.ctr || 0) < 1 },
-                          { label: 'CPL', value: `R$${audit.performance.meta.metricas.cpa || 0}`, warn: false },
-                          { label: 'Freq.', value: `${audit.performance.meta.metricas.frequencia || 0}×`, warn: (audit.performance.meta.metricas.frequencia || 0) > 4 },
-                        ].map(m => (
-                          <div key={m.label} className="bg-[#111114] rounded-lg p-2 text-center">
-                            <div className="text-[10px] text-slate-600 mb-0.5">{m.label}</div>
-                            <div className="text-sm font-bold" style={{ color: m.warn ? '#FF4D4D' : '#F0B429' }}>{m.value}</div>
+                          { label: 'CTR', value: m.ctr > 0 ? `${m.ctr}%` : '—', warn: m.ctr > 0 && m.ctr < 1 },
+                          { label: 'CPL', value: m.cpa > 0 ? `R$${m.cpa}` : '—', warn: false },
+                          { label: 'Freq.', value: m.frequencia > 0 ? `${m.frequencia}×` : '—', warn: m.frequencia > 0 && m.frequencia > 4 },
+                        ].map(item => (
+                          <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
+                            <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
+                            <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
                           </div>
                         ))}
                       </div>
-                    )}
+                      {noData && (
+                        <div className="text-[10px] text-slate-500 text-center mb-2">Sem métricas disponíveis para o período</div>
+                      )}
+                      </>
+                      )
+                    })()}
                     {audit.performance.meta.gargalos?.length > 0 && (
                       <div className="mb-3"><div className="text-[10px] text-[#FB923C] font-bold uppercase mb-1.5">Gargalos</div>
                         <ItemList items={audit.performance.meta.gargalos} color="#FB923C" icon="⚠" /></div>
@@ -992,20 +1110,23 @@ export function TabAuditoria({ clientData }: Props) {
                 )}
                 {audit.performance.google && (
                   <PlatformBlock label="Google Ads" icon="🔍" color="#EA4335">
-                    {audit.performance.google.metricas && (
-                      <div className="grid grid-cols-3 gap-2 mb-3">
-                        {[
-                          { label: 'CTR', value: `${audit.performance.google.metricas.ctr || 0}%`, warn: (audit.performance.google.metricas.ctr || 0) < 2 },
-                          { label: 'CPC', value: `R$${audit.performance.google.metricas.cpc || 0}`, warn: false },
-                          { label: 'Conv.', value: `${audit.performance.google.metricas.taxa_conversao || 0}%`, warn: (audit.performance.google.metricas.taxa_conversao || 0) < 2 },
-                        ].map(m => (
-                          <div key={m.label} className="bg-[#111114] rounded-lg p-2 text-center">
-                            <div className="text-[10px] text-slate-600 mb-0.5">{m.label}</div>
-                            <div className="text-sm font-bold" style={{ color: m.warn ? '#FF4D4D' : '#F0B429' }}>{m.value}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {audit.performance.google.metricas && (() => {
+                      const gm = audit.performance.google.metricas
+                      return (
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          {[
+                            { label: 'CTR', value: gm.ctr > 0 ? `${gm.ctr}%` : '—', warn: gm.ctr > 0 && gm.ctr < 2 },
+                            { label: 'CPC', value: gm.cpc > 0 ? `R$${gm.cpc}` : '—', warn: false },
+                            { label: 'Conv.', value: gm.taxa_conversao > 0 ? `${gm.taxa_conversao}%` : '—', warn: gm.taxa_conversao > 0 && gm.taxa_conversao < 2 },
+                          ].map(item => (
+                            <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
+                              <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
+                              <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()}
                     {audit.performance.google.palavras_chave_analise && (
                       <p className="text-xs text-slate-400 mb-2">{audit.performance.google.palavras_chave_analise}</p>
                     )}

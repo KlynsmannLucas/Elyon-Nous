@@ -53,6 +53,17 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const bodyAccountId = body.accountId as string | undefined
 
+  // Converte datePreset para literal GAQL. Padrão: LAST_30_DAYS.
+  const presetMap: Record<string, string> = {
+    last_7d:    'LAST_7_DAYS',
+    last_30d:   'LAST_30_DAYS',
+    last_90d:   'LAST_90_DAYS',
+    this_month: 'THIS_MONTH',
+    last_month: 'LAST_MONTH',
+  }
+  const rawPreset  = (body.datePreset as string | undefined) || 'last_30d'
+  const gaqlPeriod = presetMap[rawPreset] || 'LAST_30_DAYS'
+
   let accessToken: string
   let accountId:   string | null
 
@@ -87,7 +98,7 @@ export async function POST(req: NextRequest) {
       metrics.conversions_value,
       metrics.cost_per_conversion
     FROM campaign
-    WHERE segments.date DURING LAST_30_DAYS
+    WHERE segments.date DURING ${gaqlPeriod}
       AND campaign.status != 'REMOVED'
     ORDER BY metrics.cost_micros DESC
     LIMIT 25

@@ -193,6 +193,25 @@ export interface AuditEntry {
   createdAt: string
 }
 
+export interface PendingAction {
+  id: string
+  title: string
+  description: string
+  platform: 'meta' | 'google' | 'ambos'
+  urgency: 'critica' | 'alta' | 'media' | 'baixa'
+  impact: string
+  status: 'pendente' | 'em_andamento' | 'concluida'
+  source: 'auditoria' | 'pipeline' | 'manual'
+  createdAt: string
+}
+
+export interface ClientHealthScore {
+  score: number
+  grade: string
+  updatedAt: string
+  source: 'ai' | 'benchmark'
+}
+
 export interface StrategyData {
   analysis: Record<string, any>
   strategy: Record<string, any>
@@ -282,6 +301,16 @@ interface AppStore {
   actionPlanCache: Record<string, any[]>
   setActionPlanCache: (clientName: string, items: any[]) => void
   updateActionStatus: (clientName: string, id: string, status: string) => void
+
+  // Ações pendentes auto-geradas da auditoria
+  pendingActionsCache: Record<string, PendingAction[]>
+  addPendingActions: (clientName: string, actions: PendingAction[]) => void
+  updatePendingActionStatus: (clientName: string, id: string, status: PendingAction['status']) => void
+  clearPendingActions: (clientName: string) => void
+
+  // Score de saúde por cliente
+  clientHealthScores: Record<string, ClientHealthScore>
+  setClientHealthScore: (clientName: string, score: number, grade: string, source: 'ai' | 'benchmark') => void
 
   // Testes A/B de criativos
   creativeTests: CreativeTest[]
@@ -514,6 +543,37 @@ export const useAppStore = create<AppStore>()(
           },
         })),
 
+      pendingActionsCache: {},
+      addPendingActions: (clientName, actions) =>
+        set((s) => ({
+          pendingActionsCache: {
+            ...s.pendingActionsCache,
+            [clientName]: actions,
+          },
+        })),
+      updatePendingActionStatus: (clientName, id, status) =>
+        set((s) => ({
+          pendingActionsCache: {
+            ...s.pendingActionsCache,
+            [clientName]: (s.pendingActionsCache[clientName] || []).map((a) =>
+              a.id === id ? { ...a, status } : a
+            ),
+          },
+        })),
+      clearPendingActions: (clientName) =>
+        set((s) => ({
+          pendingActionsCache: { ...s.pendingActionsCache, [clientName]: [] },
+        })),
+
+      clientHealthScores: {},
+      setClientHealthScore: (clientName, score, grade, source) =>
+        set((s) => ({
+          clientHealthScores: {
+            ...s.clientHealthScores,
+            [clientName]: { score, grade, source, updatedAt: new Date().toISOString() },
+          },
+        })),
+
       creativeTests: [],
       addCreativeTest: (test) => {
         const entry: CreativeTest = { ...test, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
@@ -666,6 +726,8 @@ export const useAppStore = create<AppStore>()(
         campaignHistory:          [],
         auditCache:               {},
         actionPlanCache:          {},
+        pendingActionsCache:      {},
+        clientHealthScores:       {},
         creativeTests:            [],
         funnelEntries:            [],
         clientAssets:             {},
@@ -698,6 +760,8 @@ export const useAppStore = create<AppStore>()(
         strategyTimestamps:       state.strategyTimestamps,
         auditCache:               state.auditCache,
         actionPlanCache:          state.actionPlanCache,
+        pendingActionsCache:      state.pendingActionsCache,
+        clientHealthScores:       state.clientHealthScores,
         creativeTests:            state.creativeTests,
         funnelEntries:            state.funnelEntries,
         generatedPersona:         state.generatedPersona,

@@ -68,11 +68,12 @@ function prazoToDate(prazo: string, generatedAt?: string): string {
 }
 
 export function TabAcoes({ clientData, strategyData }: Props) {
-  const { auditCache, actionPlanCache, setActionPlanCache, updateActionStatus } = useAppStore()
+  const { auditCache, actionPlanCache, setActionPlanCache, updateActionStatus, pendingActionsCache, updatePendingActionStatus } = useAppStore()
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
   const [filtro, setFiltro]   = useState<Filtro>('todas')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [showAuditActions, setShowAuditActions] = useState(true)
 
   const key             = clientData?.clientName || ''
   const actions         = actionPlanCache[key] || []
@@ -81,6 +82,14 @@ export function TabAcoes({ clientData, strategyData }: Props) {
   const auditHistory  = auditCache[key]
   const latestAudit   = Array.isArray(auditHistory) ? auditHistory[0]?.audit : auditHistory
   const metaIntelData = latestAudit?._intelligenceData || null
+
+  // Ações auto-geradas da auditoria
+  const pendingActions = pendingActionsCache[key] || []
+  const pendingStats = {
+    total:    pendingActions.length,
+    critica:  pendingActions.filter(a => a.urgency === 'critica' && a.status === 'pendente').length,
+    pendente: pendingActions.filter(a => a.status === 'pendente').length,
+  }
 
   const stats = {
     total:     actions.length,
@@ -218,6 +227,126 @@ export function TabAcoes({ clientData, strategyData }: Props) {
       {error && (
         <div style={{ background: C.redBg, border: `1px solid rgba(239,68,68,0.3)`, borderRadius: 12, padding: '12px 16px', fontSize: 13, color: C.red }}>
           {error}
+        </div>
+      )}
+
+      {/* Ações da Auditoria — auto-geradas */}
+      {pendingActions.length > 0 && (
+        <div style={{ background: C.surface, border: `1px solid rgba(167,139,250,0.2)`, borderRadius: 16, padding: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 16 }}>🔍</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>Ações da Auditoria</span>
+              {pendingStats.critica > 0 && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                  background: 'rgba(239,68,68,0.1)', color: C.red, border: '1px solid rgba(239,68,68,0.3)',
+                }}>
+                  {pendingStats.critica} crítica{pendingStats.critica > 1 ? 's' : ''}
+                </span>
+              )}
+              <span style={{
+                fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999,
+                background: 'rgba(167,139,250,0.1)', color: '#A78BFA', border: '1px solid rgba(167,139,250,0.25)',
+              }}>
+                Auto-gerado da auditoria
+              </span>
+            </div>
+            <button onClick={() => setShowAuditActions(v => !v)} style={{ fontSize: 11, color: '#A78BFA', background: 'none', border: 'none', cursor: 'pointer' }}>
+              {showAuditActions ? '▲ Recolher' : '▼ Expandir'}
+            </button>
+          </div>
+
+          {showAuditActions && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(['critica', 'alta', 'media', 'baixa'] as Prioridade[]).map(urgency => {
+                const items = pendingActions.filter(a => a.urgency === urgency)
+                if (!items.length) return null
+                const cfg = PRIORIDADE_CONFIG[urgency]
+                return (
+                  <div key={urgency}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, marginTop: 4 }}>
+                      <span style={{ fontSize: 12 }}>{cfg.icon}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: cfg.color }}>
+                        {cfg.label}
+                      </span>
+                    </div>
+                    {items.map(item => {
+                      const sCfg = STATUS_CONFIG[item.status as Status] || STATUS_CONFIG.pendente
+                      const isOpen = expanded === item.id
+                      return (
+                        <div key={item.id} style={{
+                          background: C.elevated, borderRadius: 12, overflow: 'hidden',
+                          border: `1px solid ${C.border}`,
+                          borderLeft: `3px solid ${cfg.color}`,
+                          marginBottom: 6,
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px' }}>
+                            <button
+                              onClick={() => {
+                                const next = STATUS_CONFIG[item.status as Status]?.next || 'pendente'
+                                updatePendingActionStatus(key, item.id, next as any)
+                              }}
+                              style={{
+                                width: 18, height: 18, borderRadius: 999, border: `2px solid ${sCfg.color}`,
+                                flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', background: item.status === 'concluida' ? sCfg.color : 'transparent',
+                              }}
+                            >
+                              {item.status === 'concluida' && <span style={{ fontSize: 9, color: '#000', fontWeight: 700 }}>✓</span>}
+                              {item.status === 'em_andamento' && <span style={{ width: 7, height: 7, borderRadius: 999, background: sCfg.color, display: 'block' }} />}
+                            </button>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4,
+                                  background: item.platform === 'meta' ? 'rgba(24,119,242,0.12)' : item.platform === 'google' ? 'rgba(234,67,53,0.12)' : 'rgba(124,58,237,0.1)',
+                                  color: item.platform === 'meta' ? '#1877F2' : item.platform === 'google' ? '#EA4335' : '#A78BFA',
+                                  border: `1px solid ${item.platform === 'meta' ? 'rgba(24,119,242,0.25)' : item.platform === 'google' ? 'rgba(234,67,53,0.25)' : 'rgba(124,58,237,0.25)'}`,
+                                }}>
+                                  {item.platform === 'meta' ? '📘 Meta' : item.platform === 'google' ? '🔍 Google' : '📡 Ambos'}
+                                </span>
+                                <span style={{ fontSize: 10, color: sCfg.color }}>{sCfg.label}</span>
+                              </div>
+                              <span style={{
+                                fontSize: 12, fontWeight: 600, color: C.text1,
+                                textDecoration: item.status === 'concluida' ? 'line-through' : 'none',
+                                opacity: item.status === 'concluida' ? 0.5 : 1,
+                              }}>
+                                {item.title}
+                              </span>
+                            </div>
+                            <button onClick={() => setExpanded(isOpen ? null : item.id)}
+                              style={{ color: C.text3, background: 'none', border: 'none', cursor: 'pointer', fontSize: 11 }}>
+                              {isOpen ? '▲' : '▼'}
+                            </button>
+                          </div>
+                          {isOpen && (
+                            <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${C.border}` }}>
+                              <div style={{ paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {item.description && (
+                                  <div>
+                                    <div style={{ fontSize: 10, color: C.text2, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>Como executar</div>
+                                    <p style={{ fontSize: 12, color: C.text1, lineHeight: 1.6, margin: 0 }}>{item.description}</p>
+                                  </div>
+                                )}
+                                {item.impact && (
+                                  <div style={{ background: C.surface, borderRadius: 8, padding: '8px 12px', display: 'flex', gap: 8 }}>
+                                    <span style={{ fontSize: 11, color: C.text2 }}>Impacto:</span>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: C.green }}>{item.impact}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 

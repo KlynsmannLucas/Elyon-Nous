@@ -21,9 +21,11 @@ const QUICK_PROMPTS = [
 ]
 
 export function NousChat({ clientData, strategy, campaignHistory }: Props) {
-  const auditCache          = useAppStore((s) => s.auditCache)
-  const nousConversations   = useAppStore((s) => s.nousConversations)
-  const addNousMessage      = useAppStore((s) => s.addNousMessage)
+  const auditCache            = useAppStore((s) => s.auditCache)
+  const pendingActionsCache   = useAppStore((s) => s.pendingActionsCache)
+  const clientHealthScores    = useAppStore((s) => s.clientHealthScores)
+  const nousConversations     = useAppStore((s) => s.nousConversations)
+  const addNousMessage        = useAppStore((s) => s.addNousMessage)
   const clearNousConversation = useAppStore((s) => s.clearNousConversation)
 
   const clientName = clientData?.clientName || '__global__'
@@ -130,21 +132,36 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
     if (strategy?.recommendation) lines.push(`\n=== ESTRATÉGIA GERADA ===\n${strategy.recommendation}`)
     if (strategy?.growth_diagnosis?.main_problem) lines.push(`Problema principal identificado: ${strategy.growth_diagnosis.main_problem}`)
 
-    // Último audit
+    // Health score do store
     const clientName = clientData?.clientName
+    const hs = clientName ? clientHealthScores[clientName] : undefined
+    if (hs) lines.push(`\nScore de saúde da conta: ${hs.score}/100 (${hs.grade}) — fonte: ${hs.source}`)
+
+    // Último audit
     const audits = clientName ? auditCache[clientName] : undefined
     if (audits && audits.length > 0) {
       const latest = audits[0]
       const audit = latest.audit as any
-      lines.push(`\n=== ÚLTIMA AUDITORIA ===`)
-      if (audit?.score) lines.push(`Score geral: ${audit.score}/100`)
-      if (audit?.diagnosis) lines.push(`Diagnóstico: ${audit.diagnosis}`)
-      if (audit?.top_issues?.length) {
-        lines.push(`Principais problemas: ${audit.top_issues.slice(0, 3).join('; ')}`)
+      lines.push(`\n=== ÚLTIMA AUDITORIA (${new Date(latest.createdAt || '').toLocaleDateString('pt-BR')}) ===`)
+      if (audit?.health_score) lines.push(`Score: ${audit.health_score}/100 (${audit.grade || ''})`)
+      if (audit?.executive_summary) lines.push(`Sumário executivo: ${audit.executive_summary}`)
+      const rm = audit?._realMetrics
+      if (rm && rm.totalSpend > 0) {
+        lines.push(`Dados reais: R$${rm.totalSpend.toLocaleString('pt-BR')} investidos | ${rm.totalLeads} leads | CPL R$${rm.avgCPL || '?'} | ROAS ${rm.avgROAS || '?'}× | CTR ${rm.avgCTR || '?'}% | ${rm.campaignCount} campanhas`)
       }
-      if (audit?.quick_wins?.length) {
-        lines.push(`Quick wins: ${audit.quick_wins.slice(0, 3).join('; ')}`)
+      if (audit?.gargalos?.length) {
+        lines.push(`Principais gargalos: ${audit.gargalos.slice(0, 3).map((g: any) => g.titulo).join('; ')}`)
       }
+      if (audit?.plano_acao?.curto?.length) {
+        lines.push(`Ações de curto prazo: ${audit.plano_acao.curto.slice(0, 2).map((a: any) => a.acao).join('; ')}`)
+      }
+    }
+
+    // Ações pendentes da auditoria
+    const pendingActions = clientName ? (pendingActionsCache[clientName] || []) : []
+    const criticalPending = pendingActions.filter(a => a.urgency === 'critica' && a.status === 'pendente')
+    if (criticalPending.length > 0) {
+      lines.push(`\nAÇÕES CRÍTICAS PENDENTES (${criticalPending.length}): ${criticalPending.slice(0, 3).map(a => a.title).join('; ')}`)
     }
 
     if (campaignHistory.length > 0) {

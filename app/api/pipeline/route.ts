@@ -323,7 +323,7 @@ ${benchmarkText ? `\nBENCHMARK (${niche}):\n${benchmarkText}` : ''}
 JSON:
 {"score_conta":<0-100>,"grade":"<A+|A|A-|B+|B|B-|C+|C|D>","resumo_executivo":"<2-3 frases com números>","plataformas_analisadas":["<platform>"],"diagnostico":["<1>","<2>","<3>"],"erros_criticos":["<erro com nome da campanha>"],"gargalos":[{"rank":1,"titulo":"<gargalo>","descricao":"<métricas>","impacto":"<R$ ou %>","plataforma":"<meta|google|ambos>"}],"oportunidades":[{"titulo":"<oportunidade>","descricao":"<como capitalizar>","potencial":"<resultado>","plataforma":"<meta|google|ambos>"}],"campanhas_destaque":[{"nome":"<campanha>","acao":"<ESCALAR|MANTER|PAUSAR>","motivo":"<razão com número>","plataforma":"<meta|google>"}],"plano_acao":{"curto":[{"acao":"<7d>","como":"<passos>","impacto":"<resultado>"}],"medio":[{"acao":"<30d>","como":"<execução>","impacto":"<resultado>"}],"longo":[{"acao":"<90d>","como":"<estratégia>","impacto":"<transformação>"}]}}`
 
-  const result = await callLLMJson<any>(anthropic, prompt, 6000)
+  const result = await callLLMJson<any>(anthropic, prompt, 8000)
   return {
     agent: 'auditor',
     ...result,
@@ -419,7 +419,7 @@ ${benchmarkSection ? `\nBENCHMARKS:\n${benchmarkSection}` : ''}${nicheContext ? 
 JSON:
 {"intelligence_score":<0-100>,"score_label":"<Básica|Boa|Avançada|Excelente>","recommendation":"<2-3 frases>","estimated_monthly_revenue_range":"R$X–Y","regulatory_alerts":["<alerta>"],"growth_diagnosis":{"main_problem":"<problema>","waste_analysis":["<desperdício>","<2>","<3>"],"growth_blockers":["<gargalo>","<2>","<3>"],"funnel_health":{"tofu":{"status":"<ok|atenção|crítico>","issue":"<problema>","action":"<ação>"},"mofu":{"status":"<ok|atenção|crítico>","issue":"<problema>","action":"<ação>"},"bofu":{"status":"<ok|atenção|crítico>","issue":"<problema>","action":"<ação>"}}},"funnel_strategy":{"tofu":{"goal":"<meta>","channels":["<canal>"],"tactics":["<tática>","<2>","<3>"]},"mofu":{"goal":"<meta>","tactics":["<tática>","<2>"]},"bofu":{"goal":"<meta>","tactics":["<tática>","<2>"]}},"optimization_scale":{"cpl_target":<num>,"scale_actions":["<escalar>","<2>"],"cut_immediately":["<cortar>","<2>"],"ab_tests":["<teste>","<2>","<3>"]},"brand_positioning":{"authority_strategies":["<estratégia>","<2>"],"communication_adjustments":["<ajuste>","<2>"],"value_perception":["<ação>","<2>"]},"vision_360":{"website_improvements":["<melhoria>","<2>"],"sales_alignment":["<alinhamento>","<2>"],"off_ads_opportunities":["<oportunidade>","<2>"]},"priority_ranking":[{"channel":"<nome>","priority":1,"budget_pct":<0-100>,"budget_brl":<val>,"cpl_min":<num>,"cpl_max":<num>,"cpl_avg":<num>,"leads_min":<num>,"leads_max":<num>,"roi_range":"<X%–Y%>","revenue_min":<num>,"revenue_max":<num>,"rationale":"<por que>"}],"recommended_channels_names":["<canal>"],"plan_90_days":[{"month":1,"goal":"<objetivo>","week_1":["<ação>"],"week_2":["<ação>"],"week_3":["<ação>"],"week_4":["<ação>"]},{"month":2,"goal":"<objetivo>","week_1":["<ação>"],"week_2":["<ação>"],"week_3":["<ação>"],"week_4":["<ação>"]},{"month":3,"goal":"<objetivo>","week_1":["<ação>"],"week_2":["<ação>"],"week_3":["<ação>"],"week_4":["<ação>"]}],"key_actions":["<ação>","<2>","<3>","<4>","<5>"]}`
 
-  const result = await callLLMJson<any>(anthropic, prompt, 6000)
+  const result = await callLLMJson<any>(anthropic, prompt, 8000)
   return { agent: 'estrategista', ...result, generated_at: new Date().toISOString(), source: 'ai' }
 }
 

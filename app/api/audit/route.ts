@@ -163,7 +163,9 @@ function buildFallbackAudit(
     executive_summary: `Conta de ${clientName} (${niche}) com CPL real de R$${realCPL} vs benchmark R$${bench.cpl_min}–${bench.cpl_max}. ${allCampaigns.length} campanhas analisadas com investimento total de R$${Math.round(totalSpend).toLocaleString('pt-BR')}.`,
 
     visao_geral: {
-      modelo_aquisicao: `Modelo de aquisição baseado em tráfego pago para ${niche}. Investimento de R$${Math.round(totalSpend).toLocaleString('pt-BR')} gerando ${totalLeads} leads com CPL médio de R$${realCPL}.`,
+      modelo_aquisicao: totalSpend > 0
+        ? `Modelo de aquisição baseado em tráfego pago para ${niche}. Investimento de R$${Math.round(totalSpend).toLocaleString('pt-BR')} gerando ${totalLeads} leads com CPL médio de R$${realCPL}.`
+        : `Análise de ${niche} baseada em benchmarks do mercado. Sem dados de performance disponíveis para o período selecionado — conecte a conta correta ou importe um relatório para análise real.`,
       desalinhamentos: realCPL > bench.cpl_max
         ? [`CPL ${Math.round(cplDiff)}% acima do benchmark do nicho — sinaliza desalinhamento entre criativo, audiência ou oferta`]
         : [`Performance dentro do benchmark do nicho ${niche}`],
@@ -325,6 +327,31 @@ function buildFallbackAudit(
   }
 }
 
+function extractPriorityActions(audit: any, platform: string): any[] {
+  const plan = audit.plano_acao
+  if (!plan) return []
+  const actions: any[] = []
+  const plat = platform as 'meta' | 'google' | 'ambos'
+
+  const toAction = (item: any, urgency: string) => ({
+    id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    title: item.acao || item.titulo || '',
+    description: item.como || item.descricao || '',
+    platform: plat,
+    urgency,
+    impact: item.impacto || '',
+    status: 'pendente',
+    source: 'auditoria',
+    createdAt: new Date().toISOString(),
+  })
+
+  ;(plan.curto || []).forEach((a: any) => actions.push(toAction(a, 'critica')))
+  ;(plan.medio || []).forEach((a: any) => actions.push(toAction(a, 'alta')))
+  ;(plan.longo || []).forEach((a: any) => actions.push(toAction(a, 'media')))
+
+  return actions.slice(0, 12)
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth()
@@ -368,6 +395,8 @@ export async function POST(req: NextRequest) {
       uploadedFiles     = [],
       uploadedCampaigns = [],
       uploadedPlatform  = null,
+      datePreset        = 'last_30d',
+      period            = null,
     } = body
     const clientName = sanitizeText(_cn, 120)
     const niche      = sanitizeText(_ni, 120)
@@ -418,7 +447,7 @@ export async function POST(req: NextRequest) {
     const uploadTotalLeads = Object.values(platformBest).reduce((s, v) => s + v.leads, 0)
     const totalSpend = (metaTotals?.spend || 0) + (googleTotals?.spend || 0) + uploadTotalSpend
     const totalLeads = (metaTotals?.leads || 0) + (googleTotals?.leads || 0) + uploadTotalLeads
-    const realCPL    = totalLeads > 0 ? (totalSpend / totalLeads).toFixed(2) : '0'
+    const realCPL    = totalLeads > 0 ? +(totalSpend / totalLeads).toFixed(2) : 0
 
     // ── Métricas reais agregadas (usadas pelo Overview) ────────────────────────
     const totalImpressions = allCampaigns.reduce((s: number, c: any) => s + (c.impressions || 0), 0)
@@ -563,6 +592,8 @@ Cliente: ${clientName}
 Nicho: ${niche}
 Investimento mensal configurado: R$${budget}
 Objetivo: ${objective}
+Período analisado: ${period ? `${period.startDate} a ${period.endDate}` : datePreset === 'last_7d' ? 'Últimos 7 dias' : datePreset === 'last_90d' ? 'Últimos 90 dias' : datePreset === 'this_month' ? 'Este mês' : datePreset === 'last_month' ? 'Mês anterior' : 'Últimos 30 dias'}
+Fontes de dados: ${[hasMeta && 'Meta Ads', hasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean).join(' + ')}
 
 ${anomalySection}
 
@@ -738,20 +769,39 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
 
         const message = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 6000,
+          max_tokens: 8000,
+          system: 'Você é um consultor sênior de tráfego pago com 10+ anos no mercado brasileiro. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois do JSON. Sem ```json. Comece direto com { e termine com }.',
           messages: [{ role: 'user', content: prompt }],
         })
 
-        const raw = (message.content[0] as any).text.trim()
-        const jsonStr = raw.startsWith('```') ? raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '') : raw
-        const audit = JSON.parse(jsonStr)
+        let raw = (message.content[0] as any).text.trim()
+        // Remove TODAS as markdown fences independente de posição
+        raw = raw.replace(/```(?:json)?[ \t]*\r?\n?/gi, '').replace(/[ \t]*```[ \t]*/g, '').trim()
+        // Descarta texto antes do primeiro { ou [
+        const firstBrace = raw.search(/[\[{]/)
+        if (firstBrace > 0) raw = raw.slice(firstBrace)
+        // Descarta texto após o último } ou ]
+        const lastClose = Math.max(raw.lastIndexOf('}'), raw.lastIndexOf(']'))
+        if (lastClose >= 0 && lastClose < raw.length - 1) raw = raw.slice(0, lastClose + 1)
+
+        let audit: any
+        try {
+          audit = JSON.parse(raw)
+        } catch {
+          const objMatch = raw.match(/(\{[\s\S]*\})/)
+          if (objMatch) audit = JSON.parse(objMatch[1])
+          else throw new Error('Resposta da IA não contém JSON válido')
+        }
         audit.generated_at = new Date().toISOString()
         audit._realMetrics = realMetrics
 
         // ── Salva padrões na memória RAG (fire-and-forget) ─────────────────
         saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
 
-        return NextResponse.json({ success: true, audit, source: 'ai' })
+        const dataSource = hasMeta && hasGoogle ? 'ambos' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'ambos'
+        const priorityActions = extractPriorityActions(audit, dataSource)
+
+        return NextResponse.json({ success: true, audit, source: 'ai', priorityActions })
 
       } catch (aiError: any) {
         console.warn('Anthropic API falhou na auditoria, usando fallback:', aiError.message)
@@ -767,7 +817,10 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
 
     saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
 
-    return NextResponse.json({ success: true, audit, source: 'benchmark' })
+    const fbDataSource = hasMeta && hasGoogle ? 'ambos' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'ambos'
+    const priorityActions = extractPriorityActions(audit, fbDataSource)
+
+    return NextResponse.json({ success: true, audit, source: 'benchmark', priorityActions })
 
   } catch (error: any) {
     console.error('Audit route error:', error)

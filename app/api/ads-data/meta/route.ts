@@ -86,11 +86,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Ad Account ID não encontrado. Selecione uma conta.', code: 'NO_ACCOUNT_ID' }, { status: 400 })
     }
 
+    // Suporta datePreset (last_7d, last_30d, last_90d, this_month, last_month)
+    // ou startDate/endDate customizados. Padrão: last_30d.
+    const preset    = (body.datePreset as string | undefined) || 'last_30d'
+    const startDate = body.startDate as string | undefined
+    const endDate   = body.endDate   as string | undefined
+
     const today = new Date()
     const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const sixtyDaysAgo = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000)
-    const currentTimeParam = 'date_preset=last_30d'
-    const prevTimeParam = `time_range=${encodeURIComponent(JSON.stringify({ since: dateStr(sixtyDaysAgo), until: dateStr(thirtyDaysAgo) }))}`
+    const sixtyDaysAgo  = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000)
+
+    let currentTimeParam: string
+    let prevTimeParam: string
+    if (startDate && endDate) {
+      currentTimeParam = `time_range=${encodeURIComponent(JSON.stringify({ since: startDate, until: endDate }))}`
+      // Período anterior: mesma duração antes do startDate
+      const duration = new Date(endDate).getTime() - new Date(startDate).getTime()
+      const prevEnd   = new Date(new Date(startDate).getTime() - 1).toISOString().split('T')[0]
+      const prevStart = new Date(new Date(startDate).getTime() - duration).toISOString().split('T')[0]
+      prevTimeParam = `time_range=${encodeURIComponent(JSON.stringify({ since: prevStart, until: prevEnd }))}`
+    } else {
+      currentTimeParam = `date_preset=${preset}`
+      prevTimeParam = `time_range=${encodeURIComponent(JSON.stringify({ since: dateStr(sixtyDaysAgo), until: dateStr(thirtyDaysAgo) }))}`
+    }
 
     const [rows, prevRows] = await Promise.all([
       fetchAllInsights(accountId, accessToken, currentTimeParam),

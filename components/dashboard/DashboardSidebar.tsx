@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { getPlanLimits } from '@/lib/planUtils'
+import { useAppStore } from '@/lib/store'
 
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
@@ -78,40 +79,42 @@ export const SIDEBAR_SECTIONS: {
   { label: 'Início', items: [
     { key: 'overview',    label: 'Visão Geral',          icon: '🏠', badge: 'LIVE' },
   ]},
-  { label: 'Análise', items: [
+  { label: 'Diagnóstico', items: [
     { key: 'analise',     label: 'Auditoria de Anúncios', icon: '🔍' },
     { key: 'diagnostic',  label: 'Saúde do Negócio',      icon: '🎯' },
     { key: 'funil',       label: 'Funil de Vendas',       icon: '🔬' },
-  ]},
-  { label: 'Estratégia', items: [
-    { key: 'strategy',    label: 'Estratégia',            icon: '⚡' },
-    { key: 'acoes',       label: 'Ações Prioritárias',    icon: '✅' },
     { key: 'performance', label: 'Resultados',            icon: '📊' },
-    { key: 'relatorios',  label: 'Relatórios',            icon: '📤' },
-    { key: 'financeiro',  label: 'Painel Financeiro',     icon: '💰', badge: 'NOVO' },
   ]},
-  { label: 'Anúncios', planLabel: 'Profissional', items: [
+  { label: 'Campanhas', planLabel: 'Profissional', items: [
     { key: 'anuncios',    label: 'Meta & Google Ads',     icon: '📡' },
     { key: 'audiencias',  label: 'Audiências',            icon: '👥' },
-    { key: 'persona',     label: 'Persona do Cliente',    icon: '👤' },
+    { key: 'budget',      label: 'Alocar Verba',          icon: '💰', badge: 'IA' },
+    { key: 'channelmix',  label: 'Mix de Canais',         icon: '🌐', badge: 'IA' },
+  ]},
+  { label: 'Estratégia & Ações', items: [
+    { key: 'strategy',    label: 'Estratégia',            icon: '⚡' },
+    { key: 'acoes',       label: 'Ações Prioritárias',    icon: '✅' },
+    { key: 'cenarios',    label: 'Projeções',             icon: '📈' },
+    { key: 'financeiro',  label: 'Painel Financeiro',     icon: '💰', badge: 'NOVO' },
   ]},
   { label: 'Criativo', planLabel: 'Profissional', items: [
     { key: 'concorrentes',label: 'Concorrentes',          icon: '🕵️' },
     { key: 'cro',         label: 'Melhorar Conversão',    icon: '⚙️', badge: 'IA' },
     { key: 'conteudo',    label: 'Criar Conteúdo',        icon: '✨' },
     { key: 'assets',      label: 'Arquivos da Empresa',   icon: '🖼️' },
+    { key: 'persona',     label: 'Persona do Cliente',    icon: '👤' },
   ]},
-  { label: 'Avançado', planLabel: 'Avançada', items: [
-    { key: 'budget',      label: 'Alocar Verba',          icon: '💰', badge: 'IA' },
-    { key: 'channelmix',  label: 'Mix de Canais',         icon: '🌐', badge: 'IA' },
-    { key: 'memory',      label: 'Memória da Campanha',   icon: '🧠', badge: 'RAG' },
-    { key: 'workflow',    label: 'Workflow Builder',      icon: '⚙️', badge: 'AUTO' },
+  { label: 'Inteligência', planLabel: 'Avançada', items: [
+    { key: 'inteligencia',label: 'TrafficBrain AI',       icon: '🧠', badge: 'IA' },
+    { key: 'memory',      label: 'Memória RAG',           icon: '🧠', badge: 'RAG' },
     { key: 'mercado',     label: 'Pesquisa de Mercado',   icon: '📡' },
-    { key: 'cenarios',    label: 'Projeções',             icon: '📈' },
+    { key: 'workflow',    label: 'Workflow Builder',      icon: '⚙️', badge: 'AUTO' },
   ]},
-  { label: 'Operação', items: [
-    { key: 'checklist',  label: 'Checklist Diário',       icon: '✅', badge: 'NOVO' },
-    { key: 'portal',     label: 'Portal do Cliente',      icon: '🔗', badge: 'NOVO' },
+  { label: 'Relatórios & Operação', items: [
+    { key: 'relatorios',  label: 'Relatórios',            icon: '📤' },
+    { key: 'checklist',   label: 'Checklist Diário',      icon: '✅', badge: 'NOVO' },
+    { key: 'portal',      label: 'Portal do Cliente',     icon: '🔗' },
+    { key: 'campanha',    label: 'Histórico',             icon: '📋' },
   ]},
 ]
 
@@ -136,6 +139,11 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
   const [portalLoading, setPortalLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
+  const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
+  const clientKey = clientData?.clientName || ''
+  const pendingCritical = (pendingActionsCache[clientKey] || [])
+    .filter(a => (a.urgency === 'critica' || a.urgency === 'alta') && a.status === 'pendente').length
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
@@ -145,9 +153,9 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
 
   const planLimits = getPlanLimits(userPlan)
   const SECTION_LOCK: Record<string, boolean> = {
-    'Anúncios': !planLimits.hasAnunciosGroup,
-    'Criativo':  !planLimits.hasCriativoGroup,
-    'Avançado':  !planLimits.hasAvancadoGroup,
+    'Campanhas':    !planLimits.hasAnunciosGroup,
+    'Criativo':     !planLimits.hasCriativoGroup,
+    'Inteligência': !planLimits.hasAvancadoGroup,
   }
 
   const plan         = userPlan ? PLAN_META[userPlan] : null
@@ -371,6 +379,15 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                           </span>
                           {isLocked ? (
                             <span style={{ color: 'rgba(255,255,255,0.15)', flexShrink: 0 }}>{I.lock}</span>
+                          ) : item.key === 'acoes' && pendingCritical > 0 ? (
+                            <span style={{
+                              fontSize: '9px', fontWeight: 800,
+                              color: '#fff', background: '#EF4444',
+                              borderRadius: '99px', padding: '1px 6px',
+                              flexShrink: 0, minWidth: '18px', textAlign: 'center',
+                            }}>
+                              {pendingCritical}
+                            </span>
                           ) : item.badge === 'LIVE' && hasConnectedAccount ? (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
                               <span className="status-dot-live" style={{ width: '5px', height: '5px' }} />

@@ -294,16 +294,16 @@ const INP: React.CSSProperties = {
   fontSize: 13, outline: 'none', boxSizing: 'border-box',
 }
 
-function FunnelForm({ clientData, onSubmit }: { clientData: ClientData; onSubmit: (data: Omit<FunnelEntry, 'id' | 'createdAt'>) => void }) {
+function FunnelForm({ clientData, onSubmit, prefill }: { clientData: ClientData; onSubmit: (data: Omit<FunnelEntry, 'id' | 'createdAt'>) => void; prefill?: { investment?: number; impressions?: number; clicks?: number; leads?: number } }) {
   const months = ['Jan 2025','Fev 2025','Mar 2025','Abr 2025','Mai 2025','Jun 2025','Jul 2025','Ago 2025','Set 2025','Out 2025','Nov 2025','Dez 2025',
                   'Jan 2026','Fev 2026','Mar 2026','Abr 2026','Mai 2026','Jun 2026']
   const [form, setForm] = useState({
-    period: 'Abr 2026',
+    period: 'Mai 2026',
     channel: 'Meta Ads',
-    investment: clientData.budget,
-    impressions: 0,
-    clicks: 0,
-    leads: 0,
+    investment: prefill?.investment ?? clientData.budget,
+    impressions: prefill?.impressions ?? 0,
+    clicks: prefill?.clicks ?? 0,
+    leads: prefill?.leads ?? 0,
     qualifiedLeads: 0,
     sales: 0,
     avgTicket: clientData.ticketPrice ?? 0,
@@ -462,6 +462,7 @@ export function TabFunil({ clientData }: Props) {
   const funnelEntries     = useAppStore((s) => s.funnelEntries)
   const addFunnelEntry    = useAppStore((s) => s.addFunnelEntry)
   const deleteFunnelEntry = useAppStore((s) => s.deleteFunnelEntry)
+  const auditCache        = useAppStore((s) => s.auditCache)
   const [showForm, setShowForm]   = useState(true)
   const [result, setResult]       = useState<DiagnosisResult | null>(null)
   const [lastEntry, setLastEntry] = useState<Omit<FunnelEntry, 'id' | 'createdAt'> | null>(null)
@@ -477,6 +478,17 @@ export function TabFunil({ clientData }: Props) {
   const bench    = getBenchmark(clientData.niche)
   const benchKey = bench ? Object.keys(BENCHMARKS).find((k) => BENCHMARKS[k] === bench) || 'outro' : 'outro'
   const clientEntries = funnelEntries.filter((e) => e.clientName === clientData.clientName)
+
+  // Pré-preenche com dados reais da última auditoria
+  const auditHistory = auditCache[clientData.clientName]
+  const latestAudit  = Array.isArray(auditHistory) ? auditHistory[0]?.audit : auditHistory
+  const rm = latestAudit?._realMetrics as any
+  const auditPrefill = rm && rm.totalSpend > 0 ? {
+    investment:  rm.totalSpend,
+    impressions: rm.totalImpressions || 0,
+    clicks:      rm.totalClicks || 0,
+    leads:       rm.totalLeads || 0,
+  } : undefined
 
   const handleSubmit = (data: Omit<FunnelEntry, 'id' | 'createdAt'>) => {
     const dx = diagnose(data, benchKey)
@@ -514,8 +526,18 @@ export function TabFunil({ clientData }: Props) {
 
       {showForm && (
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, marginBottom: 24 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: C.text2, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>📊 Dados do período</div>
-          <FunnelForm clientData={clientData} onSubmit={handleSubmit} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: C.text2, textTransform: 'uppercase', letterSpacing: 2 }}>📊 Dados do período</div>
+            {auditPrefill && (
+              <span style={{
+                fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99,
+                background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)',
+              }}>
+                ✓ Pré-preenchido com dados da auditoria
+              </span>
+            )}
+          </div>
+          <FunnelForm clientData={clientData} onSubmit={handleSubmit} prefill={auditPrefill} />
         </div>
       )}
 
