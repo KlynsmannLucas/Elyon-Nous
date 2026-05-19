@@ -28,6 +28,7 @@ import { TabRelatorios }   from '@/components/dashboard/TabRelatorios'
 import { TabFinanceiro }   from '@/components/dashboard/TabFinanceiro'
 import { TabCRO }              from '@/components/dashboard/TabCRO'
 import { TabBudgetAllocator } from '@/components/dashboard/TabBudgetAllocator'
+import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { TabChannelMix }     from '@/components/dashboard/TabChannelMix'
 import { TabChecklist }      from '@/components/dashboard/TabChecklist'
 import { TabPortal }         from '@/components/dashboard/TabPortal'
@@ -607,6 +608,17 @@ export default function DashboardBody() {
     setView('dashboard')
 
     try {
+      // Dispara refresh de benchmark do nicho em background (fire-and-forget)
+      const bench = getBenchmark(clientData.niche)
+      const nicheKey = bench ? (Object.keys(BENCHMARKS).find(k => BENCHMARKS[k] === bench) ?? null) : null
+      if (nicheKey) {
+        fetch('/api/benchmarks/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ niche: clientData.niche, nicheKey }),
+        }).catch(() => {})
+      }
+
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 58000)
       const { auditCache: ac, campaignHistory: ch, generatedPersona: gp, connectedAccounts: ca } = useAppStore.getState()
