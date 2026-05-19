@@ -4,7 +4,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { RevenueChart } from './RevenueChart'
 import { getBenchmark, computeNicheProjection } from '@/lib/niche_benchmarks'
-import { overviewKPIs, channelCards } from '@/lib/mockData'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 
@@ -452,11 +451,13 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         },
       ]
     }
-    return overviewKPIs.slice(0, 4).map((k, i) => ({
-      label: k.label, value: k.value, sub: k.sub, color: k.color,
-      trend: undefined, base: 100 + i * 50,
-      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-    }))
+    // Sem dados reais nem projeção — mostra cards informativos (sem mock de outra empresa)
+    return [
+      { label: 'Investimento', value: '—', sub: 'Execute a auditoria', color: C.amber, trend: undefined, base: 100, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
+      { label: 'Leads / mês',  value: '—', sub: bench ? `Benchmark CPL: R$${bench.cpl_min}–${bench.cpl_max}` : 'Conecte Meta ou Google Ads', color: C.green, trend: undefined, base: 100, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
+      { label: 'CPL Médio',    value: clientData?.currentCPL ? `R$${clientData.currentCPL}` : '—', sub: bench ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}` : 'Custo por lead', color: C.blue, trend: undefined, base: 100, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> },
+      { label: 'Score IA',     value: `${healthScore}/100`, sub: scoreLabel, color: healthScore >= 70 ? C.green : healthScore >= 45 ? C.amber : C.red, trend: undefined, base: healthScore, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+    ]
   })()
 
   // ── Funnel stages ────────────────────────────────────────────────────────
@@ -479,12 +480,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         { label: 'Vendas Est.', value: proj.salesMonth,       pct: `${(bench!.cvr_lead_to_sale*100).toFixed(0)}%`, color: C.amber },
       ]
     }
-    return [
-      { label: 'Impressões',  value: 120000, pct: '100%',  color: C.purple },
-      { label: 'Cliques',     value: 3000,   pct: '2.5%',  color: C.blue },
-      { label: 'Leads',       value: 450,    pct: '15%',   color: C.green },
-      { label: 'Conversões',  value: 112,    pct: '24.9%', color: C.amber },
-    ]
+    return []
   }, [hasRealData, rm, proj, bench])
 
   // ── Channels ─────────────────────────────────────────────────────────────
@@ -501,10 +497,11 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
       return bench.best_channels.slice(0, 4).map((ch) => {
         const range = bench.cpl_by_channel[ch] || `R$${bench.cpl_min}–${bench.cpl_max}`
         const [minStr] = range.replace('R$','').split('–')
-        return { name: ch, icon: getChannelIcon(ch), leads: proj ? `~${Math.round((budget/bench.best_channels.length)/parseInt(minStr,10))}` : '—', cpl: parseInt(minStr,10), budget: proj ? `R$${Math.round(budget/bench.best_channels.length).toLocaleString('pt-BR')}` : '—' }
+        const cplVal = parseInt(minStr, 10) || bench.cpl_min || 1
+        return { name: ch, icon: getChannelIcon(ch), leads: proj ? `~${Math.round((budget/bench.best_channels.length)/cplVal)}` : '—', cpl: cplVal, budget: proj ? `R$${Math.round(budget/bench.best_channels.length).toLocaleString('pt-BR')}` : '—' }
       })
     }
-    return channelCards
+    return []
   }, [hasAIStrategy, strategy, bench, proj, budget])
 
   // ── Insights (smart alerts → cards) ──────────────────────────────────────
@@ -619,7 +616,14 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
         {/* Funnel */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
           <SectionHeader title="Funil de Conversão" />
-          <FunnelViz stages={funnelStages} />
+          {funnelStages.length > 0
+            ? <FunnelViz stages={funnelStages} />
+            : (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: C.text3, fontSize: '12px', lineHeight: 1.6 }}>
+                Execute a auditoria com dados reais<br />para ver o funil de conversão
+              </div>
+            )
+          }
         </div>
 
         {/* AI Score */}
@@ -639,40 +643,13 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
 
         {/* Top campanhas */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
-          <SectionHeader title="Top Campanhas" action="Ver todas" />
-          {hasRealData && rm ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* Mock campaign rows based on real totals */}
-              {[
-                { name: 'CBO | Públicos Quentes', roas: rm.avgROAS ? (rm.avgROAS * 1.2).toFixed(2) : '—', cpl: rm.avgCPL ? Math.round(rm.avgCPL * 0.85) : '—', score: 88 },
-                { name: 'CBO | Lookalike 1%',     roas: rm.avgROAS ? (rm.avgROAS * 1.0).toFixed(2) : '—', cpl: rm.avgCPL ? Math.round(rm.avgCPL * 1.0) : '—', score: 75 },
-                { name: 'ABO | Interesses | VSL',  roas: rm.avgROAS ? (rm.avgROAS * 0.9).toFixed(2) : '—', cpl: rm.avgCPL ? Math.round(rm.avgCPL * 1.1) : '—', score: 62 },
-                { name: 'ABO | Públicos Frios',    roas: rm.avgROAS ? (rm.avgROAS * 0.7).toFixed(2) : '—', cpl: rm.avgCPL ? Math.round(rm.avgCPL * 1.3) : '—', score: 45 },
-              ].map((c, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '8px 10px', borderRadius: '9px',
-                  background: C.elevated, border: `1px solid ${C.border}`,
-                }}>
-                  <div style={{
-                    width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                    background: c.score >= 75 ? C.green : c.score >= 55 ? C.amber : C.red,
-                  }} />
-                  <span style={{ flex: 1, fontSize: '12px', color: C.text1, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                  <span style={{ fontSize: '11px', color: C.text3, flexShrink: 0 }}>CPL R${c.cpl}</span>
-                  <span style={{
-                    fontSize: '11px', fontWeight: 700, color: c.score >= 75 ? C.green : c.score >= 55 ? C.amber : C.red,
-                    background: c.score >= 75 ? 'rgba(34,197,94,0.1)' : c.score >= 55 ? 'rgba(245,165,0,0.1)' : 'rgba(239,68,68,0.1)',
-                    borderRadius: '5px', padding: '2px 7px', flexShrink: 0,
-                  }}>{c.score}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: C.text3, fontSize: '12px' }}>
-              Execute a auditoria para ver as campanhas
-            </div>
-          )}
+          <SectionHeader title="Top Campanhas" />
+          <div style={{ textAlign: 'center', padding: '24px 0', color: C.text3, fontSize: '12px', lineHeight: 1.6 }}>
+            {hasRealData
+              ? <>Dados por campanha disponíveis na aba<br /><strong style={{ color: C.text2 }}>Auditoria de Anúncios</strong></>
+              : <>Conecte Meta Ads ou Google Ads<br />para ver o desempenho por campanha</>
+            }
+          </div>
         </div>
 
         {/* Canais recomendados */}

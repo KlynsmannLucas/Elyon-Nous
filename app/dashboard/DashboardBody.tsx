@@ -930,8 +930,9 @@ export default function DashboardBody() {
     )
   }
 
-  // ── Não autenticado ──
+  // ── Não autenticado — limpa estado antes de redirecionar ──
   if (isLoaded && !user) {
+    clearAll()
     if (typeof window !== 'undefined') window.location.href = '/sign-in'
     return null
   }

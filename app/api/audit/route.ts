@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { sanitizeText } from '@/lib/sanitize'
+import { supabaseAdmin } from '@/lib/supabase'
 
-// ── Salva padrões da auditoria na memória RAG (fire-and-forget) ──────────────
+// ── Salva padrões da auditoria diretamente no Supabase (fire-and-forget) ─────
 async function saveAuditMemory(
   userId: string,
   clientName: string,
@@ -12,8 +13,8 @@ async function saveAuditMemory(
   audit: any,
   realMetrics: any,
 ) {
+  if (!supabaseAdmin) return
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const score = audit.healthScore ?? audit.overallScore ?? 0
     const cpl   = realMetrics?.avgCPL ?? 0
     const spend = realMetrics?.totalSpend ?? 0
@@ -21,58 +22,50 @@ async function saveAuditMemory(
 
     if (spend < 100) return  // sem dados suficientes para aprender
 
-    // 1. Salva benchmark da conta
+    const rows: any[] = []
+    const now = new Date().toISOString()
+
+    // 1. Benchmark da conta
     if (cpl > 0) {
-      await fetch(`${baseUrl}/api/memory`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-internal': '1' },
-        body: JSON.stringify({
-          clientName, niche,
-          memoryType: 'benchmark',
-          title: `Benchmark real — ${niche} — CPL R$${cpl}`,
-          description: `Conta com gasto R$${spend} gerou ${leads} leads com CPL médio R$${cpl}. Score de saúde: ${score}/100.`,
-          metrics: { cpl, spend, leads, roas: realMetrics?.avgROAS, ctr: realMetrics?.avgCTR },
-          confidence: 0.9,
-          source: 'audit',
-          period: new Date().toISOString().slice(0, 7),
-        }),
+      rows.push({
+        user_id: userId, client_name: clientName, niche,
+        memory_type: 'benchmark',
+        title: `Benchmark real — ${niche} — CPL R$${cpl}`,
+        description: `Conta com gasto R$${spend} gerou ${leads} leads com CPL médio R$${cpl}. Score de saúde: ${score}/100.`,
+        metrics: { cpl, spend, leads, roas: realMetrics?.avgROAS, ctr: realMetrics?.avgCTR },
+        confidence: 0.9, source: 'audit',
+        period: now.slice(0, 7), tags: [], updated_at: now,
       })
     }
 
-    // 2. Salva alertas críticos como padrões de perda
+    // 2. Alertas críticos como padrões de perda
     const alerts: any[] = audit.alerts ?? []
     for (const alert of alerts.filter((a: any) => a.type === 'critical').slice(0, 3)) {
-      await fetch(`${baseUrl}/api/memory`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-internal': '1' },
-        body: JSON.stringify({
-          clientName, niche,
-          memoryType: 'losing_pattern',
-          title: alert.title || 'Problema crítico detectado',
-          description: alert.description || alert.message || '',
-          metrics: { cpl, spend },
-          confidence: 0.85,
-          source: 'audit',
-        }),
+      rows.push({
+        user_id: userId, client_name: clientName, niche,
+        memory_type: 'losing_pattern',
+        title: alert.title || 'Problema crítico detectado',
+        description: alert.description || alert.message || '',
+        metrics: { cpl, spend },
+        confidence: 0.85, source: 'audit', tags: [], updated_at: now,
       })
     }
 
-    // 3. Salva pontos fortes como padrões vencedores
+    // 3. Pontos fortes como padrões vencedores
     const highlights: string[] = audit.highlights ?? audit.topInsights ?? []
     if (highlights.length > 0) {
-      await fetch(`${baseUrl}/api/memory`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-internal': '1' },
-        body: JSON.stringify({
-          clientName, niche,
-          memoryType: 'winning_creative',
-          title: `Padrão vencedor — ${niche}`,
-          description: highlights.slice(0, 3).join(' | '),
-          metrics: { cpl, roas: realMetrics?.avgROAS },
-          confidence: 0.8,
-          source: 'audit',
-        }),
+      rows.push({
+        user_id: userId, client_name: clientName, niche,
+        memory_type: 'winning_creative',
+        title: `Padrão vencedor — ${niche}`,
+        description: highlights.slice(0, 3).join(' | '),
+        metrics: { cpl, roas: realMetrics?.avgROAS },
+        confidence: 0.8, source: 'audit', tags: [], updated_at: now,
       })
+    }
+
+    if (rows.length > 0) {
+      await supabaseAdmin.from('campaign_memory').insert(rows)
     }
   } catch {
     // silencioso — não quebra a auditoria

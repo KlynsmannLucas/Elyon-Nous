@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     const { sessionId } = await auth()
     if (sessionId) {
       const { clerkClient } = await import('@clerk/nextjs/server')
-      const clerk = clerkClient()
+      const clerk = await clerkClient()
       await clerk.sessions.revokeSession(sessionId)
     }
   } catch {
