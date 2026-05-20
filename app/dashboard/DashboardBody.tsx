@@ -97,6 +97,19 @@ function GeneratingScreen({ clientName, niche }: { clientName: string; niche: st
   )
 }
 
+// ── Tab descriptions — shown as a contextual banner on first visit ─────────────
+const TAB_DESCRIPTIONS: Partial<Record<TabKey, { icon: string; title: string; desc: string }>> = {
+  analise:      { icon: '🔍', title: 'Análise Profunda', desc: 'Conecte Meta Ads ou Google Ads e gere o diagnóstico completo da conta — pontuação de saúde, alertas e oportunidades de melhoria com base nos dados reais.' },
+  diagnostic:   { icon: '🎯', title: 'Saúde do Negócio', desc: 'Visão consolidada dos indicadores da empresa — funil de vendas, ticket médio, margens e comparativo com o benchmarks do nicho.' },
+  strategy:     { icon: '⚡', title: 'Estratégia de Crescimento', desc: 'A IA gera um plano de 90 dias com canais recomendados, CPL-alvo, alocação de orçamento e cronograma de execução — baseado nos dados reais da conta.' },
+  inteligencia: { icon: '🧠', title: 'TrafficBrain IA', desc: 'Central de inteligência com alertas proativos, sugestões de otimização e análises avançadas — vai além do chat, age sobre seus dados.' },
+  memory:       { icon: '🧠', title: 'Histórico de Aprendizado', desc: 'O ELYON aprende com cada análise e auditoria. Aqui ficam os insights acumulados sobre seu cliente — usados para personalizar as respostas do Assistente IA.' },
+  workflow:     { icon: '⚙️', title: 'Automação de Rotina', desc: 'Crie fluxos automatizados para tarefas repetitivas — como atualizar relatórios, enviar resumos e disparar alertas conforme metas.' },
+  cro:          { icon: '⚙️', title: 'Otimização de Conversão', desc: 'Identifique onde o funil perde conversões e receba sugestões da IA para melhorar landing pages, criativos e fluxos de vendas.' },
+  budget:       { icon: '💰', title: 'Alocador de Verba', desc: 'Distribua o orçamento de anúncios de forma inteligente entre canais — a IA calcula a alocação ideal com base no CPL e ROAS de cada plataforma.' },
+  channelmix:   { icon: '🌐', title: 'Mix de Canais', desc: 'Compare o desempenho de Meta, Google, TikTok e outros canais lado a lado. Descubra qual canal traz mais ROI para o perfil do seu cliente.' },
+}
+
 // ── Score de saúde por cliente ─────────────────────────────────────────────────
 function getClientHealthScore(client: SavedClient, auditCache: Record<string, any>): {
   score: number; label: string; color: string; dot: string
@@ -847,7 +860,7 @@ export default function DashboardBody() {
     }
 
     switch (activeTab) {
-      case 'overview':      return wrap('Overview',          <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} />)
+      case 'overview':      return wrap('Overview',          <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
       case 'strategy':      return wrap('Estratégia',        <TabStrategy strategy={strategy} analysis={analysis} />)
       case 'diagnostic':    return wrap('Diagnóstico',       <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />)
       case 'analise':       return wrap('Análise Profunda',  <TabAnalise clientData={clientData} planHasAudit={planLimits.hasAudit} onUpgrade={goUpgrade} />)
@@ -859,20 +872,20 @@ export default function DashboardBody() {
       case 'cenarios':      return wrap('Cenários',          <TabGrowth analysis={analysis} clientData={clientData} />)
       case 'mercado':       return wrap('Mercado & Nicho',   <TabMarketIntel clientData={clientData} />)
       case 'funil':         return wrap('Gargalo do Funil',  <TabFunil clientData={clientData} />)
-      case 'cro':           return wrap('CRO Agent',          <TabCRO />)
-      case 'budget':        return wrap('Budget Allocator',   <TabBudgetAllocator />)
-      case 'channelmix':    return wrap('Channel Mix',        <TabChannelMix />)
-      case 'persona':       return wrap('Persona IA',          <TabPersona clientData={clientData} />)
-      case 'conteudo':      return wrap('Criador de Conteúdo', <TabConteudo clientData={clientData} />)
-      case 'assets':        return wrap('Assets da Empresa',     <TabAssets       clientData={clientData} />)
-      case 'concorrentes':  return wrap('Radar de Concorrentes', <TabConcorrentes clientData={clientData} />)
-      case 'campanha':      return wrap('Campanha Campeã',       <TabCampanha />)
-      case 'relatorios':    return wrap('Relatórios',            <TabRelatorios />)
-      case 'financeiro':    return wrap('Painel Financeiro',     <TabFinanceiro />)
-      case 'checklist':     return wrap('Checklist Diário',      <TabChecklist clientData={clientData} />)
-      case 'portal':        return wrap('Portal do Cliente',     <TabPortal    clientData={clientData} />)
-      case 'memory':        return wrap('Memória da Campanha',   <TabMemory />)
-      case 'workflow':      return wrap('Workflow Builder',      <TabWorkflow />)
+      case 'cro':           return wrap('Otimização de Conversão', <TabCRO />)
+      case 'budget':        return wrap('Alocador de Verba',      <TabBudgetAllocator />)
+      case 'channelmix':    return wrap('Mix de Canais',           <TabChannelMix />)
+      case 'persona':       return wrap('Persona do Cliente',      <TabPersona clientData={clientData} />)
+      case 'conteudo':      return wrap('Criador de Conteúdo',     <TabConteudo clientData={clientData} />)
+      case 'assets':        return wrap('Arquivos da Empresa',     <TabAssets       clientData={clientData} />)
+      case 'concorrentes':  return wrap('Radar de Concorrentes',   <TabConcorrentes clientData={clientData} />)
+      case 'campanha':      return wrap('Histórico de Campanhas',  <TabCampanha />)
+      case 'relatorios':    return wrap('Relatórios',              <TabRelatorios />)
+      case 'financeiro':    return wrap('Painel Financeiro',       <TabFinanceiro />)
+      case 'checklist':     return wrap('Checklist Diário',        <TabChecklist clientData={clientData} />)
+      case 'portal':        return wrap('Portal do Cliente',       <TabPortal    clientData={clientData} />)
+      case 'memory':        return wrap('Histórico de Aprendizado',<TabMemory />)
+      case 'workflow':      return wrap('Automação de Rotina',     <TabWorkflow />)
     }
   }
 
@@ -1120,6 +1133,25 @@ export default function DashboardBody() {
             </div>
           )}
           <OnboardingFlow onNavigate={setActiveTab} />
+          {TAB_DESCRIPTIONS[activeTab] && (() => {
+            const d = TAB_DESCRIPTIONS[activeTab]!
+            return (
+              <div style={{
+                margin: '0 28px 0',
+                padding: '10px 16px',
+                background: 'rgba(124,58,237,0.04)',
+                border: '1px solid rgba(124,58,237,0.12)',
+                borderRadius: '10px',
+                display: 'flex', alignItems: 'center', gap: '10px',
+              }}>
+                <span style={{ fontSize: '16px', flexShrink: 0 }}>{d.icon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#A78BFA', marginRight: '6px' }}>{d.title}</span>
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>{d.desc}</span>
+                </div>
+              </div>
+            )
+          })()}
           <div key={activeTab} className="animate-fade-up" style={{ padding: '24px 28px 0' }}>
             {renderTab()}
           </div>

@@ -77,44 +77,44 @@ export const SIDEBAR_SECTIONS: {
   items: { key: TabKey; label: string; icon: string; badge?: string }[]
 }[] = [
   { label: 'Início', items: [
-    { key: 'overview',    label: 'Visão Geral',          icon: '🏠', badge: 'LIVE' },
+    { key: 'overview',    label: 'Visão Geral',            icon: '🏠', badge: 'LIVE' },
   ]},
   { label: 'Diagnóstico', items: [
-    { key: 'analise',     label: 'Auditoria de Anúncios', icon: '🔍' },
-    { key: 'diagnostic',  label: 'Saúde do Negócio',      icon: '🎯' },
-    { key: 'funil',       label: 'Funil de Vendas',       icon: '🔬' },
-    { key: 'performance', label: 'Resultados',            icon: '📊' },
+    { key: 'analise',     label: 'Análise Profunda',        icon: '🔍' },
+    { key: 'diagnostic',  label: 'Saúde do Negócio',        icon: '🎯' },
+    { key: 'funil',       label: 'Funil de Vendas',         icon: '🔬' },
+    { key: 'performance', label: 'Resultados',              icon: '📊' },
   ]},
   { label: 'Campanhas', planLabel: 'Profissional', items: [
-    { key: 'anuncios',    label: 'Meta & Google Ads',     icon: '📡' },
-    { key: 'audiencias',  label: 'Audiências',            icon: '👥' },
-    { key: 'budget',      label: 'Alocar Verba',          icon: '💰', badge: 'IA' },
-    { key: 'channelmix',  label: 'Mix de Canais',         icon: '🌐', badge: 'IA' },
+    { key: 'anuncios',    label: 'Meta & Google Ads',       icon: '📡' },
+    { key: 'audiencias',  label: 'Audiências',              icon: '👥' },
+    { key: 'budget',      label: 'Alocador de Verba',       icon: '💰', badge: 'IA' },
+    { key: 'channelmix',  label: 'Mix de Canais',           icon: '🌐', badge: 'IA' },
   ]},
-  { label: 'Estratégia & Ações', items: [
-    { key: 'strategy',    label: 'Estratégia',            icon: '⚡' },
-    { key: 'acoes',       label: 'Ações Prioritárias',    icon: '✅' },
-    { key: 'cenarios',    label: 'Projeções',             icon: '📈' },
-    { key: 'financeiro',  label: 'Painel Financeiro',     icon: '💰', badge: 'NOVO' },
+  { label: 'Plano de Ação', items: [
+    { key: 'strategy',    label: 'Estratégia',              icon: '⚡' },
+    { key: 'acoes',       label: 'Ações Prioritárias',      icon: '✅' },
+    { key: 'cenarios',    label: 'Projeções',               icon: '📈' },
+    { key: 'financeiro',  label: 'Painel Financeiro',       icon: '💰', badge: 'NOVO' },
   ]},
-  { label: 'Criativo', planLabel: 'Profissional', items: [
-    { key: 'concorrentes',label: 'Concorrentes',          icon: '🕵️' },
-    { key: 'cro',         label: 'Melhorar Conversão',    icon: '⚙️', badge: 'IA' },
-    { key: 'conteudo',    label: 'Criar Conteúdo',        icon: '✨' },
-    { key: 'assets',      label: 'Arquivos da Empresa',   icon: '🖼️' },
-    { key: 'persona',     label: 'Persona do Cliente',    icon: '👤' },
+  { label: 'Criação', planLabel: 'Profissional', items: [
+    { key: 'concorrentes',label: 'Concorrentes',            icon: '🕵️' },
+    { key: 'cro',         label: 'Otimização de Conversão', icon: '⚙️', badge: 'IA' },
+    { key: 'conteudo',    label: 'Criar Conteúdo',          icon: '✨' },
+    { key: 'assets',      label: 'Arquivos da Empresa',     icon: '🖼️' },
+    { key: 'persona',     label: 'Persona do Cliente',      icon: '👤' },
   ]},
   { label: 'Inteligência', planLabel: 'Avançada', items: [
-    { key: 'inteligencia',label: 'TrafficBrain AI',       icon: '🧠', badge: 'IA' },
-    { key: 'memory',      label: 'Memória RAG',           icon: '🧠', badge: 'RAG' },
-    { key: 'mercado',     label: 'Pesquisa de Mercado',   icon: '📡' },
-    { key: 'workflow',    label: 'Workflow Builder',      icon: '⚙️', badge: 'AUTO' },
+    { key: 'inteligencia',label: 'TrafficBrain IA',         icon: '🧠', badge: 'IA' },
+    { key: 'memory',      label: 'Histórico de Aprendizado',icon: '🧠', badge: 'RAG' },
+    { key: 'mercado',     label: 'Pesquisa de Mercado',     icon: '📡' },
+    { key: 'workflow',    label: 'Automação de Rotina',     icon: '⚙️', badge: 'AUTO' },
   ]},
-  { label: 'Relatórios & Operação', items: [
-    { key: 'relatorios',  label: 'Relatórios',            icon: '📤' },
-    { key: 'checklist',   label: 'Checklist Diário',      icon: '✅', badge: 'NOVO' },
-    { key: 'portal',      label: 'Portal do Cliente',     icon: '🔗' },
-    { key: 'campanha',    label: 'Histórico',             icon: '📋' },
+  { label: 'Configurações', items: [
+    { key: 'relatorios',  label: 'Relatórios',              icon: '📤' },
+    { key: 'checklist',   label: 'Checklist Diário',        icon: '✅' },
+    { key: 'portal',      label: 'Portal do Cliente',       icon: '🔗' },
+    { key: 'campanha',    label: 'Histórico de Campanhas',  icon: '📋' },
   ]},
 ]
 
@@ -154,7 +154,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
   const planLimits = getPlanLimits(userPlan)
   const SECTION_LOCK: Record<string, boolean> = {
     'Campanhas':    !planLimits.hasAnunciosGroup,
-    'Criativo':     !planLimits.hasCriativoGroup,
+    'Criação':      !planLimits.hasCriativoGroup,
     'Inteligência': !planLimits.hasAvancadoGroup,
   }
 

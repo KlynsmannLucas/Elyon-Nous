@@ -499,6 +499,22 @@ function EmptyConnections({ onConnectMeta, onConnectGoogle }: { onConnectMeta: (
           Conectar Google Ads
         </button>
       </div>
+      {/* Trust badges */}
+      <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '20px' }}>
+        {[
+          { icon: '🔒', label: 'Acesso somente leitura', desc: 'Nunca modificamos campanhas' },
+          { icon: '🛡️', label: 'OAuth oficial', desc: 'Autenticação via Meta & Google' },
+          { icon: '🗑️', label: 'Revogar a qualquer hora', desc: 'Desconecte com 1 clique' },
+        ].map(b => (
+          <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: T.text3 }}>
+            <span style={{ fontSize: '14px' }}>{b.icon}</span>
+            <div>
+              <div style={{ fontWeight: 600, color: T.text2 }}>{b.label}</div>
+              <div>{b.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -625,9 +641,21 @@ export function TabConnections() {
       {/* Header */}
       <div>
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: T.text1, margin: '0 0 6px', letterSpacing: '-0.02em' }}>Conexões de Anúncios</h2>
-        <p style={{ fontSize: '13px', color: T.text3, margin: 0, lineHeight: 1.6 }}>
+        <p style={{ fontSize: '13px', color: T.text3, margin: '0 0 10px', lineHeight: 1.6 }}>
           Conecte suas contas para acompanhar campanhas reais em tempo real — CPL, ROAS e leads direto do Meta e Google.
         </p>
+        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+          {[
+            { icon: '🔒', text: 'Acesso somente leitura — nunca modificamos suas campanhas' },
+            { icon: '🛡️', text: 'OAuth oficial via Meta e Google — seus dados ficam seguros' },
+            { icon: '🗑️', text: 'Desconecte a qualquer momento com 1 clique' },
+          ].map(b => (
+            <div key={b.text} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: T.text3 }}>
+              <span>{b.icon}</span>
+              <span>{b.text}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Error banner */}

@@ -1,4 +1,4 @@
-// components/dashboard/OnboardingFlow.tsx — Tutorial de primeiros passos
+// components/dashboard/OnboardingFlow.tsx — Primeiros passos simplificado
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -21,19 +21,19 @@ const STEPS: Step[] = [
     id: 'client',
     number: 1,
     icon: '✍️',
-    title: 'Cadastre seu cliente',
-    description: 'Preencha os dados do cliente para personalizar toda a análise.',
-    action: 'Criar cliente',
+    title: 'Cadastre os dados do cliente',
+    description: 'Nome, nicho e orçamento mensal — o ELYON personaliza toda a análise com base nesses dados.',
+    action: 'Preencher agora',
     check: (s) => !!s.clientData?.clientName,
   },
   {
     id: 'audit',
     number: 2,
     icon: '🔍',
-    title: 'Rode a auditoria de anúncios',
-    description: 'Conecte sua conta do Meta ou Google e gere o diagnóstico completo.',
+    title: 'Rode a Análise Profunda',
+    description: 'Conecte Meta Ads ou Google Ads e gere o diagnóstico completo da conta — pontos fortes, gargalos e oportunidades.',
     tab: 'analise',
-    action: 'Ir para Auditoria',
+    action: 'Ir para Análise Profunda',
     check: (s) => {
       const name = s.clientData?.clientName
       return name ? (s.auditCache[name]?.length ?? 0) > 0 : false
@@ -43,8 +43,8 @@ const STEPS: Step[] = [
     id: 'strategy',
     number: 3,
     icon: '⚡',
-    title: 'Gere sua estratégia',
-    description: 'A IA cria um plano de 90 dias baseado nos dados reais da sua conta.',
+    title: 'Gere a estratégia de crescimento',
+    description: 'A IA cria um plano de 90 dias com canais recomendados, metas de CPL e ações prioritárias — tudo baseado nos dados reais da conta.',
     tab: 'strategy',
     action: 'Gerar estratégia',
     check: (s) => !!s.strategyData,
@@ -54,7 +54,7 @@ const STEPS: Step[] = [
     number: 4,
     icon: '✅',
     title: 'Execute o plano de ações',
-    description: 'Veja as tarefas prioritárias e marque conforme for executando.',
+    description: 'Veja as tarefas por ordem de impacto e marque conforme for executando. O ELYON acompanha o progresso.',
     tab: 'acoes',
     action: 'Ver ações',
     check: (s) => {
@@ -90,15 +90,13 @@ export function OnboardingFlow({ onNavigate }: Props) {
     try { localStorage.setItem('elyon_onboarding_dismissed', '1') } catch {}
   }
 
-  const completedSteps = STEPS.filter(s => s.check(state))
-  const completedCount = completedSteps.length
+  const completedCount = STEPS.filter(s => s.check(state)).length
   const allDone = completedCount === STEPS.length
   const nextStep = STEPS.find(s => !s.check(state))
   const progressPct = (completedCount / STEPS.length) * 100
 
   if (dismissed) return null
 
-  // Se completou tudo, mostra só um badge de parabéns antes de sumir
   if (allDone) {
     return (
       <div style={{
@@ -112,10 +110,10 @@ export function OnboardingFlow({ onNavigate }: Props) {
         <span style={{ fontSize: '18px' }}>🎉</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: '#22C55E' }}>
-            Configuração completa!
+            Configuração completa! O ELYON está pronto para uso.
           </div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '1px' }}>
-            Todos os passos foram concluídos. O sistema está pronto para uso.
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
+            Use o <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Assistente IA</strong> (botão dourado no canto inferior direito) para tirar dúvidas a qualquer momento.
           </div>
         </div>
         <button onClick={dismiss} style={{
@@ -146,9 +144,8 @@ export function OnboardingFlow({ onNavigate }: Props) {
         <span style={{ fontSize: '15px' }}>🗺️</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: '#F0B429', marginBottom: '3px' }}>
-            Primeiros passos — {completedCount}/{STEPS.length} concluídos
+            Comece aqui — {completedCount}/{STEPS.length} etapas concluídas
           </div>
-          {/* Progress bar */}
           <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
             <div style={{
               width: `${progressPct}%`, height: '100%',
@@ -192,7 +189,6 @@ export function OnboardingFlow({ onNavigate }: Props) {
                   transition: 'all 0.15s',
                 }}
               >
-                {/* Step indicator */}
                 <div style={{
                   width: '24px', height: '24px', borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -204,7 +200,6 @@ export function OnboardingFlow({ onNavigate }: Props) {
                   {done ? '✓' : step.number}
                 </div>
 
-                {/* Content */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '11px' }}>{step.icon}</span>
@@ -217,13 +212,12 @@ export function OnboardingFlow({ onNavigate }: Props) {
                     </span>
                   </div>
                   {isNext && (
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px', lineHeight: 1.4 }}>
                       {step.description}
                     </div>
                   )}
                 </div>
 
-                {/* CTA */}
                 {isNext && step.tab && (
                   <button
                     onClick={() => onNavigate(step.tab!)}
@@ -244,6 +238,21 @@ export function OnboardingFlow({ onNavigate }: Props) {
               </div>
             )
           })}
+
+          {/* "How ELYON works" footer tip */}
+          <div style={{
+            marginTop: '4px', padding: '8px 10px',
+            background: 'rgba(124,58,237,0.06)',
+            border: '1px solid rgba(124,58,237,0.12)',
+            borderRadius: '8px',
+            display: 'flex', alignItems: 'flex-start', gap: '8px',
+          }}>
+            <span style={{ fontSize: '12px', marginTop: '1px' }}>💡</span>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+              <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Como o ELYON funciona:</strong>{' '}
+              você conecta seus dados → a IA faz a análise → gera estratégia personalizada → você executa com apoio do Assistente IA.
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -30,6 +30,7 @@ interface Props {
   strategy: Record<string, any>
   analysis: Record<string, any>
   clientData: ClientData | null
+  onNavigate?: (tab: string) => void
 }
 
 // ── Sparkline component ───────────────────────────────────────────────────────
@@ -85,6 +86,8 @@ function KpiCard({ label, value, sub, color, trend, sparkSeed, sparkBase, icon }
 }) {
   const sparkData = useMemo(() => genSparkline(sparkBase || 100, sparkSeed), [sparkBase, sparkSeed])
   const isPos = trend == null ? null : trend >= 0
+  // Extract the metric keyword from the label for tooltip (e.g. "CPL Real" → "CPL")
+  const metricKey = Object.keys(METRIC_TIPS).find(k => label.toUpperCase().includes(k))
   return (
     <div style={{
       background: C.surface, border: `1px solid ${C.border}`,
@@ -125,8 +128,9 @@ function KpiCard({ label, value, sub, color, trend, sparkSeed, sparkBase, icon }
         <div style={{ fontSize: '24px', fontWeight: 800, color: C.text1, letterSpacing: '-0.03em', lineHeight: 1 }}>
           {value}
         </div>
-        <div style={{ fontSize: '9px', color: C.text3, marginTop: '4px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: '9px', color: C.text3, marginTop: '4px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', display: 'flex', alignItems: 'center' }}>
           {label}
+          {metricKey && <MetricTooltip metric={metricKey} />}
         </div>
       </div>
 
@@ -232,10 +236,20 @@ function getInsightIcon(icon: string, color: string): React.ReactNode {
   return fn ? fn(color) : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 }
 
+const INSIGHT_ACTION_TAB: Record<string, string> = {
+  'Ver auditoria':       'diagnostic',
+  'Auditar agora':       'diagnostic',
+  'Conectar conta':      'diagnostic',
+  'Atualizar estratégia':'strategy',
+  'Ver estratégia':      'strategy',
+  'Ver projeção':        'overview',
+}
+
 // ── Insight card ──────────────────────────────────────────────────────────────
-function InsightCard({ icon, title, desc, color, action }: {
-  icon: string; title: string; desc: string; color: string; action?: string
+function InsightCard({ icon, title, desc, color, action, onNavigate }: {
+  icon: string; title: string; desc: string; color: string; action?: string; onNavigate?: (tab: string) => void
 }) {
+  const destTab = action ? INSIGHT_ACTION_TAB[action] : undefined
   return (
     <div style={{
       background: C.surface, border: `1px solid ${C.border}`,
@@ -259,14 +273,59 @@ function InsightCard({ icon, title, desc, color, action }: {
       {action && (
         <button style={{
           marginTop: 'auto', padding: '5px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
-          background: `${color}10`, border: `1px solid ${color}25`, color, cursor: 'pointer',
+          background: `${color}10`, border: `1px solid ${color}25`, color,
+          cursor: destTab && onNavigate ? 'pointer' : 'default',
           transition: 'all 0.15s', textAlign: 'left',
         }}
+          onClick={() => { if (destTab && onNavigate) onNavigate(destTab) }}
           onMouseEnter={e => { e.currentTarget.style.background = `${color}20` }}
           onMouseLeave={e => { e.currentTarget.style.background = `${color}10` }}
         >Ver detalhes →</button>
       )}
     </div>
+  )
+}
+
+// ── Metric tooltip ────────────────────────────────────────────────────────────
+const METRIC_TIPS: Record<string, string> = {
+  'CPL':        'Custo por Lead — quanto você paga em média para captar um lead. Quanto menor, melhor.',
+  'CPA':        'Custo por Aquisição — quanto custa converter um lead em cliente. Depende da taxa de fechamento.',
+  'CTR':        'Taxa de Cliques — % de pessoas que viram seu anúncio e clicaram. Acima de 1% é bom para tráfego pago.',
+  'ROAS':       'Retorno sobre o Investimento em Anúncios — cada R$1 investido gera R$ X em receita. Acima de 3× costuma ser lucrativo.',
+  'CPM':        'Custo por Mil Impressões — quanto custa para seu anúncio aparecer 1.000 vezes. Indica o custo de alcance.',
+  'Frequência': 'Quantas vezes, em média, a mesma pessoa viu seu anúncio. Acima de 3× pode indicar saturação da audiência.',
+  'CPC':        'Custo por Clique — quanto você paga cada vez que alguém clica no anúncio.',
+}
+
+function MetricTooltip({ metric }: { metric: string }) {
+  const [show, setShow] = useState(false)
+  const tip = METRIC_TIPS[metric]
+  if (!tip) return null
+  return (
+    <span
+      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', marginLeft: '4px', cursor: 'help', verticalAlign: 'middle' }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+      {show && (
+        <span style={{
+          position: 'absolute', bottom: 'calc(100% + 6px)', left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#1C2440', border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '8px', padding: '8px 10px',
+          fontSize: '11px', color: 'rgba(255,255,255,0.75)',
+          lineHeight: 1.5, whiteSpace: 'normal',
+          width: '220px', zIndex: 100, pointerEvents: 'none',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+        }}>
+          <strong style={{ color: '#A78BFA', display: 'block', marginBottom: '3px' }}>{metric}</strong>
+          {tip}
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -304,7 +363,7 @@ function timeAgo(iso: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-export function TabOverview({ strategy, analysis, clientData }: Props) {
+export function TabOverview({ strategy, analysis, clientData, onNavigate }: Props) {
   const niche  = clientData?.niche || ''
   const budget = clientData?.budget || 0
   const bench  = getBenchmark(niche)
@@ -488,12 +547,28 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
   // ── Channels ─────────────────────────────────────────────────────────────
   const channels = useMemo(() => {
     if (hasAIStrategy) {
-      return strategy.priority_ranking.slice(0, 5).map((ch: any) => ({
-        name: ch.channel, icon: getChannelIcon(ch.channel),
-        leads: `${ch.leads_min ?? '?'}–${ch.leads_max ?? '?'}`,
-        cpl: Math.round(ch.cpl_avg ?? ch.cpl_min ?? 0),
-        budget: ch.budget_brl ? `R$${ch.budget_brl.toLocaleString('pt-BR')}` : '—',
-      }))
+      return strategy.priority_ranking.slice(0, 5).map((ch: any) => {
+        // Prefer per-channel CPL from benchmark over the strategy's generic cpl_avg
+        let cpl = Math.round(ch.cpl_avg ?? ch.cpl_min ?? 0)
+        if (bench) {
+          const channelKey = Object.keys(bench.cpl_by_channel).find(k =>
+            (ch.channel ?? '').toLowerCase().includes(k.toLowerCase()) ||
+            k.toLowerCase().includes((ch.channel ?? '').toLowerCase())
+          )
+          if (channelKey) {
+            const parts = bench.cpl_by_channel[channelKey].replace(/R\$/g, '').split('–')
+            const lo = parseInt(parts[0], 10)
+            const hi = parts[1] ? parseInt(parts[1], 10) : lo
+            if (!isNaN(lo)) cpl = Math.round((lo + (!isNaN(hi) ? hi : lo)) / 2)
+          }
+        }
+        return {
+          name: ch.channel, icon: getChannelIcon(ch.channel),
+          leads: `${ch.leads_min ?? '?'}–${ch.leads_max ?? '?'}`,
+          cpl,
+          budget: ch.budget_brl ? `R$${ch.budget_brl.toLocaleString('pt-BR')}` : '—',
+        }
+      })
     }
     if (bench) {
       return bench.best_channels.slice(0, 4).map((ch) => {
@@ -583,6 +658,56 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
           )}
         </div>
       </div>
+
+      {/* ── O que fazer agora (exibido apenas quando não há dados reais) ── */}
+      {!hasRealData && !latestAudit && clientData?.clientName && (
+        <div style={{
+          background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.15)',
+          borderRadius: '14px', padding: '20px 24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <span style={{ fontSize: '14px' }}>🎯</span>
+            <h3 style={{ fontSize: '13px', fontWeight: 700, color: C.text1, margin: 0 }}>O que fazer agora</h3>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+            {[
+              { step: '1', title: 'Conecte seus dados', desc: 'Ligue Meta Ads ou Google Ads para importar campanhas reais.', tab: 'analise', cta: 'Conectar conta', color: '#38BDF8' },
+              { step: '2', title: 'Rode a Análise Profunda', desc: 'Gere o diagnóstico completo da conta — score, alertas e oportunidades.', tab: 'analise', cta: 'Ir para Análise', color: '#A78BFA' },
+              { step: '3', title: 'Gere sua Estratégia', desc: 'A IA cria um plano de 90 dias com canais, CPL-alvo e ações.', tab: 'strategy', cta: 'Ir para Estratégia', color: '#F0B429' },
+            ].map(item => (
+              <div key={item.step} style={{
+                background: C.surface, border: `1px solid ${C.border}`,
+                borderRadius: '10px', padding: '14px',
+                display: 'flex', flexDirection: 'column', gap: '6px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                  <div style={{
+                    width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
+                    background: `${item.color}18`, border: `1px solid ${item.color}35`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '10px', fontWeight: 800, color: item.color,
+                  }}>{item.step}</div>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: C.text1 }}>{item.title}</span>
+                </div>
+                <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5, flex: 1 }}>{item.desc}</div>
+                <button
+                  onClick={() => onNavigate?.(item.tab)}
+                  style={{
+                    marginTop: '4px', padding: '6px 12px', borderRadius: '7px',
+                    background: `${item.color}12`, border: `1px solid ${item.color}30`,
+                    color: item.color, fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                    textAlign: 'left', transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = `${item.color}22`}
+                  onMouseLeave={e => e.currentTarget.style.background = `${item.color}12`}
+                >
+                  {item.cta} →
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── KPI Cards — 6 colunas ──────────────────────────────────────── */}
       <div style={{
@@ -732,7 +857,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
           <SectionHeader title="Top Campanhas" />
           <div style={{ textAlign: 'center', padding: '24px 0', color: C.text3, fontSize: '12px', lineHeight: 1.6 }}>
             {hasRealData
-              ? <>Dados por campanha disponíveis na aba<br /><strong style={{ color: C.text2 }}>Auditoria de Anúncios</strong></>
+              ? <>Dados por campanha disponíveis em<br /><strong style={{ color: C.text2 }}>Diagnóstico → Análise Profunda</strong></>
               : <>Conecte Meta Ads ou Google Ads<br />para ver o desempenho por campanha</>
             }
           </div>
@@ -791,7 +916,7 @@ export function TabOverview({ strategy, analysis, clientData }: Props) {
           gap: '12px',
         }}>
           {insights.map((ins, i) => (
-            <InsightCard key={i} {...ins} />
+            <InsightCard key={i} {...ins} onNavigate={onNavigate} />
           ))}
         </div>
       </div>

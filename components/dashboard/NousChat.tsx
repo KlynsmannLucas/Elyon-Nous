@@ -43,7 +43,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
       const name  = clientData?.clientName || 'cliente'
       addNousMessage(clientName, {
         role: 'nous',
-        content: `Olá! Sou a **NOUS**, sua analista estratégica especializada em **${niche}**.\n\nTenho acesso completo aos dados de **${name}**: budget, unit economics, benchmarks reais do nicho${campaignHistory.length > 0 ? `, ${campaignHistory.length} campanhas históricas` : ''}${auditCache[name] ? ', última auditoria' : ''} e estratégia gerada.\n\nMe pergunte qualquer coisa — diagnóstico, criativos, canais, ROAS break-even, CPL máximo. Sou direta e baseio tudo em dados.`,
+        content: `Olá! Sou seu **Assistente IA**, especializado em **${niche}**.\n\nTenho acesso completo aos dados de **${name}**: budget, unit economics, benchmarks reais do nicho${campaignHistory.length > 0 ? `, ${campaignHistory.length} campanhas históricas` : ''}${auditCache[name] ? ', última auditoria' : ''} e estratégia gerada.\n\nMe pergunte qualquer coisa — diagnóstico, criativos, canais, ROAS break-even, CPL máximo. Sou direto e baseio tudo em dados.`,
         ts: Date.now(),
       })
     }
@@ -228,11 +228,11 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
           background: open ? '#0F1629' : 'linear-gradient(135deg, #F0B429, #FFD166)',
           border: open ? '1px solid rgba(240,180,41,0.4)' : 'none',
         }}
-        title="NOUS — Assistente Estratégica"
+        title="Assistente IA — Analista Estratégica"
       >
         {open
           ? <span className="text-[#F0B429] text-xl font-bold">×</span>
-          : <span className="text-black text-lg font-black">N</span>
+          : <span className="text-black text-lg font-black">IA</span>
         }
       </button>
 
@@ -254,7 +254,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
               <span className="text-black text-sm font-black">N</span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-display font-bold text-white text-sm">NOUS</div>
+              <div className="font-display font-bold text-white text-sm">Assistente IA</div>
               <div className="text-[10px] text-slate-500">
                 Analista estratégica · {clientData?.niche || 'aguardando contexto'}
               </div>
@@ -288,7 +288,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
                   }
                 >
                   {msg.role === 'nous' && (
-                    <div className="text-[9px] text-[#F0B429] font-bold uppercase tracking-widest mb-1">NOUS</div>
+                    <div className="text-[9px] text-[#F0B429] font-bold uppercase tracking-widest mb-1">ASSISTENTE IA</div>
                   )}
                   <div className="whitespace-pre-wrap">
                     {msg.content.split('\n').map((line, li) => (
@@ -335,7 +335,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
                 ref={inputRef}
                 type="text"
                 className="flex-1 bg-[#080D1A] border border-[#2A2A30] rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-[#F0B429] transition-colors"
-                placeholder="Pergunte à NOUS..."
+                placeholder="Pergunte ao Assistente IA..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage(input)}
