@@ -322,7 +322,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
           fontSize: '13px',
         }}>
           <IconWarning size={16} />
-          <span>Conecte suas contas de anúncio e execute a análise de inteligência para gerar relatórios com dados reais.</span>
+          <span>Conecte suas contas de anúncio e execute a Análise Profunda para gerar relatórios com dados reais.</span>
           {onNavigateToConnections && (
             <button
               onClick={onNavigateToConnections}

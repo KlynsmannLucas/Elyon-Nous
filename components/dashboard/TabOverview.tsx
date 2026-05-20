@@ -326,7 +326,7 @@ function InsightCard({ icon, title, desc, color, action, onNavigate }: {
           onClick={() => { if (destTab && onNavigate) onNavigate(destTab) }}
           onMouseEnter={e => { e.currentTarget.style.background = `${color}20` }}
           onMouseLeave={e => { e.currentTarget.style.background = `${color}10` }}
-        >Ver detalhes →</button>
+        >{action} →</button>
       )}
     </div>
   )

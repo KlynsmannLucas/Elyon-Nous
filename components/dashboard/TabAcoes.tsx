@@ -4,7 +4,7 @@
 import { useState, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData, StrategyData } from '@/lib/store'
-import { syncActionStatus, useClientActions } from '@/hooks/useClientActions'
+import { syncActionStatus, useClientActions, retrySyncActions } from '@/hooks/useClientActions'
 
 interface Props {
   clientData: ClientData | null
@@ -70,13 +70,14 @@ function prazoToDate(prazo: string, generatedAt?: string): string {
 }
 
 export function TabAcoes({ clientData, strategyData }: Props) {
-  const { auditCache, actionPlanCache, setActionPlanCache, updateActionStatus, pendingActionsCache, updatePendingActionStatus } = useAppStore()
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [filtro, setFiltro]   = useState<Filtro>('todas')
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const { auditCache, actionPlanCache, setActionPlanCache, updateActionStatus, pendingActionsCache, updatePendingActionStatus, updatePendingActionSyncState } = useAppStore()
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState('')
+  const [filtro, setFiltro]           = useState<Filtro>('todas')
+  const [expanded, setExpanded]       = useState<string | null>(null)
   const [showAuditActions, setShowAuditActions] = useState(true)
-  const [syncError, setSyncError] = useState<string | null>(null)
+  const [retrying, setRetrying]       = useState(false)
+  const [retryResult, setRetryResult] = useState<{ succeeded: number; failed: number } | null>(null)
 
   // Hidrata store do Supabase ao abrir a aba (cross-device persistence)
   const { loading: hydrating } = useClientActions({ clientName: clientData?.clientName })
@@ -96,6 +97,20 @@ export function TabAcoes({ clientData, strategyData }: Props) {
     critica:  pendingActions.filter(a => a.urgency === 'critica' && a.status === 'pendente').length,
     pendente: pendingActions.filter(a => a.status === 'pendente').length,
     ignorada: pendingActions.filter(a => a.status === 'ignorada').length,
+  }
+
+  const unsyncedActions = pendingActions.filter(
+    a => a.syncState === 'pending_sync' || a.syncState === 'sync_failed',
+  )
+  const unsyncedCount = unsyncedActions.length
+
+  const handleRetrySync = async () => {
+    if (retrying || !key || unsyncedCount === 0) return
+    setRetrying(true)
+    setRetryResult(null)
+    const result = await retrySyncActions(key, unsyncedActions, updatePendingActionSyncState)
+    setRetryResult(result)
+    setRetrying(false)
   }
 
   const stats = {
@@ -177,7 +192,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 800, color: C.text1, margin: '0 0 6px' }}>Plano de Ações</h2>
           <p style={{ fontSize: 13, color: C.text2, margin: 0 }}>
-            Ações priorizadas geradas a partir de estratégia + auditoria · {clientData.clientName}
+            Ações priorizadas geradas a partir de estratégia + Análise Profunda · {clientData.clientName}
           </p>
           {hydrating && (
             <span style={{ fontSize: 10, color: C.text3, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
@@ -218,7 +233,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         {[
           { label: 'Estratégia',    ok: !!strategyData,                    icon: '⚡' },
-          { label: 'Auditoria',     ok: !!(latestAudit || metaIntelData),  icon: '🔍' },
+          { label: 'Análise Profunda', ok: !!(latestAudit || metaIntelData), icon: '🔍' },
           { label: 'Dados cliente', ok: !!clientData,                      icon: '👤' },
         ].map(({ label, ok, icon }) => (
           <span key={label} style={{
@@ -250,7 +265,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 16 }}>🔍</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>Ações da Auditoria</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.text1 }}>Ações da Análise</span>
               {pendingStats.critica > 0 && (
                 <span style={{
                   fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
@@ -273,6 +288,43 @@ export function TabAcoes({ clientData, strategyData }: Props) {
 
           {showAuditActions && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+              {/* Banner de sincronização */}
+              {unsyncedCount > 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: retryResult?.failed
+                    ? 'rgba(239,68,68,0.07)'
+                    : 'rgba(245,158,11,0.07)',
+                  border: `1px solid ${retryResult?.failed ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`,
+                  borderRadius: 10, padding: '8px 14px', gap: 10,
+                }}>
+                  <span style={{ fontSize: 11, color: retryResult?.failed ? C.red : C.gold }}>
+                    {retryResult
+                      ? retryResult.failed > 0
+                        ? `⚠ ${retryResult.failed} ação${retryResult.failed > 1 ? 'ões' : ''} ainda sem sincronizar — verifique a conexão`
+                        : `✓ Sincronização concluída`
+                      : `☁ ${unsyncedCount} ação${unsyncedCount > 1 ? 'ões' : ''} não sincronizada${unsyncedCount > 1 ? 's' : ''} com o banco`
+                    }
+                  </span>
+                  <button
+                    onClick={handleRetrySync}
+                    disabled={retrying}
+                    style={{
+                      fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 8,
+                      cursor: retrying ? 'not-allowed' : 'pointer', border: 'none',
+                      background: 'rgba(245,158,11,0.15)', color: C.gold,
+                      opacity: retrying ? 0.6 : 1, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', gap: 5,
+                    }}>
+                    {retrying
+                      ? <><span style={{ width: 10, height: 10, borderRadius: 999, border: '1.5px solid rgba(245,158,11,0.3)', borderTopColor: C.gold, display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Sincronizando…</>
+                      : '↻ Sincronizar'
+                    }
+                  </button>
+                </div>
+              )}
+
               {(['critica', 'alta', 'media', 'baixa'] as Prioridade[]).map(urgency => {
                 // Respeita o filtro global: mostra tudo ou filtra por status
                 const items = pendingActions.filter(a =>
@@ -315,6 +367,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                   key,
                                   next as Status,
                                   updatePendingActionStatus,
+                                  updatePendingActionSyncState,
                                 ).catch(() => {})
                               }}
                               style={{
@@ -341,6 +394,21 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                 {item.metric && (
                                   <span style={{ fontSize: 10, color: C.text3 }}>· {item.metric}</span>
                                 )}
+                                {/* Indicador de estado de sync */}
+                                {item.syncState === 'sync_failed' && (
+                                  <span
+                                    title="Falha ao sincronizar — clique em Sincronizar para tentar novamente"
+                                    style={{ fontSize: 10, color: C.red, cursor: 'default', flexShrink: 0 }}>
+                                    ⚠
+                                  </span>
+                                )}
+                                {item.syncState === 'pending_sync' && (
+                                  <span
+                                    title="Aguardando sincronização com o banco de dados"
+                                    style={{ fontSize: 10, color: C.gold, cursor: 'default', flexShrink: 0 }}>
+                                    ☁
+                                  </span>
+                                )}
                               </div>
                               <span style={{
                                 fontSize: 12, fontWeight: 600, color: C.text1,
@@ -360,6 +428,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                   key,
                                   'ignorada',
                                   updatePendingActionStatus,
+                                  updatePendingActionSyncState,
                                 ).catch(() => {})}
                                 style={{
                                   width: 18, height: 18, borderRadius: 4, border: `1px solid ${C.border}`,
@@ -435,7 +504,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
             com base na estratégia e auditoria do cliente.
           </p>
           <p style={{ fontSize: 11, color: C.text3 }}>
-            Dica: execute a <strong style={{ color: C.text2 }}>Auditoria</strong> antes para ações mais cirúrgicas.
+            Dica: execute a <strong style={{ color: C.text2 }}>Análise Profunda</strong> antes para ações mais precisas.
           </p>
         </div>
       )}
