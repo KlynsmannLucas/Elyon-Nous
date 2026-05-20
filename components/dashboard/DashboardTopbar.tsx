@@ -21,8 +21,8 @@ interface Props {
 
 const TAB_SUBTITLES: Partial<Record<TabKey, string>> = {
   overview:    'Resumo completo da performance das suas campanhas',
-  analise:     'Diagnóstico profundo dos seus anúncios com IA',
-  diagnostic:  'Saúde geral do negócio e métricas estratégicas',
+  analise:     'Auditoria avançada das campanhas, anúncios, criativos e oportunidades de otimização.',
+  diagnostic:  'Visão executiva da performance, gargalos e impacto do marketing no negócio.',
   funil:       'Visualize cada etapa da jornada do cliente',
   strategy:    'Plano de crescimento de 90 dias gerado por IA',
   acoes:       'Tarefas prioritárias para executar agora',

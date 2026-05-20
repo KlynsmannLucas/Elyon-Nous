@@ -97,7 +97,7 @@ export const SIDEBAR_SECTIONS: {
     { key: 'cenarios',    label: 'Projeções',               icon: '📈' },
     { key: 'financeiro',  label: 'Painel Financeiro',       icon: '💰', badge: 'NOVO' },
   ]},
-  { label: 'Criação', planLabel: 'Profissional', items: [
+  { label: 'Conteúdo & Criativos', planLabel: 'Profissional', items: [
     { key: 'concorrentes',label: 'Concorrentes',            icon: '🕵️' },
     { key: 'cro',         label: 'Otimização de Conversão', icon: '⚙️', badge: 'IA' },
     { key: 'conteudo',    label: 'Criar Conteúdo',          icon: '✨' },
@@ -154,7 +154,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
   const planLimits = getPlanLimits(userPlan)
   const SECTION_LOCK: Record<string, boolean> = {
     'Campanhas':    !planLimits.hasAnunciosGroup,
-    'Criação':      !planLimits.hasCriativoGroup,
+    'Conteúdo & Criativos': !planLimits.hasCriativoGroup,
     'Inteligência': !planLimits.hasAvancadoGroup,
   }
 
@@ -393,14 +393,17 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                               <span className="status-dot-live" style={{ width: '5px', height: '5px' }} />
                             </span>
                           ) : item.badge && item.badge !== 'LIVE' ? (
-                            <span style={{
-                              fontSize: '8px', fontFamily: 'var(--font-mono)',
-                              color: '#A78BFA',
-                              background: 'rgba(167,139,250,0.12)',
-                              border: '1px solid rgba(167,139,250,0.25)',
-                              borderRadius: '4px', padding: '1px 5px',
-                              letterSpacing: '0.04em', flexShrink: 0, fontWeight: 700,
-                            }}>
+                            <span
+                              title={item.badge === 'IA' ? 'Usa Inteligência Artificial — pode consumir créditos conforme o tipo de análise' : undefined}
+                              style={{
+                                fontSize: '8px', fontFamily: 'var(--font-mono)',
+                                color: '#A78BFA',
+                                background: 'rgba(167,139,250,0.12)',
+                                border: '1px solid rgba(167,139,250,0.25)',
+                                borderRadius: '4px', padding: '1px 5px',
+                                letterSpacing: '0.04em', flexShrink: 0, fontWeight: 700,
+                                cursor: item.badge === 'IA' ? 'help' : 'default',
+                              }}>
                               {item.badge}
                             </span>
                           ) : null}

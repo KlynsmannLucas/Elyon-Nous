@@ -387,13 +387,34 @@ export function TabStrategy({ strategy, analysis }: Props) {
         </div>
       ) : (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12,
-          background: 'rgba(100,116,139,0.06)', border: '1px solid rgba(100,116,139,0.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          padding: '12px 16px', borderRadius: 12,
+          background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.15)',
         }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.text3, flexShrink: 0 }} />
-          <span style={{ color: C.text3, fontSize: 12 }}>
-            Estratégia baseada em estimativas do nicho · Conecte o Meta Ads para calibrar com dados reais
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 16, flexShrink: 0 }}>💡</span>
+            <div>
+              <div style={{ color: '#A78BFA', fontWeight: 600, fontSize: 12, marginBottom: 2 }}>
+                Estratégia baseada em estimativas do nicho
+              </div>
+              <div style={{ color: C.text3, fontSize: 11, lineHeight: 1.5 }}>
+                Rode uma Análise Profunda primeiro para gerar uma estratégia baseada nos dados reais da conta.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('elyon:navigate', { detail: 'analise' }))}
+            style={{
+              padding: '7px 14px', borderRadius: 8, flexShrink: 0,
+              background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)',
+              color: '#A78BFA', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              whiteSpace: 'nowrap', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,58,237,0.22)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(124,58,237,0.12)'}
+          >
+            Ir para Análise Profunda →
+          </button>
         </div>
       )}
 

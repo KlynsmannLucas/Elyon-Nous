@@ -534,9 +534,11 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
 
     const runStart = Date.now()
 
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
     try {
-      // Timeout de 5 minutos no cliente
-      const timeoutId = setTimeout(() => abortRef.current?.abort(), 5 * 60 * 1000)
+      // Timeout global de 5 minutos — mantido até o finally (cobre toda a leitura do stream)
+      timeoutId = setTimeout(() => abortRef.current?.abort(), 5 * 60 * 1000)
 
       const res = await fetch('/api/pipeline', {
         method: 'POST',
@@ -544,8 +546,6 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
         body: JSON.stringify(payload),
         signal: abortRef.current.signal,
       })
-
-      clearTimeout(timeoutId)
 
       if (!res.ok) {
         const errText = await res.text().catch(() => `Erro ${res.status}`)
@@ -558,8 +558,20 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
       let   buffer  = ''
       const resultsMap: Record<string, any> = {}
 
+      // Detecta inatividade: se o servidor não enviar nada por 90s, aborta
+      const INACTIVITY_MS = 90_000
+      const readWithTimeout = () => Promise.race([
+        reader.read(),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Servidor parou de responder por 90s. Tente novamente ou cancele.')),
+            INACTIVITY_MS,
+          )
+        ),
+      ])
+
       while (true) {
-        const { done, value } = await reader.read()
+        const { done, value } = await readWithTimeout()
         if (done) break
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
@@ -615,6 +627,7 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
         message: msg,
       }])
     } finally {
+      if (timeoutId !== null) clearTimeout(timeoutId)
       setRunning(false)
       setFetchingData(false)
       setCurrentAgent(null)
@@ -652,7 +665,7 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-white font-bold text-lg">Pipeline 360° ELYON</h2>
+              <h2 className="text-white font-bold text-lg">Análise por Agentes IA</h2>
               {lastRunAt && (
                 <span className="text-xs text-white/30">
                   Última análise: {new Date(lastRunAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
@@ -1092,7 +1105,7 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
       {!running && !hasResults && errors.length === 0 && (
         <div className="text-center py-14">
           <div className="text-5xl mb-4">🤖</div>
-          <div className="text-white/40 text-sm font-medium">Pipeline 360° ELYON</div>
+          <div className="text-white/40 text-sm font-medium">Análise por Agentes IA</div>
           <div className="text-white/20 text-xs mt-1 mb-6">5 agentes de IA em cadeia: Auditor → Data Analyst → Estrategista → Copywriter → Report</div>
           <div className="space-y-2 max-w-xs mx-auto text-left">
             {[

@@ -146,43 +146,89 @@ function KpiCard({ label, value, sub, color, trend, sparkSeed, sparkBase, icon }
 }
 
 // ── AI Score gauge ────────────────────────────────────────────────────────────
+const SCORE_RANGES = [
+  { min: 90, max: 100, label: 'Excelente',  color: '#22C55E', desc: 'Estrutura e performance acima da média do nicho.' },
+  { min: 70, max: 89,  label: 'Saudável',   color: '#22C55E', desc: 'A conta está bem. Ainda há espaço para otimizar.' },
+  { min: 45, max: 69,  label: 'Atenção',    color: '#F59E0B', desc: 'Existem problemas importantes para corrigir.' },
+  { min: 0,  max: 44,  label: 'Crítico',    color: '#EF4444', desc: 'A conta precisa de ação urgente.' },
+]
+
 function ScoreGauge({ score, label, description }: { score: number; label: string; description: string }) {
+  const [showInfo, setShowInfo] = useState(false)
   const R = 52
   const CIRC = 2 * Math.PI * R
-  const dashOffset = CIRC - (score / 100) * CIRC * 0.75
-  const color = score >= 70 ? C.green : score >= 45 ? C.amber : C.red
+  const color = score >= 90 ? '#22C55E' : score >= 70 ? '#22C55E' : score >= 45 ? '#F59E0B' : '#EF4444'
   const bgColor = score >= 70 ? 'rgba(34,197,94,0.08)' : score >= 45 ? 'rgba(245,165,0,0.08)' : 'rgba(239,68,68,0.08)'
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%' }}>
       <div style={{ position: 'relative' }}>
         <svg width="130" height="130" viewBox="0 0 130 130">
-          {/* Bg track */}
           <circle cx="65" cy="65" r={R} fill="none" stroke={C.elevated} strokeWidth="10"
-            strokeDasharray={`${CIRC * 0.75} ${CIRC}`}
-            strokeLinecap="round"
-            transform="rotate(135 65 65)"
-          />
-          {/* Progress */}
+            strokeDasharray={`${CIRC * 0.75} ${CIRC}`} strokeLinecap="round"
+            transform="rotate(135 65 65)" />
           <circle cx="65" cy="65" r={R} fill="none" stroke={color} strokeWidth="10"
-            strokeDasharray={`${CIRC * 0.75 * score / 100} ${CIRC}`}
-            strokeLinecap="round"
+            strokeDasharray={`${CIRC * 0.75 * score / 100} ${CIRC}`} strokeLinecap="round"
             transform="rotate(135 65 65)"
-            style={{ transition: 'stroke-dasharray 1.2s ease', filter: `drop-shadow(0 0 6px ${color}60)` }}
-          />
-          {/* Score number */}
+            style={{ transition: 'stroke-dasharray 1.2s ease', filter: `drop-shadow(0 0 6px ${color}60)` }} />
           <text x="65" y="60" textAnchor="middle" fill={C.text1} fontSize="28" fontWeight="800"
             fontFamily="var(--font-dm-sans)">{score}</text>
           <text x="65" y="76" textAnchor="middle" fill={C.text3} fontSize="11" fontWeight="500">/100</text>
         </svg>
+        {/* Info button */}
+        <button
+          onClick={() => setShowInfo(v => !v)}
+          title="O que é o Score IA?"
+          style={{
+            position: 'absolute', top: 2, right: 2,
+            width: '18px', height: '18px', borderRadius: '50%',
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontWeight: 700,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            lineHeight: 1,
+          }}
+        >?</button>
       </div>
-      <div style={{ textAlign: 'center' }}>
+
+      <div style={{ textAlign: 'center', width: '100%' }}>
         <div style={{
           fontSize: '12px', fontWeight: 700, color,
           background: bgColor, border: `1px solid ${color}30`,
           borderRadius: '6px', padding: '3px 10px', display: 'inline-block', marginBottom: '6px',
         }}>{label}</div>
-        <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5, maxWidth: '160px', margin: '0 auto' }}>{description}</div>
+        <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5, maxWidth: '160px', margin: '0 auto' }}>
+          {description}
+        </div>
       </div>
+
+      {/* Faixas de referência — expande ao clicar no ? */}
+      {showInfo && (
+        <div style={{
+          width: '100%', background: '#0F1629',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '10px', padding: '10px 12px',
+        }}>
+          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+            Como o Score é calculado
+          </div>
+          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.5, marginBottom: '8px' }}>
+            Avalia métricas da conta, alertas críticos encontrados, ações pendentes e recência da auditoria.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {SCORE_RANGES.map(r => (
+              <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
+                  background: r.color, opacity: score >= r.min && score <= r.max ? 1 : 0.25,
+                }} />
+                <span style={{ fontSize: '10px', fontWeight: 600, color: score >= r.min && score <= r.max ? r.color : 'rgba(255,255,255,0.3)', minWidth: '60px' }}>
+                  {r.min}–{r.max} {r.label}
+                </span>
+                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>{r.desc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -415,12 +461,14 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
     return Math.min(100, s)
   }, [strategyData, latestAudit, rm])
 
-  const scoreLabel = healthScore >= 70 ? 'Boa performance!' : healthScore >= 45 ? 'Atenção necessária' : 'Crítico'
-  const scoreDesc  = healthScore >= 70
-    ? 'Existem oportunidades para otimizar e escalar seus resultados.'
+  const scoreLabel = healthScore >= 90 ? 'Excelente' : healthScore >= 70 ? 'Saudável' : healthScore >= 45 ? 'Atenção' : 'Crítico'
+  const scoreDesc  = healthScore >= 90
+    ? 'Estrutura e performance acima da média. Continue monitorando.'
+    : healthScore >= 70
+    ? 'A conta está bem. Ainda há oportunidades para otimizar e escalar.'
     : healthScore >= 45
-    ? 'Revise as campanhas e execute as ações recomendadas.'
-    : 'Execute a auditoria e implemente as ações críticas urgentes.'
+    ? 'Existem problemas importantes. Revise as campanhas e execute as ações.'
+    : 'A conta precisa de ação urgente. Execute a auditoria e corrija os alertas críticos.'
 
   // ── KPI cards data ───────────────────────────────────────────────────────
   const kpiCards = (() => {
@@ -843,7 +891,7 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: C.text2, marginBottom: '16px', textAlign: 'center' }}>
-            AI Score (Saúde da Conta)
+            Score de Saúde da Conta
           </div>
           <ScoreGauge score={healthScore} label={scoreLabel} description={scoreDesc} />
         </div>

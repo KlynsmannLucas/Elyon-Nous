@@ -583,6 +583,15 @@ export default function DashboardBody() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const tab = (e as CustomEvent<string>).detail as TabKey
+      if (tab) setActiveTab(tab)
+    }
+    window.addEventListener('elyon:navigate', handler)
+    return () => window.removeEventListener('elyon:navigate', handler)
+  }, [])
+
   const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
   const [genError, setGenError] = useState('')
   const [syncing, setSyncing] = useState(false)
