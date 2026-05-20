@@ -24,11 +24,14 @@ interface Props {
     name: string
   } | null
   currentBudget?: number
+  scenarioBudgets?: { conservNum: number; baseNum: number; agresNum: number }
 }
 
-function buildScenarios(bench: Props['bench'], currentBudget?: number): ScenarioPoint[] {
+function buildScenarios(
+  bench: Props['bench'],
+  scenarioBudgets?: Props['scenarioBudgets'],
+): ScenarioPoint[] {
   if (!bench) {
-    // fallback sem benchmark
     return ['Mês 1','Mês 2','Mês 3','Mês 4','Mês 5','Mês 6'].map((month, i) => ({
       month,
       conservador: Math.round(8000  * (0.55 + i * 0.09)),
@@ -39,29 +42,23 @@ function buildScenarios(bench: Props['bench'], currentBudget?: number): Scenario
 
   const cplAvg = (bench.cpl_min + bench.cpl_max) / 2
 
-  // 3 budgets de cenário
-  const conservBudget = bench.budget_floor
-  const recoBudget    = bench.budget_ideal
-  const agressBudget  = Math.round(bench.budget_ideal * 2.2)
+  // Use client-derived scenario budgets when available; otherwise benchmark defaults
+  const conservBudget = scenarioBudgets?.conservNum ?? bench.budget_floor
+  const recoBudget    = scenarioBudgets?.baseNum    ?? bench.budget_ideal
+  const agressBudget  = scenarioBudgets?.agresNum   ?? Math.round(bench.budget_ideal * 2)
 
   const revenue = (b: number) => {
     const leads = b / cplAvg
-    const sales = leads * bench.cvr_lead_to_sale
-    return sales * bench.avg_ticket
+    return leads * bench.cvr_lead_to_sale * bench.avg_ticket
   }
 
-  const conservBase = revenue(conservBudget)
-  const recoBase    = revenue(recoBudget)
-  const agressBase  = revenue(agressBudget)
-
-  // Ramp-up realista: otimização de campanha ao longo dos meses
   const ramp = [0.45, 0.62, 0.78, 0.88, 0.95, 1.00]
 
   return ['Mês 1','Mês 2','Mês 3','Mês 4','Mês 5','Mês 6'].map((month, i) => ({
     month,
-    conservador: Math.round(conservBase * ramp[i]),
-    recomendado: Math.round(recoBase    * ramp[i]),
-    agressivo:   Math.round(agressBase  * ramp[i]),
+    conservador: Math.round(revenue(conservBudget) * ramp[i]),
+    recomendado: Math.round(revenue(recoBudget)    * ramp[i]),
+    agressivo:   Math.round(revenue(agressBudget)  * ramp[i]),
   }))
 }
 
@@ -104,12 +101,18 @@ function CustomLegend({ payload }: any) {
   )
 }
 
-export function GrowthChart({ bench, currentBudget }: Props) {
-  const data = buildScenarios(bench, currentBudget)
+export function GrowthChart({ bench, currentBudget, scenarioBudgets }: Props) {
+  const data = buildScenarios(bench, scenarioBudgets)
 
-  const conservBudget = bench ? `R$${bench.budget_floor.toLocaleString('pt-BR')}` : '—'
-  const recoBudget    = bench ? `R$${bench.budget_ideal.toLocaleString('pt-BR')}` : '—'
-  const agressBudget  = bench ? `R$${Math.round(bench.budget_ideal * 2.2).toLocaleString('pt-BR')}` : '—'
+  const conservBudget = scenarioBudgets
+    ? `R$${scenarioBudgets.conservNum.toLocaleString('pt-BR')}`
+    : bench ? `R$${bench.budget_floor.toLocaleString('pt-BR')}` : '—'
+  const recoBudget = scenarioBudgets
+    ? `R$${scenarioBudgets.baseNum.toLocaleString('pt-BR')}`
+    : bench ? `R$${bench.budget_ideal.toLocaleString('pt-BR')}` : '—'
+  const agressBudget = scenarioBudgets
+    ? `R$${scenarioBudgets.agresNum.toLocaleString('pt-BR')}`
+    : bench ? `R$${Math.round(bench.budget_ideal * 2).toLocaleString('pt-BR')}` : '—'
 
   return (
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
