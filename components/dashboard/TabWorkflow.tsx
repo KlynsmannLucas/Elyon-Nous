@@ -164,7 +164,7 @@ export function TabWorkflow() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '20px' }}>⚙️</span>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Workflow Builder</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Automação de Rotina</h2>
             <span style={{
               fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#22C55E',
               background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',

@@ -213,7 +213,7 @@ export function TabBudgetAllocator() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '20px' }}>💰</span>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Budget Allocator</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Alocador de Verba</h2>
             <span style={{
               fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#F0B429',
               background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.2)',
@@ -422,7 +422,7 @@ export function TabBudgetAllocator() {
             Adicione suas campanhas para calcular a alocação ideal
           </div>
           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', maxWidth: '360px', margin: '0 auto 16px' }}>
-            Insira dados de cada campanha (gasto, leads, CPL) e o Budget Allocator vai distribuir o orçamento para maximizar resultados.
+            Insira dados de cada campanha (gasto, leads, CPL) e o Alocador de Verba vai distribuir o orçamento para maximizar resultados.
           </div>
           <button
             onClick={() => setShowAddForm(true)}

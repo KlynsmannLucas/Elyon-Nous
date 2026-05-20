@@ -109,7 +109,7 @@ export function TabCRO() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '20px' }}>⚙️</span>
             <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>
-              CRO Agent
+              Otimização de Conversão
             </h2>
             <span style={{
               fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#F0B429',

@@ -237,9 +237,9 @@ function getInsightIcon(icon: string, color: string): React.ReactNode {
 }
 
 const INSIGHT_ACTION_TAB: Record<string, string> = {
-  'Ver auditoria':       'diagnostic',
-  'Auditar agora':       'diagnostic',
-  'Conectar conta':      'diagnostic',
+  'Ver auditoria':       'analise',
+  'Auditar agora':       'analise',
+  'Conectar conta':      'anuncios',
   'Atualizar estratégia':'strategy',
   'Ver estratégia':      'strategy',
   'Ver projeção':        'overview',

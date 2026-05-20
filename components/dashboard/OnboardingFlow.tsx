@@ -23,7 +23,8 @@ const STEPS: Step[] = [
     icon: '✍️',
     title: 'Cadastre os dados do cliente',
     description: 'Nome, nicho e orçamento mensal — o ELYON personaliza toda a análise com base nesses dados.',
-    action: 'Preencher agora',
+    tab: 'overview' as TabKey,
+    action: 'Ir para a tela inicial',
     check: (s) => !!s.clientData?.clientName,
   },
   {

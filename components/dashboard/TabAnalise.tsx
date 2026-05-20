@@ -60,7 +60,7 @@ export function TabAnalise({ clientData, planHasAudit, onUpgrade }: Props) {
               Meta e Google têm políticas específicas para{' '}
               <strong style={{ color: C.text1 }}>{clientData?.niche}</strong>. Evite termos como "cura",
               "garantia de resultado" ou promessas de saúde/jurídico. Pergunte à{' '}
-              <strong style={{ color: C.text1 }}>NOUS</strong> por ângulos de copy aprovados para esse nicho.
+              <strong style={{ color: C.text1 }}>Assistente IA</strong> por ângulos de copy aprovados para esse nicho.
             </div>
           </div>
         </div>
@@ -74,7 +74,7 @@ export function TabAnalise({ clientData, planHasAudit, onUpgrade }: Props) {
         }}>
           {([
             { key: 'auditoria', label: '🔍 Auditoria Detalhada', sub: '11 seções' },
-            { key: 'pipeline',  label: '🤖 Pipeline 360°',       sub: '5 agentes IA' },
+            { key: 'pipeline',  label: '🤖 Análise por Agentes IA', sub: '5 agentes' },
           ] as { key: 'auditoria' | 'pipeline'; label: string; sub: string }[]).map((m) => (
             <button
               key={m.key}
