@@ -409,10 +409,13 @@ function AuctionPanel({ insights, myIS }: { insights: AuctionInsight[]; myIS: nu
   )
 }
 
+interface DiagCheck { id: string; label: string; status: 'ok' | 'error' | 'warning' | 'skip'; detail: string }
+interface DiagResult { healthy: boolean; checks: DiagCheck[]; accessibleAccounts: string[] | null }
+
 interface Props { onNavigateToConnections?: () => void }
 
 export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
-  const { connectedAccounts, connectAccount } = useAppStore()
+  const { connectedAccounts } = useAppStore()
   const googleAccount = connectedAccounts.find(a => a.platform === 'google')
 
   const [data,          setData]          = useState<IntelligenceData | null>(null)
@@ -423,6 +426,9 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
   const [accounts,      setAccounts]      = useState<{ id: string; name: string }[]>([])
   const [loadingAccs,   setLoadingAccs]   = useState(false)
   const [selectedAccId, setSelectedAccId] = useState(googleAccount?.accountId || '')
+  const [diagLoading,   setDiagLoading]   = useState(false)
+  const [diagResult,    setDiagResult]    = useState<DiagResult | null>(null)
+  const [showDiag,      setShowDiag]      = useState(false)
 
   // Sempre busca lista de contas disponíveis para permitir troca
   useEffect(() => {
@@ -433,7 +439,6 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
       .then(json => {
         if (json.success && json.accounts?.length > 0) {
           setAccounts(json.accounts)
-          // Pré-seleciona a conta salva, ou a única disponível
           const saved = googleAccount.accountId
           if (saved && json.accounts.some((a: { id: string }) => a.id === saved)) {
             setSelectedAccId(saved)
@@ -453,7 +458,7 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
 
   const fetchIntelligence = async () => {
     if (!resolvedAccountId) return
-    setLoading(true); setError('')
+    setLoading(true); setError(''); setDiagResult(null); setShowDiag(false)
     try {
       const res  = await fetch('/api/ads-data/google-intelligence', {
         method: 'POST',
@@ -468,6 +473,20 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const runDiagnostics = async () => {
+    setDiagLoading(true); setDiagResult(null)
+    try {
+      const res  = await fetch('/api/google-ads/diagnostics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId: resolvedAccountId || undefined }),
+      })
+      const json = await res.json()
+      if (json.success) setDiagResult(json)
+    } catch {}
+    finally { setDiagLoading(false); setShowDiag(true) }
   }
 
   if (!googleAccount) {
@@ -534,19 +553,79 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
         const isNoConn = error.includes('NO_CONNECTION') || error.includes('não encontrada')
         const msg = error.split('||')[0]
         return (
-          <div className="rounded-xl px-4 py-3 text-sm flex items-center justify-between gap-3"
-            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}>
-            <span>{msg}</span>
-            <div className="flex items-center gap-2 shrink-0">
-              {isNoConn && onNavigateToConnections && (
-                <button onClick={onNavigateToConnections}
-                  className="text-xs px-3 py-1.5 rounded-lg font-bold"
-                  style={{ background: 'linear-gradient(135deg,#4285F4,#1a6ae8)', color: '#fff' }}>
-                  Reconectar
-                </button>
-              )}
-              <button onClick={() => setError('')}>×</button>
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
+            {/* Error header */}
+            <div className="px-4 py-3 flex items-start justify-between gap-3"
+              style={{ background: 'rgba(239,68,68,0.08)' }}>
+              <div className="flex items-start gap-2 flex-1 min-w-0">
+                <span className="text-base flex-shrink-0 mt-0.5">🔴</span>
+                <div>
+                  <div className="text-sm font-semibold text-red-400 mb-0.5">Erro ao acessar o Google Ads</div>
+                  <div className="text-xs text-red-300 leading-relaxed break-words">{msg}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                {isNoConn && onNavigateToConnections && (
+                  <button onClick={onNavigateToConnections}
+                    className="text-xs px-3 py-1.5 rounded-lg font-bold"
+                    style={{ background: 'linear-gradient(135deg,#4285F4,#1a6ae8)', color: '#fff' }}>
+                    Reconectar
+                  </button>
+                )}
+                <button onClick={() => { setError(''); setDiagResult(null); setShowDiag(false) }}
+                  className="text-slate-500 hover:text-slate-300 text-lg leading-none">×</button>
+              </div>
             </div>
+
+            {/* Diagnostics section */}
+            <div className="px-4 py-3 border-t" style={{ borderColor: 'rgba(239,68,68,0.15)', background: '#0D0D10' }}>
+              <button
+                onClick={runDiagnostics}
+                disabled={diagLoading}
+                className="text-xs font-bold px-4 py-2 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50 mr-3"
+                style={{ background: 'rgba(240,180,41,0.12)', border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429' }}>
+                {diagLoading ? '⏳ Diagnosticando…' : '🔧 Testar conexão'}
+              </button>
+              {!showDiag && !diagLoading && (
+                <span className="text-xs text-slate-600">
+                  Verifica token, Developer Token, contas acessíveis e Customer ID.
+                </span>
+              )}
+            </div>
+
+            {showDiag && diagResult && (
+              <div className="px-4 pb-4 space-y-1.5" style={{ background: '#0D0D10' }}>
+                {diagResult.checks.map(c => {
+                  const icons = { ok: '✅', error: '❌', warning: '⚠️', skip: '—' }
+                  const colors = { ok: '#22C55E', error: '#FF4D4D', warning: '#F0B429', skip: '#64748B' }
+                  return (
+                    <div key={c.id} className="flex items-start gap-2 text-xs">
+                      <span className="flex-shrink-0 mt-0.5">{icons[c.status]}</span>
+                      <div>
+                        <span className="font-semibold" style={{ color: colors[c.status] }}>{c.label}: </span>
+                        <span className="text-slate-400">{c.detail}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+                {diagResult.accessibleAccounts && diagResult.accessibleAccounts.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-[#1E1E24]">
+                    <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">Contas acessíveis — selecione uma:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {diagResult.accessibleAccounts.slice(0, 10).map(id => (
+                        <button
+                          key={id}
+                          onClick={() => { setSelectedAccId(id); setError(''); setShowDiag(false); setDiagResult(null) }}
+                          className="text-xs px-3 py-1 rounded-lg font-mono transition-opacity hover:opacity-80"
+                          style={{ background: 'rgba(66,133,244,0.12)', border: '1px solid rgba(66,133,244,0.3)', color: '#93C5FD' }}>
+                          {id}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )
       })()}

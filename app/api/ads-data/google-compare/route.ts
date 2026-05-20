@@ -3,8 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidGoogleToken, tokenErrorToResponse } from '@/services/google/token-manager'
-
-const API_VERSIONS = ['v19', 'v18']
+import { gaqlSearch, normalizeCustomerId } from '@/lib/google-ads'
 
 type Period =
   | 'THIS_WEEK_SUN_TODAY'
@@ -20,36 +19,6 @@ const PERIOD_PAIRS: Record<string, { current: Period; previous: Period; label: s
   month:   { current: 'THIS_MONTH',          previous: 'LAST_MONTH',         label: 'Mês atual vs. mês anterior' },
   '7d':    { current: 'LAST_7_DAYS',         previous: 'LAST_14_DAYS',       label: 'Últimos 7 dias vs. 7 dias anteriores' },
   '30d':   { current: 'LAST_30_DAYS',        previous: 'LAST_30_DAYS',       label: 'Últimos 30 dias (referência interna)' },
-}
-
-async function gaqlSearch(cleanId: string, accessToken: string, devToken: string, query: string): Promise<any[]> {
-  let lastError = ''
-  for (const version of API_VERSIONS) {
-    const res = await fetch(
-      `https://googleads.googleapis.com/${version}/customers/${cleanId}/googleAds:search`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization':     `Bearer ${accessToken}`,
-          'developer-token':   devToken,
-          'login-customer-id': cleanId,
-          'Content-Type':      'application/json',
-        },
-        body: JSON.stringify({ query: query.trim() }),
-        signal: AbortSignal.timeout(20_000),
-      }
-    )
-    const ct = res.headers.get('content-type') || ''
-    if (!ct.includes('application/json')) { lastError = `HTTP ${res.status}`; continue }
-    const data = await res.json()
-    if (data.error) {
-      const msg = data.error?.message || `HTTP ${res.status}`
-      if (/version|deprecated|not found/i.test(msg)) { lastError = msg; continue }
-      throw new Error(msg)
-    }
-    return data.results || []
-  }
-  throw new Error(`Google Ads API indisponível (${lastError})`)
 }
 
 function sumMetrics(results: any[]) {
@@ -135,7 +104,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Customer ID não encontrado', code: 'NO_ACCOUNT_ID' }, { status: 400 })
   }
 
-  const cleanId    = String(accountId).replace(/-/g, '')
+  const cleanId    = normalizeCustomerId(accountId)
   const campaignFilter = campaignId ? `AND campaign.id = ${campaignId}` : ''
 
   const baseQuery = (during: string) => `

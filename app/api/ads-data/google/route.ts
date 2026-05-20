@@ -3,42 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidGoogleToken, tokenErrorToResponse } from '@/services/google/token-manager'
-
-const API_VERSIONS = ['v19', 'v18']
-
-async function gaqlSearch(
-  cleanId: string, accessToken: string, developerToken: string, query: string
-): Promise<any[]> {
-  let lastError = ''
-  for (const version of API_VERSIONS) {
-    const res = await fetch(
-      `https://googleads.googleapis.com/${version}/customers/${cleanId}/googleAds:search`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization':     `Bearer ${accessToken}`,
-          'developer-token':   developerToken,
-          'login-customer-id': cleanId,
-          'Content-Type':      'application/json',
-        },
-        body: JSON.stringify({ query }),
-        signal: AbortSignal.timeout(15_000),
-      }
-    )
-    const ct = res.headers.get('content-type') || ''
-    if (!ct.includes('application/json')) {
-      lastError = `HTTP ${res.status} — Customer ID inválido ou sem acesso`
-      continue
-    }
-    const data = await res.json()
-    if (data.error || !res.ok) {
-      lastError = data.error?.message || `HTTP ${res.status}`
-      continue
-    }
-    return data.results || []
-  }
-  throw new Error(lastError || 'Google Ads API indisponível')
-}
+import { gaqlSearch, normalizeCustomerId } from '@/lib/google-ads'
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -84,7 +49,7 @@ export async function POST(req: NextRequest) {
     }, { status: 400 })
   }
 
-  const cleanId = String(accountId).replace(/-/g, '')
+  const cleanId = normalizeCustomerId(accountId)
 
   const query = `
     SELECT

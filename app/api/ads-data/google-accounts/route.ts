@@ -3,33 +3,18 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidGoogleToken, tokenErrorToResponse } from '@/services/google/token-manager'
-
-const API_VERSIONS = ['v19', 'v18']
+import { gaqlSearch, API_VERSIONS } from '@/lib/google-ads'
 
 async function fetchAccountName(customerId: string, accessToken: string, devToken: string): Promise<string> {
-  for (const version of API_VERSIONS) {
-    try {
-      const res = await fetch(
-        `https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:search`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization':     `Bearer ${accessToken}`,
-            'developer-token':   devToken,
-            'login-customer-id': customerId,
-            'Content-Type':      'application/json',
-          },
-          body: JSON.stringify({ query: 'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1' }),
-          signal: AbortSignal.timeout(8_000),
-        }
-      )
-      const data = await res.json()
-      if (data.results?.[0]?.customer?.descriptiveName) {
-        return data.results[0].customer.descriptiveName
-      }
-    } catch { /* tenta próxima versão */ }
+  try {
+    const results = await gaqlSearch(
+      customerId, accessToken, devToken,
+      'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1'
+    )
+    return results?.[0]?.customer?.descriptiveName || ''
+  } catch {
+    return ''
   }
-  return ''
 }
 
 export async function GET() {

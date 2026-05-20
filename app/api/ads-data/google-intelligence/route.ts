@@ -2,6 +2,7 @@
 // Google Ads Intelligence — campanhas + search terms + QS/IS + auction insights
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { gaqlSearch, normalizeCustomerId } from '@/lib/google-ads'
 
 const CAMPAIGN_TYPE_LABELS: Record<string, string> = {
   SEARCH:             'Pesquisa (Search)',
@@ -82,55 +83,6 @@ interface AuctionInsight {
 
 type RecItem = { type: RecType; title: string; description: string }
 
-// Tries each API version in order until one succeeds (v18 was sunset Jan 2026)
-const API_VERSIONS = ['v19', 'v18', 'v17']
-
-async function gaqlSearch(
-  cleanId: string,
-  accessToken: string,
-  developerToken: string,
-  query: string,
-  loginCustomerId?: string,
-) {
-  let lastError = ''
-  for (const version of API_VERSIONS) {
-    const headers: Record<string, string> = {
-      'Authorization':   `Bearer ${accessToken}`,
-      'developer-token': developerToken,
-      'Content-Type':    'application/json',
-    }
-    // Only include login-customer-id when the manager differs from the customer
-    if (loginCustomerId && loginCustomerId !== cleanId) {
-      headers['login-customer-id'] = loginCustomerId
-    }
-
-    const res = await fetch(
-      `https://googleads.googleapis.com/${version}/customers/${cleanId}/googleAds:search`,
-      {
-        method: 'POST',
-        headers,
-        body:   JSON.stringify({ query: query.trim() }),
-        signal: AbortSignal.timeout(20000),
-      }
-    )
-    const ct = res.headers.get('content-type') || ''
-    if (!ct.includes('application/json')) {
-      // Non-JSON (e.g. HTML 404) usually means version is gone — try next
-      lastError = `HTTP ${res.status}`
-      continue
-    }
-    const data = await res.json()
-    if (data.error) {
-      const msg = data.error?.message || JSON.stringify(data.error)
-      // Version-related errors: try next
-      if (/version|deprecated|not found/i.test(msg)) { lastError = msg; continue }
-      throw new Error(msg)
-    }
-    return data.results || []
-  }
-  throw new Error(`Google Ads API indisponível (${lastError}). Verifique se o Customer ID ${cleanId} está correto e se o Developer Token tem acesso de produção.`)
-}
-
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
@@ -166,7 +118,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    const cleanId = String(accountId).replace(/-/g, '')
+    const cleanId = normalizeCustomerId(accountId)
 
     // ── 4 queries em paralelo ───────────────────────────────────────────────
     const [campaignResults, searchTermResults, auctionResults, keywordResults] = await Promise.allSettled([
