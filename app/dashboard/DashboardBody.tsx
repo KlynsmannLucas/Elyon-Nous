@@ -47,6 +47,120 @@ const PLAN_LABELS: Record<string, { label: string; color: string }> = {
   avancada:     { label: 'Avançada',     color: '#22C55E' },
 }
 
+// ── Preview de valor por aba bloqueada ─────────────────────────────────────────
+const TAB_PREVIEWS: Record<string, {
+  icon: string; title: string; desc: string; benefit: string; target: string
+}> = {
+  // Grupo Campanhas (Profissional)
+  anuncios: {
+    icon: '📡',
+    title: 'Meta & Google Ads — Dados Reais',
+    desc: 'Conecte suas contas e visualize campanhas, CPL real, ROAS e alertas automáticos com dados atualizados.',
+    benefit: 'Sem conexão, a estratégia usa estimativas do nicho. Com dados reais, cada recomendação é baseada no que está acontecendo nas suas campanhas agora.',
+    target: 'Indispensável para gestores de tráfego e agências que precisam tomar decisões baseadas em dados, não em suposições.',
+  },
+  audiencias: {
+    icon: '👥',
+    title: 'Audiências Segmentadas por IA',
+    desc: 'Visualize e crie públicos detalhados para Meta e Google com base no perfil do cliente ideal e histórico de campanhas.',
+    benefit: 'Aumenta o ROI ao concentrar verba nos públicos com maior probabilidade de conversão — e evita gastar com quem não vai comprar.',
+    target: 'Gestores de tráfego que querem parar de atirar no escuro na segmentação de audiências.',
+  },
+  // Grupo Conteúdo & Criativos (Profissional)
+  cro: {
+    icon: '⚙️',
+    title: 'Otimização de Conversão',
+    desc: 'Identifique onde o funil perde conversões e receba sugestões da IA para melhorar landing pages, criativos e fluxos.',
+    benefit: 'Dobrar a taxa de conversão tem o mesmo efeito que dobrar o orçamento — com muito menos investimento. É o recurso de maior ROI do produto.',
+    target: 'Qualquer negócio que investe em tráfego mas não está convertendo o suficiente dos visitantes em leads ou clientes.',
+  },
+  concorrentes: {
+    icon: '🕵️',
+    title: 'Radar de Concorrentes',
+    desc: 'Monitore os anúncios ativos dos concorrentes diretos, ângulos de copy, ofertas e criativos em tempo real.',
+    benefit: 'Saiba o que está funcionando no seu nicho antes de criar suas próprias campanhas — e evite copiar o que já está saturado.',
+    target: 'Gestores e agências que precisam de inteligência competitiva rápida para criar campanhas mais relevantes.',
+  },
+  conteudo: {
+    icon: '✨',
+    title: 'Criação de Conteúdo com IA',
+    desc: 'Gere scripts para vídeos, copies de anúncio, posts e emails personalizados para o nicho e persona do cliente.',
+    benefit: 'Reduz de horas para minutos a produção de copy testável — mantendo consistência de mensagem entre todas as campanhas.',
+    target: 'Agências e gestores que precisam de volume de conteúdo de qualidade sem comprometer a estratégia.',
+  },
+  campanha: {
+    icon: '📋',
+    title: 'Histórico de Campanhas',
+    desc: 'Registre e consulte todas as campanhas criadas, com performance acumulada e aprendizados por período.',
+    benefit: 'Aprenda com o histórico — evite repetir o que não funcionou e escale exatamente o que deu resultado em campanhas anteriores.',
+    target: 'Agências e gestores que gerenciam clientes de longo prazo e precisam de rastreabilidade e memória estratégica.',
+  },
+  assets: {
+    icon: '🖼️',
+    title: 'Arquivos da Empresa',
+    desc: 'Centralize logotipos, fontes, paleta de cores e materiais da marca para uso direto nos criativos gerados pela IA.',
+    benefit: 'Garante consistência visual em todos os anúncios e elimina o retrabalho de buscar arquivos dispersos antes de criar.',
+    target: 'Agências que trabalham com múltiplos clientes e precisam manter a identidade visual de cada um organizada.',
+  },
+  persona: {
+    icon: '👤',
+    title: 'Persona do Cliente Ideal',
+    desc: 'Gere um perfil completo com comportamentos, objeções, medos e argumentos de compra — personalizado por nicho.',
+    benefit: 'Copy mais assertivo, criativos que convertem e abordagem de vendas mais eficiente quando toda a equipe entende quem é o cliente.',
+    target: 'Empresas e gestores que querem entender com profundidade quem compra de você — e por quê.',
+  },
+  // Grupo Inteligência (Avançada)
+  budget: {
+    icon: '💰',
+    title: 'Alocador de Verba Inteligente',
+    desc: 'Distribua o orçamento de forma otimizada entre canais com base no CPL e ROAS histórico de cada plataforma.',
+    benefit: 'Pare de distribuir verba igualmente entre canais. O alocador concentra o investimento onde a conta historicamente converte mais.',
+    target: 'Gestores e agências com múltiplos canais ativos que precisam justificar e otimizar cada real investido.',
+  },
+  channelmix: {
+    icon: '🌐',
+    title: 'Mix de Canais por Nicho',
+    desc: 'Compare Meta, Google, TikTok e outros canais lado a lado. Descubra qual canal traz mais ROI para o perfil do cliente.',
+    benefit: 'Evita o erro de escalar no canal errado. Com o mix correto, você para de investir em plataformas que não convertem para aquele nicho.',
+    target: 'Gestores e agências que gerenciam múltiplos canais e precisam de dados para justificar a distribuição de investimento.',
+  },
+  inteligencia: {
+    icon: '🧠',
+    title: 'TrafficBrain IA',
+    desc: 'Central de alertas proativos, sugestões avançadas e análises automáticas baseadas nos dados em tempo real.',
+    benefit: 'Vai além do chat — age sobre seus dados sem você precisar perguntar. Identifica oportunidades e riscos antes de se tornarem problemas.',
+    target: 'Gestores avançados e agências que querem um copiloto de tráfego proativo, não apenas um assistente reativo.',
+  },
+  memory: {
+    icon: '🧠',
+    title: 'Histórico de Aprendizado',
+    desc: 'O ELYON acumula insights de todas as análises anteriores e os usa para personalizar cada recomendação ao longo do tempo.',
+    benefit: 'Quanto mais você usa, mais preciso fica. O sistema aprende com o histórico real do cliente e para de dar respostas genéricas.',
+    target: 'Gestores e agências que buscam análises cada vez mais contextualizadas — e menos "receitas de bolo" do nicho.',
+  },
+  mercado: {
+    icon: '📡',
+    title: 'Pesquisa de Mercado',
+    desc: 'Mapeamento de tendências, sazonalidade e oportunidades no nicho do cliente com dados atualizados.',
+    benefit: 'Antecipe demandas e posicione campanhas antes que a concorrência reaja — aproveitando janelas de oportunidade no mercado.',
+    target: 'Gestores estratégicos e agências que planejam campanhas com visão de médio e longo prazo.',
+  },
+  cenarios: {
+    icon: '📈',
+    title: 'Projeções e Cenários',
+    desc: 'Simule resultados com diferentes orçamentos, canais e metas — veja o impacto esperado antes de executar.',
+    benefit: 'Apresente projeções realistas para clientes e tome decisões de escala com mais confiança — baseadas em dados, não em intuição.',
+    target: 'Agências que precisam justificar investimentos a clientes e gestores que querem planejar escala de forma estruturada.',
+  },
+  workflow: {
+    icon: '⚙️',
+    title: 'Automação de Rotina',
+    desc: 'Crie fluxos que disparam relatórios, resumos e alertas automaticamente com base nos dados das campanhas.',
+    benefit: 'Elimine tarefas repetitivas — relatórios semanais, resumos de performance e alertas de meta passam a ser automáticos.',
+    target: 'Agências e gestores que gerenciam múltiplos clientes e precisam de eficiência operacional para escalar sem contratar.',
+  },
+}
+
 // ── Tela de geração ────────────────────────────────────────────────────────────
 function GeneratingScreen({ clientName, niche }: { clientName: string; niche: string }) {
   const steps = [
@@ -793,25 +907,83 @@ export default function DashboardBody() {
   }
 
   function UpgradeWall({ group }: { group: 'anuncios' | 'criativo' | 'avancado' }) {
-    const req = GROUP_REQUIRED_PLAN[group]
-    const descriptions: Record<string, { icon: string; title: string; items: string[] }> = {
+    const req     = GROUP_REQUIRED_PLAN[group]
+    const preview = TAB_PREVIEWS[activeTab]
+
+    if (preview) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '40px 24px' }}>
+          <div style={{ maxWidth: 480, width: '100%' }}>
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 14px' }}>
+                {preview.icon}
+              </div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: 20, background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.2)', marginBottom: 10 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#F0B429', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  Disponível no plano {req.name}
+                </span>
+              </div>
+              <h2 style={{ color: '#fff', fontSize: 19, fontWeight: 700, marginBottom: 8, fontFamily: 'var(--font-syne)' }}>
+                {preview.title}
+              </h2>
+              <p style={{ color: '#94A3B8', fontSize: 13, lineHeight: 1.65, margin: 0, maxWidth: 400, marginInline: 'auto' }}>
+                {preview.desc}
+              </p>
+            </div>
+
+            {/* Value cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+              <div style={{ background: '#0F1629', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>💡</span>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#22C55E', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Por que isso importa</div>
+                  <div style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.65 }}>{preview.benefit}</div>
+                </div>
+              </div>
+              <div style={{ background: '#0F1629', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>🎯</span>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#A78BFA', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ideal para</div>
+                  <div style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.65 }}>{preview.target}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+              <a
+                href="/landing#pricing"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 28px', borderRadius: 10, background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000', fontWeight: 700, fontSize: 14, textDecoration: 'none', width: '100%' }}
+              >
+                ⚡ Conhecer o plano {req.name} — {req.price}
+              </a>
+              <span style={{ fontSize: 11, color: '#475569' }}>Sem contrato de fidelidade · Cancele quando quiser</span>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Fallback genérico para abas sem preview específico
+    const fallback: Record<string, { icon: string; title: string; items: string[] }> = {
       anuncios: {
         icon: '📡',
-        title: 'Anúncios & Audiências',
-        items: ['Geração de anúncios com IA', 'Segmentação de audiências por nicho', 'Criação de copies para Meta e Google'],
+        title: 'Campanhas & Audiências',
+        items: ['Dados reais de Meta Ads e Google Ads', 'Segmentação de audiências por nicho', 'Persona detalhada do cliente ideal'],
       },
       criativo: {
         icon: '✨',
-        title: 'Criativo & Concorrentes',
-        items: ['Campanha Campeã com IA', 'Persona detalhada do cliente ideal', 'Criador de conteúdo para redes sociais', 'Radar de concorrentes', 'Assets e identidade visual'],
+        title: 'Conteúdo & Criativos',
+        items: ['Criação de conteúdo com IA', 'Radar de concorrentes', 'Otimização de conversão', 'Assets e identidade visual', 'Histórico de campanhas'],
       },
       avancado: {
         icon: '🧠',
         title: 'Inteligência Avançada',
-        items: ['Inteligência de mercado em tempo real', 'Cenários de crescimento e projeções', 'Análise de mercado e nicho'],
+        items: ['TrafficBrain IA com alertas proativos', 'Alocador de verba inteligente', 'Mix de canais por nicho', 'Projeções e cenários', 'Automação de rotina'],
       },
     }
-    const info = descriptions[group]
+    const info = fallback[group]
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '40px 24px' }}>
         <div style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>

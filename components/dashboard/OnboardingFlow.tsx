@@ -28,39 +28,51 @@ const STEPS: Step[] = [
     check: (s) => !!s.clientData?.clientName,
   },
   {
-    id: 'audit',
+    id: 'connect',
     number: 2,
+    icon: '🔗',
+    title: 'Conecte sua conta de anúncios',
+    description: 'Importe dados reais do Meta Ads ou Google Ads — sem conexão, a análise usa estimativas do nicho em vez de dados reais.',
+    tab: 'anuncios' as TabKey,
+    action: 'Conectar Meta ou Google',
+    // Passa se já conectou OU se já rodou auditoria (usuário avançado que pulou a ordem)
+    check: (s) => (s.connectedAccounts?.length ?? 0) > 0
+      || (s.clientData?.clientName ? (s.auditCache?.[s.clientData.clientName]?.length ?? 0) > 0 : false),
+  },
+  {
+    id: 'audit',
+    number: 3,
     icon: '🔍',
     title: 'Rode a Análise Profunda',
-    description: 'Conecte Meta Ads ou Google Ads e gere o diagnóstico completo da conta — pontos fortes, gargalos e oportunidades.',
-    tab: 'analise',
+    description: 'Gere o diagnóstico completo da conta — pontos fortes, gargalos e oportunidades com IA.',
+    tab: 'analise' as TabKey,
     action: 'Ir para Análise Profunda',
     check: (s) => {
       const name = s.clientData?.clientName
-      return name ? (s.auditCache[name]?.length ?? 0) > 0 : false
+      return name ? (s.auditCache?.[name]?.length ?? 0) > 0 : false
     },
   },
   {
     id: 'strategy',
-    number: 3,
+    number: 4,
     icon: '⚡',
     title: 'Gere a estratégia de crescimento',
-    description: 'A IA cria um plano de 90 dias com canais recomendados, metas de CPL e ações prioritárias — tudo baseado nos dados reais da conta.',
-    tab: 'strategy',
+    description: 'A IA cria um plano de 90 dias com canais recomendados, metas de CPL e ações prioritárias.',
+    tab: 'strategy' as TabKey,
     action: 'Gerar estratégia',
     check: (s) => !!s.strategyData,
   },
   {
     id: 'actions',
-    number: 4,
+    number: 5,
     icon: '✅',
     title: 'Execute o plano de ações',
     description: 'Veja as tarefas por ordem de impacto e marque conforme for executando. O ELYON acompanha o progresso.',
-    tab: 'acoes',
+    tab: 'acoes' as TabKey,
     action: 'Ver ações',
     check: (s) => {
       const name = s.clientData?.clientName
-      return name ? (s.actionPlanCache[name]?.length ?? 0) > 0 : false
+      return name ? (s.actionPlanCache?.[name]?.length ?? 0) > 0 : false
     },
   },
 ]
@@ -73,11 +85,12 @@ export function OnboardingFlow({ onNavigate }: Props) {
   const [dismissed, setDismissed] = useState(false)
   const [expanded, setExpanded] = useState(true)
 
-  const clientData     = useAppStore(s => s.clientData)
-  const strategyData   = useAppStore(s => s.strategyData)
-  const auditCache     = useAppStore(s => s.auditCache)
+  const clientData      = useAppStore(s => s.clientData)
+  const strategyData    = useAppStore(s => s.strategyData)
+  const auditCache      = useAppStore(s => s.auditCache)
   const actionPlanCache = useAppStore(s => s.actionPlanCache)
-  const state = { clientData, strategyData, auditCache, actionPlanCache }
+  const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const state = { clientData, strategyData, auditCache, actionPlanCache, connectedAccounts }
 
   useEffect(() => {
     try {
@@ -251,7 +264,7 @@ export function OnboardingFlow({ onNavigate }: Props) {
             <span style={{ fontSize: '12px', marginTop: '1px' }}>💡</span>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
               <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Como o ELYON funciona:</strong>{' '}
-              você conecta seus dados → a IA faz a análise → gera estratégia personalizada → você executa com apoio do Assistente IA.
+              você cria o cliente → conecta as contas de anúncio → a IA faz a análise → gera estratégia personalizada → você executa com apoio do Assistente IA.
             </div>
           </div>
         </div>
