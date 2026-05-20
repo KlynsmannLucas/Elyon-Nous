@@ -179,7 +179,7 @@ export function TabMemory() {
               <select
                 value={form.memoryType}
                 onChange={e => setForm(p => ({ ...p, memoryType: e.target.value as MemoryType }))}
-                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: '12px', outline: 'none' }}
+                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', background: '#1A1A22', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: '12px', outline: 'none', colorScheme: 'dark' }}
               >
                 {(Object.entries(TYPE_CONFIG) as [MemoryType, any][]).map(([k, v]) => (
                   <option key={k} value={k}>{v.icon} {v.label}</option>
@@ -192,7 +192,7 @@ export function TabMemory() {
               <select
                 value={form.platform}
                 onChange={e => setForm(p => ({ ...p, platform: e.target.value }))}
-                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: '12px', outline: 'none' }}
+                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', background: '#1A1A22', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: '12px', outline: 'none', colorScheme: 'dark' }}
               >
                 <option value="">Todas</option>
                 <option value="meta">Meta Ads</option>
@@ -258,7 +258,7 @@ export function TabMemory() {
               <select
                 value={form.confidence}
                 onChange={e => setForm(p => ({ ...p, confidence: e.target.value as Confidence }))}
-                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: '12px', outline: 'none' }}
+                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', background: '#1A1A22', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: '12px', outline: 'none', colorScheme: 'dark' }}
               >
                 <option value="alta">Alta</option>
                 <option value="media">Média</option>
@@ -310,8 +310,8 @@ export function TabMemory() {
           onChange={e => setFilterType(e.target.value as MemoryType | '')}
           style={{
             padding: '8px 10px', borderRadius: '8px',
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.6)', fontSize: '12px', outline: 'none',
+            background: '#1A1A22', border: '1px solid rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.6)', fontSize: '12px', outline: 'none', colorScheme: 'dark',
           }}
         >
           <option value="">Todos os tipos</option>

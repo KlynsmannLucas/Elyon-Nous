@@ -4,6 +4,7 @@
 import { GrowthChart } from './GrowthChart'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { getNicheContent } from '@/lib/niche_content'
+import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 
 interface Props {
@@ -50,6 +51,16 @@ export function TabGrowth({ analysis, clientData }: Props) {
   const content = getNicheContent(niche)
   const hasAIData = analysis && analysis.priority_ranking?.length > 0
 
+  const campaignHistory = useAppStore(s => s.campaignHistory)
+
+  // Derive best available CPL: explicit clientData field → latest campaign record → benchmark avg
+  const realCPL = (() => {
+    if (clientData?.currentCPL && clientData.currentCPL > 0) return clientData.currentCPL
+    const recentCPL = campaignHistory.filter(c => c.cplReal > 0).at(0)?.cplReal
+    if (recentCPL) return recentCPL
+    return null
+  })()
+
   // ── Cenários de budget ────────────────────────────────────────────────────
   // Regra invariante: conservador ≤ recomendado ≤ agressivo
   // Recomendado = budget real do cliente (ou benchmark_ideal se sem orçamento)
@@ -57,7 +68,8 @@ export function TabGrowth({ analysis, clientData }: Props) {
   // Agressivo   = 200% do Recomendado
   const scenarios = (() => {
     if (bench) {
-      const cplAvg     = (bench.cpl_min + bench.cpl_max) / 2
+      const cplAvg     = realCPL ?? (bench.cpl_min + bench.cpl_max) / 2
+      const cplSource  = realCPL ? 'real' : 'benchmark'
       const baseNum    = budget > 0 ? budget : bench.budget_ideal
       const conservNum = Math.round(baseNum * 0.5)   // sempre 50% do recomendado
       const agresNum   = Math.round(baseNum * 2)      // sempre 200% do recomendado
@@ -79,6 +91,7 @@ export function TabGrowth({ analysis, clientData }: Props) {
         hasClientBudget: budget > 0,
         dataSource: budget > 0 ? 'real' : 'benchmark',
         cplAvg,
+        cplSource,
         items: [
           {
             name: 'Conservador',
@@ -211,7 +224,14 @@ export function TabGrowth({ analysis, clientData }: Props) {
                   }}>
                   {scenarios.dataSource === 'real' ? 'Orçamento real' : 'Benchmark do nicho'}
                 </span>
-                <span className="text-[10px] text-slate-600">CPL médio R${scenarios.cplAvg.toFixed(0)}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+                  style={{
+                    background: scenarios.cplSource === 'real' ? 'rgba(56,189,248,0.08)' : 'rgba(148,163,184,0.08)',
+                    color:      scenarios.cplSource === 'real' ? '#38BDF8' : '#64748B',
+                    border:     `1px solid ${scenarios.cplSource === 'real' ? 'rgba(56,189,248,0.2)' : 'rgba(148,163,184,0.15)'}`,
+                  }}>
+                  CPL {scenarios.cplSource === 'real' ? 'real' : 'bench'} R${scenarios.cplAvg.toFixed(0)}
+                </span>
               </div>
             </div>
           ))}
