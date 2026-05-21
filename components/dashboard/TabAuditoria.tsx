@@ -352,7 +352,10 @@ interface UploadedFile {
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export function TabAuditoria({ clientData }: Props) {
-  const { connectedAccounts, auditCache, setAuditCache, deleteAuditEntry, selectedMetaAccountId, selectedGoogleAccountId, addPendingActions, setClientHealthScore } = useAppStore()
+  const { connectedAccounts, auditCache, setAuditCache, deleteAuditEntry, selectedMetaAccountByClient, selectedGoogleAccountByClient, addPendingActions, setClientHealthScore } = useAppStore()
+  const clientKey = clientData?.clientName || ''
+  const selectedMetaAccountId   = selectedMetaAccountByClient[clientKey]   || ''
+  const selectedGoogleAccountId = selectedGoogleAccountByClient[clientKey] || ''
   const [audit,             setAudit]             = useState<Record<string, any> | null>(null)
   const [selectedId,        setSelectedId]        = useState<string | null>(null)
   const [loading,           setLoading]           = useState(false)

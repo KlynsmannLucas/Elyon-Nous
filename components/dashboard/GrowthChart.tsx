@@ -5,6 +5,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
+import { SimpleSourceBadge } from './DataSourceBadge'
 
 interface ScenarioPoint {
   month: string
@@ -118,7 +119,10 @@ export function GrowthChart({ bench, currentBudget, scenarioBudgets }: Props) {
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
       <div className="flex items-start justify-between mb-1 flex-wrap gap-2">
         <div>
-          <div className="font-display font-bold text-white text-lg">Projeção de Receita</div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <div className="font-display font-bold text-white text-lg">Projeção de Receita</div>
+            <SimpleSourceBadge type={bench ? 'benchmark' : 'estimated'} />
+          </div>
           <div className="text-xs text-slate-500 mt-0.5">
             3 cenários · próximos 6 meses · ramp-up de otimização incluído
             {bench ? ` · ${bench.name}` : ''}
@@ -181,11 +185,29 @@ export function GrowthChart({ bench, currentBudget, scenarioBudgets }: Props) {
         </AreaChart>
       </ResponsiveContainer>
 
+      {/* Premissas da estimativa */}
+      {bench && (
+        <div className="mt-4 pt-3 border-t border-[#1E1E24]">
+          <div className="text-[10px] text-slate-600 font-semibold uppercase tracking-wide mb-2">Premissas da projeção</div>
+          <div className="flex flex-wrap gap-3 text-[10px] text-slate-500">
+            <span>CPL médio: <strong className="text-slate-400">R${Math.round((bench.cpl_min + bench.cpl_max) / 2)}</strong></span>
+            <span>CVR lead→venda: <strong className="text-slate-400">{(bench.cvr_lead_to_sale * 100).toFixed(1)}%</strong></span>
+            <span>Ticket médio: <strong className="text-slate-400">R${bench.avg_ticket.toLocaleString('pt-BR')}</strong></span>
+            <span>Fonte: <strong className="text-slate-400">benchmark {bench.name}</strong></span>
+          </div>
+          <div className="text-[10px] text-slate-700 mt-1">
+            Estes valores são estimativas de mercado — conecte seus anúncios para projeções baseadas em dados reais.
+          </div>
+        </div>
+      )}
+
       {/* Nota explicativa */}
-      <div className="mt-3 text-[10px] text-slate-600 text-center">
-        Projeção baseada em benchmarks reais do nicho · CPL histórico × CVR × ticket médio.
-        Mês 1 considera período de aprendizado das campanhas.
-      </div>
+      {!bench && (
+        <div className="mt-3 text-[10px] text-slate-600 text-center">
+          Projeção baseada em benchmarks reais do nicho · CPL histórico × CVR × ticket médio.
+          Mês 1 considera período de aprendizado das campanhas.
+        </div>
+      )}
     </div>
   )
 }

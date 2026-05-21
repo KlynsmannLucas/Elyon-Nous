@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import { StatCard } from './StatCard'
-import { strategyData } from '@/lib/mockData'
+
 import { useAppStore } from '@/lib/store'
 
 const C = {
@@ -343,13 +343,13 @@ export function TabStrategy({ strategy, analysis }: Props) {
         cpl: `R$${ch.cpl_min}–${ch.cpl_max}`,
         status: 'Ativo', rationale: ch.rationale, budgetPct: ch.budget_pct,
       }))
-    : strategyData.channels.map((ch) => ({ ...ch, priority: ch.priority === '🥇 Alta' ? 1 : ch.priority === '🥈 Média' ? 2 : 3 }))
+    : []
 
   const totalBudget = hasRealData
     ? `R$${strategy.priority_ranking.reduce((s: number, ch: any) => s + (ch.budget_brl || 0), 0).toLocaleString('pt-BR')}`
-    : strategyData.totalBudget
+    : '—'
 
-  const aiInsight = hasRealData ? strategy.recommendation : strategyData.aiInsight
+  const aiInsight = hasRealData ? strategy.recommendation : null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

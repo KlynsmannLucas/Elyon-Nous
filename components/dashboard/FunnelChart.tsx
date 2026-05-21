@@ -1,7 +1,6 @@
 // components/dashboard/FunnelChart.tsx — Funil de conversão
 'use client'
 
-import { funnelData as mockFunnelData } from '@/lib/mockData'
 
 interface FunnelStage {
   label: string
@@ -15,7 +14,20 @@ interface Props {
 }
 
 export function FunnelChart({ data }: Props) {
-  const stages = data && data.length > 0 ? data : mockFunnelData
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6 animate-fade-up delay-300">
+        <div className="font-display font-bold text-white text-lg mb-1">Funil de Conversão</div>
+        <div className="text-xs text-slate-500 mb-6">Impressões → Vendas</div>
+        <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
+          <div className="text-slate-600 text-sm">Sem dados reais para exibir ainda.</div>
+          <div className="text-slate-700 text-xs">Execute a auditoria para ver o funil de conversão real.</div>
+        </div>
+      </div>
+    )
+  }
+
+  const stages = data
 
   return (
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6 animate-fade-up delay-300">

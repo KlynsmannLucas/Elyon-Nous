@@ -284,11 +284,11 @@ interface AppStore {
   connectAccount: (account: ConnectedAccount) => void
   disconnectAccount: (platform: 'meta' | 'google') => void
 
-  // Ad account selecionado pelo usuário em Meta/Google Ads IA (persiste entre abas)
-  selectedMetaAccountId:   string
-  selectedGoogleAccountId: string
-  setSelectedMetaAccountId:   (id: string) => void
-  setSelectedGoogleAccountId: (id: string) => void
+  // Ad account selecionado por cliente (clientKey = clientName)
+  selectedMetaAccountByClient:   Record<string, string>
+  selectedGoogleAccountByClient: Record<string, string>
+  setSelectedMetaAccountId:   (clientKey: string, id: string) => void
+  setSelectedGoogleAccountId: (clientKey: string, id: string) => void
 
   // Histórico de campanhas por cliente
   campaignHistory: CampaignRecord[]
@@ -442,10 +442,10 @@ export const useAppStore = create<AppStore>()(
         })
       },
 
-      selectedMetaAccountId:   '',
-      selectedGoogleAccountId: '',
-      setSelectedMetaAccountId:   (id) => set({ selectedMetaAccountId: id }),
-      setSelectedGoogleAccountId: (id) => set({ selectedGoogleAccountId: id }),
+      selectedMetaAccountByClient:   {},
+      selectedGoogleAccountByClient: {},
+      setSelectedMetaAccountId:   (clientKey, id) => set(s => ({ selectedMetaAccountByClient: { ...s.selectedMetaAccountByClient, [clientKey]: id } })),
+      setSelectedGoogleAccountId: (clientKey, id) => set(s => ({ selectedGoogleAccountByClient: { ...s.selectedGoogleAccountByClient, [clientKey]: id } })),
 
       campaignHistory: [],
 
@@ -797,8 +797,8 @@ export const useAppStore = create<AppStore>()(
         clientPortalsSaved:       [],
         strategyTimestamps:       [],
         briefingEnabled:          false,
-        selectedMetaAccountId:    '',
-        selectedGoogleAccountId:  '',
+        selectedMetaAccountByClient:   {},
+        selectedGoogleAccountByClient: {},
       }),
     }),
     {

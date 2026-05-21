@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { BudgetAllocation, CampaignAllocation } from '@/app/api/budget-allocator/route'
+import { SimpleSourceBadge } from './DataSourceBadge'
 
 const ACTION_CONFIG = {
   scale:    { color: '#22C55E', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.2)',   icon: '↑', label: 'Escalar' },
@@ -223,6 +224,11 @@ export function TabBudgetAllocator() {
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0, maxWidth: '520px' }}>
             Distribui o orçamento entre campanhas com base na eficiência real — escala o que funciona, pausa o que desperdiça.
           </p>
+          {source && (
+            <div style={{ marginTop: '8px' }}>
+              <SimpleSourceBadge type={source === 'ai' ? 'real' : 'fallback'} />
+            </div>
+          )}
         </div>
         <button
           onClick={runAllocator}

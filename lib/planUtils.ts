@@ -74,9 +74,10 @@ export function hasActivePlan(plan?: string): boolean {
 export const TRIAL_DAYS = 7
 
 export const PLAN_NAMES: Record<string, string> = {
-  individual:   'Individual',
-  profissional: 'Profissional',
-  avancada:     'Avançada',
+  free:         'Start',
+  individual:   'Pro',
+  profissional: 'Agency',
+  avancada:     'Enterprise',
 }
 
 export const PLAN_PRICES: Record<string, string> = {
@@ -86,8 +87,8 @@ export const PLAN_PRICES: Record<string, string> = {
 }
 
 // Plano mínimo necessário para cada grupo bloqueado
-export const GROUP_REQUIRED_PLAN: Record<string, { name: string; price: string }> = {
-  anuncios: { name: 'Profissional', price: 'R$997/mês' },
-  criativo: { name: 'Profissional', price: 'R$997/mês' },
-  avancado: { name: 'Avançado',     price: 'R$2.997/mês' },
+export const GROUP_REQUIRED_PLAN: Record<string, { name: string; price: string; tier: PlanTier }> = {
+  anuncios: { name: 'Agency', price: 'R$997/mês',   tier: 'profissional' },
+  criativo: { name: 'Agency', price: 'R$997/mês',   tier: 'profissional' },
+  avancado: { name: 'Enterprise', price: 'R$2.997/mês', tier: 'avancada' },
 }

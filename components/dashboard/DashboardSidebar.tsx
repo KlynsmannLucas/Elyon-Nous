@@ -108,7 +108,7 @@ export const SIDEBAR_SECTIONS: {
     { key: 'inteligencia',label: 'TrafficBrain IA',         icon: '🧠', badge: 'IA' },
     { key: 'memory',      label: 'Histórico de Aprendizado',icon: '🧠', badge: 'RAG' },
     { key: 'mercado',     label: 'Pesquisa de Mercado',     icon: '📡' },
-    { key: 'workflow',    label: 'Automação de Rotina',     icon: '⚙️', badge: 'AUTO' },
+    { key: 'workflow',    label: 'Regras de Alerta',        icon: '🔔' },
   ]},
   { label: 'Configurações', items: [
     { key: 'relatorios',  label: 'Relatórios',              icon: '📤' },

@@ -1715,8 +1715,10 @@ interface Props {
 }
 
 export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
-  const { connectedAccounts, auditCache, setAuditCache, clientData: storeClientData, selectedMetaAccountId, setSelectedMetaAccountId } = useAppStore()
+  const { connectedAccounts, auditCache, setAuditCache, clientData: storeClientData, selectedMetaAccountByClient, setSelectedMetaAccountId } = useAppStore()
   const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
+  const clientKey = storeClientData?.clientName || ''
+  const selectedMetaAccountId = selectedMetaAccountByClient[clientKey] || ''
 
   const [data, setData] = useState<IntelligenceData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -1754,7 +1756,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
         const first = selectedMetaAccountId || d.accounts[0].id
         if (!selectedAccountId) {
           setSelectedAccountId(first)
-          setSelectedMetaAccountId(first)
+          setSelectedMetaAccountId(clientKey, first)
         }
       }
     }).catch(() => {})
@@ -1849,7 +1851,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
           <div className="flex items-center gap-3 flex-wrap">
             {allAccounts.length > 1 ? (
               <select value={selectedAccountId}
-                onChange={e => { setSelectedAccountId(e.target.value); setSelectedMetaAccountId(e.target.value); setFetched(false); setData(null); setTrackingAudit(null) }}
+                onChange={e => { setSelectedAccountId(e.target.value); setSelectedMetaAccountId(clientKey, e.target.value); setFetched(false); setData(null); setTrackingAudit(null) }}
                 className="text-sm font-semibold text-slate-300 bg-[#16161A] border border-[#2A2A30] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#1877F2]">
                 {allAccounts.map(a => <option key={a.id} value={a.id}>{a.name || a.id}</option>)}
               </select>

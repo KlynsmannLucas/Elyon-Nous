@@ -337,8 +337,10 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
   const [activeSection, setActiveSection] = useState<'progress' | 'summary' | 'problems' | 'actions' | 'report' | 'agents'>('progress')
   const abortRef = useRef<AbortController | null>(null)
 
-  const { auditCache, campaignHistory, connectedAccounts, setAuditCache, selectedMetaAccountId, selectedGoogleAccountId } = useAppStore()
+  const { auditCache, campaignHistory, connectedAccounts, setAuditCache, selectedMetaAccountByClient, selectedGoogleAccountByClient } = useAppStore()
   const clientName  = clientData?.clientName
+  const selectedMetaAccountId   = selectedMetaAccountByClient[clientName   || ''] || ''
+  const selectedGoogleAccountId = selectedGoogleAccountByClient[clientName || ''] || ''
   const latestAudit = auditCache[clientName]?.[0]?.audit
   // Pipeline results são persistidos como uma entrada especial no auditCache
   const cachedPipeline = (Array.isArray(auditCache[clientName])

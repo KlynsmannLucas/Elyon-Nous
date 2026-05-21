@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ChannelMixResult, ChannelRecommendation } from '@/app/api/channel-mix/route'
+import { SimpleSourceBadge } from './DataSourceBadge'
 
 const PRIORITY_CONFIG = {
   primary:   { label: 'Principal',   color: '#F0B429', bg: 'rgba(240,180,41,0.10)', border: 'rgba(240,180,41,0.25)' },
@@ -138,6 +139,11 @@ export function TabChannelMix() {
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0, maxWidth: '500px' }}>
             Recomendação do mix ideal de canais para o seu nicho, budget e objetivo — com alocação % e CPL esperado por canal.
           </p>
+          {source && (
+            <div style={{ marginTop: '8px' }}>
+              <SimpleSourceBadge type={source === 'ai' ? 'real' : 'fallback'} />
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           <div>

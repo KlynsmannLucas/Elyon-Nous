@@ -76,6 +76,31 @@ export function DataSourceBadge({ meta, className = '' }: Props) {
   )
 }
 
+// ── Simple source badge (lightweight, no BenchmarkMeta required) ────────────
+export type SimpleSourceType = 'real' | 'benchmark' | 'estimated' | 'fallback' | 'unavailable'
+
+const SIMPLE_CONFIG: Record<SimpleSourceType, { color: string; bg: string; border: string; icon: string; label: string; tooltip: string }> = {
+  real:        { color: '#22C55E', bg: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.25)',  icon: '✓', label: 'Dados reais',  tooltip: 'Dados extraídos diretamente das plataformas de anúncio conectadas.' },
+  benchmark:   { color: '#F0B429', bg: 'rgba(240,180,41,0.06)', border: 'rgba(240,180,41,0.25)', icon: '~', label: 'Benchmark',     tooltip: 'Projeção baseada em médias de mercado para o nicho. Não representa dados reais desta conta.' },
+  estimated:   { color: '#F0B429', bg: 'rgba(240,180,41,0.06)', border: 'rgba(240,180,41,0.25)', icon: '≈', label: 'Estimativa',    tooltip: 'Valor estimado com base em parâmetros do cliente e benchmarks do nicho.' },
+  fallback:    { color: '#FB923C', bg: 'rgba(251,146,60,0.06)', border: 'rgba(251,146,60,0.25)', icon: '↩', label: 'Fallback IA',  tooltip: 'Análise gerada pela IA com dados parciais. Conecte anúncios para maior precisão.' },
+  unavailable: { color: '#EF4444', bg: 'rgba(239,68,68,0.06)',  border: 'rgba(239,68,68,0.25)',  icon: '!', label: 'Indisponível', tooltip: 'Dados não disponíveis. Execute uma análise para obter informações.' },
+}
+
+export function SimpleSourceBadge({ type, tooltip, className = '' }: { type: SimpleSourceType; tooltip?: string; className?: string }) {
+  const cfg = SIMPLE_CONFIG[type]
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold cursor-help ${className}`}
+      style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color }}
+      title={tooltip ?? cfg.tooltip}
+    >
+      <span className="font-mono leading-none">{cfg.icon}</span>
+      {cfg.label}
+    </span>
+  )
+}
+
 // Smaller inline version for table cells
 export function DataSourceDot({ dataSource }: { dataSource: DataSource }) {
   const cfg = CONFIG[dataSource]

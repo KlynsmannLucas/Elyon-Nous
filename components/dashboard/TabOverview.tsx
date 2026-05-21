@@ -84,7 +84,7 @@ function KpiCard({ label, value, sub, color, trend, sparkSeed, sparkBase, icon }
   label: string; value: string; sub: string; color: string
   trend?: number; sparkSeed: string; sparkBase: number; icon: React.ReactNode
 }) {
-  const sparkData = useMemo(() => genSparkline(sparkBase || 100, sparkSeed), [sparkBase, sparkSeed])
+  const sparkData = useMemo(() => sparkBase > 0 ? genSparkline(sparkBase, sparkSeed) : [], [sparkBase, sparkSeed])
   const isPos = trend == null ? null : trend >= 0
   // Extract the metric keyword from the label for tooltip (e.g. "CPL Real" → "CPL")
   const metricKey = Object.keys(METRIC_TIPS).find(k => label.toUpperCase().includes(k))
@@ -562,9 +562,9 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
     }
     // Sem dados reais nem projeção — mostra cards informativos (sem mock de outra empresa)
     return [
-      { label: 'Investimento', value: '—', sub: 'Execute a auditoria', color: C.amber, trend: undefined, base: 100, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
-      { label: 'Leads / mês',  value: '—', sub: bench ? `Benchmark CPL: R$${bench.cpl_min}–${bench.cpl_max}` : 'Conecte Meta ou Google Ads', color: C.green, trend: undefined, base: 100, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
-      { label: 'CPL Médio',    value: clientData?.currentCPL ? `R$${clientData.currentCPL}` : '—', sub: bench ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}` : 'Custo por lead', color: C.blue, trend: undefined, base: 100, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> },
+      { label: 'Investimento', value: '—', sub: 'Execute a auditoria', color: C.amber, trend: undefined, base: 0, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
+      { label: 'Leads / mês',  value: '—', sub: bench ? `Benchmark CPL: R$${bench.cpl_min}–${bench.cpl_max}` : 'Conecte Meta ou Google Ads', color: C.green, trend: undefined, base: 0, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
+      { label: 'CPL Médio',    value: clientData?.currentCPL ? `R$${clientData.currentCPL}` : '—', sub: bench ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}` : 'Custo por lead', color: C.blue, trend: undefined, base: clientData?.currentCPL || 0, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> },
       { label: 'Score IA',     value: `${healthScore}/100`, sub: scoreLabel, color: healthScore >= 70 ? C.green : healthScore >= 45 ? C.amber : C.red, trend: undefined, base: healthScore, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
     ]
   })()

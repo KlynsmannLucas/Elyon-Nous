@@ -163,16 +163,16 @@ export function TabWorkflow() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', gap: '16px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '20px' }}>⚙️</span>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Automação de Rotina</h2>
+            <span style={{ fontSize: '20px' }}>🔔</span>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Regras de Alerta</h2>
             <span style={{
-              fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#22C55E',
-              background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
+              fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#94A3B8',
+              background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)',
               borderRadius: '4px', padding: '2px 6px', letterSpacing: '0.06em',
-            }}>AUTO</span>
+            }}>Em desenvolvimento</span>
           </div>
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0, maxWidth: '500px' }}>
-            Ative automações pré-construídas que disparam alertas, emails e recomendações com base nos dados das suas campanhas.
+            Configure quais alertas e notificações você quer receber com base nos dados das suas campanhas.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
@@ -188,6 +188,22 @@ export function TabWorkflow() {
           }}>
             {enabledCount} ativa{enabledCount !== 1 ? 's' : ''}
           </div>
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', gap: '10px',
+        padding: '12px 16px', borderRadius: '10px', marginBottom: '20px',
+        background: 'rgba(148,163,184,0.04)', border: '1px solid rgba(148,163,184,0.15)',
+      }}>
+        <span style={{ fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>ℹ️</span>
+        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.55 }}>
+          <strong style={{ color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '2px' }}>
+            As regras abaixo ainda não executam ações automaticamente.
+          </strong>
+          Elas registram suas preferências de alerta para quando a execução automática estiver disponível.
+          Por ora, os alertas aparecem apenas como notificações visuais dentro do painel.
         </div>
       </div>
 

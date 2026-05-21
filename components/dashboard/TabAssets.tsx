@@ -151,6 +151,20 @@ export function TabAssets({ clientData }: Props) {
         </p>
       </div>
 
+      {/* Storage warning */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', gap: '10px',
+        padding: '10px 14px', borderRadius: '10px',
+        background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.18)',
+      }}>
+        <span style={{ fontSize: '13px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
+        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.55 }}>
+          <strong style={{ color: 'rgba(245,158,11,0.8)' }}>Assets salvos localmente no navegador.</strong>
+          {' '}Imagens grandes são armazenadas em localStorage e podem ser perdidas ao limpar o cache.
+          Faça backup dos arquivos originais fora do painel.
+        </div>
+      </div>
+
       {/* Contadores por tipo */}
       <div
         style={{

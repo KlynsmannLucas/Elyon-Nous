@@ -44,7 +44,7 @@ const TAB_SUBTITLES: Partial<Record<TabKey, string>> = {
   portal:      'Link white-label para o cliente acompanhar resultados',
   inteligencia:'Alertas proativos, sugestões avançadas e análises em tempo real',
   memory:      'Insights acumulados de análises anteriores — personalize o Assistente IA',
-  workflow:    'Automações que disparam alertas e ações com base nos dados das campanhas',
+  workflow:    'Configure alertas e notificações com base nos dados das campanhas — execução automática em desenvolvimento',
   campanha:    'Histórico de campanhas criadas e performance ao longo do tempo',
 }
 

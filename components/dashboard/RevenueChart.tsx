@@ -6,7 +6,6 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { revenueChartData } from '@/lib/mockData'
 
 interface ChartPoint {
   month: string
@@ -78,12 +77,29 @@ function scalePeriod(data: ChartPoint[], period: Period): ChartPoint[] {
 export function RevenueChart({ data, title, subtitle }: Props) {
   const [period, setPeriod] = useState<Period>('Mensal')
 
-  const baseData: ChartPoint[] = data && data.length > 0
-    ? data
-    : revenueChartData.map(d => ({ month: d.month, projetado: d.real, meta: d.meta }))
-
-  const chartData = scalePeriod(baseData, period)
   const hasRealData = !!(data && data.length > 0)
+
+  if (!hasRealData) {
+    return (
+      <div style={{
+        background: '#0F1629', border: '1px solid rgba(255,255,255,0.05)',
+        borderRadius: '16px', padding: '22px',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+        minHeight: '200px', gap: '8px',
+      }}>
+        <div style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', marginBottom: '2px' }}>
+          {title || 'Performance ao longo do tempo'}
+        </div>
+        <div style={{ fontSize: '12px', color: '#64748B', textAlign: 'center', lineHeight: 1.6 }}>
+          Sem dados reais para exibir ainda.<br />
+          Configure o orçamento e execute a auditoria para ver a projeção.
+        </div>
+      </div>
+    )
+  }
+
+  const baseData: ChartPoint[] = data!
+  const chartData = scalePeriod(baseData, period)
 
   const PERIODS: Period[] = ['Diário', 'Semanal', 'Mensal']
 

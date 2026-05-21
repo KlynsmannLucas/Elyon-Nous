@@ -154,7 +154,7 @@ const TAB_PREVIEWS: Record<string, {
   },
   workflow: {
     icon: '⚙️',
-    title: 'Automação de Rotina',
+    title: 'Regras de Alerta',
     desc: 'Crie fluxos que disparam relatórios, resumos e alertas automaticamente com base nos dados das campanhas.',
     benefit: 'Elimine tarefas repetitivas — relatórios semanais, resumos de performance e alertas de meta passam a ser automáticos.',
     target: 'Agências e gestores que gerenciam múltiplos clientes e precisam de eficiência operacional para escalar sem contratar.',
@@ -218,7 +218,7 @@ const TAB_DESCRIPTIONS: Partial<Record<TabKey, { icon: string; title: string; de
   strategy:     { icon: '⚡', title: 'Estratégia de Crescimento', desc: 'A IA gera um plano de 90 dias com canais recomendados, CPL-alvo, alocação de orçamento e cronograma de execução — baseado nos dados reais da conta.' },
   inteligencia: { icon: '🧠', title: 'TrafficBrain IA', desc: 'Central de inteligência com alertas proativos, sugestões de otimização e análises avançadas — vai além do chat, age sobre seus dados.' },
   memory:       { icon: '🧠', title: 'Histórico de Aprendizado', desc: 'O ELYON aprende com cada análise e auditoria. Aqui ficam os insights acumulados sobre seu cliente — usados para personalizar as respostas do Assistente IA.' },
-  workflow:     { icon: '⚙️', title: 'Automação de Rotina', desc: 'Crie fluxos automatizados para tarefas repetitivas — como atualizar relatórios, enviar resumos e disparar alertas conforme metas.' },
+  workflow:     { icon: '⚙️', title: 'Regras de Alerta', desc: 'Crie fluxos automatizados para tarefas repetitivas — como atualizar relatórios, enviar resumos e disparar alertas conforme metas.' },
   cro:          { icon: '⚙️', title: 'Otimização de Conversão', desc: 'Identifique onde o funil perde conversões e receba sugestões da IA para melhorar landing pages, criativos e fluxos de vendas.' },
   budget:       { icon: '💰', title: 'Alocador de Verba', desc: 'Distribua o orçamento de anúncios de forma inteligente entre canais — a IA calcula a alocação ideal com base no CPL e ROAS de cada plataforma.' },
   channelmix:   { icon: '🌐', title: 'Mix de Canais', desc: 'Compare o desempenho de Meta, Google, TikTok e outros canais lado a lado. Descubra qual canal traz mais ROI para o perfil do seu cliente.' },
@@ -980,7 +980,7 @@ export default function DashboardBody() {
       avancado: {
         icon: '🧠',
         title: 'Inteligência Avançada',
-        items: ['TrafficBrain IA com alertas proativos', 'Alocador de verba inteligente', 'Mix de canais por nicho', 'Projeções e cenários', 'Automação de rotina'],
+        items: ['TrafficBrain IA com alertas proativos', 'Alocador de verba inteligente', 'Mix de canais por nicho', 'Projeções e cenários', 'Regras de alerta'],
       },
     }
     const info = fallback[group]
@@ -1066,7 +1066,7 @@ export default function DashboardBody() {
       case 'checklist':     return wrap('Checklist Diário',        <TabChecklist clientData={clientData} />)
       case 'portal':        return wrap('Portal do Cliente',       <TabPortal    clientData={clientData} />)
       case 'memory':        return wrap('Histórico de Aprendizado',<TabMemory />)
-      case 'workflow':      return wrap('Automação de Rotina',     <TabWorkflow />)
+      case 'workflow':      return wrap('Regras de Alerta',     <TabWorkflow />)
     }
   }
 
