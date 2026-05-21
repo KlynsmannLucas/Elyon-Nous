@@ -116,3 +116,31 @@ export async function checkAndDeductCredits(
     return { allowed: true, remaining: limit, used: 0, limit }
   }
 }
+
+/**
+ * Devolve créditos de uma operação que falhou sem entregar resultado ao usuário.
+ * Silencioso — falha de refund nunca quebra o fluxo.
+ */
+export async function refundCredits(
+  userId: string,
+  plan: string,
+  operation: string,
+): Promise<void> {
+  if (!supabaseAdmin) return
+  if (plan === 'admin' || (PLAN_CREDITS[plan] ?? 0) >= 9999999) return
+  const cost = OPERATION_COSTS[operation] ?? 2
+  try {
+    const { data } = await supabaseAdmin
+      .from('ai_credits')
+      .select('used, reset_at')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (!data) return
+    if (new Date() > new Date(data.reset_at)) return  // janela já resetou, nada a devolver
+    const newUsed = Math.max(0, (data.used ?? 0) - cost)
+    await supabaseAdmin.from('ai_credits').update({ used: newUsed }).eq('user_id', userId)
+    console.info('[credits] refundCredits ok:', { userId: userId.slice(0, 8) + '…', operation, costReturned: cost, newUsed })
+  } catch {
+    // falha silenciosa — refund não deve interromper a resposta
+  }
+}

@@ -5,8 +5,33 @@
 import { supabaseAdmin } from '@/lib/supabase'
 
 // ── Normalização de clientId ──────────────────────────────────────────────────
+// Usa NFD para decompor acentos (ç→c+cedilha, ã→a+til) e os remove antes de normalizar.
+// Exemplos:
+//   "Clínica ABC"             → "clinica_abc"
+//   "João & Maria"            → "joao_maria"
+//   "Advocacia São José"      → "advocacia_sao_jose"
+//   "Odonto Premium - Goiânia"→ "odonto_premium_goiania"
 export function normalizeClientId(clientName: string): string {
-  return clientName.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+  return clientName
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')   // remove diacríticos (acentos, cedilha, til)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')      // substitui caracteres especiais por espaço
+    .trim()
+    .replace(/\s+/g, '_')              // colapsa espaços em underscore
+    .replace(/^_+|_+$/g, '')          // remove underscore no início/fim
+}
+
+// Simula o normalizeClientId ANTERIOR ao fix NFD — para fallback de dados legados.
+// Sem NFD, chars acentuados (í, ã, ç) não batem com [a-z] e viram underscores.
+// Ex: "Clínica ABC" → "cl_nica_abc" (legado) vs "clinica_abc" (novo)
+function legacyNormalizeClientId(clientName: string): string {
+  return clientName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/^_+|_+$/g, '')
 }
 
 // ── Tipos internos ────────────────────────────────────────────────────────────
@@ -90,10 +115,14 @@ export async function saveAuditReport(
       })
       .select('id')
       .single()
-    if (error) { console.error('[persistence] saveAuditReport error:', error.message); return null }
+    if (error) {
+      console.error('[persistence] saveAuditReport falhou:', { message: error.message, clientName, userId: userId.slice(0, 8) + '…', source })
+      return null
+    }
+    console.info('[persistence] saveAuditReport ok:', { id: data?.id, clientName, score: audit.health_score ?? audit.overallScore })
     return data?.id ?? null
   } catch (e: any) {
-    console.error('[persistence] saveAuditReport exception:', e.message)
+    console.error('[persistence] saveAuditReport exception inesperada:', { message: e.message, clientName })
     return null
   }
 }
@@ -102,7 +131,7 @@ export async function saveAuditReport(
 // PRIORITY ACTIONS — deduplicação inteligente
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface RawAction {
+export interface RawAction {
   clientId: string        // Clerk userId
   title: string
   description?: string
@@ -144,17 +173,23 @@ export async function upsertPriorityActions(
     try {
       // Busca ação existente pela chave de dedup
       const titleNorm = action.title.trim().toLowerCase()
-      const { data: existing } = await supabaseAdmin
+      // Escapa wildcards do LIKE para evitar falsos positivos com % e _
+      const titleEscaped = titleNorm.replace(/%/g, '\\%').replace(/_/g, '\\_')
+      let query = supabaseAdmin
         .from('priority_actions')
         .select('id, status, urgency, updated_at')
         .eq('user_id', userId)
         .eq('client_id', clientId)
-        .ilike('title', titleNorm)
+        .ilike('title', titleEscaped)
         .eq('platform', action.platform)
         .eq('source', action.source ?? 'auditoria')
-        // Se há campanha relacionada, a dedup é mais específica
-        .eq('related_campaign', action.relatedCampaign ?? '')
-        .maybeSingle()
+      // NULL vs string: .eq('col', '') nunca bate com NULL no PostgreSQL
+      if (action.relatedCampaign) {
+        query = query.eq('related_campaign', action.relatedCampaign)
+      } else {
+        query = query.is('related_campaign', null)
+      }
+      const { data: existing } = await query.maybeSingle()
 
       if (existing) {
         const s = existing.status as string
@@ -252,10 +287,16 @@ export async function upsertPriorityActions(
         if (inserted) saved.push(inserted as ActionRow)
       }
     } catch (e: any) {
-      console.error('[persistence] upsertAction error:', e.message, action.title)
+      console.error('[persistence] upsertPriorityActions erro na ação:', { message: e.message, title: action.title, platform: action.platform })
     }
   }
 
+  const unsaved = actions.length - saved.length
+  if (unsaved > 0) {
+    console.warn('[persistence] upsertPriorityActions: %d/%d ações não persistidas para "%s"', unsaved, actions.length, clientName)
+  } else {
+    console.info('[persistence] upsertPriorityActions ok: %d ações persistidas para "%s"', saved.length, clientName)
+  }
   return saved
 }
 
@@ -278,10 +319,34 @@ export async function loadPriorityActions(
       .order('priority', { ascending: true })
       .order('created_at', { ascending: false })
       .limit(50)
-    if (error) { console.error('[persistence] loadPriorityActions:', error.message); return [] }
+    if (error) {
+      console.error('[persistence] loadPriorityActions falhou:', { message: error.message, clientName })
+      return []
+    }
+
+    // Fallback: se nenhum registro encontrado com o novo ID normalizado, tenta o ID legado
+    // (pré-fix NFD) para não perder dados de clientes com acento cadastrados antes da migração.
+    if ((data || []).length === 0) {
+      const legacyId = legacyNormalizeClientId(clientName)
+      if (legacyId !== clientId) {
+        const { data: legacyData } = await supabaseAdmin
+          .from('priority_actions')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('client_id', legacyId)
+          .order('priority', { ascending: true })
+          .order('created_at', { ascending: false })
+          .limit(50)
+        if ((legacyData || []).length > 0) {
+          console.info('[persistence] loadPriorityActions: dados encontrados com client_id legado — execute a migration SQL para atualizar', { clientName, legacyId, newId: clientId })
+          return legacyData as ActionRow[]
+        }
+      }
+    }
+
     return (data || []) as ActionRow[]
   } catch (e: any) {
-    console.error('[persistence] loadPriorityActions exception:', e.message)
+    console.error('[persistence] loadPriorityActions exception:', { message: e.message, clientName })
     return []
   }
 }
@@ -304,10 +369,14 @@ export async function updateActionStatusInDB(
       .eq('user_id', userId)  // garante que só atualiza próprio dado
       .select()
       .single()
-    if (error) { console.error('[persistence] updateActionStatus:', error.message); return null }
+    if (error) {
+      console.error('[persistence] updateActionStatusInDB falhou:', { message: error.message, actionId, status })
+      return null
+    }
+    console.info('[persistence] updateActionStatusInDB ok:', { actionId, status })
     return data as ActionRow
   } catch (e: any) {
-    console.error('[persistence] updateActionStatus exception:', e.message)
+    console.error('[persistence] updateActionStatusInDB exception:', { message: e.message, actionId, status })
     return null
   }
 }
@@ -344,10 +413,14 @@ export async function upsertHealthScore(
       )
       .select()
       .single()
-    if (error) { console.error('[persistence] upsertHealthScore:', error.message); return null }
+    if (error) {
+      console.error('[persistence] upsertHealthScore falhou:', { message: error.message, clientName, score, grade })
+      return null
+    }
+    console.info('[persistence] upsertHealthScore ok:', { clientName, score, grade, source })
     return data as HealthScoreRow
   } catch (e: any) {
-    console.error('[persistence] upsertHealthScore exception:', e.message)
+    console.error('[persistence] upsertHealthScore exception:', { message: e.message, clientName })
     return null
   }
 }
@@ -364,10 +437,32 @@ export async function loadHealthScore(
       .select('*')
       .eq('user_id', userId)
       .eq('client_id', clientId)
-      .single()
-    if (error) return null
-    return data as HealthScoreRow
-  } catch {
+      .maybeSingle()
+    if (error) {
+      console.error('[persistence] loadHealthScore falhou:', { message: error.message, clientName })
+      return null
+    }
+
+    // Fallback: tenta ID legado se novo ID não retornou resultado
+    if (!data) {
+      const legacyId = legacyNormalizeClientId(clientName)
+      if (legacyId !== clientId) {
+        const { data: legacyData } = await supabaseAdmin
+          .from('client_health_scores')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('client_id', legacyId)
+          .maybeSingle()
+        if (legacyData) {
+          console.info('[persistence] loadHealthScore: score encontrado com client_id legado — execute a migration SQL para atualizar', { clientName, legacyId, newId: clientId })
+          return legacyData as HealthScoreRow
+        }
+      }
+    }
+
+    return data as HealthScoreRow | null
+  } catch (e: any) {
+    console.error('[persistence] loadHealthScore exception:', { message: e.message, clientName })
     return null
   }
 }

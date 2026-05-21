@@ -8,8 +8,15 @@ const key  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 export const supabase = url && key ? createClient(url, key) : null
 
 // Cliente admin com service role key (server-side apenas)
-// Se SUPABASE_SERVICE_ROLE_KEY não estiver definido, usa a anon key como fallback
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || key
+// NUNCA usa anon key como fallback — service_role bypassa RLS; anon key é bloqueada pelas policies
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+if (url && !serviceKey) {
+  console.error(
+    '[supabase] SUPABASE_SERVICE_ROLE_KEY não configurada — supabaseAdmin=null, ' +
+    'operações de persistência (audit_reports, priority_actions, client_health_scores) falharão. ' +
+    'Configure a variável no painel do Vercel/Railway e faça redeploy.'
+  )
+}
 export const supabaseAdmin = url && serviceKey
   ? createClient(url, serviceKey, { auth: { persistSession: false } })
   : null

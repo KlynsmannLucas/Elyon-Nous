@@ -83,9 +83,12 @@ export async function POST(req: NextRequest) {
   const { rateLimit } = await import('@/lib/rateLimit')
   const rl = rateLimit(userId, 'nous', { max: 20, windowSec: 3600 })
   if (!rl.ok) {
-    return NextResponse.json({ success: false, error: `Limite atingido. Tente novamente em ${rl.retryAfterSec}s.` }, {
-      status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) },
-    })
+    const waitSec = rl.retryAfterSec ?? 3600
+    const minutesLeft = Math.ceil(waitSec / 60)
+    return NextResponse.json({
+      success: false,
+      error: `Você atingiu o limite de 20 mensagens por hora. Aguarde ${minutesLeft} minuto${minutesLeft !== 1 ? 's' : ''} antes de tentar novamente.`,
+    }, { status: 429, headers: { 'Retry-After': String(waitSec) } })
   }
 
   // Sempre busca do Clerk diretamente — JWT pode estar cacheado sem o plano atualizado

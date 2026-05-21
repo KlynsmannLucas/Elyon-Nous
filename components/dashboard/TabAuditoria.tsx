@@ -353,13 +353,14 @@ interface UploadedFile {
 // ─── Componente principal ────────────────────────────────────────────────────
 export function TabAuditoria({ clientData }: Props) {
   const { connectedAccounts, auditCache, setAuditCache, deleteAuditEntry, selectedMetaAccountId, selectedGoogleAccountId, addPendingActions, setClientHealthScore } = useAppStore()
-  const [audit,         setAudit]         = useState<Record<string, any> | null>(null)
-  const [selectedId,    setSelectedId]    = useState<string | null>(null)
-  const [loading,       setLoading]       = useState(false)
-  const [loadingStep,   setLoadingStep]   = useState('')
-  const [pdfLoading,    setPdfLoading]    = useState(false)
-  const [error,         setError]         = useState('')
-  const [source,        setSource]        = useState<'ai' | 'benchmark' | null>(null)
+  const [audit,             setAudit]             = useState<Record<string, any> | null>(null)
+  const [selectedId,        setSelectedId]        = useState<string | null>(null)
+  const [loading,           setLoading]           = useState(false)
+  const [loadingStep,       setLoadingStep]        = useState('')
+  const [pdfLoading,        setPdfLoading]        = useState(false)
+  const [error,             setError]             = useState('')
+  const [source,            setSource]            = useState<'ai' | 'benchmark' | null>(null)
+  const [persistenceStatus, setPersistenceStatus] = useState<Record<string, any> | null>(null)
   const [dragOver,      setDragOver]      = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [parseError,    setParseError]    = useState('')
@@ -544,6 +545,7 @@ export function TabAuditoria({ clientData }: Props) {
       if (!json.success) throw new Error(json.error)
       setAudit(json.audit)
       setSource(json.source)
+      setPersistenceStatus(json.persistence ?? null)
       if (!partialWarning) setError('')
       // Persiste no store (Zustand persist → localStorage)
       if (clientData?.clientName) {
@@ -945,6 +947,40 @@ export function TabAuditoria({ clientData }: Props) {
             {audit.executive_summary && (
               <p className="text-slate-300 text-sm leading-relaxed border-t border-[#2A2A30] pt-4">{audit.executive_summary}</p>
             )}
+            {/* ── Status de persistência Supabase ── */}
+            {persistenceStatus && (() => {
+              const allSaved  = persistenceStatus.auditReportSaved && persistenceStatus.priorityActionsSaved && persistenceStatus.healthScoreSaved
+              const noneSaved = !persistenceStatus.auditReportSaved && !persistenceStatus.priorityActionsSaved && !persistenceStatus.healthScoreSaved
+              const color  = allSaved ? '#22C55E' : noneSaved ? '#EF4444' : '#F59E0B'
+              const bgColor = allSaved ? 'rgba(34,197,94,0.07)' : noneSaved ? 'rgba(239,68,68,0.07)' : 'rgba(245,158,11,0.07)'
+              const borderColor = allSaved ? 'rgba(34,197,94,0.2)' : noneSaved ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'
+              const icon   = allSaved ? '✅' : noneSaved ? '⚠' : '⚡'
+              const label  = allSaved
+                ? 'Auditoria salva no banco'
+                : noneSaved
+                ? 'Auditoria gerada, mas não sincronizada com o banco'
+                : 'Auditoria parcialmente sincronizada'
+              return (
+                <div style={{ marginTop: '12px', padding: '8px 12px', borderRadius: '8px', background: bgColor, border: `1px solid ${borderColor}`, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '12px' }}>{icon}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color, flex: 1 }}>{label}</span>
+                  {!allSaved && (
+                    <span style={{ fontSize: '10px', color: '#94A3B8' }}>
+                      {[
+                        persistenceStatus.auditReportSaved ? null : 'relatório',
+                        persistenceStatus.priorityActionsSaved ? null : `ações (${persistenceStatus.actionsSaved ?? 0}/${(persistenceStatus.errors as string[])?.length > 0 ? '?' : '0'})`,
+                        persistenceStatus.healthScoreSaved ? null : 'score',
+                      ].filter(Boolean).join(', ')} não salvos
+                    </span>
+                  )}
+                  {persistenceStatus.auditReportSaved && (
+                    <span style={{ fontSize: '10px', color: '#64748B', fontFamily: 'monospace' }}>
+                      #{String(persistenceStatus.auditReportId).slice(0, 8)}
+                    </span>
+                  )}
+                </div>
+              )
+            })()}
           </div>
 
           {/* ── 01 VISÃO GERAL ── */}

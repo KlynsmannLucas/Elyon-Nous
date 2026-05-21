@@ -585,7 +585,7 @@ export async function POST(req: NextRequest) {
     effectivePlan = 'trial'
   }
 
-  const { checkAndDeductCredits } = await import('@/lib/credits')
+  const { checkAndDeductCredits, refundCredits } = await import('@/lib/credits')
   const creditResult = await checkAndDeductCredits(userId, effectivePlan, 'strategy')
   if (!creditResult.allowed) {
     return new Response(
@@ -610,6 +610,8 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(result)}\n\n`))
       } catch (err: any) {
         console.error('Strategy stream error:', err)
+        // Devolve créditos — estratégia falhou, usuário não recebeu resultado
+        refundCredits(userId, effectivePlan, 'strategy').catch(() => {})
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ success: false, error: err.message || 'Erro inesperado.' })}\n\n`))
       } finally {
         if (pingTimer) clearInterval(pingTimer)

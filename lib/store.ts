@@ -206,6 +206,7 @@ export interface PendingAction {
   metric?: string           // métrica relacionada: CPL, ROAS, CTR, frequência…
   evidence?: string         // dado específico que motivou a ação
   status: 'pendente' | 'em_andamento' | 'concluida' | 'ignorada'
+  syncState?: 'synced' | 'pending_sync' | 'sync_failed' // estado de sincronização com Supabase
   source: 'auditoria' | 'pipeline' | 'manual'
   origin: string            // ID da auditoria de origem ou 'manual'
   relatedCampaign?: string
@@ -316,6 +317,7 @@ interface AppStore {
   pendingActionsCache: Record<string, PendingAction[]>
   addPendingActions: (clientName: string, actions: PendingAction[]) => void
   updatePendingActionStatus: (clientName: string, id: string, status: PendingAction['status']) => void
+  updatePendingActionSyncState: (clientName: string, id: string, syncState: NonNullable<PendingAction['syncState']>, dbId?: string) => void
   clearPendingActions: (clientName: string) => void
 
   // Score de saúde por cliente
@@ -529,7 +531,10 @@ export const useAppStore = create<AppStore>()(
             : s.auditCache[clientName]
               ? [{ id: crypto.randomUUID(), audit: s.auditCache[clientName], createdAt: new Date().toISOString() }]
               : []
-          const newEntry: AuditEntry = { id: crypto.randomUUID(), audit, createdAt: new Date().toISOString() }
+          // raw_response é o JSON completo da IA — já persistido no Supabase.
+          // Removido do localStorage para não dobrar o tamanho de cada entrada.
+          const { raw_response: _raw, ...auditToStore } = (audit ?? {}) as any
+          const newEntry: AuditEntry = { id: crypto.randomUUID(), audit: auditToStore, createdAt: new Date().toISOString() }
           return { auditCache: { ...s.auditCache, [clientName]: [newEntry, ...prev].slice(0, 10) } }
         }),
       deleteAuditEntry: (clientName, id) =>
@@ -557,18 +562,37 @@ export const useAppStore = create<AppStore>()(
       addPendingActions: (clientName, newActions) =>
         set((s) => {
           const existing = s.pendingActionsCache[clientName] || []
-          // Chave de deduplicação: title (normalizado) + platform + source
           const dedupKey = (a: PendingAction) =>
             `${a.title.toLowerCase().trim()}|${a.platform}|${a.source}`
-          // Mantém ações ativas (não-pendentes) — representam trabalho em progresso ou concluído
-          const activeActions = existing.filter((a) => a.status !== 'pendente')
-          const activeKeys = new Set(activeActions.map(dedupKey))
-          // Adiciona novas ações que não colidem com ativas
-          const fresh = newActions.filter((a) => !activeKeys.has(dedupKey(a)))
+
+          // Decisões explícitas do usuário (em_andamento / concluida / ignorada) — nunca sobrescrever
+          const userDecisions = existing.filter(
+            (a) => a.status === 'em_andamento' || a.status === 'concluida' || a.status === 'ignorada',
+          )
+          const userDecisionKeys = new Set(userDecisions.map(dedupKey))
+
+          // Ações locais não-sincronizadas que NÃO têm equivalente nas novas (ainda não chegaram ao DB)
+          const newActionKeys = new Set(newActions.map(dedupKey))
+          const localOnlyUnsynced = existing.filter(
+            (a) =>
+              (a.syncState === 'pending_sync' || a.syncState === 'sync_failed') &&
+              !a.dbId &&
+              !newActionKeys.has(dedupKey(a)),
+          )
+
+          // Novas ações (do DB ou auditoria) que não conflitam com decisões do usuário
+          // Auto-detecta syncState: com dbId → synced, sem dbId → sync_failed
+          const fresh = newActions
+            .filter((a) => !userDecisionKeys.has(dedupKey(a)))
+            .map((a) => ({
+              ...a,
+              syncState: (a.syncState ?? (a.dbId ? 'synced' : 'sync_failed')) as NonNullable<PendingAction['syncState']>,
+            }))
+
           return {
             pendingActionsCache: {
               ...s.pendingActionsCache,
-              [clientName]: [...activeActions, ...fresh],
+              [clientName]: [...userDecisions, ...localOnlyUnsynced, ...fresh],
             },
           }
         }),
@@ -578,6 +602,17 @@ export const useAppStore = create<AppStore>()(
             ...s.pendingActionsCache,
             [clientName]: (s.pendingActionsCache[clientName] || []).map((a) =>
               a.id === id ? { ...a, status, updatedAt: new Date().toISOString() } : a
+            ),
+          },
+        })),
+      updatePendingActionSyncState: (clientName, id, syncState, dbId) =>
+        set((s) => ({
+          pendingActionsCache: {
+            ...s.pendingActionsCache,
+            [clientName]: (s.pendingActionsCache[clientName] || []).map((a) =>
+              a.id === id
+                ? { ...a, syncState, ...(dbId !== undefined ? { dbId } : {}) }
+                : a
             ),
           },
         })),

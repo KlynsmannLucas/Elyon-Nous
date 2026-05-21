@@ -403,6 +403,124 @@ function extractPriorityActions(audit: any, platform: string, clientId: string, 
   return actions.slice(0, 12)
 }
 
+// ── Persistência centralizada com logs e status granular ─────────────────────
+async function runPersistence(
+  userId: string,
+  clientName: string,
+  audit: any,
+  realMetrics: any,
+  dataSources: string[],
+  source: 'ai' | 'benchmark',
+  priorityActions: any[],
+): Promise<{ auditReportId: string | null; dbActions: any[]; status: Record<string, any> }> {
+  const status: Record<string, any> = {
+    auditReportSaved:      false,
+    priorityActionsSaved:  false,
+    healthScoreSaved:      false,
+    auditReportId:         null as string | null,
+    actionsSaved:          0,
+    errors:                [] as string[],
+  }
+  let dbActions: any[] = []
+
+  console.info('[AUDIT_PERSISTENCE_START]', {
+    userId:             userId.slice(0, 8) + '…',
+    clientName,
+    source,
+    supabaseAdminReady: !!supabaseAdmin,
+    actionsCount:       priorityActions.length,
+    hasHealthScore:     !!audit.health_score,
+  })
+
+  if (!supabaseAdmin) {
+    const msg = 'supabaseAdmin=null — SUPABASE_SERVICE_ROLE_KEY ausente ou NEXT_PUBLIC_SUPABASE_URL não configurada'
+    status.errors.push(msg)
+    console.error('[AUDIT_PERSISTENCE] BLOQUEADO:', msg)
+    return { auditReportId: null, dbActions, status }
+  }
+
+  // STEP 1 — audit_reports
+  try {
+    const id = await saveAuditReport(userId, clientName, audit, realMetrics, dataSources, source)
+    if (id) {
+      status.auditReportSaved = true
+      status.auditReportId   = id
+      console.info('[AUDIT_PERSISTENCE] audit_reports: OK', { id, clientName, score: audit.health_score })
+    } else {
+      const msg = 'saveAuditReport retornou null — verifique RLS e SUPABASE_SERVICE_ROLE_KEY'
+      status.errors.push(msg)
+      console.error('[AUDIT_PERSISTENCE] audit_reports: insert retornou null —', msg)
+    }
+  } catch (e: any) {
+    status.errors.push(`saveAuditReport: ${e.message}`)
+    console.error('[AUDIT_PERSISTENCE] audit_reports: exception', e.message)
+  }
+
+  // STEP 2 — priority_actions (independente do audit_report — salva mesmo sem auditReportId)
+  if (priorityActions.length > 0) {
+    try {
+      const rawForDB = priorityActions.map((a: any) => ({
+        clientId:        userId,
+        title:           a.title,
+        description:     a.description,
+        platform:        a.platform,
+        source:          a.source,
+        priority:        a.priority,
+        urgency:         a.urgency,
+        metric:          a.metric,
+        evidence:        a.evidence,
+        impact:          a.impact,
+        origin:          a.origin,
+        relatedCampaign: a.relatedCampaign,
+        relatedAdSet:    a.relatedAdSet,
+        relatedAd:       a.relatedAd,
+        auditReportId:   status.auditReportId,
+      }))
+      dbActions = await upsertPriorityActions(userId, clientName, rawForDB)
+      if (dbActions.length > 0) {
+        status.priorityActionsSaved = true
+        status.actionsSaved         = dbActions.length
+        console.info('[AUDIT_PERSISTENCE] priority_actions: OK', { saved: dbActions.length, total: rawForDB.length })
+      } else {
+        const msg = `upsertPriorityActions: 0/${rawForDB.length} ações salvas`
+        status.errors.push(msg)
+        console.error('[AUDIT_PERSISTENCE] priority_actions: nenhuma ação persistida —', msg)
+      }
+    } catch (e: any) {
+      status.errors.push(`upsertPriorityActions: ${e.message}`)
+      console.error('[AUDIT_PERSISTENCE] priority_actions: exception', e.message)
+    }
+  }
+
+  // STEP 3 — client_health_scores (independente dos passos anteriores)
+  if (audit.health_score) {
+    try {
+      const hs = await upsertHealthScore(userId, clientName, audit.health_score, audit.grade || 'B', source, status.auditReportId)
+      if (hs) {
+        status.healthScoreSaved = true
+        console.info('[AUDIT_PERSISTENCE] health_score: OK', { score: audit.health_score, grade: audit.grade })
+      } else {
+        const msg = 'upsertHealthScore retornou null'
+        status.errors.push(msg)
+        console.error('[AUDIT_PERSISTENCE] health_score:', msg)
+      }
+    } catch (e: any) {
+      status.errors.push(`upsertHealthScore: ${e.message}`)
+      console.error('[AUDIT_PERSISTENCE] health_score: exception', e.message)
+    }
+  }
+
+  console.info('[AUDIT_PERSISTENCE_DONE]', {
+    auditReportSaved:     status.auditReportSaved,
+    priorityActionsSaved: status.priorityActionsSaved,
+    healthScoreSaved:     status.healthScoreSaved,
+    actionsSaved:         status.actionsSaved,
+    errorsCount:          (status.errors as string[]).length,
+  })
+
+  return { auditReportId: status.auditReportId, dbActions, status }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth()
@@ -411,8 +529,14 @@ export async function POST(req: NextRequest) {
     const { rateLimit } = await import('@/lib/rateLimit')
     const rl = rateLimit(userId, 'audit', { max: 5, windowSec: 3600 })
     if (!rl.ok) {
-      return NextResponse.json({ success: false, error: `Limite atingido. Tente novamente em ${rl.retryAfterSec}s.` }, {
-        status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) },
+      const waitSec = rl.retryAfterSec ?? 3600
+      const minutesLeft = Math.ceil(waitSec / 60)
+      return NextResponse.json({
+        success: false,
+        error: `Você atingiu o limite de 5 auditorias por hora. Aguarde ${minutesLeft} minuto${minutesLeft !== 1 ? 's' : ''} antes de tentar novamente.`,
+      }, {
+        status: 429,
+        headers: { 'Retry-After': String(waitSec) },
       })
     }
 
@@ -427,7 +551,7 @@ export async function POST(req: NextRequest) {
     }
     const effectivePlan = hasActivePlan ? plan! : (inTrial ? 'trial' : 'free')
 
-    const { checkAndDeductCredits } = await import('@/lib/credits')
+    const { checkAndDeductCredits, refundCredits } = await import('@/lib/credits')
     const creditResult = await checkAndDeductCredits(userId, effectivePlan, 'audit')
     if (!creditResult.allowed) {
       return NextResponse.json({ success: false, error: creditResult.error }, { status: 402 })
@@ -852,46 +976,18 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
         const dataSource = hasMeta && hasGoogle ? 'ambos' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'ambos'
         const priorityActions = extractPriorityActions(audit, dataSource, userId, clientName)
 
-        // ── Persiste no Supabase (fire-and-forget — não bloqueia resposta) ───
-        let auditReportId: string | null = null
-        let dbActions: any[] = []
-        try {
-          const dataSrcList = [hasMeta && 'meta', hasGoogle && 'google', hasUpload && 'upload'].filter(Boolean) as string[]
-          auditReportId = await saveAuditReport(userId, clientName, audit, realMetrics, dataSrcList, 'ai')
-          if (auditReportId && priorityActions.length > 0) {
-            const rawForDB = priorityActions.map((a: any) => ({
-              clientId:        userId,
-              title:           a.title,
-              description:     a.description,
-              platform:        a.platform,
-              source:          a.source,
-              priority:        a.priority,
-              urgency:         a.urgency,
-              metric:          a.metric,
-              evidence:        a.evidence,
-              impact:          a.impact,
-              origin:          a.origin,
-              relatedCampaign: a.relatedCampaign,
-              relatedAdSet:    a.relatedAdSet,
-              relatedAd:       a.relatedAd,
-              auditReportId,
-            }))
-            dbActions = await upsertPriorityActions(userId, clientName, rawForDB)
-          }
-          if (audit.health_score) {
-            await upsertHealthScore(userId, clientName, audit.health_score, audit.grade || 'B', 'ai', auditReportId)
-          }
-        } catch (persistErr: any) {
-          console.warn('[audit] Supabase persistence failed (non-fatal):', persistErr.message)
-        }
+        // ── Persiste no Supabase ──────────────────────────────────────────────
+        const dataSrcList = [hasMeta && 'meta', hasGoogle && 'google', hasUpload && 'upload'].filter(Boolean) as string[]
+        const persistence = await runPersistence(userId, clientName, audit, realMetrics, dataSrcList, 'ai', priorityActions)
+        const dbActions = persistence.dbActions
 
-        // Merge DB IDs into the actions returned to frontend (allows status sync by DB id)
+        // Merge DB IDs into the actions returned to frontend
         const mergedActions = priorityActions.map((a: any) => {
           const saved = dbActions.find((d: any) => d.title.toLowerCase() === a.title.toLowerCase() && d.platform === a.platform)
           return saved ? { ...a, dbId: saved.id } : a
         })
 
-        return NextResponse.json({ success: true, audit, source: 'ai', priorityActions: mergedActions, auditReportId })
+        return NextResponse.json({ success: true, audit, source: 'ai', priorityActions: mergedActions, auditReportId: persistence.auditReportId, persistence: persistence.status })
 
       } catch (aiError: any) {
         console.warn('Anthropic API falhou na auditoria, usando fallback:', aiError.message)
@@ -900,6 +996,8 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
 
     // ── Fallback por benchmark ──────────────────────────────────────────────
     if (!bench) {
+      // IA falhou E nicho desconhecido → usuário não recebe nenhum resultado: devolve créditos
+      refundCredits(userId, effectivePlan, 'audit').catch(() => {})
       return NextResponse.json({ success: false, error: 'Nicho não reconhecido e API indisponível.' }, { status: 400 })
     }
     const audit: Record<string, any> = buildFallbackAudit(clientName, niche, allCampaigns, metaTotals, googleTotals, bench)
@@ -911,44 +1009,16 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     const priorityActions = extractPriorityActions(audit, fbDataSource, userId, clientName)
 
     // ── Persiste fallback no Supabase ────────────────────────────────────────
-    let fbAuditReportId: string | null = null
-    let fbDbActions: any[] = []
-    try {
-      const fbDataSrcList = [hasMeta && 'meta', hasGoogle && 'google', hasUpload && 'upload'].filter(Boolean) as string[]
-      fbAuditReportId = await saveAuditReport(userId, clientName, audit, realMetrics, fbDataSrcList, 'benchmark')
-      if (fbAuditReportId && priorityActions.length > 0) {
-        const rawForDB = priorityActions.map((a: any) => ({
-          clientId:        userId,
-          title:           a.title,
-          description:     a.description,
-          platform:        a.platform,
-          source:          a.source,
-          priority:        a.priority,
-          urgency:         a.urgency,
-          metric:          a.metric,
-          evidence:        a.evidence,
-          impact:          a.impact,
-          origin:          a.origin,
-          relatedCampaign: a.relatedCampaign,
-          relatedAdSet:    a.relatedAdSet,
-          relatedAd:       a.relatedAd,
-          auditReportId:   fbAuditReportId,
-        }))
-        fbDbActions = await upsertPriorityActions(userId, clientName, rawForDB)
-      }
-      if (audit.health_score) {
-        await upsertHealthScore(userId, clientName, audit.health_score, audit.grade || 'B', 'benchmark', fbAuditReportId)
-      }
-    } catch (persistErr: any) {
-      console.warn('[audit] Supabase persistence failed on fallback (non-fatal):', persistErr.message)
-    }
+    const fbDataSrcList = [hasMeta && 'meta', hasGoogle && 'google', hasUpload && 'upload'].filter(Boolean) as string[]
+    const fbPersistence = await runPersistence(userId, clientName, audit, realMetrics, fbDataSrcList, 'benchmark', priorityActions)
+    const fbDbActions = fbPersistence.dbActions
 
     const fbMergedActions = priorityActions.map((a: any) => {
       const saved = fbDbActions.find((d: any) => d.title.toLowerCase() === a.title.toLowerCase() && d.platform === a.platform)
       return saved ? { ...a, dbId: saved.id } : a
     })
 
-    return NextResponse.json({ success: true, audit, source: 'benchmark', priorityActions: fbMergedActions, auditReportId: fbAuditReportId })
+    return NextResponse.json({ success: true, audit, source: 'benchmark', priorityActions: fbMergedActions, auditReportId: fbPersistence.auditReportId, persistence: fbPersistence.status })
 
   } catch (error: any) {
     console.error('Audit route error:', error)
