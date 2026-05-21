@@ -186,7 +186,7 @@ export function TabWorkflow() {
             fontSize: '12px', fontWeight: 700,
             color: enabledCount > 0 ? '#22C55E' : 'rgba(255,255,255,0.3)',
           }}>
-            {enabledCount} ativa{enabledCount !== 1 ? 's' : ''}
+            {enabledCount} configurada{enabledCount !== 1 ? 's' : ''}
           </div>
         </div>
       </div>

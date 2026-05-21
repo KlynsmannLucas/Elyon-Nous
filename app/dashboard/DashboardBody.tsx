@@ -42,9 +42,9 @@ import { TermsModal } from '@/components/dashboard/TermsModal'
 import { getPlanLimits, hasActivePlan, TRIAL_DAYS, GROUP_REQUIRED_PLAN } from '@/lib/planUtils'
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
-  individual:   { label: 'Individual',   color: '#38BDF8' },
-  profissional: { label: 'Profissional', color: '#F0B429' },
-  avancada:     { label: 'Avançada',     color: '#22C55E' },
+  individual:   { label: 'Pro',        color: '#38BDF8' },
+  profissional: { label: 'Agency',     color: '#F0B429' },
+  avancada:     { label: 'Enterprise', color: '#22C55E' },
 }
 
 // ── Preview de valor por aba bloqueada ─────────────────────────────────────────

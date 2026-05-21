@@ -14,6 +14,7 @@ export interface NousMessage {
   role: 'user' | 'nous'
   content: string
   ts: number
+  dataSource?: 'real' | 'benchmark' | 'mixed' | 'local' | 'unavailable'
 }
 
 export interface FreshBenchmark {

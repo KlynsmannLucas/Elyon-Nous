@@ -772,7 +772,7 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
             color={k.color}
             trend={(k as any).trend}
             sparkSeed={k.label + (clientData?.clientName || '')}
-            sparkBase={k.base || 100}
+            sparkBase={k.base ?? 0}
             icon={k.icon}
           />
         ))}

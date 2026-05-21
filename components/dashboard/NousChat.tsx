@@ -31,6 +31,13 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
   const clientName = clientData?.clientName || '__global__'
   const messages: NousMessage[] = nousConversations[clientName] || []
 
+  // Compute data availability at component level so it can be passed to the API
+  const cn = clientData?.clientName
+  const latestAudit = cn && auditCache[cn]?.length > 0 ? auditCache[cn][0] : null
+  const realMetrics = latestAudit ? (latestAudit.audit as any)?._realMetrics : null
+  const hasRealCampaignData = !!(realMetrics && realMetrics.totalSpend > 0)
+  const hasBenchmark = !!(clientData?.niche)
+
   const [open, setOpen]   = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -41,10 +48,17 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
     if (open && messages.length === 0) {
       const niche = clientData?.niche || 'seu nicho'
       const name  = clientData?.clientName || 'cliente'
+      const dataCtx = hasRealCampaignData
+        ? `dados reais de campanha (Meta/Google Ads), ${campaignHistory.length > 0 ? `${campaignHistory.length} campanhas históricas, ` : ''}última auditoria e benchmarks do nicho`
+        : `benchmarks do nicho ${niche}${campaignHistory.length > 0 ? `, ${campaignHistory.length} campanhas declaradas` : ''}${latestAudit ? ' e última auditoria (sem dados reais de plataforma)' : ''}`
+      const dataNote = hasRealCampaignData
+        ? 'Minha análise usa dados reais das suas campanhas.'
+        : 'Ainda não há dados reais de campanha (Meta/Google Ads não conectado). Usarei benchmarks do nicho e as informações que você configurou — deixarei claro quando for estimativa.'
       addNousMessage(clientName, {
         role: 'nous',
-        content: `Olá! Sou seu **Assistente IA**, especializado em **${niche}**.\n\nTenho acesso completo aos dados de **${name}**: budget, unit economics, benchmarks reais do nicho${campaignHistory.length > 0 ? `, ${campaignHistory.length} campanhas históricas` : ''}${auditCache[name] ? ', última auditoria' : ''} e estratégia gerada.\n\nMe pergunte qualquer coisa — diagnóstico, criativos, canais, ROAS break-even, CPL máximo. Sou direto e baseio tudo em dados.`,
+        content: `Olá! Sou seu **Assistente IA**, especializado em **${niche}**.\n\nTenho acesso ao contexto de **${name}**: ${dataCtx}.\n\n${dataNote}\n\nMe pergunte qualquer coisa — diagnóstico, criativos, canais, CPL, ROAS.`,
         ts: Date.now(),
+        dataSource: hasRealCampaignData ? 'real' : (hasBenchmark ? 'benchmark' : 'unavailable'),
       })
     }
   }, [open])
@@ -59,8 +73,24 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
 
   const buildContext = () => {
     const lines: string[] = []
+
+    // ── 1. Status dos dados (lido primeiro pelo modelo) ────────────────────────
+    lines.push(`=== STATUS DOS DADOS — LEIA PRIMEIRO ===`)
+    lines.push(`Dados reais de campanha (Meta/Google Ads): ${
+      hasRealCampaignData
+        ? `SIM — ${realMetrics.campaignCount} campanhas, R$${realMetrics.totalSpend.toLocaleString('pt-BR')} investidos`
+        : 'NÃO — conta não conectada ou auditoria sem dados de plataforma'
+    }`)
+    lines.push(`Análise Profunda realizada: ${latestAudit ? `SIM (${new Date(latestAudit.createdAt || '').toLocaleDateString('pt-BR')})` : 'NÃO'}`)
+    lines.push(`Histórico de campanhas declarado pelo usuário: ${campaignHistory.length > 0 ? `SIM (${campaignHistory.length} entradas)` : 'NÃO'}`)
+    lines.push(`Benchmarks do nicho: ${hasBenchmark ? 'disponíveis' : 'indisponíveis'}`)
+    if (!hasRealCampaignData) {
+      lines.push(`⚠️ Sem dados reais de campanha — use benchmarks como referência, mas NÃO afirme ter analisado campanhas reais.`)
+    }
+
+    // ── 2. Dados declarados pelo usuário ───────────────────────────────────────
     if (clientData) {
-      lines.push(`=== DADOS DO CLIENTE ===`)
+      lines.push(`\n=== DADOS DECLARADOS PELO USUÁRIO (configurados manualmente — não extraídos de plataforma) ===`)
       lines.push(`Cliente: ${clientData.clientName}`)
       lines.push(`Nicho: ${clientData.niche}`)
       lines.push(`Budget mensal: R$${clientData.budget.toLocaleString('pt-BR')}`)
@@ -71,15 +101,13 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
       if (clientData.mainChallenge) lines.push(`Maior desafio: ${clientData.mainChallenge}`)
       if (clientData.currentLeadSource) lines.push(`Origem de leads: ${clientData.currentLeadSource}`)
 
-      // Unit economics
       const hasUnitEcon = clientData.ticketPrice || clientData.grossMargin || clientData.conversionRate
       if (hasUnitEcon) {
-        lines.push(`\n=== UNIT ECONOMICS ===`)
+        lines.push(`\n=== UNIT ECONOMICS (calculado a partir dos dados declarados) ===`)
         if (clientData.ticketPrice) lines.push(`Ticket médio: R$${clientData.ticketPrice.toLocaleString('pt-BR')}`)
         if (clientData.grossMargin) lines.push(`Margem bruta: ${clientData.grossMargin}%`)
         if (clientData.conversionRate) lines.push(`Taxa de fechamento: ${clientData.conversionRate}%`)
         lines.push(`Modelo: ${clientData.isRecurring ? 'Recorrente/Assinatura' : 'Venda única'}`)
-        // Derived metrics
         if (clientData.ticketPrice && clientData.grossMargin && clientData.conversionRate) {
           const ticket = clientData.ticketPrice
           const margin = clientData.grossMargin / 100
@@ -94,34 +122,34 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
       }
     }
 
-    // Budget constraint
+    // ── 3. Restrição de budget ─────────────────────────────────────────────────
     if (clientData?.budget) {
       if (clientData.budget < 2000) {
-        lines.push(`\n⚠️ RESTRIÇÃO DE BUDGET: R$${clientData.budget}/mês — recomendar APENAS canal único e campanha de conversão direta. Não sugerir brand awareness, dual-channel ou testes extensos.`)
+        lines.push(`\n⚠️ RESTRIÇÃO DE BUDGET: R$${clientData.budget}/mês — recomendar APENAS canal único e campanha de conversão direta.`)
       } else if (clientData.budget < 5000) {
-        lines.push(`\nNOTA BUDGET: R$${clientData.budget}/mês — budget moderado. Priorizar 1 canal principal. Dual-channel somente se ambos tiverem histórico positivo comprovado.`)
+        lines.push(`\nNOTA BUDGET: R$${clientData.budget}/mês — budget moderado. Priorizar 1 canal principal.`)
       }
     }
 
-    // Benchmark do nicho
+    // ── 4. Benchmarks do nicho (dados de mercado, NÃO métricas da conta) ──────
     const benchSummary = clientData?.niche ? getBenchmarkSummary(clientData.niche) : null
     if (benchSummary) {
-      lines.push(`\n=== BENCHMARKS DO NICHO ===`)
+      lines.push(`\n=== BENCHMARKS DO NICHO (dados de mercado estimados — NÃO são métricas reais da conta) ===`)
       lines.push(benchSummary)
     }
 
-    // Sazonalidade e ângulos criativos
+    // ── 5. Sazonalidade e ângulos criativos (estimativas de mercado) ───────────
     if (clientData?.niche) {
       const bench = getBenchmark(clientData.niche)
       if (bench) {
         const benchKey = Object.keys(BENCHMARKS).find((k) => BENCHMARKS[k] === bench) || 'outro'
         const seasonCtx = getSeasonalityContext(benchKey)
-        lines.push(`\n=== SAZONALIDADE ATUAL ===`)
+        lines.push(`\n=== SAZONALIDADE DO NICHO (estimativa de mercado, não da conta) ===`)
         lines.push(`Mês atual: índice CPL ${seasonCtx.current.toFixed(2)} (${seasonCtx.interpretation}). Meses mais baratos: ${seasonCtx.valleyMonths.join(', ')}. Meses mais caros: ${seasonCtx.peakMonths.join(', ')}.`)
 
         const angles = getCreativeAngles(clientData.niche)
         if (angles) {
-          lines.push(`\n=== ÂNGULOS DE CRIATIVO ===`)
+          lines.push(`\n=== ÂNGULOS DE CRIATIVO (referências de mercado para o nicho) ===`)
           lines.push(`Saturados (evitar): ${angles.saturated.join(', ')}`)
           lines.push(`Em alta (explorar): ${angles.trending.join(', ')}`)
           lines.push(`Subexplorados (oportunidade): ${angles.underexplored.join(', ')}`)
@@ -129,25 +157,25 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
       }
     }
 
-    if (strategy?.recommendation) lines.push(`\n=== ESTRATÉGIA GERADA ===\n${strategy.recommendation}`)
+    // ── 6. Estratégia gerada pela IA ───────────────────────────────────────────
+    if (strategy?.recommendation) lines.push(`\n=== ESTRATÉGIA GERADA PELA IA ===\n${strategy.recommendation}`)
     if (strategy?.growth_diagnosis?.main_problem) lines.push(`Problema principal identificado: ${strategy.growth_diagnosis.main_problem}`)
 
-    // Health score do store (usa clientName do escopo externo — sem shadowing)
-    const cn = clientData?.clientName
+    // ── 7. Health score ────────────────────────────────────────────────────────
     const hs = cn ? clientHealthScores[cn] : undefined
     if (hs) lines.push(`\nScore de saúde da conta: ${hs.score}/100 (${hs.grade}) — fonte: ${hs.source}`)
 
-    // Último audit
-    const audits = cn ? auditCache[cn] : undefined
-    if (audits && audits.length > 0) {
-      const latest = audits[0]
-      const audit = latest.audit as any
-      lines.push(`\n=== ÚLTIMA AUDITORIA (${new Date(latest.createdAt || '').toLocaleDateString('pt-BR')}) ===`)
+    // ── 8. Auditoria (rótulo muda conforme existência de dados reais) ──────────
+    if (latestAudit) {
+      const audit = latestAudit.audit as any
+      const auditLabel = hasRealCampaignData
+        ? `ANÁLISE PROFUNDA — DADOS REAIS (${new Date(latestAudit.createdAt || '').toLocaleDateString('pt-BR')} — Meta/Google Ads)`
+        : `ANÁLISE PROFUNDA (${new Date(latestAudit.createdAt || '').toLocaleDateString('pt-BR')} — SEM dados reais de plataforma)`
+      lines.push(`\n=== ${auditLabel} ===`)
       if (audit?.health_score) lines.push(`Score: ${audit.health_score}/100 (${audit.grade || ''})`)
       if (audit?.executive_summary) lines.push(`Sumário executivo: ${audit.executive_summary}`)
-      const rm = audit?._realMetrics
-      if (rm && rm.totalSpend > 0) {
-        lines.push(`Dados reais: R$${rm.totalSpend.toLocaleString('pt-BR')} investidos | ${rm.totalLeads} leads | CPL R$${rm.avgCPL || '?'} | ROAS ${rm.avgROAS || '?'}× | CTR ${rm.avgCTR || '?'}% | ${rm.campaignCount} campanhas`)
+      if (hasRealCampaignData) {
+        lines.push(`Métricas reais: R$${realMetrics.totalSpend.toLocaleString('pt-BR')} investidos | ${realMetrics.totalLeads} leads | CPL R$${realMetrics.avgCPL || '?'} | ROAS ${realMetrics.avgROAS || '?'}× | CTR ${realMetrics.avgCTR || '?'}% | ${realMetrics.campaignCount} campanhas`)
       }
       if (audit?.gargalos?.length) {
         lines.push(`Principais gargalos: ${audit.gargalos.slice(0, 3).map((g: any) => g.titulo).join('; ')}`)
@@ -157,19 +185,21 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
       }
     }
 
-    // Ações pendentes da auditoria
+    // ── 9. Ações críticas pendentes ────────────────────────────────────────────
     const pendingActions = cn ? (pendingActionsCache[cn] || []) : []
     const criticalPending = pendingActions.filter(a => a.urgency === 'critica' && a.status === 'pendente')
     if (criticalPending.length > 0) {
       lines.push(`\nAÇÕES CRÍTICAS PENDENTES (${criticalPending.length}): ${criticalPending.slice(0, 3).map(a => a.title).join('; ')}`)
     }
 
+    // ── 10. Histórico de campanhas (declarado pelo usuário) ────────────────────
     if (campaignHistory.length > 0) {
-      lines.push(`\n=== HISTÓRICO DE CAMPANHAS (${campaignHistory.length}) ===`)
+      lines.push(`\n=== HISTÓRICO DE CAMPANHAS (declarado pelo usuário — não extraído de plataforma) ===`)
       campaignHistory.slice(0, 5).forEach((c) => {
         lines.push(`- ${c.channel} (${c.period}): CPL R$${c.cplReal}, ${c.leads} leads, ${c.outcome}. OK: ${c.whatWorked || 'n/a'}. Falhou: ${c.whatFailed || 'n/a'}`)
       })
     }
+
     return lines.join('\n')
   }
 
@@ -188,6 +218,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
           context: buildContext(),
           niche: clientData?.niche,
           city: clientData?.city,
+          hasRealData: hasRealCampaignData,
           history: messages.slice(-6).map((m) => ({
             role: m.role === 'nous' ? 'assistant' : 'user',
             content: m.content,
@@ -196,7 +227,12 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
       })
       const json = await res.json()
       if (!json.success) throw new Error(json.error || 'Erro')
-      addNousMessage(clientName, { role: 'nous', content: json.reply, ts: Date.now() })
+      addNousMessage(clientName, {
+        role: 'nous',
+        content: json.reply,
+        ts: Date.now(),
+        dataSource: json.dataSource,
+      })
     } catch (e: any) {
       addNousMessage(clientName, {
         role: 'nous',
@@ -208,13 +244,29 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
     }
   }
 
-  // Renderiza markdown simples (bold e quebras de linha)
   const renderText = (text: string) => {
     const parts = text.split(/(\*\*[^*]+\*\*)/g)
     return parts.map((part, i) =>
       part.startsWith('**') && part.endsWith('**')
         ? <strong key={i} className="text-white font-semibold">{part.slice(2, -2)}</strong>
         : <span key={i}>{part}</span>
+    )
+  }
+
+  function DataSourceTag({ source }: { source: NousMessage['dataSource'] }) {
+    if (!source || source === 'real') return null
+    const cfg: Record<string, { label: string; color: string; icon: string }> = {
+      benchmark:   { label: 'Benchmark do nicho',    color: 'rgba(240,180,41,0.7)',  icon: '~' },
+      mixed:       { label: 'Dados reais + benchmark', color: 'rgba(56,189,248,0.7)', icon: '≈' },
+      local:       { label: 'Fallback local',          color: 'rgba(251,146,60,0.7)', icon: '↩' },
+      unavailable: { label: 'Sem dados',               color: 'rgba(239,68,68,0.7)',  icon: '!' },
+    }
+    const c = cfg[source]
+    if (!c) return null
+    return (
+      <div style={{ marginTop: '6px', fontSize: '9px', color: c.color, fontFamily: 'var(--font-mono)', opacity: 0.85 }}>
+        {c.icon} {c.label}
+      </div>
     )
   }
 
@@ -295,6 +347,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
                       <div key={li}>{renderText(line)}</div>
                     ))}
                   </div>
+                  {msg.role === 'nous' && <DataSourceTag source={msg.dataSource} />}
                 </div>
               </div>
             ))}

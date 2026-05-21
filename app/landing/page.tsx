@@ -743,7 +743,7 @@ const INTEL_BLOCKS = [
     num: '05',
     title: 'Plano de Ação',
     color: '#F87171',
-    modules: ['Estratégia', 'Ações Prioritárias', 'Relatórios', 'Automação de Rotina'],
+    modules: ['Estratégia', 'Ações Prioritárias', 'Relatórios', 'Regras de Alerta'],
     desc: 'Transforme diagnóstico em próximos passos, organize prioridades e acompanhe a evolução com relatórios.',
   },
 ]
@@ -801,7 +801,7 @@ const MODULE_GROUPS = [
     color: '#A78BFA',
     bgColor: 'rgba(167,139,250,.08)',
     question: 'O problema está na atração, conversão ou qualificação?',
-    modules: ['TrafficBrain IA', 'Pesquisa de Mercado', 'Histórico de Aprendizado', 'Automação de Rotina'],
+    modules: ['TrafficBrain IA', 'Pesquisa de Mercado', 'Histórico de Aprendizado', 'Regras de Alerta'],
   },
   {
     group: 'Conteúdo & Conversão',
@@ -852,7 +852,7 @@ const PLANS = [
     href: '/checkout?plan=individual',
   },
   {
-    name: 'Profissional',
+    name: 'Agency',
     target: 'Para gestores e agências que precisam organizar múltiplos clientes.',
     price: 'R$997',
     period: '/mês',
@@ -871,7 +871,7 @@ const PLANS = [
     href: '/checkout?plan=profissional',
   },
   {
-    name: 'Avançado',
+    name: 'Enterprise',
     target: 'Para operações que precisam transformar análise em rotina contínua.',
     price: 'R$2.997',
     period: '/mês',
@@ -879,7 +879,7 @@ const PLANS = [
     ctaStyle: 'secondary',
     features: [
       'Até 15 clientes',
-      'Automação de rotina',
+      'Regras de alerta',
       'Histórico de aprendizado',
       'Inteligência contínua por cliente',
       'Múltiplas contas por plataforma',
