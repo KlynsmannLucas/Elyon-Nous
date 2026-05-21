@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ELYON NOUS | Diagnóstico gratuito de CPL',
+  title: 'ELYON NOUS | Inteligência de crescimento para marketing e tráfego',
   description:
-    'Compare seu CPL com faixas de referência por nicho e região e descubra se suas campanhas estão acima da faixa esperada.',
+    'Diagnostique negócio, campanhas, audiência, funil, mercado e conteúdo em uma central de inteligência. Comece com diagnóstico gratuito de CPL.',
   openGraph: {
-    title: 'ELYON NOUS | Diagnóstico gratuito de CPL',
+    title: 'ELYON NOUS | Inteligência de crescimento para marketing e tráfego',
     description:
-      'Compare seu CPL com faixas de referência por nicho e região. Diagnóstico gratuito para gestores, agências e empresas que investem em mídia paga.',
+      'Analise sinais do negócio, campanhas, audiência, funil e mercado para identificar gargalos e priorizar as próximas ações. Diagnóstico gratuito.',
     url: 'https://elyonnous.com',
     siteName: 'ELYON NOUS',
     type: 'website',
@@ -30,6 +30,7 @@ const CSS = `
   --green:#22C55E;
   --green-dim:rgba(34,197,94,.10);
   --blue:#38BDF8;
+  --purple:#A78BFA;
   --red:#F87171;
   --amber:#FBBF24;
   --text:#F4F4F6;
@@ -59,7 +60,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--f-body);-webkit-fo
 .nav-logo-mark{width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg,var(--gold),rgba(212,175,55,.4));
   display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .nav-logo-mark-inner{width:6px;height:6px;border-radius:50%;background:#000;}
-.nav-links{display:flex;align-items:center;gap:24px;}
+.nav-links{display:flex;align-items:center;gap:22px;}
 .nav-link{font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s;}
 .nav-link:hover{color:var(--sub);}
 .nav-actions{display:flex;align-items:center;gap:10px;}
@@ -77,36 +78,35 @@ section{padding:96px 0;}
 .hero{
   padding:144px 0 108px;
   background:
-    radial-gradient(ellipse 900px 700px at 65% -5%,rgba(212,175,55,.06) 0%,transparent 60%),
-    radial-gradient(ellipse 500px 400px at 10% 90%,rgba(56,189,248,.02) 0%,transparent 60%);
+    radial-gradient(ellipse 900px 700px at 65% -5%,rgba(212,175,55,.055) 0%,transparent 60%),
+    radial-gradient(ellipse 500px 400px at 5% 90%,rgba(56,189,248,.025) 0%,transparent 55%);
   position:relative;overflow:hidden;
 }
 .hero::before{
   content:'';position:absolute;inset:0;
-  background-image:linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px);
+  background-image:linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px);
   background-size:60px 60px;
   mask-image:radial-gradient(ellipse 90% 80% at 50% 10%,black 0%,transparent 100%);
   -webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 10%,black 0%,transparent 100%);
   pointer-events:none;
 }
-.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;position:relative;z-index:1;}
+.hero-inner{display:grid;grid-template-columns:1fr 1.1fr;gap:52px;align-items:start;position:relative;z-index:1;}
 .hero-eyebrow{
   display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;
   background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.18);border-radius:999px;
   padding:5px 14px;font-family:var(--f-mono);font-size:10.5px;font-weight:700;
   letter-spacing:.12em;text-transform:uppercase;color:var(--gold);
 }
-.blink{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;display:inline-block;}
+.blink{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;display:inline-block;flex-shrink:0;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
-.hero-pos{font-size:13px;color:var(--muted);margin-bottom:16px;letter-spacing:.01em;}
 .hero h1{
-  font-family:var(--f-display);font-size:54px;font-weight:800;
-  line-height:1.05;letter-spacing:-2.8px;color:var(--text);margin-bottom:20px;
+  font-family:var(--f-display);font-size:52px;font-weight:800;
+  line-height:1.06;letter-spacing:-2.6px;color:var(--text);margin-bottom:20px;
 }
 .hero h1 em{color:var(--gold);font-style:normal;}
-.hero-sub{font-size:17px;color:var(--sub);line-height:1.68;margin-bottom:28px;max-width:460px;}
-.hero-ctas{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
+.hero-sub{font-size:16.5px;color:var(--sub);line-height:1.7;margin-bottom:28px;max-width:470px;}
+.hero-ctas{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
 .cta-primary{
   background:linear-gradient(135deg,var(--gold) 0%,var(--gold-hi) 100%);
   color:#000;font-weight:800;font-size:15px;padding:14px 28px;border-radius:var(--r);
@@ -128,120 +128,117 @@ section{padding:96px 0;}
   font-size:11.5px;color:var(--muted);}
 .tc-check{color:var(--green);font-size:10px;font-weight:700;}
 
-/* ── HERO RIGHT — window chrome wrapper ── */
-.hero-right{position:relative;}
-
-/* ── DASHBOARD CARD ── */
+/* ── FULL DASHBOARD MOCKUP ── */
+.hero-right{position:relative;padding-top:4px;}
 .dash-card{
-  background:var(--surface);border:1px solid rgba(212,175,55,.15);border-radius:var(--rxl);
+  background:var(--surface);border:1px solid rgba(212,175,55,.14);border-radius:var(--rxl);
   overflow:hidden;position:relative;
-  box-shadow:0 0 100px rgba(212,175,55,.05),0 40px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);
+  box-shadow:0 0 80px rgba(212,175,55,.05),0 36px 72px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.04);
 }
 .dash-card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(212,175,55,.55),transparent);pointer-events:none;z-index:2;
+  background:linear-gradient(90deg,transparent,rgba(212,175,55,.5),transparent);pointer-events:none;z-index:2;
 }
-
-/* Window chrome bar */
-.hd-chrome{
+.fdb-chrome{
   display:flex;align-items:center;justify-content:space-between;
   padding:9px 14px;border-bottom:1px solid var(--border);
   background:rgba(0,0,0,.18);
 }
-.hd-dots{display:flex;gap:5px;align-items:center;}
-.hd-dot{width:8px;height:8px;border-radius:50%;}
-.hd-dot-r{background:#FF5F57;}
-.hd-dot-y{background:#FEBC2E;}
-.hd-dot-g{background:#28C840;}
-.hd-chrome-title{
-  font-family:var(--f-mono);font-size:10px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
-}
-.dash-live{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;
+.fdb-dots{display:flex;gap:5px;align-items:center;}
+.fdb-dot{width:8px;height:8px;border-radius:50%;}
+.fdb-dot-r{background:#FF5F57;}
+.fdb-dot-y{background:#FEBC2E;}
+.fdb-dot-g{background:#28C840;}
+.fdb-chrome-title{font-family:var(--f-mono);font-size:10px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.fdb-live{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:4px;}
-
-/* Sidebar + main body */
-.hd-body{display:grid;grid-template-columns:38px 1fr;}
-.hd-sidebar{
+.fdb-body{display:grid;grid-template-columns:126px 1fr;overflow:hidden;}
+.fdb-sidebar{
   border-right:1px solid var(--border);background:rgba(0,0,0,.1);
-  display:flex;flex-direction:column;padding:10px 0;gap:4px;align-items:center;
+  overflow:hidden;padding:6px 0;
+  -webkit-mask-image:linear-gradient(to bottom,black 78%,transparent 100%);
+  mask-image:linear-gradient(to bottom,black 78%,transparent 100%);
 }
-.hd-nav-sq{
-  width:22px;height:22px;border-radius:5px;
-  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.055);
+.fdb-nav-group{margin-bottom:1px;}
+.fdb-nav-group-label{
+  font-family:var(--f-mono);font-size:7.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);padding:5px 10px 2px;opacity:.6;
 }
-.hd-nav-sq.active{background:rgba(212,175,55,.14);border-color:rgba(212,175,55,.22);}
-.hd-main{min-width:0;}
+.fdb-nav-item{
+  display:flex;align-items:center;gap:5px;padding:3px 10px;
+  font-size:9.5px;color:var(--muted);transition:background .1s;
+  cursor:default;white-space:nowrap;overflow:hidden;
+}
+.fdb-nav-item.active{
+  background:rgba(212,175,55,.09);color:var(--gold);
+  border-right:2px solid rgba(212,175,55,.5);
+}
+.fdb-nav-dot{width:3px;height:3px;border-radius:50%;background:var(--muted);flex-shrink:0;opacity:.5;}
+.fdb-nav-dot.active{background:var(--gold);opacity:1;}
+.fdb-main{display:flex;flex-direction:column;min-width:0;}
+.fdb-main-header{
+  padding:8px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,.01);flex-shrink:0;
+}
+.fdb-main-title{
+  font-family:var(--f-mono);font-size:9.5px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:6px;
+}
+.fdb-badge{
+  font-family:var(--f-mono);font-size:8.5px;font-weight:700;padding:2px 8px;border-radius:3px;
+  background:rgba(34,197,94,.07);color:var(--green);border:1px solid rgba(34,197,94,.14);letter-spacing:.06em;
+}
+.fdb-content{padding:10px;}
+.fdb-overview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;}
+.fdb-block{
+  background:rgba(255,255,255,.022);border:1px solid var(--border);
+  border-radius:7px;padding:8px 9px;
+}
+.fdb-block-label{
+  font-family:var(--f-mono);font-size:7.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:4px;
+}
+.fdb-block-val{font-family:var(--f-mono);font-size:15px;font-weight:800;line-height:1.1;}
+.fdb-block-val.g{color:var(--green);}
+.fdb-block-val.a{color:var(--amber);}
+.fdb-block-val.r{color:var(--red);}
+.fdb-block-val.gold{color:var(--gold);}
+.fdb-block-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+.fdb-actions{
+  background:rgba(212,175,55,.03);border:1px solid rgba(212,175,55,.1);
+  border-radius:7px;padding:8px 10px;
+}
+.fdb-actions-label{
+  font-family:var(--f-mono);font-size:7.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:6px;
+}
+.fdb-action-item{display:flex;align-items:flex-start;gap:5px;margin-bottom:4px;}
+.fdb-action-item:last-child{margin-bottom:0;}
+.fdb-action-num{
+  font-family:var(--f-mono);font-size:7.5px;font-weight:700;color:var(--gold);
+  background:rgba(212,175,55,.1);border-radius:2px;padding:1px 4px;flex-shrink:0;margin-top:1px;
+}
+.fdb-action-text{font-size:9.5px;color:var(--sub);line-height:1.4;}
 
-/* Sparkline history */
-.hd-spark{
-  padding:8px 14px 7px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:8px;
-}
-.hd-spark-label{
-  font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.06em;
-  text-transform:uppercase;color:var(--muted);white-space:nowrap;flex-shrink:0;
-}
-.hd-sparkbars{display:flex;align-items:flex-end;gap:2px;height:22px;flex:1;}
-.hd-sparkbar{flex:1;border-radius:1px 1px 0 0;min-width:4px;}
-
-/* Floating desvio card */
+/* Floating card on hero */
 .hero-float{
-  position:absolute;bottom:12px;left:12px;
+  position:absolute;bottom:12px;right:0;
   background:rgba(23,23,29,.97);
-  border:1px solid rgba(248,113,113,.28);border-radius:11px;
+  border:1px solid rgba(212,175,55,.22);border-radius:11px;
   padding:10px 14px;
-  box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 0 1px rgba(248,113,113,.05);
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   z-index:5;
 }
 .hero-float-label{
-  font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--red);margin-bottom:4px;
+  font-family:var(--f-mono);font-size:8.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:3px;
 }
-.hero-float-val{font-family:var(--f-mono);font-size:22px;font-weight:800;color:var(--red);line-height:1;}
-.hero-float-sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:var(--f-mono);}
-
-/* Dashboard internals */
-.dash-meta{display:flex;align-items:center;gap:5px;padding:9px 14px;border-bottom:1px solid var(--border);}
-.dash-chip{font-family:var(--f-mono);font-size:9.5px;padding:3px 9px;border-radius:4px;
-  background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--sub);}
-.dash-chip.gold{background:rgba(212,175,55,.08);border-color:rgba(212,175,55,.18);color:var(--gold);}
-.dash-alert{
-  display:flex;align-items:center;gap:8px;padding:8px 14px;
-  background:rgba(248,113,113,.05);border-bottom:1px solid rgba(248,113,113,.12);
-  font-size:11px;color:var(--red);font-weight:600;font-family:var(--f-mono);letter-spacing:.01em;
-}
-.dash-metrics{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);}
-.dash-m{padding:11px 12px;border-right:1px solid var(--border);}
-.dash-m:last-child{border-right:none;}
-.dash-m-label{font-size:9px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
-.dash-m-val{font-family:var(--f-mono);font-size:17px;font-weight:800;line-height:1;}
-.dash-m-val.r{color:var(--red);}
-.dash-m-val.g{color:var(--green);}
-.dash-m-val.a{color:var(--amber);}
-.dash-m-sub{font-size:9px;color:var(--muted);margin-top:2px;font-family:var(--f-mono);}
-.dash-m-delta{display:inline-flex;font-size:9px;font-weight:700;font-family:var(--f-mono);
-  padding:2px 5px;border-radius:3px;margin-top:2px;background:rgba(248,113,113,.12);color:var(--red);}
-.dash-bars{padding:10px 14px;border-bottom:1px solid var(--border);}
-.dash-bars-lbl{font-size:9px;color:var(--muted);font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
-.bar-row{display:flex;align-items:center;gap:9px;margin-bottom:5px;}
-.bar-row:last-child{margin-bottom:0;}
-.bar-lbl{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);width:28px;flex-shrink:0;text-align:right;}
-.bar-track{flex:1;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:2px;}
-.bar-fill.g{background:var(--green);}
-.bar-fill.r{background:var(--red);}
-.bar-val{font-size:10px;font-family:var(--f-mono);font-weight:700;width:34px;text-align:right;flex-shrink:0;}
-.bar-val.g{color:var(--green);}
-.bar-val.r{color:var(--red);}
-.dash-bottom{display:grid;grid-template-columns:1fr 1fr;}
-.dash-block{padding:11px 14px;}
-.dash-block.bd{border-right:1px solid var(--border);}
-.dash-block-lbl{font-size:9px;font-family:var(--f-mono);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
-.dash-block-lbl.gold{color:var(--gold);}
-.dash-block-lbl.blue{color:var(--blue);}
-.dash-block-text{font-size:11px;color:var(--sub);line-height:1.55;}
+.hero-float-val{font-family:var(--f-mono);font-size:20px;font-weight:800;color:var(--text);line-height:1;}
+.hero-float-sub{font-size:9.5px;color:var(--muted);margin-top:2px;font-family:var(--f-mono);}
 
 /* ── EYEBROW / TITLES ── */
 .eyebrow{
@@ -258,55 +255,65 @@ section{padding:96px 0;}
 }
 .section-title em{color:var(--gold);font-style:normal;}
 .section-title.c{text-align:center;}
-.section-sub{font-size:17px;color:var(--sub);line-height:1.65;margin-bottom:40px;}
-.section-sub.c{text-align:center;max-width:540px;margin-left:auto;margin-right:auto;}
+.section-sub{font-size:16.5px;color:var(--sub);line-height:1.65;margin-bottom:40px;}
+.section-sub.c{text-align:center;max-width:560px;margin-left:auto;margin-right:auto;}
 
-/* ── EDITORIAL "A DIFERENÇA ESTÁ NA REFERÊNCIA" ── */
-.diff-section{
+/* ── INTELLIGENCE CONNECTION — "Uma inteligência que conecta os pontos" ── */
+.intel-section{padding:96px 0;}
+.intel-flow{display:flex;align-items:stretch;gap:0;}
+.intel-block{
+  flex:1;min-width:0;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
+  padding:22px 18px;position:relative;overflow:hidden;
+  transition:border-color .2s,box-shadow .2s;
+}
+.intel-block:hover{border-color:rgba(212,175,55,.16);box-shadow:0 0 24px rgba(212,175,55,.03);}
+.intel-block-line{
+  position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--rl) var(--rl) 0 0;
+}
+.intel-sep{
+  flex-shrink:0;width:24px;display:flex;align-items:flex-start;
+  justify-content:center;padding-top:24px;
+}
+.intel-arrow{font-family:var(--f-mono);font-size:11px;color:var(--muted);opacity:.28;}
+.intel-num{font-family:var(--f-mono);font-size:9.5px;font-weight:700;letter-spacing:.12em;margin-bottom:8px;}
+.intel-title{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.35;}
+.intel-modules{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:12px;}
+.intel-mod-tag{
+  font-family:var(--f-mono);font-size:8.5px;padding:2px 6px;border-radius:3px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:var(--muted);
+  white-space:nowrap;
+}
+.intel-desc{font-size:12px;color:var(--muted);line-height:1.6;}
+
+/* ── JOURNEY TIMELINE — "Do diagnóstico ao plano de ação" ── */
+.jrn-section{
   background:var(--surface);
   border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-  padding:80px 0;
+  padding:96px 0;
 }
-.diff-intro{max-width:560px;margin:0 auto 52px;text-align:center;}
-.diff-intro-text{
-  font-family:var(--f-display);font-size:24px;font-weight:700;
-  line-height:1.45;letter-spacing:-.8px;color:var(--muted);
+.jrn-track{display:grid;grid-template-columns:repeat(5,1fr);gap:0;position:relative;}
+.jrn-track::before{
+  content:'';position:absolute;top:15px;left:calc(10% + 1px);right:calc(10% + 1px);height:1px;
+  background:linear-gradient(90deg,rgba(212,175,55,.45),rgba(212,175,55,.1));z-index:0;
 }
-.diff-intro-text em{color:var(--text);font-style:normal;}
-.diff-intro-text strong{color:var(--gold);font-weight:inherit;}
-.diff-cols{
-  display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;
-  border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;
+.jrn-step{text-align:center;position:relative;z-index:1;padding:0 10px;}
+.jrn-badge{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--bg);border:1px solid var(--border);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--f-mono);font-size:10.5px;font-weight:700;color:var(--muted);
+  margin:0 auto 16px;
 }
-.diff-col{padding:30px 26px;background:var(--bg);transition:background .15s;}
-.diff-col:hover{background:rgba(255,255,255,.01);}
-.diff-col-sep{
-  display:flex;align-items:center;justify-content:center;
-  border-left:1px solid var(--border);border-right:1px solid var(--border);
-  background:rgba(255,255,255,.005);
-}
-.diff-arrow{font-family:var(--f-mono);font-size:12px;color:var(--muted);opacity:.35;}
-.diff-num{
-  font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.12em;
-  color:var(--gold);opacity:.5;margin-bottom:6px;
-}
-.diff-state{
-  font-size:10.5px;color:var(--muted);font-family:var(--f-mono);
-  letter-spacing:.04em;margin-bottom:14px;text-transform:uppercase;
-}
-.diff-head{
-  font-family:var(--f-display);font-size:19px;font-weight:700;
-  line-height:1.3;letter-spacing:-.4px;color:var(--text);margin-bottom:12px;
-}
-.diff-head em{color:var(--gold);font-style:normal;}
-.diff-desc{font-size:13px;color:var(--muted);line-height:1.65;}
+.jrn-badge.first{background:var(--gold-dim);border-color:rgba(212,175,55,.3);color:var(--gold);}
+.jrn-title{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.3;}
+.jrn-desc{font-size:12px;color:var(--muted);line-height:1.6;}
 
 /* ── STEPS ── */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;position:relative;}
 .steps::before{
   content:'';position:absolute;top:23px;left:calc(16.67% + 12px);right:calc(16.67% + 12px);
-  height:1px;background:linear-gradient(90deg,rgba(212,175,55,.3),rgba(212,175,55,.08));
-  z-index:0;
+  height:1px;background:linear-gradient(90deg,rgba(212,175,55,.3),rgba(212,175,55,.08));z-index:0;
 }
 .step{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
   padding:28px 24px;transition:border-color .2s,box-shadow .2s;position:relative;z-index:1;}
@@ -315,13 +322,12 @@ section{padding:96px 0;}
   width:32px;height:32px;border-radius:50%;
   background:var(--gold-dim);border:1px solid rgba(212,175,55,.2);
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--f-mono);font-size:12px;font-weight:700;color:var(--gold);
-  margin-bottom:18px;
+  font-family:var(--f-mono);font-size:12px;font-weight:700;color:var(--gold);margin-bottom:18px;
 }
 .step-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4;}
 .step-desc{font-size:13px;color:var(--muted);line-height:1.6;}
 
-/* ── PRODUCT PANEL ── */
+/* ── PRODUCT PANEL (diagnóstico demo) ── */
 .product-panel{
   background:var(--surface);border:1px solid var(--border);border-radius:var(--rxl);
   overflow:hidden;position:relative;box-shadow:0 0 60px rgba(212,175,55,.03);
@@ -354,6 +360,16 @@ section{padding:96px 0;}
 .pp-m-sub{font-size:10.5px;color:var(--muted);}
 .pp-bar-section{padding:16px 22px;border-bottom:1px solid var(--border);}
 .pp-bar-label{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;}
+.bar-row{display:flex;align-items:center;gap:9px;margin-bottom:5px;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-lbl{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);width:28px;flex-shrink:0;text-align:right;}
+.bar-track{flex:1;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;}
+.bar-fill.g{background:var(--green);}
+.bar-fill.r{background:var(--red);}
+.bar-val{font-size:10px;font-family:var(--f-mono);font-weight:700;width:34px;text-align:right;flex-shrink:0;}
+.bar-val.g{color:var(--green);}
+.bar-val.r{color:var(--red);}
 .pp-insights{display:grid;grid-template-columns:1fr 1fr;}
 .pp-insight{padding:16px 22px;border-right:1px solid var(--border);}
 .pp-insight:last-child{border-right:none;}
@@ -362,56 +378,61 @@ section{padding:96px 0;}
 .pp-insight-label.blue{color:var(--blue);}
 .pp-insight-text{font-size:13px;color:var(--sub);line-height:1.6;}
 
-/* ── RADAR DE CPL ── */
-.radar-panel{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--rxl);
-  overflow:hidden;position:relative;
+/* ── CPL INVESTIGATION PANEL ── */
+.cplinv-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;}
+.cplinv-copy p{font-size:15px;color:var(--sub);line-height:1.7;margin-bottom:16px;}
+.cplinv-copy p strong{color:var(--text);}
+.cplinv-copy p em{color:var(--gold);font-style:normal;}
+.cplinv-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;
 }
-.radar-panel::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(212,175,55,.3),transparent);pointer-events:none;
+.cplinv-panel-header{
+  padding:11px 18px;border-bottom:1px solid var(--border);
+  background:rgba(248,113,113,.025);
+  font-family:var(--f-mono);font-size:9.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--red);display:flex;align-items:center;gap:6px;
 }
-.radar-header{
-  padding:13px 22px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  background:rgba(255,255,255,.01);
+.cplinv-item{
+  display:grid;grid-template-columns:64px 1fr;border-bottom:1px solid var(--border);
+  transition:background .12s;
 }
-.radar-header-title{
-  font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;
+.cplinv-item:last-child{border-bottom:none;}
+.cplinv-item:hover{background:rgba(255,255,255,.012);}
+.cplinv-area{
+  padding:11px 12px;font-family:var(--f-mono);font-size:9px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--gold);
+  border-right:1px solid var(--border);display:flex;align-items:center;
 }
-.radar-badge{
-  font-family:var(--f-mono);font-size:9px;font-weight:700;
-  padding:3px 10px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;
-  background:rgba(212,175,55,.07);color:var(--gold);border:1px solid rgba(212,175,55,.14);
+.cplinv-question{padding:11px 14px;font-size:12.5px;color:var(--sub);display:flex;align-items:center;}
+.cplinv-mod{
+  font-family:var(--f-mono);font-size:8.5px;color:var(--muted);
+  padding:1px 5px;background:rgba(255,255,255,.03);border-radius:3px;
+  margin-left:auto;flex-shrink:0;white-space:nowrap;
 }
-.radar-scroll{overflow-x:auto;}
-.radar-table{min-width:560px;width:100%;}
-.radar-thead,.radar-tr{
-  display:grid;
-  grid-template-columns:1.5fr 1fr 1fr 1.1fr 1fr;
-  border-bottom:1px solid var(--border);
+
+/* ── MODULE GRID ── */
+.mod-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:1px;border:1px solid var(--border);border-radius:var(--rl);
+  overflow:hidden;background:var(--border);
 }
-.radar-tr:last-child{border-bottom:none;}
-.radar-tr:hover{background:rgba(255,255,255,.012);}
-.radar-th{
-  padding:10px 18px;font-family:var(--f-mono);font-size:9.5px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
-  border-right:1px solid var(--border);
+.mod-col{background:var(--surface);padding:22px 16px;}
+.mod-col-header{margin-bottom:14px;}
+.mod-col-title{font-family:var(--f-display);font-size:13px;font-weight:800;color:var(--text);margin-bottom:6px;}
+.mod-col-badge{
+  display:inline-block;font-family:var(--f-mono);font-size:8px;font-weight:700;
+  padding:2px 7px;border-radius:3px;letter-spacing:.06em;text-transform:uppercase;
 }
-.radar-th:last-child{border-right:none;}
-.radar-td{padding:12px 18px;font-size:12px;color:var(--sub);border-right:1px solid var(--border);}
-.radar-td:first-child{font-weight:600;color:var(--text);}
-.radar-td:last-child{border-right:none;}
-.radar-faixa{font-family:var(--f-mono);font-size:12px;font-weight:700;color:var(--gold);}
-.radar-dots{display:flex;gap:3px;align-items:center;}
-.radar-dot{width:6px;height:6px;border-radius:50%;}
-.radar-dot.on{background:var(--gold);}
-.radar-dot.off{background:rgba(255,255,255,.07);}
-.radar-note{
-  padding:10px 22px;font-size:11px;color:var(--muted);
-  font-family:var(--f-mono);border-top:1px solid var(--border);font-style:italic;
+.mod-items{display:flex;flex-direction:column;gap:3px;}
+.mod-item{
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--f-mono);font-size:9.5px;color:var(--muted);
+  padding:4px 7px;border-radius:4px;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);
+  transition:background .12s;
 }
+.mod-item:hover{background:rgba(255,255,255,.04);}
+.mod-item-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
 
 /* ── TIER SECTION ── */
 .tier-section{
@@ -471,22 +492,17 @@ section{padding:96px 0;}
 .compare-cell.bad{color:rgba(248,113,113,.65);}
 .compare-cell.good{color:var(--sub);}
 
-/* ── PRICING JOURNEY STRIP ── */
+/* ── PRICING JOURNEY + PLANS ── */
 .pricing-journey{
-  display:flex;align-items:center;justify-content:center;
-  margin-bottom:52px;gap:0;
+  display:flex;align-items:center;justify-content:center;margin-bottom:52px;
 }
 .pj-step{text-align:center;padding:0 22px;}
-.pj-step-num{
-  font-family:var(--f-mono);font-size:9px;font-weight:700;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;
-}
+.pj-step-num{font-family:var(--f-mono);font-size:9px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
 .pj-step-name{font-size:13.5px;font-weight:600;color:var(--muted);}
 .pj-step.active .pj-step-num{color:var(--gold);}
 .pj-step.active .pj-step-name{color:var(--text);}
 .pj-arr{color:var(--muted);font-size:14px;opacity:.25;flex-shrink:0;}
-
-/* ── PRICING PLANS ── */
 .plans{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
 .plan{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
   padding:24px 20px;display:flex;flex-direction:column;transition:all .2s;position:relative;}
@@ -521,7 +537,7 @@ section{padding:96px 0;}
 .plan-cta.green-btn{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.2);}
 .plan-cta.green-btn:hover{background:rgba(34,197,94,.16);}
 
-/* ── "TRANSPARENTE POR PADRÃO" TRUST GRID ── */
+/* ── TRUST "TRANSPARENTE POR PADRÃO" ── */
 .trust-grid{
   display:grid;grid-template-columns:1fr 1fr;
   gap:1px;border:1px solid var(--border);border-radius:var(--rl);
@@ -535,17 +551,6 @@ section{padding:96px 0;}
 }
 .trust-blk-title{font-size:14.5px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4;}
 .trust-blk-desc{font-size:13px;color:var(--muted);line-height:1.65;}
-
-/* ── OBJECTION ── */
-.obj-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;}
-.obj-items{display:flex;flex-direction:column;gap:8px;}
-.obj-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
-  padding:14px 18px;display:flex;align-items:center;gap:14px;transition:border-color .15s;}
-.obj-item:hover{border-color:rgba(212,175,55,.14);}
-.obj-mark{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0;}
-.obj-text{font-size:13.5px;color:var(--sub);flex:1;line-height:1.45;}
-.obj-text strong{color:var(--text);}
-.obj-cost{font-family:var(--f-mono);font-size:10.5px;font-weight:700;color:var(--red);white-space:nowrap;}
 
 /* ── FAQ ── */
 .faq-list{display:flex;flex-direction:column;gap:6px;max-width:720px;margin:0 auto;}
@@ -578,8 +583,13 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
 .cta-final h2{font-family:var(--f-display);font-size:44px;font-weight:800;
   letter-spacing:-2.5px;color:var(--text);margin-bottom:18px;line-height:1.1;}
 .cta-final h2 em{color:var(--gold);font-style:normal;}
-.cta-final-sub{font-size:17px;color:var(--sub);margin-bottom:40px;max-width:480px;
+.cta-final-sub{font-size:17px;color:var(--sub);margin-bottom:16px;max-width:520px;
   margin-left:auto;margin-right:auto;line-height:1.65;}
+.cta-final-promise{
+  font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.06em;
+  color:var(--muted);margin-bottom:36px;
+}
+.cta-final-promise em{color:var(--gold);font-style:normal;}
 .final-trust{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-top:20px;}
 .trust-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);}
 .trust-ck{color:var(--green);font-size:12px;}
@@ -594,8 +604,13 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
 .footer-copy{font-size:11.5px;color:var(--muted);}
 
 /* ── RESPONSIVE ── */
+@media(max-width:1024px){
+  .intel-flow{flex-direction:column;}
+  .intel-sep{width:auto;height:18px;padding:0;align-items:center;}
+  .intel-arrow{transform:rotate(90deg);}
+}
 @media(max-width:960px){
-  .hero-inner,.obj-grid{grid-template-columns:1fr;}
+  .hero-inner{grid-template-columns:1fr;}
   .plans{grid-template-columns:1fr 1fr;}
   .tier-cards{grid-template-columns:1fr;}
   .compare-head,.compare-row{grid-template-columns:1fr 1fr;}
@@ -611,28 +626,34 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
   .section-title{font-size:32px;}
   .pp-metrics{grid-template-columns:repeat(3,1fr);}
   .pp-metrics .pp-m:nth-child(4),.pp-metrics .pp-m:nth-child(5){border-top:1px solid var(--border);}
-  .diff-cols{grid-template-columns:1fr;}
-  .diff-col-sep{display:none;}
-  .diff-section{padding:60px 0;}
-  .diff-intro{margin-bottom:36px;}
-  .dash-bottom{grid-template-columns:1fr;}
-  .dash-block.bd{border-right:none;border-bottom:1px solid var(--border);}
+  .cplinv-wrapper{grid-template-columns:1fr;}
+  .jrn-track{grid-template-columns:1fr;gap:0;}
+  .jrn-track::before{display:none;}
+  .jrn-step{
+    display:grid;grid-template-columns:30px 1fr;gap:16px;align-items:start;
+    text-align:left;margin-bottom:20px;padding:0;
+  }
+  .jrn-step:last-child{margin-bottom:0;}
+  .jrn-badge{margin:0;}
+  .mod-grid{grid-template-columns:1fr 1fr;}
+  .fdb-body{grid-template-columns:110px 1fr;}
 }
 @media(max-width:768px){
   .hero{padding:104px 0 72px;}
   .hero h1{font-size:34px;letter-spacing:-1.8px;}
-  .hero-sub{font-size:16px;}
+  .hero-sub{font-size:15.5px;}
   .hero-ctas{flex-direction:column;align-items:flex-start;}
-  .dash-metrics{grid-template-columns:1fr 1fr 1fr;}
   .pp-metrics{grid-template-columns:1fr 1fr;}
   .pp-metrics .pp-m:nth-child(5){grid-column:span 2;border-right:none;border-top:1px solid var(--border);}
   .pp-insights{grid-template-columns:1fr;}
   .pp-insight{border-right:none;border-bottom:1px solid var(--border);}
   .pp-insight:last-child{border-bottom:none;}
   .section-title{font-size:28px;letter-spacing:-1.2px;}
-  .obj-grid{gap:36px;}
   .trust-grid{grid-template-columns:1fr;}
   .pricing-journey{flex-wrap:wrap;gap:8px;}
+  .fdb-body{grid-template-columns:1fr;}
+  .fdb-sidebar{display:none;}
+  .hero-float{right:8px;bottom:8px;}
 }
 @media(max-width:560px){
   .plans{grid-template-columns:1fr;}
@@ -641,77 +662,100 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
   .cta-primary.lg{font-size:16px;padding:16px 28px;}
   .trust-row{gap:5px;}
   .tc{font-size:11px;}
-  .dash-metrics{grid-template-columns:1fr 1fr;}
-  .dash-m:last-child{grid-column:span 2;border-top:1px solid var(--border);border-right:none;}
   .tier-card{padding:24px 20px;}
   .cta-final h2{font-size:28px;letter-spacing:-.8px;}
   .compare-head,.compare-row{grid-template-columns:1fr 1fr;}
   .pj-arr{display:none;}
+  .mod-grid{grid-template-columns:1fr;}
+  .cplinv-item{grid-template-columns:60px 1fr;}
 }
 `
 
-const SPARK_DATA = [
-  { h: 42, c: 'rgba(34,197,94,.5)' },
-  { h: 50, c: 'rgba(34,197,94,.58)' },
-  { h: 58, c: 'rgba(251,191,36,.5)' },
-  { h: 66, c: 'rgba(251,191,36,.62)' },
-  { h: 75, c: 'rgba(251,191,36,.78)' },
-  { h: 83, c: 'rgba(248,113,113,.68)' },
-  { h: 92, c: 'rgba(248,113,113,.82)' },
-  { h: 100, c: '#F87171' },
+/* ─── DATA ─── */
+
+const FDB_NAV: { group: string; items: { label: string; active?: boolean }[] }[] = [
+  { group: 'Início', items: [{ label: 'Visão Geral', active: true }] },
+  { group: 'Diagnóstico', items: [
+    { label: 'Análise Profunda' }, { label: 'Saúde do Negócio' },
+    { label: 'Funil de Vendas' }, { label: 'Resultados' },
+  ]},
+  { group: 'Campanhas', items: [
+    { label: 'Meta & Google Ads' }, { label: 'Audiências' },
+    { label: 'Alocador de Verba' }, { label: 'Mix de Canais' },
+  ]},
+  { group: 'Plano de Ação', items: [
+    { label: 'Estratégia' }, { label: 'Ações Prioritárias' },
+  ]},
+  { group: 'Inteligência', items: [
+    { label: 'TrafficBrain IA' }, { label: 'Pesquisa de Mercado' }, { label: 'Histórico' },
+  ]},
+  { group: 'Conteúdo', items: [
+    { label: 'Concorrentes' }, { label: 'Criar Conteúdo' },
+    { label: 'Persona' }, { label: 'Otim. Conversão' },
+  ]},
 ]
 
-const DIFF_COLS = [
+const FDB_METRICS = [
+  { label: 'Saúde do Negócio', val: '74', color: 'a', sub: '/100 · atenção' },
+  { label: 'Eficiência Campanha', val: '61%', color: 'r', sub: 'abaixo da meta' },
+  { label: 'Gargalos no Funil', val: '2', color: 'r', sub: 'etapas críticas' },
+  { label: 'Audiências Potenciais', val: '3', color: 'g', sub: 'alto potencial' },
+  { label: 'Verba Sugerida', val: 'R$8.4k', color: 'gold', sub: 'redistribuir' },
+  { label: 'Ações Sugeridas', val: '5', color: 'gold', sub: 'prioritárias' },
+]
+
+const FDB_ACTIONS = [
+  'Revisar audiência fria no Meta Ads',
+  'Reequilibrar verba entre canais',
+  'Ajustar promessa da landing page',
+  'Criar variações de criativo',
+  'Analisar concorrentes diretos',
+]
+
+const INTEL_BLOCKS = [
   {
     num: '01',
-    state: 'Sem referência',
-    headline: <>CPL é só um <em>número.</em></>,
-    desc: 'R$68 pode parecer aceitável ou caro dependendo do ponto de vista. Sem uma faixa esperada por nicho e região, qualquer valor parece defensável.',
+    title: 'Diagnóstico do Negócio',
+    color: '#38BDF8',
+    modules: ['Visão Geral', 'Análise Profunda', 'Saúde do Negócio', 'Resultados'],
+    desc: 'Entenda o estado atual do negócio, os principais sinais de performance e onde existem possíveis gargalos de crescimento.',
   },
   {
     num: '02',
-    state: 'Com referência',
-    headline: <>CPL vira <em>contexto.</em></>,
-    desc: 'Com a faixa estimada de R$28–38, R$68 deixa de ser um número e vira um desvio de eficiência de +79% — com potencial desperdício mensurável.',
+    title: 'Campanhas & Verba',
+    color: '#D4AF37',
+    modules: ['Meta & Google Ads', 'Alocador de Verba', 'Mix de Canais'],
+    desc: 'Analise canais, distribuição de investimento e sinais de eficiência para decidir onde manter, reduzir ou escalar.',
   },
   {
     num: '03',
-    state: 'Com contexto',
-    headline: <>Otimização vira <em>prioridade.</em></>,
-    desc: 'Com desvio claro e prioridade sugerida, a pergunta muda de "o que testamos?" para "o que revisar antes de escalar o orçamento?"',
-  },
-]
-
-const RADAR_ROWS = [
-  { nicho: 'Odontologia', regiao: 'São Paulo', canal: 'Meta Ads', faixa: 'R$28–38', dots: 3 },
-  { nicho: 'Saúde e Estética', regiao: 'Rio de Janeiro', canal: 'Meta Ads', faixa: 'R$32–46', dots: 4 },
-  { nicho: 'Imobiliário', regiao: 'São Paulo', canal: 'Google Ads', faixa: 'R$48–72', dots: 5 },
-  { nicho: 'Educação', regiao: 'Nacional', canal: 'Meta Ads', faixa: 'R$18–28', dots: 2 },
-  { nicho: 'Jurídico', regiao: 'São Paulo', canal: 'Google Ads', faixa: 'R$55–85', dots: 5 },
-  { nicho: 'Fitness', regiao: 'Nacional', canal: 'Meta Ads', faixa: 'R$14–22', dots: 2 },
-]
-
-const TRUST_BLOCKS = [
-  {
-    num: '01',
-    title: 'Referências estimadas, não promessas absolutas',
-    desc: 'As faixas de CPL são estruturadas a partir de padrões estimados por nicho, região e canal. Não são dados coletados de terceiros nem auditados externamente.',
-  },
-  {
-    num: '02',
-    title: 'Diagnóstico inicial, não auditoria definitiva',
-    desc: 'O diagnóstico é um ponto de partida para identificar desvios evidentes — não uma conclusão sobre o desempenho do seu negócio.',
-  },
-  {
-    num: '03',
-    title: 'Mockups identificados como demonstrativos',
-    desc: 'Todos os painéis e dados exibidos nesta página são fictícios e identificados com a etiqueta "Demonstração".',
+    title: 'Audiência & Funil',
+    color: '#A78BFA',
+    modules: ['Audiências', 'Funil de Vendas', 'Persona do Cliente'],
+    desc: 'Conecte público, intenção e etapas do funil para identificar se o problema está na atração, conversão ou qualificação.',
   },
   {
     num: '04',
-    title: 'Contexto de decisão, não garantia de resultado',
-    desc: 'A ELYON NOUS fornece contexto para decisões mais informadas. Não garantimos melhora de resultado ao ajustar campanhas.',
+    title: 'Mercado & Conteúdo',
+    color: '#22C55E',
+    modules: ['Concorrentes', 'Pesquisa de Mercado', 'Criar Conteúdo', 'Otim. de Conversão'],
+    desc: 'Use contexto externo e inteligência criativa para gerar hipóteses de posicionamento, oferta, criativos e páginas.',
   },
+  {
+    num: '05',
+    title: 'Plano de Ação',
+    color: '#F87171',
+    modules: ['Estratégia', 'Ações Prioritárias', 'Relatórios', 'Automação de Rotina'],
+    desc: 'Transforme diagnóstico em próximos passos, organize prioridades e acompanhe a evolução com relatórios.',
+  },
+]
+
+const JOURNEY_STEPS = [
+  { num: '01', title: 'Diagnosticar', desc: 'Mapeie saúde do negócio, campanhas, funil e resultados.' },
+  { num: '02', title: 'Entender o contexto', desc: 'Cruze sinais de audiência, mercado, concorrência e canais.' },
+  { num: '03', title: 'Priorizar', desc: 'Identifique o que tem maior impacto antes de executar.' },
+  { num: '04', title: 'Executar melhor', desc: 'Gere ações, conteúdos, relatórios e rotinas com apoio da IA.' },
+  { num: '05', title: 'Aprender', desc: 'Use histórico de aprendizado para melhorar as próximas decisões.' },
 ]
 
 const STEPS = [
@@ -729,26 +773,69 @@ const STEPS = [
   },
 ]
 
+const CPL_INV = [
+  { area: 'Audiência', question: 'O público está alinhado com a oferta?', mod: 'Audiências' },
+  { area: 'Funil', question: 'Os leads avançam ou travam nas etapas?', mod: 'Funil de Vendas' },
+  { area: 'Canal', question: 'A verba está distribuída no canal certo?', mod: 'Alocador de Verba' },
+  { area: 'Criativo', question: 'A mensagem gera intenção de conversão?', mod: 'Otim. de Conversão' },
+  { area: 'Mercado', question: 'O contexto externo está pressionando o CPL?', mod: 'Concorrentes' },
+  { area: 'Página', question: 'A conversão sustenta o tráfego recebido?', mod: 'Pesquisa de Mercado' },
+  { area: 'Estratégia', question: 'Qual ajuste tem maior impacto primeiro?', mod: 'Ações Prioritárias' },
+]
+
+const MODULE_GROUPS = [
+  {
+    group: 'Diagnóstico',
+    color: '#38BDF8',
+    bgColor: 'rgba(56,189,248,.08)',
+    modules: ['Visão Geral', 'Análise Profunda', 'Saúde do Negócio', 'Funil de Vendas', 'Resultados'],
+  },
+  {
+    group: 'Campanhas',
+    color: '#D4AF37',
+    bgColor: 'rgba(212,175,55,.08)',
+    modules: ['Meta & Google Ads', 'Audiências', 'Alocador de Verba', 'Mix de Canais'],
+  },
+  {
+    group: 'Inteligência',
+    color: '#A78BFA',
+    bgColor: 'rgba(167,139,250,.08)',
+    modules: ['TrafficBrain IA', 'Pesquisa de Mercado', 'Histórico de Aprendizado', 'Automação de Rotina'],
+  },
+  {
+    group: 'Conteúdo & Conversão',
+    color: '#22C55E',
+    bgColor: 'rgba(34,197,94,.08)',
+    modules: ['Concorrentes', 'Criar Conteúdo', 'Persona do Cliente', 'Otim. de Conversão com IA'],
+  },
+  {
+    group: 'Plano de Ação',
+    color: '#F87171',
+    bgColor: 'rgba(248,113,113,.08)',
+    modules: ['Estratégia', 'Ações Prioritárias', 'Relatórios'],
+  },
+]
+
 const COMPARE_ROWS = [
-  { topic: 'Avaliação do CPL', bad: 'No escuro, sem referência externa', good: 'Comparado com faixa estimada por nicho' },
-  { topic: 'Base de decisão', bad: 'Histórico interno apenas', good: 'Comparativo por segmento e região' },
-  { topic: 'Justificativa de ajustes', bad: 'Baseada em feeling e teste', good: 'Embasada em desvio percentual estimado' },
-  { topic: 'Identificação de desvio', bad: 'Percebido tarde, após perda de verba', good: 'Identificado antes de escalar orçamento' },
+  { topic: 'Diagnóstico', bad: 'Métricas isoladas sem contexto', good: 'Visão integrada: negócio, funil, campanhas' },
+  { topic: 'Decisão de verba', bad: 'Baseada em feeling ou histórico interno', good: 'Apoiada por análise de eficiência por canal' },
+  { topic: 'Identificação de gargalo', bad: 'Percebido tarde, após perda de resultado', good: 'Mapeado antes de escalar investimento' },
+  { topic: 'Próximo passo', bad: 'Lista de tarefas sem prioridade clara', good: 'Ações priorizadas por impacto estimado' },
 ]
 
 const PLANS = [
   {
     name: 'Diagnóstico',
-    target: 'Para quem quer entender se o CPL está fora da faixa esperada.',
+    target: 'Para quem quer um primeiro sinal de ineficiência sem custo.',
     price: null,
-    period: 'Gratuito para sempre',
+    period: 'Gratuito',
     cta: 'Fazer diagnóstico grátis',
     ctaStyle: 'green-btn',
     features: [
-      'CPL de referência para o seu nicho',
-      'Desvio percentual do seu atual',
-      'Estimativa de desperdício mensal',
-      'Prioridade de ajuste',
+      'Diagnóstico inicial de CPL',
+      'Faixa esperada estimada por nicho',
+      'Desvio e prioridade sugerida',
+      'Sem conexão de conta · Sem cartão',
     ],
     href: '/sign-up',
   },
@@ -760,16 +847,17 @@ const PLANS = [
     cta: 'Começar acompanhamento',
     ctaStyle: 'secondary',
     features: [
-      'Tudo do Diagnóstico',
-      'Monitoramento contínuo de CPL',
-      'Alertas automáticos de desvio',
-      '1 conta conectada',
+      'Visão geral do negócio',
+      'Saúde do negócio e campanhas',
+      'Resultados e monitoramento',
+      'Relatórios básicos',
+      'Plano de ação inicial',
     ],
     href: '/checkout?plan=individual',
   },
   {
     name: 'Profissional',
-    target: 'Para gestores de tráfego e agências com múltiplos clientes.',
+    target: 'Para gestores e agências com múltiplos clientes.',
     price: 'R$997',
     period: '/mês',
     cta: 'Usar com clientes',
@@ -777,65 +865,85 @@ const PLANS = [
     featured: true,
     badge: 'Ideal para agências',
     features: [
-      'Tudo da Plataforma',
       'Até 8 clientes',
-      'Conexão Meta Ads + Google Ads',
-      'Auditoria automática de contas',
+      'TrafficBrain IA',
+      'Pesquisa de mercado',
+      'Audiências e mix de canais',
+      'Conteúdo e conversão com IA',
       'Relatórios em PDF',
     ],
     href: '/checkout?plan=profissional',
   },
   {
     name: 'Avançado',
-    target: 'Para operações maiores com múltiplas contas e acompanhamento avançado.',
+    target: 'Para operações maiores com múltiplas contas e inteligência contínua.',
     price: 'R$2.997',
     period: '/mês',
     cta: 'Falar sobre operação',
     ctaStyle: 'secondary',
     features: [
-      'Tudo do Profissional',
       'Até 15 clientes',
+      'Automação de rotina',
+      'Histórico de aprendizado',
+      'Inteligência contínua por cliente',
       'Múltiplas contas por plataforma',
       'Acesso à API',
-      'Suporte prioritário',
     ],
     href: 'mailto:oi@elyonnous.com?subject=Plano Avançado',
   },
 ]
 
-const OBJECTIONS = [
-  { text: <><strong>Agência sem referência de nicho</strong> — cobra sem saber a faixa esperada</>, cost: '~R$2.000/mês' },
-  { text: <><strong>Planilhas manuais</strong> — sempre atrasadas, propensas a erro</>, cost: 'Horas/semana' },
-  { text: <><strong>Tentativa e erro</strong> — cada teste consome verba real</>, cost: 'Variável' },
-  { text: <><strong>Ferramentas genéricas</strong> — sem comparativos por nicho e região</>, cost: 'R$300–800/mês' },
+const TRUST_BLOCKS = [
+  {
+    num: '01',
+    title: 'Referências estimadas, não promessas absolutas',
+    desc: 'As faixas de CPL são estruturadas a partir de padrões estimados por nicho, região e canal. Não são dados auditados externamente.',
+  },
+  {
+    num: '02',
+    title: 'Diagnóstico inicial, não auditoria definitiva',
+    desc: 'O diagnóstico é um ponto de partida para identificar desvios evidentes — não uma conclusão sobre o desempenho do seu negócio.',
+  },
+  {
+    num: '03',
+    title: 'Mockups identificados como demonstrativos',
+    desc: 'Todos os painéis e dados exibidos nesta página são fictícios e identificados com a etiqueta "Demonstração".',
+  },
+  {
+    num: '04',
+    title: 'Contexto de decisão, não garantia de resultado',
+    desc: 'A ELYON NOUS organiza sinais e sugere prioridades. Não garantimos melhora de resultado ao ajustar campanhas.',
+  },
 ]
 
 const FAQ_ITEMS = [
   {
-    q: 'O diagnóstico é gratuito mesmo?',
-    a: 'Sim, sem cartão e sem compromisso. Você informa seu nicho, região e CPL atual e recebe o resultado imediatamente.',
+    q: 'O diagnóstico de CPL é gratuito?',
+    a: 'Sim, sem cartão e sem compromisso. Você informa nicho, região e CPL atual e recebe o resultado imediatamente.',
   },
   {
-    q: 'Preciso conectar minha conta do Google Ads ou Meta Ads?',
-    a: 'Não. O diagnóstico é manual — você informa os dados diretamente. A conexão com plataformas de anúncios é um recurso dos planos pagos.',
+    q: 'Quais módulos estão disponíveis na plataforma?',
+    a: 'A ELYON NOUS cobre diagnóstico do negócio, campanhas Meta e Google Ads, audiências, funil de vendas, alocação de verba, pesquisa de mercado, conteúdo, concorrentes, plano de ação e histórico de aprendizado. Os módulos disponíveis variam por plano.',
   },
   {
-    q: 'De onde vêm as faixas de referência?',
-    a: 'As faixas são estruturadas a partir de padrões estimados por nicho, região e tipo de mídia. Não são dados coletados de terceiros nem auditados externamente. São estimativas para orientar — não para substituir uma análise completa.',
+    q: 'O que é o TrafficBrain IA?',
+    a: 'É o módulo de inteligência da ELYON que organiza alertas proativos, análises de contexto e sugestões de prioridade com base nos dados da conta. Disponível nos planos Profissional e Avançado.',
   },
   {
     q: 'A ELYON NOUS substitui uma agência ou gestor de tráfego?',
-    a: 'Não. A ELYON NOUS fornece faixas de referência de CPL — o que faltava para embasar decisões. Gestores e agências usam a plataforma junto com sua operação.',
+    a: 'Não. A ELYON organiza sinais, indica possíveis gargalos e sugere prioridades — contexto para decisões mais informadas. Gestores e agências usam a plataforma junto com sua operação.',
   },
   {
-    q: 'O resultado é exato ou estimado?',
-    a: 'Estimado. O diagnóstico indica se seu CPL está dentro ou fora da faixa esperada para o seu segmento. É um ponto de comparação para identificar possíveis desvios de eficiência — não um dado exato do seu negócio.',
+    q: 'De onde vêm as faixas de referência de CPL?',
+    a: 'São estimativas estruturadas por nicho, região e tipo de mídia. Não são dados coletados de terceiros nem auditados externamente. São um ponto de comparação para identificar possíveis desvios de eficiência.',
   },
   {
-    q: 'Posso usar para clientes da minha agência?',
-    a: 'Sim. O plano Profissional é feito exatamente para isso: diagnósticos e monitoramento para múltiplos clientes em um único painel.',
+    q: 'Os resultados são garantidos?',
+    a: 'Não. A ELYON ajuda a identificar onde agir e a organizar prioridades. O resultado depende da execução, do negócio e de variáveis que a plataforma não controla.',
   },
 ]
+
+/* ─── COMPONENT ─── */
 
 export default function LandingPage() {
   const ctaHref = '/sign-in'
@@ -853,13 +961,15 @@ export default function LandingPage() {
           ELYON NOUS
         </a>
         <div className="nav-links">
-          <a href="#how" className="nav-link">Como funciona</a>
+          <a href="#platform" className="nav-link">Plataforma</a>
+          <a href="#how" className="nav-link">Diagnóstico</a>
+          <a href="#modules" className="nav-link">Módulos</a>
           <a href="#pricing" className="nav-link">Planos</a>
           <a href="#faq" className="nav-link">FAQ</a>
         </div>
         <div className="nav-actions">
           <a href={ctaHref} className="nav-login">Entrar</a>
-          <a href={ctaHref} className="nav-cta" aria-label="Fazer diagnóstico gratuito de CPL">Diagnóstico grátis</a>
+          <a href={ctaHref} className="nav-cta" aria-label="Fazer diagnóstico gratuito">Diagnóstico grátis</a>
         </div>
       </nav>
 
@@ -872,138 +982,107 @@ export default function LandingPage() {
             <div>
               <div className="hero-eyebrow" aria-hidden="true">
                 <span className="blink" />
-                Diagnóstico gratuito disponível agora
+                Inteligência de crescimento para marketing e tráfego
               </div>
-              <p className="hero-pos">Para gestores, agências e empresas que investem em mídia paga.</p>
               <h1 id="hero-h1">
-                Antes de escalar verba,<br />
-                descubra se seu CPL<br />
-                <em>já está fora da faixa.</em>
+                Comece pelo diagnóstico.<br />
+                Decida o próximo passo<br />
+                <em>com inteligência.</em>
               </h1>
               <p className="hero-sub">
-                A ELYON NOUS compara seu CPL com faixas de referência estimadas por nicho, região e plataforma — e mostra desvio, potencial desperdício e prioridade de ajuste.
+                A ELYON NOUS analisa sinais do negócio, campanhas, audiência, funil, mercado e conteúdo para ajudar empresas, gestores e agências a identificar gargalos e priorizar as próximas ações.
               </p>
               <div className="hero-ctas">
                 <a href={ctaHref} className="cta-primary" aria-label="Fazer diagnóstico gratuito de CPL — sem cartão">
                   Fazer diagnóstico grátis →
                 </a>
-                <a href="#how" className="cta-ghost">Ver como funciona</a>
+                <a href="#platform" className="cta-ghost">Conhecer a plataforma</a>
               </div>
-              <div className="trust-row" aria-label="Garantias do diagnóstico">
+              <div className="trust-row" aria-label="Garantias">
                 <span className="tc"><span className="tc-check">✓</span> Sem cartão</span>
                 <span className="tc"><span className="tc-check">✓</span> Resultado em minutos</span>
-                <span className="tc"><span className="tc-check">✓</span> Meta Ads e Google Ads</span>
+                <span className="tc"><span className="tc-check">✓</span> Tráfego, audiência e funil</span>
                 <span className="tc"><span className="tc-check">✓</span> Sem compromisso</span>
               </div>
             </div>
 
-            {/* Right: CPL Intelligence dashboard — macOS window chrome */}
+            {/* Right: full platform dashboard mockup */}
             <div className="hero-right">
               <div
                 className="dash-card"
                 role="img"
-                aria-label="Exemplo de diagnóstico de CPL — Odontologia, São Paulo, Meta Ads"
+                aria-label="Visão geral da plataforma ELYON NOUS — dados demonstrativos"
               >
-                {/* Window chrome */}
-                <div className="hd-chrome" aria-hidden="true">
-                  <div className="hd-dots">
-                    <div className="hd-dot hd-dot-r" />
-                    <div className="hd-dot hd-dot-y" />
-                    <div className="hd-dot hd-dot-g" />
+                <div className="fdb-chrome" aria-hidden="true">
+                  <div className="fdb-dots">
+                    <div className="fdb-dot fdb-dot-r" />
+                    <div className="fdb-dot fdb-dot-y" />
+                    <div className="fdb-dot fdb-dot-g" />
                   </div>
-                  <span className="hd-chrome-title">CPL Intelligence · v2.0</span>
-                  <span className="dash-live">
+                  <span className="fdb-chrome-title">ELYON NOUS · Visão Geral</span>
+                  <span className="fdb-live">
                     <span className="blink" />
                     Ao vivo
                   </span>
                 </div>
 
-                {/* Sidebar + main */}
-                <div className="hd-body">
-                  <div className="hd-sidebar" aria-hidden="true">
-                    <div className="hd-nav-sq active" />
-                    <div className="hd-nav-sq" />
-                    <div className="hd-nav-sq" />
-                    <div className="hd-nav-sq" />
-                  </div>
-
-                  <div className="hd-main">
-                    {/* Sparkline history */}
-                    <div className="hd-spark" aria-hidden="true">
-                      <span className="hd-spark-label">Histórico CPL</span>
-                      <div className="hd-sparkbars">
-                        {SPARK_DATA.map((s, i) => (
+                <div className="fdb-body">
+                  {/* Sidebar nav */}
+                  <div className="fdb-sidebar" aria-hidden="true">
+                    {FDB_NAV.map((g) => (
+                      <div className="fdb-nav-group" key={g.group}>
+                        <div className="fdb-nav-group-label">{g.group}</div>
+                        {g.items.map((item) => (
                           <div
-                            key={i}
-                            className="hd-sparkbar"
-                            style={{ height: `${s.h}%`, background: s.c }}
-                          />
+                            key={item.label}
+                            className={`fdb-nav-item${item.active ? ' active' : ''}`}
+                          >
+                            <div className={`fdb-nav-dot${item.active ? ' active' : ''}`} />
+                            {item.label}
+                          </div>
                         ))}
                       </div>
-                    </div>
+                    ))}
+                  </div>
 
-                    <div className="dash-meta">
-                      <span className="dash-chip">Odontologia</span>
-                      <span className="dash-chip">São Paulo</span>
-                      <span className="dash-chip gold">Meta Ads</span>
+                  {/* Main content */}
+                  <div className="fdb-main">
+                    <div className="fdb-main-header" aria-hidden="true">
+                      <div className="fdb-main-title">
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--green)', display: 'inline-block' }} />
+                        Visão Geral · Semana 21 · 2026
+                      </div>
+                      <span className="fdb-badge">Demonstração</span>
                     </div>
-
-                    <div className="dash-alert" role="status">
-                      <span aria-hidden="true">⚠</span>
-                      CPL acima da faixa esperada · +79% de desvio
-                    </div>
-
-                    <div className="dash-metrics">
-                      <div className="dash-m">
-                        <div className="dash-m-label">CPL atual</div>
-                        <div className="dash-m-val r">R$68</div>
-                        <div className="dash-m-delta">+79%</div>
+                    <div className="fdb-content" aria-hidden="true">
+                      <div className="fdb-overview-grid">
+                        {FDB_METRICS.map((m) => (
+                          <div className="fdb-block" key={m.label}>
+                            <div className="fdb-block-label">{m.label}</div>
+                            <div className={`fdb-block-val ${m.color}`}>{m.val}</div>
+                            <div className="fdb-block-sub">{m.sub}</div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="dash-m">
-                        <div className="dash-m-label">Faixa esperada</div>
-                        <div className="dash-m-val g">R$28–38</div>
-                        <div className="dash-m-sub">estimada</div>
-                      </div>
-                      <div className="dash-m">
-                        <div className="dash-m-label">Est. desperdício</div>
-                        <div className="dash-m-val a">R$4.200</div>
-                        <div className="dash-m-sub">/mês</div>
-                      </div>
-                    </div>
-
-                    <div className="dash-bars">
-                      <div className="dash-bars-lbl">Comparativo CPL</div>
-                      <div className="bar-row">
-                        <span className="bar-lbl">Ideal</span>
-                        <div className="bar-track"><div className="bar-fill g" style={{ width: '50%' }} /></div>
-                        <span className="bar-val g">R$34</span>
-                      </div>
-                      <div className="bar-row">
-                        <span className="bar-lbl">Atual</span>
-                        <div className="bar-track"><div className="bar-fill r" style={{ width: '100%' }} /></div>
-                        <span className="bar-val r">R$68</span>
-                      </div>
-                    </div>
-
-                    <div className="dash-bottom">
-                      <div className="dash-block bd">
-                        <div className="dash-block-lbl gold">Insight</div>
-                        <p className="dash-block-text">CPL estimado acima da faixa de referência para o segmento odontológico de São Paulo.</p>
-                      </div>
-                      <div className="dash-block">
-                        <div className="dash-block-lbl blue">Próxima ação →</div>
-                        <p className="dash-block-text">Revisar oferta e segmentação antes de escalar orçamento.</p>
+                      <div className="fdb-actions">
+                        <div className="fdb-actions-label">Próximas ações sugeridas</div>
+                        {FDB_ACTIONS.map((a, i) => (
+                          <div className="fdb-action-item" key={i}>
+                            <span className="fdb-action-num">{String(i + 1).padStart(2, '0')}</span>
+                            <span className="fdb-action-text">{a}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Floating desvio card */}
+              {/* Floating contextual card */}
               <div className="hero-float" aria-hidden="true">
-                <div className="hero-float-label">Desvio detectado</div>
-                <div className="hero-float-val">+79%</div>
-                <div className="hero-float-sub">acima da faixa estimada</div>
+                <div className="hero-float-label">Ações prioritárias</div>
+                <div className="hero-float-val">5</div>
+                <div className="hero-float-sub">sugeridas esta semana</div>
               </div>
             </div>
 
@@ -1011,33 +1090,36 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── A DIFERENÇA ESTÁ NA REFERÊNCIA ── */}
-      <div className="diff-section" aria-labelledby="diff-heading">
+      {/* ── UMA INTELIGÊNCIA QUE CONECTA OS PONTOS ── */}
+      <div className="intel-section" id="platform" aria-labelledby="intel-heading">
         <div className="wrap">
-          <div className="diff-intro">
-            <div className="eyebrow c" style={{ marginBottom: 16 }}>A diferença está na referência</div>
-            <p id="diff-heading" className="diff-intro-text">
-              Você investe em anúncios. Os leads chegam.<br />
-              Mas sem saber se o CPL está dentro da faixa esperada,<br />
-              <em>otimizar é trabalhar</em> <strong>sem parâmetro.</strong>
-            </p>
-          </div>
+          <div className="eyebrow c">Uma inteligência que conecta os pontos</div>
+          <h2 id="intel-heading" className="section-title c" style={{ textAlign: 'center', maxWidth: 620, margin: '0 auto 14px' }}>
+            CPL, funil, audiência, verba, criativo e mercado<br />
+            <em>não vivem separados.</em>
+          </h2>
+          <p className="section-sub c" style={{ marginBottom: 48 }}>
+            A ELYON organiza esses sinais para mostrar onde agir primeiro — conectando diagnóstico, campanhas, audiência, conteúdo e plano de ação em uma visão integrada.
+          </p>
 
-          <div className="diff-cols">
-            {DIFF_COLS.flatMap((col, i) => {
+          <div className="intel-flow">
+            {INTEL_BLOCKS.flatMap((block, i) => {
               const el = (
-                <div key={`c${i}`} className="diff-col">
-                  <div className="diff-num">{col.num}</div>
-                  <div className="diff-state">{col.state}</div>
-                  <div className="diff-head">{col.headline}</div>
-                  <p className="diff-desc">{col.desc}</p>
+                <div key={`b${i}`} className="intel-block">
+                  <div className="intel-block-line" style={{ background: block.color, opacity: 0.6 }} />
+                  <div className="intel-num" style={{ color: block.color }}>{block.num}</div>
+                  <div className="intel-title">{block.title}</div>
+                  <div className="intel-modules">
+                    {block.modules.map((m) => (
+                      <span key={m} className="intel-mod-tag">{m}</span>
+                    ))}
+                  </div>
+                  <p className="intel-desc">{block.desc}</p>
                 </div>
               )
               if (i === 0) return [el]
               return [
-                <div key={`s${i}`} className="diff-col-sep">
-                  <span className="diff-arrow">→</span>
-                </div>,
+                <div key={`s${i}`} className="intel-sep"><span className="intel-arrow">→</span></div>,
                 el,
               ]
             })}
@@ -1045,13 +1127,37 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ── COMO FUNCIONA ── */}
+      {/* ── DO DIAGNÓSTICO AO PLANO DE AÇÃO ── */}
+      <div className="jrn-section" aria-labelledby="jrn-heading">
+        <div className="wrap">
+          <div className="eyebrow c">Do diagnóstico ao plano de ação</div>
+          <h2 id="jrn-heading" className="section-title c" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 48px' }}>
+            Uma rotina de decisão para <em>cada semana</em>
+          </h2>
+          <div className="jrn-track">
+            {JOURNEY_STEPS.map((s, i) => (
+              <div className="jrn-step" key={i}>
+                <div className={`jrn-badge${i === 0 ? ' first' : ''}`}>{s.num}</div>
+                <div>
+                  <div className="jrn-title">{s.title}</div>
+                  <p className="jrn-desc">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── COMO FUNCIONA O DIAGNÓSTICO ── */}
       <section style={{ background: 'var(--bg)' }} id="how" aria-labelledby="how-h2">
         <div className="wrap">
-          <div className="eyebrow c">Simples. Direto. Sem conexão de conta.</div>
-          <h2 id="how-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 400, margin: '0 auto 52px' }}>
-            Como funciona o <em>diagnóstico</em>
+          <div className="eyebrow c">Por onde começar</div>
+          <h2 id="how-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 14px' }}>
+            O diagnóstico gratuito é a <em>primeira porta de entrada</em>
           </h2>
+          <p className="section-sub c" style={{ marginBottom: 48 }}>
+            Em menos de 2 minutos, identifique se o seu CPL está dentro da faixa esperada para o seu nicho — sem conectar conta, sem cartão.
+          </p>
           <div className="steps">
             {STEPS.map((s, i) => (
               <div className="step" key={i}>
@@ -1077,11 +1183,11 @@ export default function LandingPage() {
             Clareza suficiente para a <em>próxima decisão</em>
           </h2>
 
-          <div className="product-panel" role="img" aria-label="Exemplo de resultado do diagnóstico de CPL">
+          <div className="product-panel" role="img" aria-label="Exemplo de resultado do diagnóstico de CPL — dados demonstrativos">
             <div className="pp-header">
               <div className="pp-header-title">
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--green)', display: 'inline-block' }} aria-hidden="true" />
-                Resultado do Diagnóstico · Odontologia · São Paulo · Meta Ads
+                Diagnóstico · Odontologia · São Paulo · Meta Ads
               </div>
               <span className="pp-badge">Demonstração</span>
             </div>
@@ -1103,7 +1209,7 @@ export default function LandingPage() {
                 <div className="pp-m-sub">acima da faixa</div>
               </div>
               <div className="pp-m">
-                <div className="pp-m-label">Est. Desperdício</div>
+                <div className="pp-m-label">Est. Ineficiência</div>
                 <div className="pp-m-val a">R$4.200</div>
                 <div className="pp-m-sub">por mês</div>
               </div>
@@ -1134,78 +1240,109 @@ export default function LandingPage() {
 
             <div className="pp-insights">
               <div className="pp-insight">
-                <div className="pp-insight-label gold">Insight principal</div>
+                <div className="pp-insight-label gold">Sinal identificado</div>
                 <p className="pp-insight-text">
-                  CPL estimado acima da faixa de referência para campanhas similares no segmento odontológico de São Paulo. Desvio consistente com criativos sem diferenciação de oferta.
+                  CPL estimado acima da faixa de referência para campanhas similares no segmento odontológico de São Paulo. Possível desvio em oferta ou segmentação.
                 </p>
               </div>
               <div className="pp-insight">
                 <div className="pp-insight-label blue">Próxima ação sugerida</div>
                 <p className="pp-insight-text">
-                  Revisar promessa da oferta e ângulo de segmentação. Testar criativos com foco em resultado específico antes de aumentar orçamento.
+                  Revisar promessa da oferta e ângulo de segmentação. Investigar audiência, funil e criativos antes de escalar orçamento.
                 </p>
               </div>
             </div>
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <a href={ctaHref} className="cta-primary" aria-label="Ver meu diagnóstico de CPL grátis">
+            <a href={ctaHref} className="cta-primary" aria-label="Ver meu diagnóstico grátis">
               Ver meu diagnóstico grátis →
             </a>
           </div>
         </div>
       </section>
 
-      {/* ── RADAR DE CPL ── */}
-      <section style={{ background: 'var(--bg)' }} aria-labelledby="radar-h2">
+      {/* ── QUANDO O CPL SAI DA FAIXA ── */}
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="cplinv-h2">
         <div className="wrap">
-          <div className="eyebrow c">Radar de CPL</div>
-          <h2 id="radar-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 500, margin: '0 auto 14px' }}>
-            Faixas de referência por <em>nicho, região e canal</em>
-          </h2>
-          <p className="section-sub c" style={{ marginBottom: 36 }}>
-            Cada nicho tem seu próprio custo por lead esperado. A sensibilidade varia por região, competição e tipo de campanha.
-          </p>
-
-          <div className="radar-panel" role="table" aria-label="Radar de CPL por nicho, região e canal — dados estimados">
-            <div className="radar-header">
-              <div className="radar-header-title">
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--gold)', display: 'inline-block' }} aria-hidden="true" />
-                Faixas estimadas por segmento
+          <div className="cplinv-wrapper">
+            <div className="cplinv-copy">
+              <div className="eyebrow">O CPL como ponto de partida</div>
+              <h2 id="cplinv-h2" className="section-title">
+                Um CPL fora da faixa pode nascer<br />
+                de <em>vários lugares.</em>
+              </h2>
+              <p>
+                O diagnóstico de CPL é uma das formas mais rápidas de encontrar um primeiro sinal de ineficiência. Mas um CPL acima da faixa esperada pode ter origem em audiência, oferta, criativo, funil, canal, concorrência ou verba mal distribuída.
+              </p>
+              <p>
+                <em>Por isso a ELYON não para no número.</em> Ela ajuda a investigar o contexto.
+              </p>
+              <div style={{ marginTop: 28 }}>
+                <a href={ctaHref} className="cta-primary" style={{ display: 'inline-flex' }}>
+                  Iniciar diagnóstico →
+                </a>
               </div>
-              <span className="radar-badge">Estimativas</span>
             </div>
-            <div className="radar-scroll">
-              <div className="radar-table">
-                <div className="radar-thead" role="row">
-                  <div className="radar-th" role="columnheader">Nicho</div>
-                  <div className="radar-th" role="columnheader">Região</div>
-                  <div className="radar-th" role="columnheader">Canal</div>
-                  <div className="radar-th" role="columnheader">Faixa estimada</div>
-                  <div className="radar-th" role="columnheader">Sensibilidade</div>
+
+            <div>
+              <div
+                className="cplinv-panel"
+                role="table"
+                aria-label="Quando o CPL sai da faixa, o que investigar"
+              >
+                <div className="cplinv-panel-header" role="row">
+                  <span aria-hidden="true">⚑</span>
+                  Quando o CPL sai da faixa — o que investigar
                 </div>
-                {RADAR_ROWS.map((row, i) => (
-                  <div className="radar-tr" key={i} role="row">
-                    <div className="radar-td" role="cell">{row.nicho}</div>
-                    <div className="radar-td" role="cell">{row.regiao}</div>
-                    <div className="radar-td" role="cell">{row.canal}</div>
-                    <div className="radar-td" role="cell">
-                      <span className="radar-faixa">{row.faixa}</span>
-                    </div>
-                    <div className="radar-td" role="cell">
-                      <div className="radar-dots" aria-label={`${row.dots} de 5`}>
-                        {Array.from({ length: 5 }, (_, di) => (
-                          <div key={di} className={`radar-dot ${di < row.dots ? 'on' : 'off'}`} />
-                        ))}
-                      </div>
+                {CPL_INV.map((item, i) => (
+                  <div className="cplinv-item" key={i} role="row">
+                    <div className="cplinv-area" role="cell">{item.area}</div>
+                    <div className="cplinv-question" role="cell">
+                      {item.question}
+                      <span className="cplinv-mod">{item.mod}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="radar-note">
-              Faixas estimadas com base em padrões por segmento. Não são dados auditados externamente. Demonstração.
-            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── MÓDULOS PRINCIPAIS DA ELYON ── */}
+      <section style={{ background: 'var(--surface)' }} id="modules" aria-labelledby="mod-h2">
+        <div className="wrap">
+          <div className="eyebrow c">Módulos principais da ELYON</div>
+          <h2 id="mod-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 14px' }}>
+            Uma plataforma organizada por <em>área de decisão</em>
+          </h2>
+          <p className="section-sub c" style={{ marginBottom: 40 }}>
+            Cada módulo endereça uma dimensão diferente do negócio. Juntos, formam uma visão completa do que está acontecendo e do que fazer primeiro.
+          </p>
+
+          <div className="mod-grid" role="list">
+            {MODULE_GROUPS.map((group) => (
+              <div className="mod-col" key={group.group} role="listitem">
+                <div className="mod-col-header">
+                  <div className="mod-col-title">{group.group}</div>
+                  <span
+                    className="mod-col-badge"
+                    style={{ background: group.bgColor, color: group.color, border: `1px solid ${group.color}22` }}
+                  >
+                    {group.modules.length} módulos
+                  </span>
+                </div>
+                <div className="mod-items">
+                  {group.modules.map((m) => (
+                    <div className="mod-item" key={m}>
+                      <div className="mod-item-dot" style={{ background: group.color, opacity: 0.6 }} />
+                      {m}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -1213,34 +1350,33 @@ export default function LandingPage() {
       {/* ── DIAGNÓSTICO GRÁTIS VS PLATAFORMA ── */}
       <section className="tier-section" aria-labelledby="tier-h2">
         <div className="wrap">
-          <div className="eyebrow c">Gratuito agora. Plataforma depois.</div>
+          <div className="eyebrow c">Diagnóstico gratuito ou plataforma completa</div>
           <h2 id="tier-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 12px' }}>
-            O diagnóstico é o retrato.<br /><em>A plataforma é o acompanhamento.</em>
+            O diagnóstico é o retrato.<br /><em>A plataforma é a rotina.</em>
           </h2>
           <p className="section-sub c" style={{ marginBottom: 14 }}>
-            Comece sem custo. Se quiser monitorar indicadores de forma contínua, a plataforma está disponível quando precisar.
+            Comece identificando um primeiro sinal com o diagnóstico gratuito. Depois, evolua para acompanhamento contínuo de campanhas, audiências, funil e plano de ação.
           </p>
-          <p className="tier-transition">Um é um snapshot. O outro é um dashboard vivo.</p>
+          <p className="tier-transition">Um é um snapshot. O outro é uma inteligência contínua.</p>
           <div className="tier-cards">
             <div className="tier-card free">
               <div className="tier-eyebrow free">Gratuito · Sempre disponível</div>
               <div className="tier-name">Diagnóstico de CPL</div>
               <div className="tier-desc">
-                Para quem quer saber, agora mesmo, se o CPL está dentro da faixa esperada — sem cartão, sem compromisso, sem conexão de conta.
+                Para quem quer saber agora se o CPL está dentro da faixa esperada — sem cartão, sem compromisso, sem conexão de conta.
               </div>
               <div className="tier-price-free">Grátis</div>
               <div className="tier-price-period">Para sempre · sem cartão</div>
               <ul className="tier-list">
                 {[
-                  'Faixa de CPL estimada para o seu nicho',
-                  'Comparativo com seu CPL atual',
-                  'Estimativa de potencial desperdício',
-                  'Prioridade de ajuste',
-                  'Ponto de partida claro para otimização',
+                  'Faixa de CPL estimada para o nicho',
+                  'Comparativo com CPL atual',
+                  'Desvio percentual estimado',
+                  'Prioridade de ajuste sugerida',
+                  'Primeiro passo claro para otimização',
                 ].map((f, i) => (
                   <li key={i}>
-                    <span className="tier-ck-g" aria-hidden="true">✓</span>
-                    {f}
+                    <span className="tier-ck-g" aria-hidden="true">✓</span>{f}
                   </li>
                 ))}
               </ul>
@@ -1253,22 +1389,21 @@ export default function LandingPage() {
               <div className="tier-eyebrow paid">Plataforma · A partir de R$297/mês</div>
               <div className="tier-name">Plataforma ELYON NOUS</div>
               <div className="tier-desc">
-                Para quem quer acompanhar indicadores ao longo do tempo, conectar contas de anúncios e agir mais rápido quando algo muda.
+                Para quem quer monitorar indicadores, conectar contas de anúncios, analisar audiências e funil e ter um plano de ação atualizado continuamente.
               </div>
               <div className="tier-price">R$297</div>
               <div className="tier-price-period">a partir de · por mês · cancele quando quiser</div>
               <ul className="tier-list">
                 {[
-                  'Monitoramento contínuo de CPL',
-                  'Alertas automáticos de variação',
-                  'Faixas de referência por nicho e região',
-                  'Conexão com Meta Ads e Google Ads',
-                  'Relatórios para tomada de decisão',
-                  'Múltiplos clientes (planos Profissional e Avançado)',
+                  'Saúde do negócio e campanhas',
+                  'Audiências, funil e resultados',
+                  'Alocador de verba por canal',
+                  'Conteúdo e otimização de conversão',
+                  'TrafficBrain IA (plano Profissional)',
+                  'Múltiplos clientes (Profissional e Avançado)',
                 ].map((f, i) => (
                   <li key={i}>
-                    <span className="tier-ck-gold" aria-hidden="true">→</span>
-                    {f}
+                    <span className="tier-ck-gold" aria-hidden="true">→</span>{f}
                   </li>
                 ))}
               </ul>
@@ -1284,13 +1419,13 @@ export default function LandingPage() {
       <section style={{ background: 'var(--bg)' }} aria-labelledby="compare-h2">
         <div className="wrap">
           <div className="eyebrow c">A diferença na prática</div>
-          <h2 id="compare-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 40px' }}>
-            Quando você tem referência,<br /><em>a conversa muda.</em>
+          <h2 id="compare-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 460, margin: '0 auto 40px' }}>
+            Quando você tem contexto,<br /><em>a decisão muda.</em>
           </h2>
-          <div className="compare-wrap" role="table" aria-label="Comparação sem referência vs com ELYON NOUS">
+          <div className="compare-wrap" role="table" aria-label="Comparação sem inteligência vs com ELYON NOUS">
             <div className="compare-head" role="row">
               <div className="compare-head-cell topic" role="columnheader">Situação</div>
-              <div className="compare-head-cell bad" role="columnheader">Sem referência</div>
+              <div className="compare-head-cell bad" role="columnheader">Sem inteligência</div>
               <div className="compare-head-cell good" role="columnheader">Com ELYON NOUS</div>
             </div>
             <div className="compare-body" role="rowgroup">
@@ -1310,14 +1445,14 @@ export default function LandingPage() {
       <section style={{ background: 'var(--surface)' }} id="pricing" aria-labelledby="pricing-h2">
         <div className="wrap">
           <div className="eyebrow c">Planos</div>
-          <h2 id="pricing-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 14px' }}>
-            Comece grátis. <em>Escale quando fizer sentido.</em>
+          <h2 id="pricing-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 14px' }}>
+            Escolha o nível de inteligência<br />
+            que sua <em>operação precisa.</em>
           </h2>
           <p className="section-sub c" style={{ marginBottom: 36 }}>
-            O diagnóstico é sempre gratuito. Os planos pagos são para quem quer monitoramento contínuo ao longo do tempo.
+            Comece validando um primeiro sinal com o diagnóstico gratuito. Depois, evolua para acompanhamento de campanhas, audiências, funil, conteúdo, relatórios e plano de ação.
           </p>
 
-          {/* Journey strip */}
           <div className="pricing-journey" aria-hidden="true">
             <div className="pj-step active">
               <div className="pj-step-num">Passo 01</div>
@@ -1356,44 +1491,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── OBJEÇÃO ── */}
-      <section style={{ background: 'var(--bg)' }} aria-labelledby="obj-h2">
-        <div className="wrap">
-          <div className="obj-grid">
-            <div>
-              <div className="eyebrow">Pense bem</div>
-              <h2 id="obj-h2" className="section-title">
-                Você já paga por isso.<br /><em>Só não tem os dados.</em>
-              </h2>
-              <p className="section-sub">
-                Agência, planilha, tentativa e erro — você já investe para entender o mercado. A diferença é que nenhuma dessas alternativas entrega uma faixa de referência de CPL por nicho.
-              </p>
-              <a href={ctaHref} className="cta-primary" style={{ display: 'inline-flex' }} aria-label="Fazer diagnóstico gratuito — sem cartão">
-                Fazer diagnóstico grátis →
-              </a>
-            </div>
-            <div className="obj-items">
-              {OBJECTIONS.map((o, i) => (
-                <div className="obj-item" key={i}>
-                  <span className="obj-mark" aria-hidden="true" />
-                  <p className="obj-text">{o.text}</p>
-                  <span className="obj-cost">{o.cost}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── TRANSPARENTE POR PADRÃO ── */}
-      <section style={{ background: 'var(--surface)' }} aria-labelledby="trust-h2">
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="trust-h2">
         <div className="wrap">
           <div className="eyebrow c">Transparente por padrão</div>
           <h2 id="trust-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 14px' }}>
             O que a ELYON NOUS <em>não promete.</em>
           </h2>
           <p className="section-sub c" style={{ marginBottom: 40 }}>
-            Acreditamos que transparência gera mais confiança do que promessas imprecisas. Aqui está o que você precisa saber.
+            Acreditamos que transparência gera mais confiança do que promessas imprecisas. Aqui está o que você precisa saber antes de começar.
           </p>
           <div className="trust-grid" role="list">
             {TRUST_BLOCKS.map((b, i) => (
@@ -1408,7 +1514,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section style={{ background: 'var(--bg)' }} id="faq" aria-labelledby="faq-h2">
+      <section style={{ background: 'var(--surface)' }} id="faq" aria-labelledby="faq-h2">
         <div className="wrap">
           <div className="eyebrow c">Perguntas frequentes</div>
           <h2 id="faq-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 460, margin: '0 auto 40px' }}>
@@ -1430,11 +1536,14 @@ export default function LandingPage() {
         <div className="wrap">
           <div className="cta-final-inner">
             <h2 id="cta-h2">
-              Antes de aumentar a verba,<br />
-              descubra se o CPL <em>já está fora da faixa.</em>
+              Entenda o que está acontecendo<br />
+              no marketing e decida <em>o que fazer primeiro.</em>
             </h2>
             <p className="cta-final-sub">
-              Faça o diagnóstico gratuito. Em minutos, você vê se suas campanhas estão dentro da faixa esperada — ou se há desvio que vale revisar antes de escalar.
+              Comece com o diagnóstico gratuito. Identifique o primeiro sinal de ineficiência e descubra como a ELYON ajuda a transformar análise em próximo passo.
+            </p>
+            <p className="cta-final-promise">
+              A ELYON ajuda a <em>identificar onde agir</em> — não a prometer onde chegará.
             </p>
             <a href={ctaHref} className="cta-primary lg" aria-label="Fazer diagnóstico gratuito de CPL — sem cartão">
               Fazer diagnóstico grátis →
