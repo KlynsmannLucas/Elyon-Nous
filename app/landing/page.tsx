@@ -19,6 +19,7 @@ const CSS = `
 :root{
   --bg:#09090C;
   --surface:#111116;
+  --surface-el:#17171D;
   --card:#16161C;
   --border:rgba(255,255,255,.06);
   --border-hi:rgba(255,255,255,.10);
@@ -74,7 +75,7 @@ section{padding:96px 0;}
 
 /* ── HERO ── */
 .hero{
-  padding:144px 0 100px;
+  padding:144px 0 108px;
   background:
     radial-gradient(ellipse 900px 700px at 65% -5%,rgba(212,175,55,.06) 0%,transparent 60%),
     radial-gradient(ellipse 500px 400px at 10% 90%,rgba(56,189,248,.02) 0%,transparent 60%);
@@ -127,7 +128,10 @@ section{padding:96px 0;}
   font-size:11.5px;color:var(--muted);}
 .tc-check{color:var(--green);font-size:10px;font-weight:700;}
 
-/* ── DASHBOARD CARD (hero right) ── */
+/* ── HERO RIGHT — window chrome wrapper ── */
+.hero-right{position:relative;}
+
+/* ── DASHBOARD CARD ── */
 .dash-card{
   background:var(--surface);border:1px solid rgba(212,175,55,.15);border-radius:var(--rxl);
   overflow:hidden;position:relative;
@@ -137,40 +141,93 @@ section{padding:96px 0;}
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(212,175,55,.55),transparent);pointer-events:none;z-index:2;
 }
-.dash-topbar{
+
+/* Window chrome bar */
+.hd-chrome{
   display:flex;align-items:center;justify-content:space-between;
-  padding:12px 18px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.01);
+  padding:9px 14px;border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.18);
 }
-.dash-topbar-title{font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;}
+.hd-dots{display:flex;gap:5px;align-items:center;}
+.hd-dot{width:8px;height:8px;border-radius:50%;}
+.hd-dot-r{background:#FF5F57;}
+.hd-dot-y{background:#FEBC2E;}
+.hd-dot-g{background:#28C840;}
+.hd-chrome-title{
+  font-family:var(--f-mono);font-size:10px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+}
 .dash-live{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:4px;}
-.dash-meta{display:flex;align-items:center;gap:5px;padding:9px 18px;border-bottom:1px solid var(--border);}
+
+/* Sidebar + main body */
+.hd-body{display:grid;grid-template-columns:38px 1fr;}
+.hd-sidebar{
+  border-right:1px solid var(--border);background:rgba(0,0,0,.1);
+  display:flex;flex-direction:column;padding:10px 0;gap:4px;align-items:center;
+}
+.hd-nav-sq{
+  width:22px;height:22px;border-radius:5px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.055);
+}
+.hd-nav-sq.active{background:rgba(212,175,55,.14);border-color:rgba(212,175,55,.22);}
+.hd-main{min-width:0;}
+
+/* Sparkline history */
+.hd-spark{
+  padding:8px 14px 7px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.hd-spark-label{
+  font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;flex-shrink:0;
+}
+.hd-sparkbars{display:flex;align-items:flex-end;gap:2px;height:22px;flex:1;}
+.hd-sparkbar{flex:1;border-radius:1px 1px 0 0;min-width:4px;}
+
+/* Floating desvio card */
+.hero-float{
+  position:absolute;bottom:12px;left:12px;
+  background:rgba(23,23,29,.97);
+  border:1px solid rgba(248,113,113,.28);border-radius:11px;
+  padding:10px 14px;
+  box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 0 1px rgba(248,113,113,.05);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  z-index:5;
+}
+.hero-float-label{
+  font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--red);margin-bottom:4px;
+}
+.hero-float-val{font-family:var(--f-mono);font-size:22px;font-weight:800;color:var(--red);line-height:1;}
+.hero-float-sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:var(--f-mono);}
+
+/* Dashboard internals */
+.dash-meta{display:flex;align-items:center;gap:5px;padding:9px 14px;border-bottom:1px solid var(--border);}
 .dash-chip{font-family:var(--f-mono);font-size:9.5px;padding:3px 9px;border-radius:4px;
   background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--sub);}
 .dash-chip.gold{background:rgba(212,175,55,.08);border-color:rgba(212,175,55,.18);color:var(--gold);}
 .dash-alert{
-  display:flex;align-items:center;gap:8px;padding:9px 18px;
+  display:flex;align-items:center;gap:8px;padding:8px 14px;
   background:rgba(248,113,113,.05);border-bottom:1px solid rgba(248,113,113,.12);
-  font-size:11.5px;color:var(--red);font-weight:600;font-family:var(--f-mono);letter-spacing:.01em;
+  font-size:11px;color:var(--red);font-weight:600;font-family:var(--f-mono);letter-spacing:.01em;
 }
-.dash-alert-tri{font-size:12px;flex-shrink:0;}
 .dash-metrics{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);}
-.dash-m{padding:13px 15px;border-right:1px solid var(--border);}
+.dash-m{padding:11px 12px;border-right:1px solid var(--border);}
 .dash-m:last-child{border-right:none;}
-.dash-m-label{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;}
-.dash-m-val{font-family:var(--f-mono);font-size:19px;font-weight:800;line-height:1;}
+.dash-m-label{font-size:9px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
+.dash-m-val{font-family:var(--f-mono);font-size:17px;font-weight:800;line-height:1;}
 .dash-m-val.r{color:var(--red);}
 .dash-m-val.g{color:var(--green);}
 .dash-m-val.a{color:var(--amber);}
-.dash-m-sub{font-size:9.5px;color:var(--muted);margin-top:3px;font-family:var(--f-mono);}
-.dash-m-delta{display:inline-flex;font-size:9.5px;font-weight:700;font-family:var(--f-mono);
-  padding:2px 5px;border-radius:3px;margin-top:3px;background:rgba(248,113,113,.12);color:var(--red);}
-.dash-bars{padding:12px 18px;border-bottom:1px solid var(--border);}
-.dash-bars-lbl{font-size:9px;color:var(--muted);font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px;}
-.bar-row{display:flex;align-items:center;gap:9px;margin-bottom:6px;}
+.dash-m-sub{font-size:9px;color:var(--muted);margin-top:2px;font-family:var(--f-mono);}
+.dash-m-delta{display:inline-flex;font-size:9px;font-weight:700;font-family:var(--f-mono);
+  padding:2px 5px;border-radius:3px;margin-top:2px;background:rgba(248,113,113,.12);color:var(--red);}
+.dash-bars{padding:10px 14px;border-bottom:1px solid var(--border);}
+.dash-bars-lbl{font-size:9px;color:var(--muted);font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.bar-row{display:flex;align-items:center;gap:9px;margin-bottom:5px;}
 .bar-row:last-child{margin-bottom:0;}
-.bar-lbl{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);width:30px;flex-shrink:0;text-align:right;}
+.bar-lbl{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);width:28px;flex-shrink:0;text-align:right;}
 .bar-track{flex:1;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:2px;}
 .bar-fill.g{background:var(--green);}
@@ -179,32 +236,12 @@ section{padding:96px 0;}
 .bar-val.g{color:var(--green);}
 .bar-val.r{color:var(--red);}
 .dash-bottom{display:grid;grid-template-columns:1fr 1fr;}
-.dash-block{padding:12px 18px;}
+.dash-block{padding:11px 14px;}
 .dash-block.bd{border-right:1px solid var(--border);}
-.dash-block-lbl{font-size:9px;font-family:var(--f-mono);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+.dash-block-lbl{font-size:9px;font-family:var(--f-mono);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
 .dash-block-lbl.gold{color:var(--gold);}
 .dash-block-lbl.blue{color:var(--blue);}
-.dash-block-text{font-size:11.5px;color:var(--sub);line-height:1.55;}
-
-/* ── NARRATIVE BREAK ── */
-.narrative{
-  padding:72px 0;background:var(--surface);
-  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-  position:relative;overflow:hidden;
-}
-.narrative::before{
-  content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  width:700px;height:350px;
-  background:radial-gradient(ellipse,rgba(212,175,55,.035) 0%,transparent 70%);
-  pointer-events:none;
-}
-.narrative-inner{max-width:720px;margin:0 auto;text-align:center;position:relative;}
-.narrative-text{
-  font-family:var(--f-display);font-size:26px;font-weight:700;
-  line-height:1.5;letter-spacing:-1px;color:var(--muted);
-}
-.narrative-text em{color:var(--text);font-style:normal;}
-.narrative-text strong{color:var(--gold);font-weight:inherit;}
+.dash-block-text{font-size:11px;color:var(--sub);line-height:1.55;}
 
 /* ── EYEBROW / TITLES ── */
 .eyebrow{
@@ -224,29 +261,47 @@ section{padding:96px 0;}
 .section-sub{font-size:17px;color:var(--sub);line-height:1.65;margin-bottom:40px;}
 .section-sub.c{text-align:center;max-width:540px;margin-left:auto;margin-right:auto;}
 
-/* ── PAIN — numbered list ── */
-.pain-list{
+/* ── EDITORIAL "A DIFERENÇA ESTÁ NA REFERÊNCIA" ── */
+.diff-section{
+  background:var(--surface);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:80px 0;
+}
+.diff-intro{max-width:560px;margin:0 auto 52px;text-align:center;}
+.diff-intro-text{
+  font-family:var(--f-display);font-size:24px;font-weight:700;
+  line-height:1.45;letter-spacing:-.8px;color:var(--muted);
+}
+.diff-intro-text em{color:var(--text);font-style:normal;}
+.diff-intro-text strong{color:var(--gold);font-weight:inherit;}
+.diff-cols{
+  display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;
   border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;
-  margin-bottom:24px;
 }
-.pain-item{
-  display:grid;grid-template-columns:52px 1fr;
-  padding:22px 24px;border-bottom:1px solid var(--border);
-  transition:background .15s;
+.diff-col{padding:30px 26px;background:var(--bg);transition:background .15s;}
+.diff-col:hover{background:rgba(255,255,255,.01);}
+.diff-col-sep{
+  display:flex;align-items:center;justify-content:center;
+  border-left:1px solid var(--border);border-right:1px solid var(--border);
+  background:rgba(255,255,255,.005);
 }
-.pain-item:last-child{border-bottom:none;}
-.pain-item:hover{background:rgba(255,255,255,.015);}
-.pain-num{font-family:var(--f-mono);font-size:13px;font-weight:700;color:var(--gold);opacity:.45;padding-top:2px;}
-.pain-label{font-size:15px;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.4;}
-.pain-desc{font-size:13px;color:var(--muted);line-height:1.55;}
-.pain-close{
-  background:rgba(248,113,113,.04);border:1px solid rgba(248,113,113,.1);
-  border-radius:var(--r);padding:18px 24px;font-size:15px;color:var(--sub);line-height:1.65;text-align:center;
+.diff-arrow{font-family:var(--f-mono);font-size:12px;color:var(--muted);opacity:.35;}
+.diff-num{
+  font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.12em;
+  color:var(--gold);opacity:.5;margin-bottom:6px;
 }
-.pain-close strong{color:var(--text);}
-.pain-close em{color:var(--red);font-style:normal;}
+.diff-state{
+  font-size:10.5px;color:var(--muted);font-family:var(--f-mono);
+  letter-spacing:.04em;margin-bottom:14px;text-transform:uppercase;
+}
+.diff-head{
+  font-family:var(--f-display);font-size:19px;font-weight:700;
+  line-height:1.3;letter-spacing:-.4px;color:var(--text);margin-bottom:12px;
+}
+.diff-head em{color:var(--gold);font-style:normal;}
+.diff-desc{font-size:13px;color:var(--muted);line-height:1.65;}
 
-/* ── STEPS — horizontal ── */
+/* ── STEPS ── */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;position:relative;}
 .steps::before{
   content:'';position:absolute;top:23px;left:calc(16.67% + 12px);right:calc(16.67% + 12px);
@@ -266,7 +321,7 @@ section{padding:96px 0;}
 .step-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4;}
 .step-desc{font-size:13px;color:var(--muted);line-height:1.6;}
 
-/* ── PRODUCT PANEL (reveal section) ── */
+/* ── PRODUCT PANEL ── */
 .product-panel{
   background:var(--surface);border:1px solid var(--border);border-radius:var(--rxl);
   overflow:hidden;position:relative;box-shadow:0 0 60px rgba(212,175,55,.03);
@@ -307,32 +362,56 @@ section{padding:96px 0;}
 .pp-insight-label.blue{color:var(--blue);}
 .pp-insight-text{font-size:13px;color:var(--sub);line-height:1.6;}
 
-/* ── PLATFORM PANEL (produto em uso) ── */
-.platform-panel{
+/* ── RADAR DE CPL ── */
+.radar-panel{
   background:var(--surface);border:1px solid var(--border);border-radius:var(--rxl);
   overflow:hidden;position:relative;
 }
-.platform-panel::before{
+.radar-panel::before{
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(212,175,55,.3),transparent);pointer-events:none;
 }
-.pf-header{padding:13px 22px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.01);}
-.pf-header-title{font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;}
-.pf-badge{font-family:var(--f-mono);font-size:9px;font-weight:700;padding:3px 10px;border-radius:4px;
-  background:rgba(212,175,55,.07);color:var(--gold);border:1px solid rgba(212,175,55,.14);letter-spacing:.06em;text-transform:uppercase;}
-.pf-metrics{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);}
-.pf-m{padding:18px 20px;border-right:1px solid var(--border);}
-.pf-m:last-child{border-right:none;}
-.pf-m-label{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px;}
-.pf-m-val{font-family:var(--f-mono);font-size:24px;font-weight:800;line-height:1;margin-bottom:4px;color:var(--text);}
-.pf-m-val.g{color:var(--green);}
-.pf-m-val.a{color:var(--amber);}
-.pf-m-sub{font-size:11px;color:var(--muted);}
-.pf-footer{padding:11px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.pf-footer-item{font-size:11px;color:var(--muted);font-family:var(--f-mono);}
-.pf-dot{width:3px;height:3px;border-radius:50%;background:var(--muted);opacity:.4;flex-shrink:0;}
+.radar-header{
+  padding:13px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,.01);
+}
+.radar-header-title{
+  font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;
+}
+.radar-badge{
+  font-family:var(--f-mono);font-size:9px;font-weight:700;
+  padding:3px 10px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(212,175,55,.07);color:var(--gold);border:1px solid rgba(212,175,55,.14);
+}
+.radar-scroll{overflow-x:auto;}
+.radar-table{min-width:560px;width:100%;}
+.radar-thead,.radar-tr{
+  display:grid;
+  grid-template-columns:1.5fr 1fr 1fr 1.1fr 1fr;
+  border-bottom:1px solid var(--border);
+}
+.radar-tr:last-child{border-bottom:none;}
+.radar-tr:hover{background:rgba(255,255,255,.012);}
+.radar-th{
+  padding:10px 18px;font-family:var(--f-mono);font-size:9.5px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  border-right:1px solid var(--border);
+}
+.radar-th:last-child{border-right:none;}
+.radar-td{padding:12px 18px;font-size:12px;color:var(--sub);border-right:1px solid var(--border);}
+.radar-td:first-child{font-weight:600;color:var(--text);}
+.radar-td:last-child{border-right:none;}
+.radar-faixa{font-family:var(--f-mono);font-size:12px;font-weight:700;color:var(--gold);}
+.radar-dots{display:flex;gap:3px;align-items:center;}
+.radar-dot{width:6px;height:6px;border-radius:50%;}
+.radar-dot.on{background:var(--gold);}
+.radar-dot.off{background:rgba(255,255,255,.07);}
+.radar-note{
+  padding:10px 22px;font-size:11px;color:var(--muted);
+  font-family:var(--f-mono);border-top:1px solid var(--border);font-style:italic;
+}
 
 /* ── TIER SECTION ── */
 .tier-section{
@@ -370,21 +449,6 @@ section{padding:96px 0;}
 .tier-cta.paid{background:linear-gradient(135deg,var(--gold),var(--gold-hi));color:#000;}
 .tier-cta.paid:hover{box-shadow:0 0 32px var(--gold-glow);transform:translateY(-1px);}
 
-/* ── FOR WHOM ── */
-.for-whom-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.fw-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
-  padding:20px 22px;transition:border-color .2s,box-shadow .2s;}
-.fw-item:hover{border-color:rgba(212,175,55,.18);box-shadow:0 0 20px rgba(212,175,55,.04);}
-.fw-marker{
-  width:28px;height:28px;border-radius:6px;
-  background:var(--gold-dim);border:1px solid rgba(212,175,55,.14);
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--f-mono);font-size:10px;font-weight:700;color:var(--gold);
-  margin-bottom:12px;
-}
-.fw-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px;}
-.fw-desc{font-size:12.5px;color:var(--muted);line-height:1.55;}
-
 /* ── COMPARISON TABLE ── */
 .compare-wrap{max-width:820px;margin:0 auto;}
 .compare-head{
@@ -407,7 +471,22 @@ section{padding:96px 0;}
 .compare-cell.bad{color:rgba(248,113,113,.65);}
 .compare-cell.good{color:var(--sub);}
 
-/* ── PRICING ── */
+/* ── PRICING JOURNEY STRIP ── */
+.pricing-journey{
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:52px;gap:0;
+}
+.pj-step{text-align:center;padding:0 22px;}
+.pj-step-num{
+  font-family:var(--f-mono);font-size:9px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;
+}
+.pj-step-name{font-size:13.5px;font-weight:600;color:var(--muted);}
+.pj-step.active .pj-step-num{color:var(--gold);}
+.pj-step.active .pj-step-name{color:var(--text);}
+.pj-arr{color:var(--muted);font-size:14px;opacity:.25;flex-shrink:0;}
+
+/* ── PRICING PLANS ── */
 .plans{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
 .plan{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
   padding:24px 20px;display:flex;flex-direction:column;transition:all .2s;position:relative;}
@@ -442,12 +521,20 @@ section{padding:96px 0;}
 .plan-cta.green-btn{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.2);}
 .plan-cta.green-btn:hover{background:rgba(34,197,94,.16);}
 
-/* ── BENCHMARK TRUST ── */
-.bench-inner{max-width:700px;margin:0 auto;text-align:center;}
-.bench-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:28px;}
-.bench-tag{display:inline-flex;align-items:center;gap:6px;background:var(--surface);
-  border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:11.5px;color:var(--sub);font-family:var(--f-mono);}
-.bench-dot{width:5px;height:5px;border-radius:50%;display:inline-block;}
+/* ── "TRANSPARENTE POR PADRÃO" TRUST GRID ── */
+.trust-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:1px;border:1px solid var(--border);border-radius:var(--rl);
+  overflow:hidden;background:var(--border);
+}
+.trust-blk{background:var(--surface);padding:28px 30px;transition:background .15s;}
+.trust-blk:hover{background:rgba(255,255,255,.012);}
+.trust-blk-num{
+  font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.12em;
+  color:var(--gold);opacity:.45;margin-bottom:10px;
+}
+.trust-blk-title{font-size:14.5px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4;}
+.trust-blk-desc{font-size:13px;color:var(--muted);line-height:1.65;}
 
 /* ── OBJECTION ── */
 .obj-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;}
@@ -510,7 +597,6 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
 @media(max-width:960px){
   .hero-inner,.obj-grid{grid-template-columns:1fr;}
   .plans{grid-template-columns:1fr 1fr;}
-  .for-whom-grid{grid-template-columns:1fr 1fr;}
   .tier-cards{grid-template-columns:1fr;}
   .compare-head,.compare-row{grid-template-columns:1fr 1fr;}
   .compare-cell.topic,.compare-head-cell.topic{display:none;}
@@ -525,14 +611,15 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
   .section-title{font-size:32px;}
   .pp-metrics{grid-template-columns:repeat(3,1fr);}
   .pp-metrics .pp-m:nth-child(4),.pp-metrics .pp-m:nth-child(5){border-top:1px solid var(--border);}
-  .pf-metrics{grid-template-columns:1fr 1fr;}
-  .pf-m:nth-child(3),.pf-m:nth-child(4){border-top:1px solid var(--border);}
-  .narrative-text{font-size:22px;}
+  .diff-cols{grid-template-columns:1fr;}
+  .diff-col-sep{display:none;}
+  .diff-section{padding:60px 0;}
+  .diff-intro{margin-bottom:36px;}
   .dash-bottom{grid-template-columns:1fr;}
   .dash-block.bd{border-right:none;border-bottom:1px solid var(--border);}
 }
 @media(max-width:768px){
-  .hero{padding:104px 0 64px;}
+  .hero{padding:104px 0 72px;}
   .hero h1{font-size:34px;letter-spacing:-1.8px;}
   .hero-sub{font-size:16px;}
   .hero-ctas{flex-direction:column;align-items:flex-start;}
@@ -542,10 +629,10 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
   .pp-insights{grid-template-columns:1fr;}
   .pp-insight{border-right:none;border-bottom:1px solid var(--border);}
   .pp-insight:last-child{border-bottom:none;}
-  .narrative-text{font-size:19px;}
   .section-title{font-size:28px;letter-spacing:-1.2px;}
-  .for-whom-grid{grid-template-columns:1fr;}
   .obj-grid{gap:36px;}
+  .trust-grid{grid-template-columns:1fr;}
+  .pricing-journey{flex-wrap:wrap;gap:8px;}
 }
 @media(max-width:560px){
   .plans{grid-template-columns:1fr;}
@@ -556,26 +643,74 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
   .tc{font-size:11px;}
   .dash-metrics{grid-template-columns:1fr 1fr;}
   .dash-m:last-child{grid-column:span 2;border-top:1px solid var(--border);border-right:none;}
-  .pf-metrics{grid-template-columns:1fr 1fr;}
   .tier-card{padding:24px 20px;}
   .cta-final h2{font-size:28px;letter-spacing:-.8px;}
-  .for-whom-grid{grid-template-columns:1fr;}
   .compare-head,.compare-row{grid-template-columns:1fr 1fr;}
+  .pj-arr{display:none;}
 }
 `
 
-const PAINS = [
+const SPARK_DATA = [
+  { h: 42, c: 'rgba(34,197,94,.5)' },
+  { h: 50, c: 'rgba(34,197,94,.58)' },
+  { h: 58, c: 'rgba(251,191,36,.5)' },
+  { h: 66, c: 'rgba(251,191,36,.62)' },
+  { h: 75, c: 'rgba(251,191,36,.78)' },
+  { h: 83, c: 'rgba(248,113,113,.68)' },
+  { h: 92, c: 'rgba(248,113,113,.82)' },
+  { h: 100, c: '#F87171' },
+]
+
+const DIFF_COLS = [
   {
-    label: 'Você sabe quanto paga, mas não sabe se está caro.',
-    desc: 'Sem uma faixa de referência por nicho e região, qualquer CPL parece aceitável.',
+    num: '01',
+    state: 'Sem referência',
+    headline: <>CPL é só um <em>número.</em></>,
+    desc: 'R$68 pode parecer aceitável ou caro dependendo do ponto de vista. Sem uma faixa esperada por nicho e região, qualquer valor parece defensável.',
   },
   {
-    label: 'Você compara campanhas só com o próprio histórico.',
-    desc: 'Melhorar em relação a si mesmo não significa estar dentro da faixa esperada.',
+    num: '02',
+    state: 'Com referência',
+    headline: <>CPL vira <em>contexto.</em></>,
+    desc: 'Com a faixa estimada de R$28–38, R$68 deixa de ser um número e vira um desvio de eficiência de +79% — com potencial desperdício mensurável.',
   },
   {
-    label: 'Você otimiza sem uma referência externa.',
-    desc: 'Decisões de criativo, segmentação e verba ficam baseadas em feeling, não em comparação.',
+    num: '03',
+    state: 'Com contexto',
+    headline: <>Otimização vira <em>prioridade.</em></>,
+    desc: 'Com desvio claro e prioridade sugerida, a pergunta muda de "o que testamos?" para "o que revisar antes de escalar o orçamento?"',
+  },
+]
+
+const RADAR_ROWS = [
+  { nicho: 'Odontologia', regiao: 'São Paulo', canal: 'Meta Ads', faixa: 'R$28–38', dots: 3 },
+  { nicho: 'Saúde e Estética', regiao: 'Rio de Janeiro', canal: 'Meta Ads', faixa: 'R$32–46', dots: 4 },
+  { nicho: 'Imobiliário', regiao: 'São Paulo', canal: 'Google Ads', faixa: 'R$48–72', dots: 5 },
+  { nicho: 'Educação', regiao: 'Nacional', canal: 'Meta Ads', faixa: 'R$18–28', dots: 2 },
+  { nicho: 'Jurídico', regiao: 'São Paulo', canal: 'Google Ads', faixa: 'R$55–85', dots: 5 },
+  { nicho: 'Fitness', regiao: 'Nacional', canal: 'Meta Ads', faixa: 'R$14–22', dots: 2 },
+]
+
+const TRUST_BLOCKS = [
+  {
+    num: '01',
+    title: 'Referências estimadas, não promessas absolutas',
+    desc: 'As faixas de CPL são estruturadas a partir de padrões estimados por nicho, região e canal. Não são dados coletados de terceiros nem auditados externamente.',
+  },
+  {
+    num: '02',
+    title: 'Diagnóstico inicial, não auditoria definitiva',
+    desc: 'O diagnóstico é um ponto de partida para identificar desvios evidentes — não uma conclusão sobre o desempenho do seu negócio.',
+  },
+  {
+    num: '03',
+    title: 'Mockups identificados como demonstrativos',
+    desc: 'Todos os painéis e dados exibidos nesta página são fictícios e identificados com a etiqueta "Demonstração".',
+  },
+  {
+    num: '04',
+    title: 'Contexto de decisão, não garantia de resultado',
+    desc: 'A ELYON NOUS fornece contexto para decisões mais informadas. Não garantimos melhora de resultado ao ajustar campanhas.',
   },
 ]
 
@@ -592,15 +727,6 @@ const STEPS = [
     title: 'Receba diagnóstico, desvio e prioridade de ajuste',
     desc: 'CPL estimado para o seu nicho, desvio percentual e o próximo passo mais claro.',
   },
-]
-
-const FOR_WHOM = [
-  { marker: '01', name: 'Gestores de tráfego', desc: 'Precisam de faixas de referência por nicho para embasar ajustes e apresentar resultados ao cliente.' },
-  { marker: '02', name: 'Agências de marketing', desc: 'Gerenciam múltiplos clientes e querem comparativos por segmento para cada conta.' },
-  { marker: '03', name: 'Negócios locais', desc: 'Investem em Google Ads ou Meta Ads e não sabem se o CPL está dentro da faixa esperada.' },
-  { marker: '04', name: 'Clínicas e consultórios', desc: 'Saúde, odontologia, estética — CPL muito variável por cidade e especialidade.' },
-  { marker: '05', name: 'Imobiliárias', desc: 'Leads custam caro — qualquer desvio da faixa esperada representa verba relevante.' },
-  { marker: '06', name: 'E-commerces', desc: 'Precisam entender custo de aquisição dentro de margens sustentáveis.' },
 ]
 
 const COMPARE_ROWS = [
@@ -677,17 +803,6 @@ const PLANS = [
   },
 ]
 
-const BENCH_TAGS = [
-  { label: 'Odontologia', color: '#22C55E' },
-  { label: 'Saúde e Estética', color: '#38BDF8' },
-  { label: 'Imobiliário', color: '#F0B429' },
-  { label: 'Educação', color: '#A78BFA' },
-  { label: 'Jurídico', color: '#FB923C' },
-  { label: 'Fitness', color: '#22C55E' },
-  { label: 'E-commerce', color: '#38BDF8' },
-  { label: 'Negócios Locais', color: '#94A3B8' },
-]
-
 const OBJECTIONS = [
   { text: <><strong>Agência sem referência de nicho</strong> — cobra sem saber a faixa esperada</>, cost: '~R$2.000/mês' },
   { text: <><strong>Planilhas manuais</strong> — sempre atrasadas, propensas a erro</>, cost: 'Horas/semana' },
@@ -705,28 +820,20 @@ const FAQ_ITEMS = [
     a: 'Não. O diagnóstico é manual — você informa os dados diretamente. A conexão com plataformas de anúncios é um recurso dos planos pagos.',
   },
   {
-    q: 'De onde vêm os benchmarks?',
-    a: 'As faixas de referência são estruturadas a partir de padrões estimados por nicho, região e tipo de mídia. Não são dados coletados de terceiros nem auditados externamente. São estimativas para orientar, não para substituir uma análise completa.',
+    q: 'De onde vêm as faixas de referência?',
+    a: 'As faixas são estruturadas a partir de padrões estimados por nicho, região e tipo de mídia. Não são dados coletados de terceiros nem auditados externamente. São estimativas para orientar — não para substituir uma análise completa.',
   },
   {
     q: 'A ELYON NOUS substitui uma agência ou gestor de tráfego?',
     a: 'Não. A ELYON NOUS fornece faixas de referência de CPL — o que faltava para embasar decisões. Gestores e agências usam a plataforma junto com sua operação.',
   },
   {
-    q: 'Serve para qualquer nicho?',
-    a: 'A plataforma cobre os principais nichos do mercado brasileiro. Se o seu não estiver listado, o diagnóstico apresenta uma faixa geral de referência.',
-  },
-  {
     q: 'O resultado é exato ou estimado?',
-    a: 'Estimado. O diagnóstico indica se seu CPL está dentro ou fora da faixa esperada para o seu segmento. É um ponto de comparação para identificar possíveis desvios — não um dado exato do seu negócio.',
+    a: 'Estimado. O diagnóstico indica se seu CPL está dentro ou fora da faixa esperada para o seu segmento. É um ponto de comparação para identificar possíveis desvios de eficiência — não um dado exato do seu negócio.',
   },
   {
     q: 'Posso usar para clientes da minha agência?',
     a: 'Sim. O plano Profissional é feito exatamente para isso: diagnósticos e monitoramento para múltiplos clientes em um único painel.',
-  },
-  {
-    q: 'Meus dados ficam seguros?',
-    a: 'Os dados informados no diagnóstico são usados apenas para gerar o resultado. Não são compartilhados nem vendidos. Para conexões com plataformas de anúncios, usamos somente escopos de leitura.',
   },
 ]
 
@@ -774,7 +881,7 @@ export default function LandingPage() {
                 <em>já está fora da faixa.</em>
               </h1>
               <p className="hero-sub">
-                A ELYON NOUS compara seu CPL com faixas de referência por nicho, região e plataforma — e mostra desvio estimado, desperdício e prioridade de ajuste.
+                A ELYON NOUS compara seu CPL com faixas de referência estimadas por nicho, região e plataforma — e mostra desvio, potencial desperdício e prioridade de ajuste.
               </p>
               <div className="hero-ctas">
                 <a href={ctaHref} className="cta-primary" aria-label="Fazer diagnóstico gratuito de CPL — sem cartão">
@@ -790,75 +897,113 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right: CPL Intelligence dashboard */}
-            <div
-              className="dash-card"
-              role="img"
-              aria-label="Exemplo de diagnóstico de CPL — Odontologia, São Paulo, Meta Ads"
-            >
-              <div className="dash-topbar">
-                <span className="dash-topbar-title">
-                  <span className="blink" aria-hidden="true" />
-                  CPL Intelligence
-                </span>
-                <span className="dash-live" aria-hidden="true">
-                  <span className="blink" />
-                  Ao vivo
-                </span>
+            {/* Right: CPL Intelligence dashboard — macOS window chrome */}
+            <div className="hero-right">
+              <div
+                className="dash-card"
+                role="img"
+                aria-label="Exemplo de diagnóstico de CPL — Odontologia, São Paulo, Meta Ads"
+              >
+                {/* Window chrome */}
+                <div className="hd-chrome" aria-hidden="true">
+                  <div className="hd-dots">
+                    <div className="hd-dot hd-dot-r" />
+                    <div className="hd-dot hd-dot-y" />
+                    <div className="hd-dot hd-dot-g" />
+                  </div>
+                  <span className="hd-chrome-title">CPL Intelligence · v2.0</span>
+                  <span className="dash-live">
+                    <span className="blink" />
+                    Ao vivo
+                  </span>
+                </div>
+
+                {/* Sidebar + main */}
+                <div className="hd-body">
+                  <div className="hd-sidebar" aria-hidden="true">
+                    <div className="hd-nav-sq active" />
+                    <div className="hd-nav-sq" />
+                    <div className="hd-nav-sq" />
+                    <div className="hd-nav-sq" />
+                  </div>
+
+                  <div className="hd-main">
+                    {/* Sparkline history */}
+                    <div className="hd-spark" aria-hidden="true">
+                      <span className="hd-spark-label">Histórico CPL</span>
+                      <div className="hd-sparkbars">
+                        {SPARK_DATA.map((s, i) => (
+                          <div
+                            key={i}
+                            className="hd-sparkbar"
+                            style={{ height: `${s.h}%`, background: s.c }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="dash-meta">
+                      <span className="dash-chip">Odontologia</span>
+                      <span className="dash-chip">São Paulo</span>
+                      <span className="dash-chip gold">Meta Ads</span>
+                    </div>
+
+                    <div className="dash-alert" role="status">
+                      <span aria-hidden="true">⚠</span>
+                      CPL acima da faixa esperada · +79% de desvio
+                    </div>
+
+                    <div className="dash-metrics">
+                      <div className="dash-m">
+                        <div className="dash-m-label">CPL atual</div>
+                        <div className="dash-m-val r">R$68</div>
+                        <div className="dash-m-delta">+79%</div>
+                      </div>
+                      <div className="dash-m">
+                        <div className="dash-m-label">Faixa esperada</div>
+                        <div className="dash-m-val g">R$28–38</div>
+                        <div className="dash-m-sub">estimada</div>
+                      </div>
+                      <div className="dash-m">
+                        <div className="dash-m-label">Est. desperdício</div>
+                        <div className="dash-m-val a">R$4.200</div>
+                        <div className="dash-m-sub">/mês</div>
+                      </div>
+                    </div>
+
+                    <div className="dash-bars">
+                      <div className="dash-bars-lbl">Comparativo CPL</div>
+                      <div className="bar-row">
+                        <span className="bar-lbl">Ideal</span>
+                        <div className="bar-track"><div className="bar-fill g" style={{ width: '50%' }} /></div>
+                        <span className="bar-val g">R$34</span>
+                      </div>
+                      <div className="bar-row">
+                        <span className="bar-lbl">Atual</span>
+                        <div className="bar-track"><div className="bar-fill r" style={{ width: '100%' }} /></div>
+                        <span className="bar-val r">R$68</span>
+                      </div>
+                    </div>
+
+                    <div className="dash-bottom">
+                      <div className="dash-block bd">
+                        <div className="dash-block-lbl gold">Insight</div>
+                        <p className="dash-block-text">CPL estimado acima da faixa de referência para o segmento odontológico de São Paulo.</p>
+                      </div>
+                      <div className="dash-block">
+                        <div className="dash-block-lbl blue">Próxima ação →</div>
+                        <p className="dash-block-text">Revisar oferta e segmentação antes de escalar orçamento.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="dash-meta">
-                <span className="dash-chip">Odontologia</span>
-                <span className="dash-chip">São Paulo</span>
-                <span className="dash-chip gold">Meta Ads</span>
-              </div>
-
-              <div className="dash-alert" role="status">
-                <span className="dash-alert-tri" aria-hidden="true">⚠</span>
-                CPL acima da faixa esperada · +79% de desvio
-              </div>
-
-              <div className="dash-metrics">
-                <div className="dash-m">
-                  <div className="dash-m-label">CPL atual</div>
-                  <div className="dash-m-val r">R$68</div>
-                  <div className="dash-m-delta">+79%</div>
-                </div>
-                <div className="dash-m">
-                  <div className="dash-m-label">Faixa esperada</div>
-                  <div className="dash-m-val g">R$28–38</div>
-                  <div className="dash-m-sub">estimada</div>
-                </div>
-                <div className="dash-m">
-                  <div className="dash-m-label">Est. desperdício</div>
-                  <div className="dash-m-val a">R$4.200</div>
-                  <div className="dash-m-sub">/mês</div>
-                </div>
-              </div>
-
-              <div className="dash-bars">
-                <div className="dash-bars-lbl">Comparativo CPL</div>
-                <div className="bar-row">
-                  <span className="bar-lbl">Ideal</span>
-                  <div className="bar-track"><div className="bar-fill g" style={{ width: '50%' }} /></div>
-                  <span className="bar-val g">R$34</span>
-                </div>
-                <div className="bar-row">
-                  <span className="bar-lbl">Atual</span>
-                  <div className="bar-track"><div className="bar-fill r" style={{ width: '100%' }} /></div>
-                  <span className="bar-val r">R$68</span>
-                </div>
-              </div>
-
-              <div className="dash-bottom">
-                <div className="dash-block bd">
-                  <div className="dash-block-lbl gold">Insight</div>
-                  <p className="dash-block-text">CPL estimado acima da faixa de referência para campanhas similares no segmento odontológico.</p>
-                </div>
-                <div className="dash-block">
-                  <div className="dash-block-lbl blue">Próxima ação →</div>
-                  <p className="dash-block-text">Revisar promessa da oferta, segmentação e criativos antes de escalar orçamento.</p>
-                </div>
+              {/* Floating desvio card */}
+              <div className="hero-float" aria-hidden="true">
+                <div className="hero-float-label">Desvio detectado</div>
+                <div className="hero-float-val">+79%</div>
+                <div className="hero-float-sub">acima da faixa estimada</div>
               </div>
             </div>
 
@@ -866,48 +1011,42 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── NARRATIVE BREAK ── */}
-      <div className="narrative" aria-hidden="true">
+      {/* ── A DIFERENÇA ESTÁ NA REFERÊNCIA ── */}
+      <div className="diff-section" aria-labelledby="diff-heading">
         <div className="wrap">
-          <div className="narrative-inner">
-            <p className="narrative-text">
+          <div className="diff-intro">
+            <div className="eyebrow c" style={{ marginBottom: 16 }}>A diferença está na referência</div>
+            <p id="diff-heading" className="diff-intro-text">
               Você investe em anúncios. Os leads chegam.<br />
               Mas sem saber se o CPL está dentro da faixa esperada,<br />
-              <em>otimizar é trabalhar sem referência.</em>
+              <em>otimizar é trabalhar</em> <strong>sem parâmetro.</strong>
             </p>
+          </div>
+
+          <div className="diff-cols">
+            {DIFF_COLS.flatMap((col, i) => {
+              const el = (
+                <div key={`c${i}`} className="diff-col">
+                  <div className="diff-num">{col.num}</div>
+                  <div className="diff-state">{col.state}</div>
+                  <div className="diff-head">{col.headline}</div>
+                  <p className="diff-desc">{col.desc}</p>
+                </div>
+              )
+              if (i === 0) return [el]
+              return [
+                <div key={`s${i}`} className="diff-col-sep">
+                  <span className="diff-arrow">→</span>
+                </div>,
+                el,
+              ]
+            })}
           </div>
         </div>
       </div>
 
-      {/* ── PROBLEMA ── */}
-      <section style={{ background: 'var(--bg)' }} aria-labelledby="pain-h2">
-        <div className="wrap">
-          <div className="eyebrow">O problema real</div>
-          <h2 id="pain-h2" className="section-title" style={{ maxWidth: 540 }}>
-            O problema não é só gerar lead.<br />
-            É saber se o <em>custo está dentro da faixa.</em>
-          </h2>
-          <div className="pain-list" role="list">
-            {PAINS.map((p, i) => (
-              <div className="pain-item" key={i} role="listitem">
-                <div className="pain-num" aria-hidden="true">0{i + 1}</div>
-                <div>
-                  <div className="pain-label">{p.label}</div>
-                  <p className="pain-desc">{p.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="pain-close">
-            Quem tem referência externa <strong>prioriza com mais clareza.</strong>{' '}
-            Quem não tem continua otimizando sem parâmetro —{' '}
-            e <em>potencialmente desperdiçando verba.</em>
-          </div>
-        </div>
-      </section>
-
       {/* ── COMO FUNCIONA ── */}
-      <section style={{ background: 'var(--surface)' }} id="how" aria-labelledby="how-h2">
+      <section style={{ background: 'var(--bg)' }} id="how" aria-labelledby="how-h2">
         <div className="wrap">
           <div className="eyebrow c">Simples. Direto. Sem conexão de conta.</div>
           <h2 id="how-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 400, margin: '0 auto 52px' }}>
@@ -931,7 +1070,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── O QUE O DIAGNÓSTICO REVELA ── */}
-      <section style={{ background: 'var(--bg)' }} aria-labelledby="reveal-h2">
+      <section style={{ background: 'var(--surface)' }} aria-labelledby="reveal-h2">
         <div className="wrap">
           <div className="eyebrow c">O que você recebe</div>
           <h2 id="reveal-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 40px' }}>
@@ -1017,55 +1156,55 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── PRODUTO EM USO ── */}
-      <section style={{ background: 'var(--surface)' }} aria-labelledby="product-h2">
+      {/* ── RADAR DE CPL ── */}
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="radar-h2">
         <div className="wrap">
-          <div className="eyebrow c">A plataforma</div>
-          <h2 id="product-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 14px' }}>
-            Um painel para enxergar o que o<br /><em>gerenciador não mostra.</em>
+          <div className="eyebrow c">Radar de CPL</div>
+          <h2 id="radar-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 500, margin: '0 auto 14px' }}>
+            Faixas de referência por <em>nicho, região e canal</em>
           </h2>
           <p className="section-sub c" style={{ marginBottom: 36 }}>
-            Meta Ads e Google Ads mostram quanto você pagou. A ELYON ajuda a entender se esse custo faz sentido para o seu nicho, região e objetivo.
+            Cada nicho tem seu próprio custo por lead esperado. A sensibilidade varia por região, competição e tipo de campanha.
           </p>
 
-          <div className="platform-panel" role="img" aria-label="Visão geral do painel ELYON NOUS — dados demonstrativos">
-            <div className="pf-header">
-              <div className="pf-header-title">
-                <span className="blink" aria-hidden="true" />
-                Dashboard · Semana 21 de 2026 · Modo demonstrativo
+          <div className="radar-panel" role="table" aria-label="Radar de CPL por nicho, região e canal — dados estimados">
+            <div className="radar-header">
+              <div className="radar-header-title">
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--gold)', display: 'inline-block' }} aria-hidden="true" />
+                Faixas estimadas por segmento
               </div>
-              <span className="pf-badge">Plano Profissional</span>
+              <span className="radar-badge">Estimativas</span>
             </div>
-            <div className="pf-metrics">
-              <div className="pf-m">
-                <div className="pf-m-label">Clientes monitorados</div>
-                <div className="pf-m-val">8</div>
-                <div className="pf-m-sub">contas ativas</div>
-              </div>
-              <div className="pf-m">
-                <div className="pf-m-label">CPL médio</div>
-                <div className="pf-m-val">R$42</div>
-                <div className="pf-m-sub">portfólio completo</div>
-              </div>
-              <div className="pf-m">
-                <div className="pf-m-label">Na faixa esperada</div>
-                <div className="pf-m-val g">5/8</div>
-                <div className="pf-m-sub">clientes</div>
-              </div>
-              <div className="pf-m">
-                <div className="pf-m-label">Alertas ativos</div>
-                <div className="pf-m-val a">3</div>
-                <div className="pf-m-sub">requerem atenção</div>
+            <div className="radar-scroll">
+              <div className="radar-table">
+                <div className="radar-thead" role="row">
+                  <div className="radar-th" role="columnheader">Nicho</div>
+                  <div className="radar-th" role="columnheader">Região</div>
+                  <div className="radar-th" role="columnheader">Canal</div>
+                  <div className="radar-th" role="columnheader">Faixa estimada</div>
+                  <div className="radar-th" role="columnheader">Sensibilidade</div>
+                </div>
+                {RADAR_ROWS.map((row, i) => (
+                  <div className="radar-tr" key={i} role="row">
+                    <div className="radar-td" role="cell">{row.nicho}</div>
+                    <div className="radar-td" role="cell">{row.regiao}</div>
+                    <div className="radar-td" role="cell">{row.canal}</div>
+                    <div className="radar-td" role="cell">
+                      <span className="radar-faixa">{row.faixa}</span>
+                    </div>
+                    <div className="radar-td" role="cell">
+                      <div className="radar-dots" aria-label={`${row.dots} de 5`}>
+                        {Array.from({ length: 5 }, (_, di) => (
+                          <div key={di} className={`radar-dot ${di < row.dots ? 'on' : 'off'}`} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="pf-footer">
-              <span className="pf-footer-item">3 nichos monitorados</span>
-              <span className="pf-dot" aria-hidden="true" />
-              <span className="pf-footer-item">Desvio médio +28%</span>
-              <span className="pf-dot" aria-hidden="true" />
-              <span className="pf-footer-item">2 clientes com alerta ativo esta semana</span>
-              <span className="pf-dot" aria-hidden="true" />
-              <span className="pf-footer-item" style={{ fontStyle: 'italic' }}>Dados demonstrativos</span>
+            <div className="radar-note">
+              Faixas estimadas com base em padrões por segmento. Não são dados auditados externamente. Demonstração.
             </div>
           </div>
         </div>
@@ -1095,7 +1234,7 @@ export default function LandingPage() {
                 {[
                   'Faixa de CPL estimada para o seu nicho',
                   'Comparativo com seu CPL atual',
-                  'Estimativa de desperdício mensal',
+                  'Estimativa de potencial desperdício',
                   'Prioridade de ajuste',
                   'Ponto de partida claro para otimização',
                 ].map((f, i) => (
@@ -1141,27 +1280,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── PARA QUEM É ── */}
-      <section style={{ background: 'var(--bg)' }} aria-labelledby="whom-h2">
-        <div className="wrap">
-          <div className="eyebrow c">Para quem é</div>
-          <h2 id="whom-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 460, margin: '0 auto 40px' }}>
-            Feito para quem <em>investe em mídia paga</em>
-          </h2>
-          <div className="for-whom-grid">
-            {FOR_WHOM.map((f, i) => (
-              <div className="fw-item" key={i}>
-                <div className="fw-marker" aria-hidden="true">{f.marker}</div>
-                <div className="fw-name">{f.name}</div>
-                <p className="fw-desc">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── COMPARAÇÃO ── */}
-      <section style={{ background: 'var(--surface)' }} aria-labelledby="compare-h2">
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="compare-h2">
         <div className="wrap">
           <div className="eyebrow c">A diferença na prática</div>
           <h2 id="compare-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 40px' }}>
@@ -1187,15 +1307,34 @@ export default function LandingPage() {
       </section>
 
       {/* ── PLANOS ── */}
-      <section style={{ background: 'var(--bg)' }} id="pricing" aria-labelledby="pricing-h2">
+      <section style={{ background: 'var(--surface)' }} id="pricing" aria-labelledby="pricing-h2">
         <div className="wrap">
           <div className="eyebrow c">Planos</div>
           <h2 id="pricing-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 14px' }}>
             Comece grátis. <em>Escale quando fizer sentido.</em>
           </h2>
-          <p className="section-sub c" style={{ marginBottom: 48 }}>
+          <p className="section-sub c" style={{ marginBottom: 36 }}>
             O diagnóstico é sempre gratuito. Os planos pagos são para quem quer monitoramento contínuo ao longo do tempo.
           </p>
+
+          {/* Journey strip */}
+          <div className="pricing-journey" aria-hidden="true">
+            <div className="pj-step active">
+              <div className="pj-step-num">Passo 01</div>
+              <div className="pj-step-name">Diagnóstico</div>
+            </div>
+            <span className="pj-arr">→</span>
+            <div className="pj-step">
+              <div className="pj-step-num">Passo 02</div>
+              <div className="pj-step-name">Acompanhamento</div>
+            </div>
+            <span className="pj-arr">→</span>
+            <div className="pj-step">
+              <div className="pj-step-num">Passo 03</div>
+              <div className="pj-step-name">Operação</div>
+            </div>
+          </div>
+
           <div className="plans">
             {PLANS.map((p, i) => (
               <div className={`plan${p.featured ? ' featured' : ''}`} key={i}>
@@ -1213,32 +1352,6 @@ export default function LandingPage() {
                 <a href={p.href} className={`plan-cta ${p.ctaStyle}`} aria-label={`${p.cta} — plano ${p.name}`}>{p.cta}</a>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── BENCHMARKS — TRANSPARÊNCIA ── */}
-      <section style={{ background: 'var(--surface)' }} aria-labelledby="bench-h2">
-        <div className="wrap">
-          <div className="bench-inner">
-            <div className="eyebrow c">Transparência total</div>
-            <h2 id="bench-h2" className="section-title c" style={{ margin: '0 auto 20px', maxWidth: 480 }}>
-              De onde vêm as <em>faixas de referência?</em>
-            </h2>
-            <p className="section-sub c" style={{ marginBottom: 14 }}>
-              As faixas de CPL são estruturadas a partir de padrões estimados por nicho, região e tipo de mídia. Não são dados coletados de terceiros nem auditados externamente.
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.7, maxWidth: 540, margin: '0 auto 28px' }}>
-              O diagnóstico não substitui uma auditoria profissional. O que ele entrega é uma leitura comparativa para identificar desvios evidentes — com linguagem clara sobre o que é estimado. Acreditamos que transparência gera mais confiança do que promessas imprecisas.
-            </p>
-            <div className="bench-tags" aria-label="Nichos cobertos pela plataforma">
-              {BENCH_TAGS.map((t, i) => (
-                <span className="bench-tag" key={i}>
-                  <span className="bench-dot" style={{ background: t.color }} aria-hidden="true" />
-                  {t.label}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </section>
@@ -1272,8 +1385,30 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── TRANSPARENTE POR PADRÃO ── */}
+      <section style={{ background: 'var(--surface)' }} aria-labelledby="trust-h2">
+        <div className="wrap">
+          <div className="eyebrow c">Transparente por padrão</div>
+          <h2 id="trust-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 14px' }}>
+            O que a ELYON NOUS <em>não promete.</em>
+          </h2>
+          <p className="section-sub c" style={{ marginBottom: 40 }}>
+            Acreditamos que transparência gera mais confiança do que promessas imprecisas. Aqui está o que você precisa saber.
+          </p>
+          <div className="trust-grid" role="list">
+            {TRUST_BLOCKS.map((b, i) => (
+              <div className="trust-blk" key={i} role="listitem">
+                <div className="trust-blk-num">{b.num}</div>
+                <div className="trust-blk-title">{b.title}</div>
+                <p className="trust-blk-desc">{b.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── FAQ ── */}
-      <section style={{ background: 'var(--surface)' }} id="faq" aria-labelledby="faq-h2">
+      <section style={{ background: 'var(--bg)' }} id="faq" aria-labelledby="faq-h2">
         <div className="wrap">
           <div className="eyebrow c">Perguntas frequentes</div>
           <h2 id="faq-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 460, margin: '0 auto 40px' }}>
