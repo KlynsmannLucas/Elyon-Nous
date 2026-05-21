@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ELYON NOUS | Inteligência de crescimento para marketing e tráfego',
+  title: 'ELYON NOUS | Central de Decisão para Marketing',
   description:
-    'Diagnostique negócio, campanhas, audiência, funil, mercado e conteúdo em uma central de inteligência. Comece com diagnóstico gratuito de CPL.',
+    'Central de decisão para marketing e tráfego. Organize sinais de negócio, campanhas, audiência e funil para saber onde agir antes de gastar mais.',
   openGraph: {
-    title: 'ELYON NOUS | Inteligência de crescimento para marketing e tráfego',
+    title: 'ELYON NOUS | Central de Decisão para Marketing',
     description:
       'Analise sinais do negócio, campanhas, audiência, funil e mercado para identificar gargalos e priorizar as próximas ações. Diagnóstico gratuito.',
     url: 'https://elyonnous.com',
@@ -470,27 +470,22 @@ section{padding:96px 0;}
 .tier-cta.paid{background:linear-gradient(135deg,var(--gold),var(--gold-hi));color:#000;}
 .tier-cta.paid:hover{box-shadow:0 0 32px var(--gold-glow);transform:translateY(-1px);}
 
-/* ── COMPARISON TABLE ── */
-.compare-wrap{max-width:820px;margin:0 auto;}
-.compare-head{
-  display:grid;grid-template-columns:1fr 1fr 1fr;
-  border:1px solid var(--border);border-bottom:none;border-radius:var(--r) var(--r) 0 0;overflow:hidden;
-}
-.compare-head-cell{padding:13px 20px;font-family:var(--f-mono);font-size:10.5px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;border-right:1px solid var(--border);}
-.compare-head-cell:last-child{border-right:none;}
-.compare-head-cell.topic{background:rgba(255,255,255,.02);color:var(--muted);}
-.compare-head-cell.bad{background:rgba(248,113,113,.06);color:var(--red);}
-.compare-head-cell.good{background:rgba(212,175,55,.08);color:var(--gold);}
-.compare-body{border:1px solid var(--border);border-radius:0 0 var(--r) var(--r);overflow:hidden;}
-.compare-row{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border);}
-.compare-row:last-child{border-bottom:none;}
-.compare-row:hover{background:rgba(255,255,255,.01);}
-.compare-cell{padding:14px 20px;font-size:13px;border-right:1px solid var(--border);}
-.compare-cell:last-child{border-right:none;}
-.compare-cell.topic{color:var(--sub);font-weight:600;}
-.compare-cell.bad{color:rgba(248,113,113,.65);}
-.compare-cell.good{color:var(--sub);}
+/* ── CDM STRIP ── */
+.cdm-strip{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:40px 0;}
+.cdm-inner{max-width:660px;margin:0 auto;text-align:center;}
+.cdm-label{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;}
+.cdm-label::before,.cdm-label::after{content:'';height:1px;width:28px;background:var(--gold);opacity:.3;}
+.cdm-text{font-size:15.5px;color:var(--sub);line-height:1.75;}
+.cdm-text em{color:var(--text);font-style:normal;}
+
+/* Module decision question */
+.mod-col-question{font-size:11px;color:var(--sub);line-height:1.55;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);font-style:italic;}
+
+/* Context analyzed in mockup */
+.fdb-ctx{padding:6px 10px;border-top:1px solid var(--border);}
+.fdb-ctx-label{font-family:var(--f-mono);font-size:7px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.fdb-ctx-tags{display:flex;flex-wrap:wrap;gap:3px;}
+.fdb-ctx-tag{font-family:var(--f-mono);font-size:8px;padding:1px 6px;border-radius:3px;background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.1);color:var(--gold);}
 
 /* ── PRICING JOURNEY + PLANS ── */
 .pricing-journey{
@@ -613,8 +608,6 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
   .hero-inner{grid-template-columns:1fr;}
   .plans{grid-template-columns:1fr 1fr;}
   .tier-cards{grid-template-columns:1fr;}
-  .compare-head,.compare-row{grid-template-columns:1fr 1fr;}
-  .compare-cell.topic,.compare-head-cell.topic{display:none;}
   .steps{grid-template-columns:1fr;}
   .steps::before{display:none;}
   .hero h1{font-size:40px;letter-spacing:-2px;}
@@ -664,7 +657,6 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
   .tc{font-size:11px;}
   .tier-card{padding:24px 20px;}
   .cta-final h2{font-size:28px;letter-spacing:-.8px;}
-  .compare-head,.compare-row{grid-template-columns:1fr 1fr;}
   .pj-arr{display:none;}
   .mod-grid{grid-template-columns:1fr;}
   .cplinv-item{grid-template-columns:60px 1fr;}
@@ -708,9 +700,9 @@ const FDB_ACTIONS = [
   'Revisar audiência fria no Meta Ads',
   'Reequilibrar verba entre canais',
   'Ajustar promessa da landing page',
-  'Criar variações de criativo',
-  'Analisar concorrentes diretos',
 ]
+
+const FDB_CTX_TAGS = ['Campanhas', 'Audiência', 'Funil', 'Mercado', 'Conteúdo']
 
 const INTEL_BLOCKS = [
   {
@@ -788,45 +780,43 @@ const MODULE_GROUPS = [
     group: 'Diagnóstico',
     color: '#38BDF8',
     bgColor: 'rgba(56,189,248,.08)',
+    question: 'Qual parte do negócio merece atenção primeiro?',
     modules: ['Visão Geral', 'Análise Profunda', 'Saúde do Negócio', 'Funil de Vendas', 'Resultados'],
   },
   {
     group: 'Campanhas',
     color: '#D4AF37',
     bgColor: 'rgba(212,175,55,.08)',
+    question: 'Onde manter, reduzir ou escalar verba?',
     modules: ['Meta & Google Ads', 'Audiências', 'Alocador de Verba', 'Mix de Canais'],
   },
   {
     group: 'Inteligência',
     color: '#A78BFA',
     bgColor: 'rgba(167,139,250,.08)',
+    question: 'O que os dados sugerem que ainda não foi visto?',
     modules: ['TrafficBrain IA', 'Pesquisa de Mercado', 'Histórico de Aprendizado', 'Automação de Rotina'],
   },
   {
     group: 'Conteúdo & Conversão',
     color: '#22C55E',
     bgColor: 'rgba(34,197,94,.08)',
+    question: 'A mensagem e a oferta sustentam o tráfego recebido?',
     modules: ['Concorrentes', 'Criar Conteúdo', 'Persona do Cliente', 'Otim. de Conversão com IA'],
   },
   {
     group: 'Plano de Ação',
     color: '#F87171',
     bgColor: 'rgba(248,113,113,.08)',
+    question: 'Qual é o próximo passo de maior impacto?',
     modules: ['Estratégia', 'Ações Prioritárias', 'Relatórios'],
   },
-]
-
-const COMPARE_ROWS = [
-  { topic: 'Diagnóstico', bad: 'Métricas isoladas sem contexto', good: 'Visão integrada: negócio, funil, campanhas' },
-  { topic: 'Decisão de verba', bad: 'Baseada em feeling ou histórico interno', good: 'Apoiada por análise de eficiência por canal' },
-  { topic: 'Identificação de gargalo', bad: 'Percebido tarde, após perda de resultado', good: 'Mapeado antes de escalar investimento' },
-  { topic: 'Próximo passo', bad: 'Lista de tarefas sem prioridade clara', good: 'Ações priorizadas por impacto estimado' },
 ]
 
 const PLANS = [
   {
     name: 'Diagnóstico',
-    target: 'Para quem quer um primeiro sinal de ineficiência sem custo.',
+    target: 'Para quem quer identificar um primeiro sinal sem custo — em minutos.',
     price: null,
     period: 'Gratuito',
     cta: 'Fazer diagnóstico grátis',
@@ -841,7 +831,7 @@ const PLANS = [
   },
   {
     name: 'Plataforma',
-    target: 'Para negócios que querem acompanhar indicadores ao longo do tempo.',
+    target: 'Para negócios que querem sair do diagnóstico pontual e monitorar continuamente.',
     price: 'R$297',
     period: '/mês',
     cta: 'Começar acompanhamento',
@@ -857,7 +847,7 @@ const PLANS = [
   },
   {
     name: 'Profissional',
-    target: 'Para gestores e agências com múltiplos clientes.',
+    target: 'Para gestores e agências que tomam decisões por vários clientes ao mesmo tempo.',
     price: 'R$997',
     period: '/mês',
     cta: 'Usar com clientes',
@@ -876,7 +866,7 @@ const PLANS = [
   },
   {
     name: 'Avançado',
-    target: 'Para operações maiores com múltiplas contas e inteligência contínua.',
+    target: 'Para operações com volume alto, múltiplas contas e necessidade de inteligência contínua.',
     price: 'R$2.997',
     period: '/mês',
     cta: 'Falar sobre operação',
@@ -982,15 +972,14 @@ export default function LandingPage() {
             <div>
               <div className="hero-eyebrow" aria-hidden="true">
                 <span className="blink" />
-                Inteligência de crescimento para marketing e tráfego
+                Central de Decisão para Marketing
               </div>
               <h1 id="hero-h1">
-                Comece pelo diagnóstico.<br />
-                Decida o próximo passo<br />
-                <em>com inteligência.</em>
+                Saiba onde agir<br />
+                antes de <em>gastar mais.</em>
               </h1>
               <p className="hero-sub">
-                A ELYON NOUS analisa sinais do negócio, campanhas, audiência, funil, mercado e conteúdo para ajudar empresas, gestores e agências a identificar gargalos e priorizar as próximas ações.
+                A ELYON NOUS organiza sinais de negócio, campanhas, audiência, funil e mercado para identificar gargalos e priorizar as próximas ações — antes de escalar investimento.
               </p>
               <div className="hero-ctas">
                 <a href={ctaHref} className="cta-primary" aria-label="Fazer diagnóstico gratuito de CPL — sem cartão">
@@ -1065,13 +1054,21 @@ export default function LandingPage() {
                         ))}
                       </div>
                       <div className="fdb-actions">
-                        <div className="fdb-actions-label">Próximas ações sugeridas</div>
+                        <div className="fdb-actions-label">Prioridade da semana</div>
                         {FDB_ACTIONS.map((a, i) => (
                           <div className="fdb-action-item" key={i}>
                             <span className="fdb-action-num">{String(i + 1).padStart(2, '0')}</span>
                             <span className="fdb-action-text">{a}</span>
                           </div>
                         ))}
+                      </div>
+                      <div className="fdb-ctx" aria-hidden="true">
+                        <div className="fdb-ctx-label">Contexto analisado</div>
+                        <div className="fdb-ctx-tags">
+                          {FDB_CTX_TAGS.map((t) => (
+                            <span className="fdb-ctx-tag" key={t}>{t}</span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1089,6 +1086,18 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── CDM DEFINITION STRIP ── */}
+      <div className="cdm-strip" aria-hidden="true">
+        <div className="wrap">
+          <div className="cdm-inner">
+            <div className="cdm-label">Central de Decisão para Marketing</div>
+            <p className="cdm-text">
+              Uma plataforma que <em>organiza sinais</em> de negócio, campanhas, audiência, funil e mercado em uma visão integrada — para ajudar a <em>identificar onde agir</em> antes de escalar investimento.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* ── UMA INTELIGÊNCIA QUE CONECTA OS PONTOS ── */}
       <div className="intel-section" id="platform" aria-labelledby="intel-heading">
@@ -1126,6 +1135,44 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+
+      {/* ── MÓDULOS PRINCIPAIS DA ELYON ── */}
+      <section style={{ background: 'var(--surface)' }} id="modules" aria-labelledby="mod-h2">
+        <div className="wrap">
+          <div className="eyebrow c">Módulos principais da ELYON</div>
+          <h2 id="mod-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 14px' }}>
+            Uma plataforma organizada por <em>área de decisão</em>
+          </h2>
+          <p className="section-sub c" style={{ marginBottom: 40 }}>
+            Cada grupo de módulos ajuda a responder uma pergunta diferente. Juntos, formam uma visão completa do que está acontecendo e do que fazer primeiro.
+          </p>
+
+          <div className="mod-grid" role="list">
+            {MODULE_GROUPS.map((group) => (
+              <div className="mod-col" key={`mod2-${group.group}`} role="listitem">
+                <div className="mod-col-header">
+                  <div className="mod-col-title">{group.group}</div>
+                  <span
+                    className="mod-col-badge"
+                    style={{ background: group.bgColor, color: group.color, border: `1px solid ${group.color}22` }}
+                  >
+                    {group.modules.length} módulos
+                  </span>
+                </div>
+                <p className="mod-col-question">{group.question}</p>
+                <div className="mod-items">
+                  {group.modules.map((m) => (
+                    <div className="mod-item" key={m}>
+                      <div className="mod-item-dot" style={{ background: group.color, opacity: 0.6 }} />
+                      {m}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ── DO DIAGNÓSTICO AO PLANO DE AÇÃO ── */}
       <div className="jrn-section" aria-labelledby="jrn-heading">
@@ -1273,10 +1320,10 @@ export default function LandingPage() {
                 de <em>vários lugares.</em>
               </h2>
               <p>
-                O diagnóstico de CPL é uma das formas mais rápidas de encontrar um primeiro sinal de ineficiência. Mas um CPL acima da faixa esperada pode ter origem em audiência, oferta, criativo, funil, canal, concorrência ou verba mal distribuída.
+                O diagnóstico de CPL é uma forma rápida de encontrar um primeiro sinal. Mas a decisão certa depende do contexto: audiência, funil, canal, oferta, conteúdo e mercado.
               </p>
               <p>
-                <em>Por isso a ELYON não para no número.</em> Ela ajuda a investigar o contexto.
+                <em>Por isso a ELYON não para no número.</em> Ela ajuda a investigar o que está por trás.
               </p>
               <div style={{ marginTop: 28 }}>
                 <a href={ctaHref} className="cta-primary" style={{ display: 'inline-flex' }}>
@@ -1306,43 +1353,6 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── MÓDULOS PRINCIPAIS DA ELYON ── */}
-      <section style={{ background: 'var(--surface)' }} id="modules" aria-labelledby="mod-h2">
-        <div className="wrap">
-          <div className="eyebrow c">Módulos principais da ELYON</div>
-          <h2 id="mod-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 14px' }}>
-            Uma plataforma organizada por <em>área de decisão</em>
-          </h2>
-          <p className="section-sub c" style={{ marginBottom: 40 }}>
-            Cada módulo endereça uma dimensão diferente do negócio. Juntos, formam uma visão completa do que está acontecendo e do que fazer primeiro.
-          </p>
-
-          <div className="mod-grid" role="list">
-            {MODULE_GROUPS.map((group) => (
-              <div className="mod-col" key={group.group} role="listitem">
-                <div className="mod-col-header">
-                  <div className="mod-col-title">{group.group}</div>
-                  <span
-                    className="mod-col-badge"
-                    style={{ background: group.bgColor, color: group.color, border: `1px solid ${group.color}22` }}
-                  >
-                    {group.modules.length} módulos
-                  </span>
-                </div>
-                <div className="mod-items">
-                  {group.modules.map((m) => (
-                    <div className="mod-item" key={m}>
-                      <div className="mod-item-dot" style={{ background: group.color, opacity: 0.6 }} />
-                      {m}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -1415,42 +1425,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── COMPARAÇÃO ── */}
-      <section style={{ background: 'var(--bg)' }} aria-labelledby="compare-h2">
-        <div className="wrap">
-          <div className="eyebrow c">A diferença na prática</div>
-          <h2 id="compare-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 460, margin: '0 auto 40px' }}>
-            Quando você tem contexto,<br /><em>a decisão muda.</em>
-          </h2>
-          <div className="compare-wrap" role="table" aria-label="Comparação sem inteligência vs com ELYON NOUS">
-            <div className="compare-head" role="row">
-              <div className="compare-head-cell topic" role="columnheader">Situação</div>
-              <div className="compare-head-cell bad" role="columnheader">Sem inteligência</div>
-              <div className="compare-head-cell good" role="columnheader">Com ELYON NOUS</div>
-            </div>
-            <div className="compare-body" role="rowgroup">
-              {COMPARE_ROWS.map((r, i) => (
-                <div className="compare-row" key={i} role="row">
-                  <div className="compare-cell topic" role="cell">{r.topic}</div>
-                  <div className="compare-cell bad" role="cell">{r.bad}</div>
-                  <div className="compare-cell good" role="cell">{r.good}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── PLANOS ── */}
       <section style={{ background: 'var(--surface)' }} id="pricing" aria-labelledby="pricing-h2">
         <div className="wrap">
           <div className="eyebrow c">Planos</div>
-          <h2 id="pricing-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 14px' }}>
+          <h2 id="pricing-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 14px' }}>
             Escolha o nível de inteligência<br />
-            que sua <em>operação precisa.</em>
+            da sua <em>operação.</em>
           </h2>
           <p className="section-sub c" style={{ marginBottom: 36 }}>
-            Comece validando um primeiro sinal com o diagnóstico gratuito. Depois, evolua para acompanhamento de campanhas, audiências, funil, conteúdo, relatórios e plano de ação.
+            Comece com o diagnóstico gratuito — sem cartão, em minutos. Evolua para acompanhamento contínuo quando precisar de mais contexto para decidir.
           </p>
 
           <div className="pricing-journey" aria-hidden="true">
@@ -1536,14 +1520,14 @@ export default function LandingPage() {
         <div className="wrap">
           <div className="cta-final-inner">
             <h2 id="cta-h2">
-              Entenda o que está acontecendo<br />
-              no marketing e decida <em>o que fazer primeiro.</em>
+              Entenda o que está acontecendo.<br />
+              Decida <em>o que fazer primeiro.</em>
             </h2>
             <p className="cta-final-sub">
-              Comece com o diagnóstico gratuito. Identifique o primeiro sinal de ineficiência e descubra como a ELYON ajuda a transformar análise em próximo passo.
+              Comece com o diagnóstico gratuito. Sem cartão, sem compromisso.
             </p>
             <p className="cta-final-promise">
-              A ELYON ajuda a <em>identificar onde agir</em> — não a prometer onde chegará.
+              Baixa fricção · <em>Resultado em minutos</em> · Sem conectar conta
             </p>
             <a href={ctaHref} className="cta-primary lg" aria-label="Fazer diagnóstico gratuito de CPL — sem cartão">
               Fazer diagnóstico grátis →
