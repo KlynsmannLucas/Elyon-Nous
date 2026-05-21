@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'ELYON NOUS | Diagnóstico gratuito de CPL',
   description:
-    'Descubra se você está pagando caro por lead. Compare seu CPL com faixas de referência por nicho e região e identifique possíveis desvios nas suas campanhas.',
+    'Compare seu CPL com faixas de referência por nicho e região e descubra se suas campanhas estão acima da faixa esperada.',
   openGraph: {
     title: 'ELYON NOUS | Diagnóstico gratuito de CPL',
     description:
@@ -17,349 +17,599 @@ export const metadata: Metadata = {
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#0F0F12;
-  --surface:#18181C;
-  --card:#202026;
-  --border:rgba(255,255,255,.07);
+  --bg:#09090C;
+  --surface:#111116;
+  --card:#16161C;
+  --border:rgba(255,255,255,.06);
+  --border-hi:rgba(255,255,255,.10);
   --gold:#D4AF37;
   --gold-hi:#E8C84A;
-  --gold-glow:rgba(212,175,55,.16);
+  --gold-dim:rgba(212,175,55,.08);
+  --gold-glow:rgba(212,175,55,.18);
   --green:#22C55E;
-  --green-dim:rgba(34,197,94,.12);
-  --purple:#A78BFA;
+  --green-dim:rgba(34,197,94,.10);
   --blue:#38BDF8;
-  --text:#F2F2F4;
-  --muted:#6B6B7A;
+  --red:#F87171;
+  --amber:#FBBF24;
+  --text:#F4F4F6;
   --sub:#9A9AAA;
-  --red:#FF4D4D;
+  --muted:#52525E;
   --f-display:'Syne',sans-serif;
   --f-body:'DM Sans',sans-serif;
   --f-mono:'JetBrains Mono',monospace;
+  --r:14px;--rl:20px;--rxl:28px;
 }
-body{background:var(--bg);color:var(--text);font-family:var(--f-body);-webkit-font-smoothing:antialiased;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--f-body);-webkit-font-smoothing:antialiased;line-height:1.5;}
 
-/* NAV */
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 48px;background:rgba(15,15,18,.93);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
-.nav-logo{font-family:var(--f-display);font-weight:800;font-size:18px;color:var(--gold);letter-spacing:-.3px;text-decoration:none;}
-.nav-links{display:flex;align-items:center;gap:28px;}
+/* ── NAV ── */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:60px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 40px;
+  background:rgba(9,9,12,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+}
+.nav::after{
+  content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(212,175,55,.18),transparent);pointer-events:none;
+}
+.nav-logo{font-family:var(--f-display);font-weight:800;font-size:17px;color:var(--gold);
+  letter-spacing:-.2px;text-decoration:none;display:flex;align-items:center;gap:7px;}
+.nav-logo-mark{width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg,var(--gold),rgba(212,175,55,.4));
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nav-logo-mark-inner{width:6px;height:6px;border-radius:50%;background:#000;}
+.nav-links{display:flex;align-items:center;gap:24px;}
 .nav-link{font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s;}
-.nav-link:hover{color:var(--text);}
-.nav-actions{display:flex;align-items:center;gap:12px;}
-.nav-login{font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s;}
-.nav-login:hover{color:var(--text);}
-.nav-cta{background:var(--gold);color:#000;font-weight:700;font-size:13px;padding:9px 20px;border-radius:8px;text-decoration:none;transition:all .18s;display:inline-flex;align-items:center;white-space:nowrap;}
-.nav-cta:hover{background:var(--gold-hi);box-shadow:0 0 20px var(--gold-glow);}
+.nav-link:hover{color:var(--sub);}
+.nav-actions{display:flex;align-items:center;gap:10px;}
+.nav-login{font-size:13px;color:var(--muted);text-decoration:none;padding:7px 14px;border-radius:8px;transition:all .15s;}
+.nav-login:hover{color:var(--text);background:rgba(255,255,255,.04);}
+.nav-cta{background:var(--gold);color:#000;font-weight:700;font-size:12.5px;padding:8px 18px;
+  border-radius:8px;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.nav-cta:hover{background:var(--gold-hi);box-shadow:0 0 24px var(--gold-glow);}
 
-/* LAYOUT */
-.wrap{max-width:1100px;margin:0 auto;padding:0 24px;}
+/* ── LAYOUT ── */
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px;}
 section{padding:96px 0;}
 
-/* HERO */
-.hero{padding:128px 0 88px;background:radial-gradient(ellipse 900px 500px at 50% 0%,rgba(212,175,55,.06) 0%,transparent 70%);}
-.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.25);border-radius:999px;padding:5px 14px;font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
-.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.hero-pos{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.5;}
-.hero h1{font-family:var(--f-display);font-size:50px;font-weight:800;line-height:1.08;letter-spacing:-2px;color:var(--text);margin-bottom:18px;}
+/* ── HERO ── */
+.hero{
+  padding:144px 0 100px;
+  background:
+    radial-gradient(ellipse 900px 700px at 65% -5%,rgba(212,175,55,.06) 0%,transparent 60%),
+    radial-gradient(ellipse 500px 400px at 10% 90%,rgba(56,189,248,.02) 0%,transparent 60%);
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 90% 80% at 50% 10%,black 0%,transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 10%,black 0%,transparent 100%);
+  pointer-events:none;
+}
+.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;position:relative;z-index:1;}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;
+  background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.18);border-radius:999px;
+  padding:5px 14px;font-family:var(--f-mono);font-size:10.5px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--gold);
+}
+.blink{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;display:inline-block;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.hero-pos{font-size:13px;color:var(--muted);margin-bottom:16px;letter-spacing:.01em;}
+.hero h1{
+  font-family:var(--f-display);font-size:54px;font-weight:800;
+  line-height:1.05;letter-spacing:-2.8px;color:var(--text);margin-bottom:20px;
+}
 .hero h1 em{color:var(--gold);font-style:normal;}
-.hero-sub{font-size:17px;color:var(--sub);line-height:1.65;margin-bottom:32px;max-width:500px;}
-.cta-primary{background:linear-gradient(135deg,var(--gold),var(--gold-hi));color:#000;font-weight:800;font-size:16px;padding:16px 32px;border-radius:12px;border:none;cursor:pointer;font-family:var(--f-body);text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s;letter-spacing:-.2px;}
+.hero-sub{font-size:17px;color:var(--sub);line-height:1.68;margin-bottom:28px;max-width:460px;}
+.hero-ctas{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
+.cta-primary{
+  background:linear-gradient(135deg,var(--gold) 0%,var(--gold-hi) 100%);
+  color:#000;font-weight:800;font-size:15px;padding:14px 28px;border-radius:var(--r);
+  border:none;cursor:pointer;font-family:var(--f-body);text-decoration:none;
+  display:inline-flex;align-items:center;gap:7px;transition:all .2s;letter-spacing:-.1px;
+}
 .cta-primary:hover{box-shadow:0 0 40px var(--gold-glow),0 8px 24px rgba(0,0,0,.4);transform:translateY(-2px);}
 .cta-primary:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
-.cta-primary.lg{font-size:18px;padding:18px 40px;border-radius:14px;}
-.trust-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
-.trust-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:5px 10px;font-size:12px;color:var(--muted);}
-.trust-badge .tck{color:var(--green);font-size:11px;}
-.trust-check{color:var(--green);}
+.cta-primary.lg{font-size:17px;padding:17px 36px;border-radius:16px;}
+.cta-ghost{
+  font-size:14px;color:var(--sub);text-decoration:none;padding:12px 20px;
+  border:1px solid var(--border);border-radius:var(--r);transition:all .18s;
+  display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.02);
+}
+.cta-ghost:hover{color:var(--text);border-color:var(--border-hi);background:rgba(255,255,255,.04);}
+.trust-row{display:flex;flex-wrap:wrap;gap:6px;}
+.tc{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.055);border-radius:6px;padding:4px 10px;
+  font-size:11.5px;color:var(--muted);}
+.tc-check{color:var(--green);font-size:10px;font-weight:700;}
 
-/* CPL CARD */
-.cpl-card{background:var(--surface);border:1px solid rgba(212,175,55,.2);border-radius:20px;padding:24px 24px 20px;box-shadow:0 0 80px rgba(212,175,55,.07),0 40px 80px rgba(0,0,0,.5);}
-.cpl-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
-.cpl-card-title{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;}
-.cpl-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block;}
-.cpl-platform-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid rgba(212,175,55,.2);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;}
-.cpl-card-meta{font-size:11px;color:rgba(255,255,255,.25);font-family:var(--f-mono);margin-bottom:14px;}
-.cpl-status{display:flex;align-items:center;gap:7px;background:rgba(255,77,77,.07);border:1px solid rgba(255,77,77,.18);border-radius:8px;padding:7px 12px;margin-bottom:14px;font-size:12px;color:var(--red);font-weight:600;}
-.cpl-status-dot{width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;}
-.cpl-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
-.cpl-row:last-of-type{border-bottom:none;}
-.cpl-label{font-size:13px;color:var(--muted);}
-.cpl-value{font-family:var(--f-mono);font-size:19px;font-weight:700;}
-.cpl-value.green{color:var(--green);}
-.cpl-value.red{color:var(--red);}
-.cpl-value.white{color:var(--text);}
-.cpl-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:8px;font-family:var(--f-mono);background:rgba(255,77,77,.15);color:var(--red);}
-.cpl-bars{padding:12px 0 0;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;}
-.cpl-bar-row{display:flex;align-items:center;gap:10px;}
-.cpl-bar-lbl{font-size:10px;color:var(--muted);font-family:var(--f-mono);width:36px;flex-shrink:0;text-align:right;}
-.cpl-bar-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;min-width:0;}
-.cpl-bar-fill{height:100%;border-radius:3px;}
-.cpl-bar-v{font-size:11px;font-family:var(--f-mono);font-weight:700;width:34px;text-align:right;flex-shrink:0;}
-.cpl-loss{margin-top:14px;background:rgba(255,77,77,.07);border:1px solid rgba(255,77,77,.18);border-radius:11px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;}
-.cpl-loss-label{font-size:13px;color:var(--red);}
-.cpl-loss-value{font-family:var(--f-mono);font-size:21px;font-weight:800;color:var(--red);}
-.cpl-priority{margin-top:8px;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:9px;padding:9px 13px;display:flex;align-items:center;gap:10px;}
-.cpl-priority-label{font-size:10px;color:var(--muted);font-family:var(--f-mono);white-space:nowrap;text-transform:uppercase;letter-spacing:.08em;}
-.cpl-priority-value{font-size:12px;color:var(--gold);font-weight:600;}
+/* ── DASHBOARD CARD (hero right) ── */
+.dash-card{
+  background:var(--surface);border:1px solid rgba(212,175,55,.15);border-radius:var(--rxl);
+  overflow:hidden;position:relative;
+  box-shadow:0 0 100px rgba(212,175,55,.05),0 40px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);
+}
+.dash-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(212,175,55,.55),transparent);pointer-events:none;z-index:2;
+}
+.dash-topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 18px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.01);
+}
+.dash-topbar-title{font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;}
+.dash-live{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:4px;}
+.dash-meta{display:flex;align-items:center;gap:5px;padding:9px 18px;border-bottom:1px solid var(--border);}
+.dash-chip{font-family:var(--f-mono);font-size:9.5px;padding:3px 9px;border-radius:4px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--sub);}
+.dash-chip.gold{background:rgba(212,175,55,.08);border-color:rgba(212,175,55,.18);color:var(--gold);}
+.dash-alert{
+  display:flex;align-items:center;gap:8px;padding:9px 18px;
+  background:rgba(248,113,113,.05);border-bottom:1px solid rgba(248,113,113,.12);
+  font-size:11.5px;color:var(--red);font-weight:600;font-family:var(--f-mono);letter-spacing:.01em;
+}
+.dash-alert-tri{font-size:12px;flex-shrink:0;}
+.dash-metrics{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);}
+.dash-m{padding:13px 15px;border-right:1px solid var(--border);}
+.dash-m:last-child{border-right:none;}
+.dash-m-label{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;}
+.dash-m-val{font-family:var(--f-mono);font-size:19px;font-weight:800;line-height:1;}
+.dash-m-val.r{color:var(--red);}
+.dash-m-val.g{color:var(--green);}
+.dash-m-val.a{color:var(--amber);}
+.dash-m-sub{font-size:9.5px;color:var(--muted);margin-top:3px;font-family:var(--f-mono);}
+.dash-m-delta{display:inline-flex;font-size:9.5px;font-weight:700;font-family:var(--f-mono);
+  padding:2px 5px;border-radius:3px;margin-top:3px;background:rgba(248,113,113,.12);color:var(--red);}
+.dash-bars{padding:12px 18px;border-bottom:1px solid var(--border);}
+.dash-bars-lbl{font-size:9px;color:var(--muted);font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px;}
+.bar-row{display:flex;align-items:center;gap:9px;margin-bottom:6px;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-lbl{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);width:30px;flex-shrink:0;text-align:right;}
+.bar-track{flex:1;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;}
+.bar-fill.g{background:var(--green);}
+.bar-fill.r{background:var(--red);}
+.bar-val{font-size:10px;font-family:var(--f-mono);font-weight:700;width:34px;text-align:right;flex-shrink:0;}
+.bar-val.g{color:var(--green);}
+.bar-val.r{color:var(--red);}
+.dash-bottom{display:grid;grid-template-columns:1fr 1fr;}
+.dash-block{padding:12px 18px;}
+.dash-block.bd{border-right:1px solid var(--border);}
+.dash-block-lbl{font-size:9px;font-family:var(--f-mono);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+.dash-block-lbl.gold{color:var(--gold);}
+.dash-block-lbl.blue{color:var(--blue);}
+.dash-block-text{font-size:11.5px;color:var(--sub);line-height:1.55;}
 
-/* EYEBROW / SECTION TITLES */
-.eyebrow{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
-.eyebrow::before{content:'';height:1px;width:24px;background:var(--gold);opacity:.5;}
-.eyebrow.center{justify-content:center;}
-.eyebrow.center::before{display:none;}
-.section-title{font-family:var(--f-display);font-size:38px;font-weight:800;line-height:1.15;letter-spacing:-1.5px;color:var(--text);margin-bottom:20px;}
+/* ── NARRATIVE BREAK ── */
+.narrative{
+  padding:72px 0;background:var(--surface);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.narrative::before{
+  content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:700px;height:350px;
+  background:radial-gradient(ellipse,rgba(212,175,55,.035) 0%,transparent 70%);
+  pointer-events:none;
+}
+.narrative-inner{max-width:720px;margin:0 auto;text-align:center;position:relative;}
+.narrative-text{
+  font-family:var(--f-display);font-size:26px;font-weight:700;
+  line-height:1.5;letter-spacing:-1px;color:var(--muted);
+}
+.narrative-text em{color:var(--text);font-style:normal;}
+.narrative-text strong{color:var(--gold);font-weight:inherit;}
+
+/* ── EYEBROW / TITLES ── */
+.eyebrow{
+  font-family:var(--f-mono);font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;
+}
+.eyebrow::before{content:'';height:1px;width:20px;background:var(--gold);opacity:.35;}
+.eyebrow.c{justify-content:center;}
+.eyebrow.c::before{display:none;}
+.section-title{
+  font-family:var(--f-display);font-size:40px;font-weight:800;
+  line-height:1.1;letter-spacing:-2px;color:var(--text);margin-bottom:18px;
+}
 .section-title em{color:var(--gold);font-style:normal;}
-.section-title.center{text-align:center;}
+.section-title.c{text-align:center;}
 .section-sub{font-size:17px;color:var(--sub);line-height:1.65;margin-bottom:40px;}
-.section-sub.center{text-align:center;max-width:560px;margin-left:auto;margin-right:auto;}
+.section-sub.c{text-align:center;max-width:540px;margin-left:auto;margin-right:auto;}
 
-/* PAIN */
-.pain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
-.pain-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:10px;}
-.pain-icon{font-size:22px;}
-.pain-label{font-size:14px;font-weight:700;color:var(--text);}
+/* ── PAIN — numbered list ── */
+.pain-list{
+  border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;
+  margin-bottom:24px;
+}
+.pain-item{
+  display:grid;grid-template-columns:52px 1fr;
+  padding:22px 24px;border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+.pain-item:last-child{border-bottom:none;}
+.pain-item:hover{background:rgba(255,255,255,.015);}
+.pain-num{font-family:var(--f-mono);font-size:13px;font-weight:700;color:var(--gold);opacity:.45;padding-top:2px;}
+.pain-label{font-size:15px;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.4;}
 .pain-desc{font-size:13px;color:var(--muted);line-height:1.55;}
-.pain-close{background:rgba(255,77,77,.05);border:1px solid rgba(255,77,77,.18);border-radius:14px;padding:18px 24px;font-size:15px;color:var(--sub);line-height:1.6;text-align:center;}
+.pain-close{
+  background:rgba(248,113,113,.04);border:1px solid rgba(248,113,113,.1);
+  border-radius:var(--r);padding:18px 24px;font-size:15px;color:var(--sub);line-height:1.65;text-align:center;
+}
 .pain-close strong{color:var(--text);}
+.pain-close em{color:var(--red);font-style:normal;}
 
-/* STEPS */
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.step{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;transition:border-color .2s;}
-.step:hover{border-color:rgba(212,175,55,.25);}
-.step-num{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--gold);margin-bottom:16px;opacity:.7;}
-.step-icon{font-size:28px;margin-bottom:14px;}
-.step-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;}
-.step-desc{font-size:14px;color:var(--muted);line-height:1.6;}
+/* ── STEPS — horizontal ── */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;position:relative;}
+.steps::before{
+  content:'';position:absolute;top:23px;left:calc(16.67% + 12px);right:calc(16.67% + 12px);
+  height:1px;background:linear-gradient(90deg,rgba(212,175,55,.3),rgba(212,175,55,.08));
+  z-index:0;
+}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
+  padding:28px 24px;transition:border-color .2s,box-shadow .2s;position:relative;z-index:1;}
+.step:hover{border-color:rgba(212,175,55,.2);box-shadow:0 0 24px rgba(212,175,55,.04);}
+.step-badge{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--gold-dim);border:1px solid rgba(212,175,55,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--f-mono);font-size:12px;font-weight:700;color:var(--gold);
+  margin-bottom:18px;
+}
+.step-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4;}
+.step-desc{font-size:13px;color:var(--muted);line-height:1.6;}
 
-/* DELIVERABLES */
-.deliver-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-.deliver-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;transition:all .2s;}
-.deliver-item:hover{border-color:rgba(212,175,55,.25);box-shadow:0 0 24px rgba(212,175,55,.04);}
-.deliver-icon{font-size:26px;margin-bottom:12px;}
-.deliver-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;}
-.deliver-desc{font-size:13px;color:var(--muted);line-height:1.6;}
+/* ── PRODUCT PANEL (reveal section) ── */
+.product-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--rxl);
+  overflow:hidden;position:relative;box-shadow:0 0 60px rgba(212,175,55,.03);
+}
+.product-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(212,175,55,.35),transparent);pointer-events:none;
+}
+.pp-header{
+  padding:13px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.01);
+}
+.pp-header-title{
+  font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;
+}
+.pp-badge{
+  font-family:var(--f-mono);font-size:9px;font-weight:700;padding:3px 10px;border-radius:4px;
+  background:rgba(34,197,94,.07);color:var(--green);border:1px solid rgba(34,197,94,.14);letter-spacing:.06em;
+}
+.pp-metrics{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border);}
+.pp-m{padding:17px 16px;border-right:1px solid var(--border);}
+.pp-m:last-child{border-right:none;}
+.pp-m-label{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px;}
+.pp-m-val{font-family:var(--f-mono);font-size:18px;font-weight:800;line-height:1;margin-bottom:3px;}
+.pp-m-val.r{color:var(--red);}
+.pp-m-val.g{color:var(--green);}
+.pp-m-val.a{color:var(--amber);}
+.pp-m-val.gold{color:var(--gold);}
+.pp-m-sub{font-size:10.5px;color:var(--muted);}
+.pp-bar-section{padding:16px 22px;border-bottom:1px solid var(--border);}
+.pp-bar-label{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;}
+.pp-insights{display:grid;grid-template-columns:1fr 1fr;}
+.pp-insight{padding:16px 22px;border-right:1px solid var(--border);}
+.pp-insight:last-child{border-right:none;}
+.pp-insight-label{font-size:9px;font-family:var(--f-mono);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.pp-insight-label.gold{color:var(--gold);}
+.pp-insight-label.blue{color:var(--blue);}
+.pp-insight-text{font-size:13px;color:var(--sub);line-height:1.6;}
 
-/* FREE VS PLATFORM */
-.tier-section{background:linear-gradient(135deg,rgba(34,197,94,.03) 0%,var(--bg) 40%,rgba(212,175,55,.04) 100%);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
-.tier-transition{text-align:center;font-size:14px;color:var(--muted);margin-bottom:40px;font-style:italic;}
-.tier-cards{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px;margin:0 auto;}
-.tier-card{border-radius:20px;padding:32px;display:flex;flex-direction:column;}
-.tier-card.free{background:rgba(34,197,94,.04);border:1px solid rgba(34,197,94,.22);}
-.tier-card.paid{background:rgba(212,175,55,.04);border:1px solid rgba(212,175,55,.28);}
-.tier-eyebrow{font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+/* ── PLATFORM PANEL (produto em uso) ── */
+.platform-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--rxl);
+  overflow:hidden;position:relative;
+}
+.platform-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(212,175,55,.3),transparent);pointer-events:none;
+}
+.pf-header{padding:13px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.01);}
+.pf-header-title{font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;}
+.pf-badge{font-family:var(--f-mono);font-size:9px;font-weight:700;padding:3px 10px;border-radius:4px;
+  background:rgba(212,175,55,.07);color:var(--gold);border:1px solid rgba(212,175,55,.14);letter-spacing:.06em;text-transform:uppercase;}
+.pf-metrics{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);}
+.pf-m{padding:18px 20px;border-right:1px solid var(--border);}
+.pf-m:last-child{border-right:none;}
+.pf-m-label{font-size:9.5px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px;}
+.pf-m-val{font-family:var(--f-mono);font-size:24px;font-weight:800;line-height:1;margin-bottom:4px;color:var(--text);}
+.pf-m-val.g{color:var(--green);}
+.pf-m-val.a{color:var(--amber);}
+.pf-m-sub{font-size:11px;color:var(--muted);}
+.pf-footer{padding:11px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.pf-footer-item{font-size:11px;color:var(--muted);font-family:var(--f-mono);}
+.pf-dot{width:3px;height:3px;border-radius:50%;background:var(--muted);opacity:.4;flex-shrink:0;}
+
+/* ── TIER SECTION ── */
+.tier-section{
+  background:var(--surface);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.tier-transition{text-align:center;font-size:14px;color:var(--muted);margin-bottom:44px;letter-spacing:.01em;}
+.tier-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px;margin:0 auto;}
+.tier-card{
+  border-radius:var(--rxl);padding:34px;display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+}
+.tier-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;pointer-events:none;}
+.tier-card.free{background:rgba(34,197,94,.025);border:1px solid rgba(34,197,94,.15);}
+.tier-card.free::before{background:linear-gradient(90deg,transparent,rgba(34,197,94,.3),transparent);}
+.tier-card.paid{background:rgba(212,175,55,.03);border:1px solid rgba(212,175,55,.2);}
+.tier-card.paid::before{background:linear-gradient(90deg,transparent,rgba(212,175,55,.45),transparent);}
+.tier-eyebrow{font-family:var(--f-mono);font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;}
 .tier-eyebrow.free{color:var(--green);}
 .tier-eyebrow.paid{color:var(--gold);}
-.tier-name{font-family:var(--f-display);font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px;}
-.tier-desc{font-size:14px;color:var(--muted);margin-bottom:22px;line-height:1.6;}
-.tier-price-free{font-family:var(--f-mono);font-size:30px;font-weight:800;color:var(--green);margin-bottom:3px;}
-.tier-price{font-family:var(--f-mono);font-size:30px;font-weight:800;color:var(--text);margin-bottom:3px;}
+.tier-name{font-family:var(--f-display);font-size:23px;font-weight:800;color:var(--text);margin-bottom:8px;}
+.tier-desc{font-size:14px;color:var(--muted);margin-bottom:22px;line-height:1.65;}
+.tier-price-free{font-family:var(--f-mono);font-size:32px;font-weight:800;color:var(--green);margin-bottom:2px;}
+.tier-price{font-family:var(--f-mono);font-size:32px;font-weight:800;color:var(--text);margin-bottom:2px;}
 .tier-price-period{font-size:12px;color:var(--muted);margin-bottom:22px;}
 .tier-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px;}
-.tier-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--sub);}
-.tier-check-green{color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px;}
-.tier-check-gold{color:var(--gold);font-weight:700;flex-shrink:0;margin-top:1px;}
-.tier-cta{display:block;text-align:center;padding:13px 24px;border-radius:11px;font-weight:700;font-size:14px;text-decoration:none;transition:all .18s;margin-top:auto;}
+.tier-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--sub);line-height:1.5;}
+.tier-ck-g{color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px;}
+.tier-ck-gold{color:var(--gold);font-weight:700;flex-shrink:0;margin-top:1px;}
+.tier-cta{display:block;text-align:center;padding:14px 24px;border-radius:var(--r);
+  font-weight:700;font-size:14px;text-decoration:none;transition:all .18s;margin-top:auto;}
 .tier-cta:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
-.tier-cta.free{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.28);}
-.tier-cta.free:hover{background:rgba(34,197,94,.2);}
+.tier-cta.free{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.tier-cta.free:hover{background:rgba(34,197,94,.16);}
 .tier-cta.paid{background:linear-gradient(135deg,var(--gold),var(--gold-hi));color:#000;}
-.tier-cta.paid:hover{box-shadow:0 0 28px var(--gold-glow);transform:translateY(-1px);}
+.tier-cta.paid:hover{box-shadow:0 0 32px var(--gold-glow);transform:translateY(-1px);}
 
-/* FOR WHOM */
-.for-whom-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-.for-whom-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s;}
-.for-whom-item:hover{border-color:rgba(212,175,55,.22);}
-.for-whom-icon{font-size:28px;}
-.for-whom-name{font-size:14px;font-weight:700;color:var(--text);}
-.for-whom-desc{font-size:13px;color:var(--muted);line-height:1.55;}
+/* ── FOR WHOM ── */
+.for-whom-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.fw-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px 22px;transition:border-color .2s,box-shadow .2s;}
+.fw-item:hover{border-color:rgba(212,175,55,.18);box-shadow:0 0 20px rgba(212,175,55,.04);}
+.fw-marker{
+  width:28px;height:28px;border-radius:6px;
+  background:var(--gold-dim);border:1px solid rgba(212,175,55,.14);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--f-mono);font-size:10px;font-weight:700;color:var(--gold);
+  margin-bottom:12px;
+}
+.fw-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.fw-desc{font-size:12.5px;color:var(--muted);line-height:1.55;}
 
-/* COMPARISON */
-.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.compare-col{border-radius:18px;overflow:hidden;}
-.compare-header{padding:15px 22px;font-family:var(--f-mono);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
-.compare-header.bad{background:rgba(255,77,77,.08);color:var(--red);border:1px solid rgba(255,77,77,.18);border-bottom:none;border-radius:18px 18px 0 0;}
-.compare-header.good{background:rgba(212,175,55,.1);color:var(--gold);border:1px solid rgba(212,175,55,.22);border-bottom:none;border-radius:18px 18px 0 0;}
-.compare-body.bad{padding:8px 0;background:rgba(255,77,77,.03);border:1px solid rgba(255,77,77,.14);border-top:none;border-radius:0 0 18px 18px;}
-.compare-body.good{padding:8px 0;background:rgba(212,175,55,.02);border:1px solid rgba(212,175,55,.18);border-top:none;border-radius:0 0 18px 18px;}
-.compare-item{display:flex;align-items:flex-start;gap:12px;padding:12px 22px;border-bottom:1px solid var(--border);}
-.compare-item:last-child{border-bottom:none;}
-.compare-text{font-size:14px;color:var(--sub);line-height:1.5;}
+/* ── COMPARISON TABLE ── */
+.compare-wrap{max-width:820px;margin:0 auto;}
+.compare-head{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  border:1px solid var(--border);border-bottom:none;border-radius:var(--r) var(--r) 0 0;overflow:hidden;
+}
+.compare-head-cell{padding:13px 20px;font-family:var(--f-mono);font-size:10.5px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;border-right:1px solid var(--border);}
+.compare-head-cell:last-child{border-right:none;}
+.compare-head-cell.topic{background:rgba(255,255,255,.02);color:var(--muted);}
+.compare-head-cell.bad{background:rgba(248,113,113,.06);color:var(--red);}
+.compare-head-cell.good{background:rgba(212,175,55,.08);color:var(--gold);}
+.compare-body{border:1px solid var(--border);border-radius:0 0 var(--r) var(--r);overflow:hidden;}
+.compare-row{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border);}
+.compare-row:last-child{border-bottom:none;}
+.compare-row:hover{background:rgba(255,255,255,.01);}
+.compare-cell{padding:14px 20px;font-size:13px;border-right:1px solid var(--border);}
+.compare-cell:last-child{border-right:none;}
+.compare-cell.topic{color:var(--sub);font-weight:600;}
+.compare-cell.bad{color:rgba(248,113,113,.65);}
+.compare-cell.good{color:var(--sub);}
 
-/* PRICING */
-.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
-.plan{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 20px;display:flex;flex-direction:column;transition:all .2s;position:relative;}
-.plan:hover{border-color:rgba(212,175,55,.25);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.4);}
-.plan.featured{border-color:rgba(212,175,55,.35);background:linear-gradient(180deg,rgba(212,175,55,.07) 0%,var(--surface) 100%);box-shadow:0 0 40px rgba(212,175,55,.07);}
-.plan-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;font-size:9px;font-weight:800;padding:3px 12px;border-radius:999px;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;}
+/* ── PRICING ── */
+.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.plan{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
+  padding:24px 20px;display:flex;flex-direction:column;transition:all .2s;position:relative;}
+.plan:hover{border-color:rgba(212,175,55,.2);transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,0,0,.4);}
+.plan.featured{
+  border-color:rgba(212,175,55,.28);
+  background:linear-gradient(180deg,rgba(212,175,55,.06) 0%,var(--surface) 60%);
+  box-shadow:0 0 40px rgba(212,175,55,.06);
+}
+.plan.featured::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.plan-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--gold);
+  color:#000;font-size:9px;font-weight:800;padding:3px 12px;border-radius:999px;
+  letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;}
 .plan-name{font-family:var(--f-display);font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px;}
-.plan-target{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5;font-style:italic;min-height:32px;}
+.plan-target{font-size:11.5px;color:var(--muted);margin-bottom:14px;line-height:1.5;min-height:34px;}
 .plan-divider{height:1px;background:var(--border);margin:14px 0;}
-.plan-price{font-family:var(--f-mono);font-size:28px;font-weight:800;color:var(--text);line-height:1;}
-.plan-price span{font-size:13px;color:var(--muted);font-family:var(--f-body);font-weight:400;}
-.plan-free{font-family:var(--f-mono);font-size:26px;font-weight:800;color:var(--green);line-height:1;}
-.plan-period{font-size:11px;color:var(--muted);margin-bottom:20px;margin-top:3px;}
-.plan-features{list-style:none;margin-bottom:20px;display:flex;flex-direction:column;gap:7px;flex:1;}
-.plan-features li{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sub);}
-.plan-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px;}
-.plan-cta{display:block;text-align:center;padding:11px;border-radius:9px;font-weight:700;font-size:14px;text-decoration:none;transition:all .18s;cursor:pointer;border:none;font-family:var(--f-body);}
+.plan-price{font-family:var(--f-mono);font-size:27px;font-weight:800;color:var(--text);line-height:1;}
+.plan-price span{font-size:12px;color:var(--muted);font-family:var(--f-body);font-weight:400;}
+.plan-free{font-family:var(--f-mono);font-size:25px;font-weight:800;color:var(--green);line-height:1;}
+.plan-period{font-size:11px;color:var(--muted);margin-bottom:18px;margin-top:3px;}
+.plan-features{list-style:none;margin-bottom:18px;display:flex;flex-direction:column;gap:7px;flex:1;}
+.plan-features li{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--sub);}
+.plan-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px;font-size:12px;}
+.plan-cta{display:block;text-align:center;padding:11px;border-radius:8px;font-weight:700;font-size:13.5px;
+  text-decoration:none;transition:all .18s;cursor:pointer;border:none;font-family:var(--f-body);}
 .plan-cta:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 .plan-cta.primary{background:linear-gradient(135deg,var(--gold),var(--gold-hi));color:#000;}
 .plan-cta.primary:hover{box-shadow:0 0 20px var(--gold-glow);}
 .plan-cta.secondary{background:transparent;color:var(--sub);border:1px solid var(--border);}
-.plan-cta.secondary:hover{color:var(--text);border-color:rgba(212,175,55,.25);}
-.plan-cta.green-btn{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.25);}
-.plan-cta.green-btn:hover{background:rgba(34,197,94,.2);}
+.plan-cta.secondary:hover{color:var(--text);border-color:rgba(212,175,55,.2);}
+.plan-cta.green-btn{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.plan-cta.green-btn:hover{background:rgba(34,197,94,.16);}
 
-/* BENCHMARK TRUST */
-.bench-inner{max-width:740px;margin:0 auto;text-align:center;}
-.bench-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:32px;}
-.bench-tag{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:12px;color:var(--sub);font-family:var(--f-mono);}
+/* ── BENCHMARK TRUST ── */
+.bench-inner{max-width:700px;margin:0 auto;text-align:center;}
+.bench-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:28px;}
+.bench-tag{display:inline-flex;align-items:center;gap:6px;background:var(--surface);
+  border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:11.5px;color:var(--sub);font-family:var(--f-mono);}
 .bench-dot{width:5px;height:5px;border-radius:50%;display:inline-block;}
 
-/* OBJECTION */
-.obj-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;}
-.obj-items{display:flex;flex-direction:column;gap:10px;}
-.obj-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 18px;display:flex;align-items:center;gap:14px;}
-.obj-icon{font-size:20px;flex-shrink:0;}
-.obj-text{font-size:14px;color:var(--sub);flex:1;}
+/* ── OBJECTION ── */
+.obj-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;}
+.obj-items{display:flex;flex-direction:column;gap:8px;}
+.obj-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 18px;display:flex;align-items:center;gap:14px;transition:border-color .15s;}
+.obj-item:hover{border-color:rgba(212,175,55,.14);}
+.obj-mark{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.obj-text{font-size:13.5px;color:var(--sub);flex:1;line-height:1.45;}
 .obj-text strong{color:var(--text);}
-.obj-cost{font-family:var(--f-mono);font-size:11px;font-weight:700;color:var(--red);white-space:nowrap;}
+.obj-cost{font-family:var(--f-mono);font-size:10.5px;font-weight:700;color:var(--red);white-space:nowrap;}
 
-/* FAQ */
-.faq-list{display:flex;flex-direction:column;gap:8px;max-width:740px;margin:0 auto;}
-details.faq-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;}
-details.faq-item[open]{border-color:rgba(212,175,55,.2);}
-details.faq-item summary{padding:18px 22px;font-size:15px;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;user-select:none;}
+/* ── FAQ ── */
+.faq-list{display:flex;flex-direction:column;gap:6px;max-width:720px;margin:0 auto;}
+details.faq-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color .2s;}
+details.faq-item[open]{border-color:rgba(212,175,55,.16);}
+details.faq-item summary{padding:17px 22px;font-size:14.5px;font-weight:600;color:var(--text);
+  cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;user-select:none;}
 details.faq-item summary::-webkit-details-marker{display:none;}
-details.faq-item summary::after{content:'+';font-size:20px;color:var(--gold);font-weight:300;line-height:1;flex-shrink:0;}
+details.faq-item summary::after{content:'+';font-size:18px;color:var(--gold);font-weight:300;line-height:1;flex-shrink:0;}
 details.faq-item[open] summary::after{content:'−';}
 details.faq-item summary:hover{color:var(--gold);}
 details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-offset:-2px;}
-.faq-answer{padding:16px 22px 18px;font-size:14px;color:var(--muted);line-height:1.7;border-top:1px solid var(--border);}
+.faq-answer{padding:14px 22px 18px;font-size:13.5px;color:var(--muted);line-height:1.7;border-top:1px solid var(--border);}
 
-/* CTA FINAL */
-.cta-final{background:radial-gradient(ellipse 1000px 500px at 50% 50%,rgba(212,175,55,.06) 0%,transparent 70%);text-align:center;padding:120px 0;}
-.cta-final h2{font-family:var(--f-display);font-size:42px;font-weight:800;letter-spacing:-2px;color:var(--text);margin-bottom:16px;line-height:1.15;}
+/* ── CTA FINAL ── */
+.cta-final{
+  background:radial-gradient(ellipse 900px 600px at 50% 50%,rgba(212,175,55,.055) 0%,transparent 65%);
+  text-align:center;padding:120px 0;position:relative;overflow:hidden;
+}
+.cta-final::before{
+  content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 70% 90% at 50% 50%,black 0%,transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 70% 90% at 50% 50%,black 0%,transparent 100%);
+  pointer-events:none;
+}
+.cta-final-inner{position:relative;z-index:1;}
+.cta-final h2{font-family:var(--f-display);font-size:44px;font-weight:800;
+  letter-spacing:-2.5px;color:var(--text);margin-bottom:18px;line-height:1.1;}
 .cta-final h2 em{color:var(--gold);font-style:normal;}
-.cta-final-sub{font-size:17px;color:var(--sub);margin-bottom:40px;max-width:520px;margin-left:auto;margin-right:auto;line-height:1.6;}
+.cta-final-sub{font-size:17px;color:var(--sub);margin-bottom:40px;max-width:480px;
+  margin-left:auto;margin-right:auto;line-height:1.65;}
 .final-trust{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-top:20px;}
 .trust-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);}
+.trust-ck{color:var(--green);font-size:12px;}
 
-/* FOOTER */
-.footer{background:var(--surface);border-top:1px solid var(--border);padding:32px 0;}
+/* ── FOOTER ── */
+.footer{background:var(--surface);border-top:1px solid var(--border);padding:28px 0;}
 .footer-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
-.footer-logo{font-family:var(--f-display);font-weight:800;font-size:16px;color:var(--gold);}
+.footer-logo{font-family:var(--f-display);font-weight:800;font-size:15px;color:var(--gold);}
 .footer-links{display:flex;gap:20px;}
-.footer-links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s;}
-.footer-links a:hover{color:var(--text);}
-.footer-copy{font-size:12px;color:var(--muted);}
+.footer-links a{font-size:12.5px;color:var(--muted);text-decoration:none;transition:color .15s;}
+.footer-links a:hover{color:var(--sub);}
+.footer-copy{font-size:11.5px;color:var(--muted);}
 
-/* RESPONSIVE */
-@media(max-width:900px){
+/* ── RESPONSIVE ── */
+@media(max-width:960px){
   .hero-inner,.obj-grid{grid-template-columns:1fr;}
   .plans{grid-template-columns:1fr 1fr;}
-  .pain-grid,.compare-grid,.deliver-grid,.tier-cards,.for-whom-grid{grid-template-columns:1fr;}
+  .for-whom-grid{grid-template-columns:1fr 1fr;}
+  .tier-cards{grid-template-columns:1fr;}
+  .compare-head,.compare-row{grid-template-columns:1fr 1fr;}
+  .compare-cell.topic,.compare-head-cell.topic{display:none;}
   .steps{grid-template-columns:1fr;}
-  .hero h1{font-size:36px;letter-spacing:-1.5px;}
+  .steps::before{display:none;}
+  .hero h1{font-size:40px;letter-spacing:-2px;}
   .nav{padding:0 20px;}
   .nav-links{display:none;}
-  .wrap{padding:0 16px;}
-  section{padding:64px 0;}
-  .cta-final h2{font-size:32px;}
-  .section-title{font-size:30px;}
-  .obj-grid{gap:32px;}
+  .wrap{padding:0 18px;}
+  section{padding:72px 0;}
+  .cta-final h2{font-size:34px;}
+  .section-title{font-size:32px;}
+  .pp-metrics{grid-template-columns:repeat(3,1fr);}
+  .pp-metrics .pp-m:nth-child(4),.pp-metrics .pp-m:nth-child(5){border-top:1px solid var(--border);}
+  .pf-metrics{grid-template-columns:1fr 1fr;}
+  .pf-m:nth-child(3),.pf-m:nth-child(4){border-top:1px solid var(--border);}
+  .narrative-text{font-size:22px;}
+  .dash-bottom{grid-template-columns:1fr;}
+  .dash-block.bd{border-right:none;border-bottom:1px solid var(--border);}
 }
 @media(max-width:768px){
-  .cpl-card{padding:20px 18px 16px;}
-  .hero h1{font-size:32px;letter-spacing:-1px;}
+  .hero{padding:104px 0 64px;}
+  .hero h1{font-size:34px;letter-spacing:-1.8px;}
   .hero-sub{font-size:16px;}
+  .hero-ctas{flex-direction:column;align-items:flex-start;}
+  .dash-metrics{grid-template-columns:1fr 1fr 1fr;}
+  .pp-metrics{grid-template-columns:1fr 1fr;}
+  .pp-metrics .pp-m:nth-child(5){grid-column:span 2;border-right:none;border-top:1px solid var(--border);}
+  .pp-insights{grid-template-columns:1fr;}
+  .pp-insight{border-right:none;border-bottom:1px solid var(--border);}
+  .pp-insight:last-child{border-bottom:none;}
+  .narrative-text{font-size:19px;}
+  .section-title{font-size:28px;letter-spacing:-1.2px;}
+  .for-whom-grid{grid-template-columns:1fr;}
+  .obj-grid{gap:36px;}
 }
 @media(max-width:560px){
   .plans{grid-template-columns:1fr;}
-  .nav-logo{font-size:16px;}
-  .hero h1{font-size:28px;letter-spacing:-.8px;}
-  .cta-primary{font-size:15px;padding:14px 24px;}
+  .hero h1{font-size:28px;letter-spacing:-1px;}
+  .cta-primary{font-size:14.5px;padding:14px 24px;}
   .cta-primary.lg{font-size:16px;padding:16px 28px;}
-  .trust-badges{gap:6px;}
-  .trust-badge{font-size:11px;}
-  .cpl-bar-lbl{width:28px;}
-  .cpl-bar-v{width:30px;}
+  .trust-row{gap:5px;}
+  .tc{font-size:11px;}
+  .dash-metrics{grid-template-columns:1fr 1fr;}
+  .dash-m:last-child{grid-column:span 2;border-top:1px solid var(--border);border-right:none;}
+  .pf-metrics{grid-template-columns:1fr 1fr;}
+  .tier-card{padding:24px 20px;}
+  .cta-final h2{font-size:28px;letter-spacing:-.8px;}
+  .for-whom-grid{grid-template-columns:1fr;}
+  .compare-head,.compare-row{grid-template-columns:1fr 1fr;}
 }
 `
 
-// ── Pain: 3 focused bullets (escaneável) ──────────────────────────────────
 const PAINS = [
   {
-    icon: '📊',
     label: 'Você sabe quanto paga, mas não sabe se está caro.',
     desc: 'Sem uma faixa de referência por nicho e região, qualquer CPL parece aceitável.',
   },
   {
-    icon: '🔄',
     label: 'Você compara campanhas só com o próprio histórico.',
-    desc: 'Melhorar em relação a si mesmo não significa estar dentro da faixa esperada do mercado.',
+    desc: 'Melhorar em relação a si mesmo não significa estar dentro da faixa esperada.',
   },
   {
-    icon: '🎯',
     label: 'Você otimiza sem uma referência externa.',
     desc: 'Decisões de criativo, segmentação e verba ficam baseadas em feeling, não em comparação.',
   },
 ]
 
-// ── Steps: ação orientada ────────────────────────────────────────────────
 const STEPS = [
   {
-    icon: '📋',
     title: 'Informe nicho, região, plataforma e CPL atual',
-    desc: 'Preencha o formulário simples em menos de 2 minutos. Nenhuma conexão de conta necessária.',
+    desc: 'Formulário simples em menos de 2 minutos. Nenhuma conexão de conta necessária.',
   },
   {
-    icon: '📊',
     title: 'Compare com a faixa de referência estimada',
     desc: 'Cruzamos as informações com faixas estruturadas por nicho, região e tipo de campanha.',
   },
   {
-    icon: '🎯',
-    title: 'Receba diagnóstico, desvio percentual e prioridade',
-    desc: 'CPL estimado para o seu nicho, diferença do seu atual e o próximo passo mais claro.',
+    title: 'Receba diagnóstico, desvio e prioridade de ajuste',
+    desc: 'CPL estimado para o seu nicho, desvio percentual e o próximo passo mais claro.',
   },
 ]
 
-const DELIVERABLES = [
-  { icon: '📊', title: 'CPL de referência estimado', desc: 'Faixa esperada de custo por lead para o seu nicho e região.' },
-  { icon: '⚖️', title: 'Comparativo por segmento', desc: 'Seu CPL atual frente à faixa estruturada para campanhas similares.' },
-  { icon: '📉', title: 'Desvio percentual', desc: 'Quanto acima (ou abaixo) da faixa estimada você está pagando.' },
-  { icon: '💸', title: 'Desperdício estimado', desc: 'Estimativa do que pode estar sendo gasto além do esperado por mês.' },
-  { icon: '🎯', title: 'Prioridade de ajuste', desc: 'O que revisar primeiro: segmentação, oferta, criativo ou orçamento.' },
-  { icon: '📋', title: 'Ponto de partida claro', desc: 'Uma leitura objetiva para quem quer tomar decisões com mais contexto.' },
-]
-
 const FOR_WHOM = [
-  { icon: '🚀', name: 'Gestores de tráfego', desc: 'Que precisam de faixas de referência por nicho para embasar ajustes e apresentar resultados.' },
-  { icon: '🏢', name: 'Agências de marketing', desc: 'Que gerenciam múltiplos clientes e querem comparativos por segmento para cada conta.' },
-  { icon: '🏪', name: 'Negócios locais', desc: 'Que investem em Google Ads ou Meta Ads e não sabem se o CPL está dentro da faixa esperada.' },
-  { icon: '🏥', name: 'Clínicas e consultórios', desc: 'Saúde, odontologia, estética — segmentos com CPL muito variável por cidade e especialidade.' },
-  { icon: '🏠', name: 'Imobiliárias', desc: 'Onde leads custam caro e qualquer desvio da faixa esperada representa verba relevante.' },
-  { icon: '🛒', name: 'E-commerces', desc: 'Que precisam entender o custo de aquisição dentro de margens sustentáveis.' },
+  { marker: '01', name: 'Gestores de tráfego', desc: 'Precisam de faixas de referência por nicho para embasar ajustes e apresentar resultados ao cliente.' },
+  { marker: '02', name: 'Agências de marketing', desc: 'Gerenciam múltiplos clientes e querem comparativos por segmento para cada conta.' },
+  { marker: '03', name: 'Negócios locais', desc: 'Investem em Google Ads ou Meta Ads e não sabem se o CPL está dentro da faixa esperada.' },
+  { marker: '04', name: 'Clínicas e consultórios', desc: 'Saúde, odontologia, estética — CPL muito variável por cidade e especialidade.' },
+  { marker: '05', name: 'Imobiliárias', desc: 'Leads custam caro — qualquer desvio da faixa esperada representa verba relevante.' },
+  { marker: '06', name: 'E-commerces', desc: 'Precisam entender custo de aquisição dentro de margens sustentáveis.' },
 ]
 
-// ── Comparison: linguagem calibrada ─────────────────────────────────────
-const BAD = [
-  '❌ Decide no feeling, sem comparativo externo',
-  '❌ Testa sem saber qual faixa seria esperada',
-  '❌ Percebe o desvio tarde, depois de perda de verba',
-  '❌ Troca de agência sem entender o problema real',
+const COMPARE_ROWS = [
+  { topic: 'Avaliação do CPL', bad: 'No escuro, sem referência externa', good: 'Comparado com faixa estimada por nicho' },
+  { topic: 'Base de decisão', bad: 'Histórico interno apenas', good: 'Comparativo por segmento e região' },
+  { topic: 'Justificativa de ajustes', bad: 'Baseada em feeling e teste', good: 'Embasada em desvio percentual estimado' },
+  { topic: 'Identificação de desvio', bad: 'Percebido tarde, após perda de verba', good: 'Identificado antes de escalar orçamento' },
 ]
 
-const GOOD = [
-  '✅ Identifica se o CPL está acima da faixa estimada',
-  '✅ Prioriza ajustes com base em comparativo por nicho',
-  '✅ Reduz decisões baseadas apenas em feeling',
-  '✅ Começa a otimizar com um ponto de referência claro',
-]
-
-// ── Plans: badge e CTAs específicos ──────────────────────────────────────
 const PLANS = [
   {
     name: 'Diagnóstico',
@@ -378,7 +628,7 @@ const PLANS = [
   },
   {
     name: 'Plataforma',
-    target: 'Para negócios que querem acompanhar seus indicadores ao longo do tempo.',
+    target: 'Para negócios que querem acompanhar indicadores ao longo do tempo.',
     price: 'R$297',
     period: '/mês',
     cta: 'Começar acompanhamento',
@@ -439,13 +689,12 @@ const BENCH_TAGS = [
 ]
 
 const OBJECTIONS = [
-  { icon: '🏢', text: <><strong>Agência sem referência de nicho</strong> — cobra sem saber a faixa esperada</>, cost: '~R$2.000/mês' },
-  { icon: '📊', text: <><strong>Planilhas manuais</strong> — sempre atrasadas, propensas a erro</>, cost: 'Horas/semana' },
-  { icon: '🎲', text: <><strong>Tentativa e erro</strong> — cada teste consome verba real</>, cost: 'Variável' },
-  { icon: '🤖', text: <><strong>Ferramentas genéricas</strong> — sem comparativos por nicho e região</>, cost: 'R$300–800/mês' },
+  { text: <><strong>Agência sem referência de nicho</strong> — cobra sem saber a faixa esperada</>, cost: '~R$2.000/mês' },
+  { text: <><strong>Planilhas manuais</strong> — sempre atrasadas, propensas a erro</>, cost: 'Horas/semana' },
+  { text: <><strong>Tentativa e erro</strong> — cada teste consome verba real</>, cost: 'Variável' },
+  { text: <><strong>Ferramentas genéricas</strong> — sem comparativos por nicho e região</>, cost: 'R$300–800/mês' },
 ]
 
-// ── FAQ: respostas curtas, seguras, escaneáveis ──────────────────────────
 const FAQ_ITEMS = [
   {
     q: 'O diagnóstico é gratuito mesmo?',
@@ -469,7 +718,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'O resultado é exato ou estimado?',
-    a: 'Estimado. O diagnóstico indica se seu CPL está dentro ou fora da faixa esperada para o seu segmento. Não é um dado exato do seu negócio — é um ponto de comparação para identificar possíveis desvios.',
+    a: 'Estimado. O diagnóstico indica se seu CPL está dentro ou fora da faixa esperada para o seu segmento. É um ponto de comparação para identificar possíveis desvios — não um dado exato do seu negócio.',
   },
   {
     q: 'Posso usar para clientes da minha agência?',
@@ -488,9 +737,14 @@ export default function LandingPage() {
     <>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      {/* NAV */}
+      {/* ── NAV ── */}
       <nav className="nav" aria-label="Navegação principal">
-        <a href="/landing" className="nav-logo" aria-label="ELYON NOUS — página inicial">ELYON NOUS</a>
+        <a href="/landing" className="nav-logo" aria-label="ELYON NOUS — página inicial">
+          <span className="nav-logo-mark" aria-hidden="true">
+            <span className="nav-logo-mark-inner" />
+          </span>
+          ELYON NOUS
+        </a>
         <div className="nav-links">
           <a href="#how" className="nav-link">Como funciona</a>
           <a href="#pricing" className="nav-link">Planos</a>
@@ -506,161 +760,313 @@ export default function LandingPage() {
       <section className="hero" aria-labelledby="hero-h1">
         <div className="wrap">
           <div className="hero-inner">
+
+            {/* Left: copy */}
             <div>
-              <div className="hero-badge" aria-hidden="true">
-                <span className="hero-badge-dot" />
+              <div className="hero-eyebrow" aria-hidden="true">
+                <span className="blink" />
                 Diagnóstico gratuito disponível agora
               </div>
-              {/* Linha de posicionamento: responde "o que é" e "para quem" */}
-              <p className="hero-pos">
-                Ferramenta de diagnóstico de CPL para gestores, agências e empresas que investem em mídia paga.
-              </p>
+              <p className="hero-pos">Para gestores, agências e empresas que investem em mídia paga.</p>
               <h1 id="hero-h1">
-                Descubra se você está<br />
-                pagando <em>caro por lead</em>
+                Antes de escalar verba,<br />
+                descubra se seu CPL<br />
+                <em>já está fora da faixa.</em>
               </h1>
               <p className="hero-sub">
-                Compare seu CPL com faixas de referência por nicho e região. Em poucos minutos, veja se há desvio nas suas campanhas — e qual seria o próximo ajuste.
+                A ELYON NOUS compara seu CPL com faixas de referência por nicho, região e plataforma — e mostra desvio estimado, desperdício e prioridade de ajuste.
               </p>
-              <a href={ctaHref} className="cta-primary" aria-label="Ver meu CPL ideal grátis — diagnóstico sem cartão">
-                Ver meu CPL ideal grátis →
-              </a>
-              <div className="trust-badges" aria-label="Garantias do diagnóstico">
-                <span className="trust-badge"><span className="tck">✓</span> Sem cartão</span>
-                <span className="trust-badge"><span className="tck">✓</span> Resultado em minutos</span>
-                <span className="trust-badge"><span className="tck">✓</span> Meta Ads e Google Ads</span>
-                <span className="trust-badge"><span className="tck">✓</span> Sem compromisso</span>
+              <div className="hero-ctas">
+                <a href={ctaHref} className="cta-primary" aria-label="Fazer diagnóstico gratuito de CPL — sem cartão">
+                  Fazer diagnóstico grátis →
+                </a>
+                <a href="#how" className="cta-ghost">Ver como funciona</a>
+              </div>
+              <div className="trust-row" aria-label="Garantias do diagnóstico">
+                <span className="tc"><span className="tc-check">✓</span> Sem cartão</span>
+                <span className="tc"><span className="tc-check">✓</span> Resultado em minutos</span>
+                <span className="tc"><span className="tc-check">✓</span> Meta Ads e Google Ads</span>
+                <span className="tc"><span className="tc-check">✓</span> Sem compromisso</span>
               </div>
             </div>
 
-            {/* Mockup: card de diagnóstico — aspecto de produto real */}
-            <div className="cpl-card" role="img" aria-label="Exemplo de diagnóstico de CPL para clínica odontológica em São Paulo">
-              <div className="cpl-card-header">
-                <span className="cpl-card-title">
-                  <span className="cpl-dot" aria-hidden="true" />
-                  Diagnóstico de CPL
+            {/* Right: CPL Intelligence dashboard */}
+            <div
+              className="dash-card"
+              role="img"
+              aria-label="Exemplo de diagnóstico de CPL — Odontologia, São Paulo, Meta Ads"
+            >
+              <div className="dash-topbar">
+                <span className="dash-topbar-title">
+                  <span className="blink" aria-hidden="true" />
+                  CPL Intelligence
                 </span>
-                <span className="cpl-platform-badge" aria-hidden="true">ELYON NOUS</span>
-              </div>
-              <div className="cpl-card-meta">Odontologia · São Paulo · Meta Ads</div>
-
-              {/* Status badge */}
-              <div className="cpl-status" role="status">
-                <span className="cpl-status-dot" aria-hidden="true" />
-                CPL acima da faixa de referência
+                <span className="dash-live" aria-hidden="true">
+                  <span className="blink" />
+                  Ao vivo
+                </span>
               </div>
 
-              {/* Dados principais */}
-              <div className="cpl-row">
-                <span className="cpl-label">CPL atual</span>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <span className="cpl-value red">R$68</span>
-                  <span className="cpl-badge" aria-label="100% acima do ideal">+100%</span>
+              <div className="dash-meta">
+                <span className="dash-chip">Odontologia</span>
+                <span className="dash-chip">São Paulo</span>
+                <span className="dash-chip gold">Meta Ads</span>
+              </div>
+
+              <div className="dash-alert" role="status">
+                <span className="dash-alert-tri" aria-hidden="true">⚠</span>
+                CPL acima da faixa esperada · +79% de desvio
+              </div>
+
+              <div className="dash-metrics">
+                <div className="dash-m">
+                  <div className="dash-m-label">CPL atual</div>
+                  <div className="dash-m-val r">R$68</div>
+                  <div className="dash-m-delta">+79%</div>
                 </div>
-              </div>
-              <div className="cpl-row">
-                <span className="cpl-label">Leads/mês</span>
-                <span className="cpl-value white">210</span>
-              </div>
-
-              {/* Barra comparativa: ideal vs atual */}
-              <div className="cpl-bars" aria-label="Comparação entre CPL ideal e atual">
-                <div className="cpl-bar-row">
-                  <span className="cpl-bar-lbl">Ideal</span>
-                  <div className="cpl-bar-track">
-                    <div className="cpl-bar-fill" style={{ width: '50%', background: 'var(--green)' }} />
-                  </div>
-                  <span className="cpl-bar-v" style={{ color: 'var(--green)' }}>R$34</span>
+                <div className="dash-m">
+                  <div className="dash-m-label">Faixa esperada</div>
+                  <div className="dash-m-val g">R$28–38</div>
+                  <div className="dash-m-sub">estimada</div>
                 </div>
-                <div className="cpl-bar-row">
-                  <span className="cpl-bar-lbl">Atual</span>
-                  <div className="cpl-bar-track">
-                    <div className="cpl-bar-fill" style={{ width: '100%', background: 'var(--red)' }} />
-                  </div>
-                  <span className="cpl-bar-v" style={{ color: 'var(--red)' }}>R$68</span>
+                <div className="dash-m">
+                  <div className="dash-m-label">Est. desperdício</div>
+                  <div className="dash-m-val a">R$4.200</div>
+                  <div className="dash-m-sub">/mês</div>
                 </div>
               </div>
 
-              <div className="cpl-loss">
-                <span className="cpl-loss-label">💸 Estimativa de desperdício/mês</span>
-                <span className="cpl-loss-value">R$4.200</span>
+              <div className="dash-bars">
+                <div className="dash-bars-lbl">Comparativo CPL</div>
+                <div className="bar-row">
+                  <span className="bar-lbl">Ideal</span>
+                  <div className="bar-track"><div className="bar-fill g" style={{ width: '50%' }} /></div>
+                  <span className="bar-val g">R$34</span>
+                </div>
+                <div className="bar-row">
+                  <span className="bar-lbl">Atual</span>
+                  <div className="bar-track"><div className="bar-fill r" style={{ width: '100%' }} /></div>
+                  <span className="bar-val r">R$68</span>
+                </div>
               </div>
-              <div className="cpl-priority">
-                <span className="cpl-priority-label">Ajuste sugerido →</span>
-                <span className="cpl-priority-value">Revisar público, criativo e promessa da oferta</span>
+
+              <div className="dash-bottom">
+                <div className="dash-block bd">
+                  <div className="dash-block-lbl gold">Insight</div>
+                  <p className="dash-block-text">CPL estimado acima da faixa de referência para campanhas similares no segmento odontológico.</p>
+                </div>
+                <div className="dash-block">
+                  <div className="dash-block-lbl blue">Próxima ação →</div>
+                  <p className="dash-block-text">Revisar promessa da oferta, segmentação e criativos antes de escalar orçamento.</p>
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
 
+      {/* ── NARRATIVE BREAK ── */}
+      <div className="narrative" aria-hidden="true">
+        <div className="wrap">
+          <div className="narrative-inner">
+            <p className="narrative-text">
+              Você investe em anúncios. Os leads chegam.<br />
+              Mas sem saber se o CPL está dentro da faixa esperada,<br />
+              <em>otimizar é trabalhar sem referência.</em>
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* ── PROBLEMA ── */}
-      <section style={{ background: 'linear-gradient(180deg,var(--bg) 0%,rgba(24,24,28,1) 100%)' }} aria-labelledby="pain-h2">
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="pain-h2">
         <div className="wrap">
           <div className="eyebrow">O problema real</div>
-          <h2 id="pain-h2" className="section-title" style={{ maxWidth: 580 }}>
+          <h2 id="pain-h2" className="section-title" style={{ maxWidth: 540 }}>
             O problema não é só gerar lead.<br />
-            É saber se o <em>lead está caro.</em>
+            É saber se o <em>custo está dentro da faixa.</em>
           </h2>
-          <p className="section-sub" style={{ maxWidth: 560 }}>
-            Muitas campanhas parecem saudáveis porque geram contatos todos os dias. Mas sem uma faixa de referência por nicho, região e plataforma, fica difícil saber se o custo está dentro do esperado ou se a verba está sendo consumida sem eficiência.
-          </p>
-          <div className="pain-grid">
+          <div className="pain-list" role="list">
             {PAINS.map((p, i) => (
-              <div className="pain-item" key={i}>
-                <span className="pain-icon" aria-hidden="true">{p.icon}</span>
-                <div className="pain-label">{p.label}</div>
-                <p className="pain-desc">{p.desc}</p>
+              <div className="pain-item" key={i} role="listitem">
+                <div className="pain-num" aria-hidden="true">0{i + 1}</div>
+                <div>
+                  <div className="pain-label">{p.label}</div>
+                  <p className="pain-desc">{p.desc}</p>
+                </div>
               </div>
             ))}
           </div>
           <div className="pain-close">
-            Quem tem referência externa <strong>prioriza com mais clareza.</strong> Quem não tem… continua otimizando no escuro — e <strong style={{ color: 'var(--red)' }}>potencialmente desperdiçando verba.</strong>
+            Quem tem referência externa <strong>prioriza com mais clareza.</strong>{' '}
+            Quem não tem continua otimizando sem parâmetro —{' '}
+            e <em>potencialmente desperdiçando verba.</em>
           </div>
         </div>
       </section>
 
       {/* ── COMO FUNCIONA ── */}
-      <section style={{ background: 'rgba(24,24,28,1)' }} id="how" aria-labelledby="how-h2">
+      <section style={{ background: 'var(--surface)' }} id="how" aria-labelledby="how-h2">
         <div className="wrap">
-          <div className="eyebrow center" style={{ justifyContent: 'center' }}>Simples. Direto. Sem conexão de conta.</div>
-          <h2 id="how-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 48px' }}>
+          <div className="eyebrow c">Simples. Direto. Sem conexão de conta.</div>
+          <h2 id="how-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 400, margin: '0 auto 52px' }}>
             Como funciona o <em>diagnóstico</em>
           </h2>
           <div className="steps">
             {STEPS.map((s, i) => (
               <div className="step" key={i}>
-                <div className="step-num" aria-hidden="true">PASSO {String(i + 1).padStart(2, '0')}</div>
-                <div className="step-icon" aria-hidden="true">{s.icon}</div>
+                <div className="step-badge" aria-hidden="true">{String(i + 1).padStart(2, '0')}</div>
                 <div className="step-title">{s.title}</div>
                 <p className="step-desc">{s.desc}</p>
               </div>
             ))}
           </div>
-          <div style={{ textAlign: 'center', marginTop: 40 }}>
-            <a href={ctaHref} className="cta-primary" aria-label="Começar diagnóstico gratuito agora">Começar agora — é grátis →</a>
+          <div style={{ textAlign: 'center', marginTop: 44 }}>
+            <a href={ctaHref} className="cta-primary" aria-label="Começar diagnóstico gratuito agora">
+              Começar agora — é grátis →
+            </a>
           </div>
         </div>
       </section>
 
-      {/* ── O QUE VOCÊ RECEBE ── */}
-      <section style={{ background: 'var(--bg)' }} aria-labelledby="deliver-h2">
+      {/* ── O QUE O DIAGNÓSTICO REVELA ── */}
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="reveal-h2">
         <div className="wrap">
-          <div className="eyebrow center" style={{ justifyContent: 'center' }}>O que você recebe</div>
-          <h2 id="deliver-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 500, margin: '0 auto 40px' }}>
-            Clareza suficiente para <em>tomar a próxima decisão</em>
+          <div className="eyebrow c">O que você recebe</div>
+          <h2 id="reveal-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 40px' }}>
+            Clareza suficiente para a <em>próxima decisão</em>
           </h2>
-          <div className="deliver-grid">
-            {DELIVERABLES.map((d, i) => (
-              <div className="deliver-item" key={i}>
-                <div className="deliver-icon" aria-hidden="true">{d.icon}</div>
-                <div className="deliver-title">{d.title}</div>
-                <p className="deliver-desc">{d.desc}</p>
+
+          <div className="product-panel" role="img" aria-label="Exemplo de resultado do diagnóstico de CPL">
+            <div className="pp-header">
+              <div className="pp-header-title">
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--green)', display: 'inline-block' }} aria-hidden="true" />
+                Resultado do Diagnóstico · Odontologia · São Paulo · Meta Ads
               </div>
-            ))}
+              <span className="pp-badge">Demonstração</span>
+            </div>
+
+            <div className="pp-metrics">
+              <div className="pp-m">
+                <div className="pp-m-label">CPL Atual</div>
+                <div className="pp-m-val r">R$68</div>
+                <div className="pp-m-sub">informado</div>
+              </div>
+              <div className="pp-m">
+                <div className="pp-m-label">Faixa Esperada</div>
+                <div className="pp-m-val g">R$28–38</div>
+                <div className="pp-m-sub">estimada para nicho</div>
+              </div>
+              <div className="pp-m">
+                <div className="pp-m-label">Desvio</div>
+                <div className="pp-m-val r">+79%</div>
+                <div className="pp-m-sub">acima da faixa</div>
+              </div>
+              <div className="pp-m">
+                <div className="pp-m-label">Est. Desperdício</div>
+                <div className="pp-m-val a">R$4.200</div>
+                <div className="pp-m-sub">por mês</div>
+              </div>
+              <div className="pp-m">
+                <div className="pp-m-label">Prioridade</div>
+                <div className="pp-m-val gold" style={{ fontSize: 15 }}>Alta</div>
+                <div className="pp-m-sub">revisar oferta + criativo</div>
+              </div>
+            </div>
+
+            <div className="pp-bar-section">
+              <div className="pp-bar-label">Comparativo CPL — atual vs. faixa esperada</div>
+              <div className="bar-row">
+                <span className="bar-lbl">Ideal</span>
+                <div className="bar-track" style={{ height: 6 }}>
+                  <div className="bar-fill g" style={{ width: '50%' }} />
+                </div>
+                <span className="bar-val g">R$34</span>
+              </div>
+              <div className="bar-row">
+                <span className="bar-lbl">Atual</span>
+                <div className="bar-track" style={{ height: 6 }}>
+                  <div className="bar-fill r" style={{ width: '100%' }} />
+                </div>
+                <span className="bar-val r">R$68</span>
+              </div>
+            </div>
+
+            <div className="pp-insights">
+              <div className="pp-insight">
+                <div className="pp-insight-label gold">Insight principal</div>
+                <p className="pp-insight-text">
+                  CPL estimado acima da faixa de referência para campanhas similares no segmento odontológico de São Paulo. Desvio consistente com criativos sem diferenciação de oferta.
+                </p>
+              </div>
+              <div className="pp-insight">
+                <div className="pp-insight-label blue">Próxima ação sugerida</div>
+                <p className="pp-insight-text">
+                  Revisar promessa da oferta e ângulo de segmentação. Testar criativos com foco em resultado específico antes de aumentar orçamento.
+                </p>
+              </div>
+            </div>
           </div>
-          <div style={{ textAlign: 'center', marginTop: 40 }}>
-            <a href={ctaHref} className="cta-primary" aria-label="Ver meu diagnóstico de CPL grátis">Ver meu diagnóstico grátis →</a>
+
+          <div style={{ textAlign: 'center', marginTop: 32 }}>
+            <a href={ctaHref} className="cta-primary" aria-label="Ver meu diagnóstico de CPL grátis">
+              Ver meu diagnóstico grátis →
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRODUTO EM USO ── */}
+      <section style={{ background: 'var(--surface)' }} aria-labelledby="product-h2">
+        <div className="wrap">
+          <div className="eyebrow c">A plataforma</div>
+          <h2 id="product-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 14px' }}>
+            Um painel para enxergar o que o<br /><em>gerenciador não mostra.</em>
+          </h2>
+          <p className="section-sub c" style={{ marginBottom: 36 }}>
+            Meta Ads e Google Ads mostram quanto você pagou. A ELYON ajuda a entender se esse custo faz sentido para o seu nicho, região e objetivo.
+          </p>
+
+          <div className="platform-panel" role="img" aria-label="Visão geral do painel ELYON NOUS — dados demonstrativos">
+            <div className="pf-header">
+              <div className="pf-header-title">
+                <span className="blink" aria-hidden="true" />
+                Dashboard · Semana 21 de 2026 · Modo demonstrativo
+              </div>
+              <span className="pf-badge">Plano Profissional</span>
+            </div>
+            <div className="pf-metrics">
+              <div className="pf-m">
+                <div className="pf-m-label">Clientes monitorados</div>
+                <div className="pf-m-val">8</div>
+                <div className="pf-m-sub">contas ativas</div>
+              </div>
+              <div className="pf-m">
+                <div className="pf-m-label">CPL médio</div>
+                <div className="pf-m-val">R$42</div>
+                <div className="pf-m-sub">portfólio completo</div>
+              </div>
+              <div className="pf-m">
+                <div className="pf-m-label">Na faixa esperada</div>
+                <div className="pf-m-val g">5/8</div>
+                <div className="pf-m-sub">clientes</div>
+              </div>
+              <div className="pf-m">
+                <div className="pf-m-label">Alertas ativos</div>
+                <div className="pf-m-val a">3</div>
+                <div className="pf-m-sub">requerem atenção</div>
+              </div>
+            </div>
+            <div className="pf-footer">
+              <span className="pf-footer-item">3 nichos monitorados</span>
+              <span className="pf-dot" aria-hidden="true" />
+              <span className="pf-footer-item">Desvio médio +28%</span>
+              <span className="pf-dot" aria-hidden="true" />
+              <span className="pf-footer-item">2 clientes com alerta ativo esta semana</span>
+              <span className="pf-dot" aria-hidden="true" />
+              <span className="pf-footer-item" style={{ fontStyle: 'italic' }}>Dados demonstrativos</span>
+            </div>
           </div>
         </div>
       </section>
@@ -668,17 +1074,14 @@ export default function LandingPage() {
       {/* ── DIAGNÓSTICO GRÁTIS VS PLATAFORMA ── */}
       <section className="tier-section" aria-labelledby="tier-h2">
         <div className="wrap">
-          <div className="eyebrow center" style={{ justifyContent: 'center' }}>Gratuito agora. Plataforma depois.</div>
-          <h2 id="tier-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 12px' }}>
-            Diagnóstico gratuito agora.<br /><em>Plataforma contínua depois.</em>
+          <div className="eyebrow c">Gratuito agora. Plataforma depois.</div>
+          <h2 id="tier-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 12px' }}>
+            O diagnóstico é o retrato.<br /><em>A plataforma é o acompanhamento.</em>
           </h2>
-          <p className="section-sub center" style={{ marginBottom: 16 }}>
+          <p className="section-sub c" style={{ marginBottom: 14 }}>
             Comece sem custo. Se quiser monitorar indicadores de forma contínua, a plataforma está disponível quando precisar.
           </p>
-          {/* Frase de transição */}
-          <p className="tier-transition">
-            O diagnóstico mostra o retrato atual. A plataforma ajuda a acompanhar a evolução.
-          </p>
+          <p className="tier-transition">Um é um snapshot. O outro é um dashboard vivo.</p>
           <div className="tier-cards">
             <div className="tier-card free">
               <div className="tier-eyebrow free">Gratuito · Sempre disponível</div>
@@ -687,7 +1090,7 @@ export default function LandingPage() {
                 Para quem quer saber, agora mesmo, se o CPL está dentro da faixa esperada — sem cartão, sem compromisso, sem conexão de conta.
               </div>
               <div className="tier-price-free">Grátis</div>
-              <div className="tier-price-period">Para sempre</div>
+              <div className="tier-price-period">Para sempre · sem cartão</div>
               <ul className="tier-list">
                 {[
                   'Faixa de CPL estimada para o seu nicho',
@@ -697,12 +1100,14 @@ export default function LandingPage() {
                   'Ponto de partida claro para otimização',
                 ].map((f, i) => (
                   <li key={i}>
-                    <span className="tier-check-green" aria-hidden="true">✓</span>
+                    <span className="tier-ck-g" aria-hidden="true">✓</span>
                     {f}
                   </li>
                 ))}
               </ul>
-              <a href={ctaHref} className="tier-cta free" aria-label="Ver meu CPL ideal grátis — sem cartão">Ver meu CPL ideal grátis →</a>
+              <a href={ctaHref} className="tier-cta free" aria-label="Fazer diagnóstico gratuito — sem cartão">
+                Fazer diagnóstico grátis →
+              </a>
             </div>
 
             <div className="tier-card paid">
@@ -717,83 +1122,79 @@ export default function LandingPage() {
                 {[
                   'Monitoramento contínuo de CPL',
                   'Alertas automáticos de variação',
-                  'Faixas de referência por nicho e região atualizadas',
+                  'Faixas de referência por nicho e região',
                   'Conexão com Meta Ads e Google Ads',
                   'Relatórios para tomada de decisão',
                   'Múltiplos clientes (planos Profissional e Avançado)',
                 ].map((f, i) => (
                   <li key={i}>
-                    <span className="tier-check-gold" aria-hidden="true">→</span>
+                    <span className="tier-ck-gold" aria-hidden="true">→</span>
                     {f}
                   </li>
                 ))}
               </ul>
-              <a href="#pricing" className="tier-cta paid" aria-label="Ver planos e preços da plataforma ELYON NOUS">Ver planos e preços →</a>
+              <a href="#pricing" className="tier-cta paid" aria-label="Ver planos e preços da plataforma ELYON NOUS">
+                Ver planos e preços →
+              </a>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── PARA QUEM É ── */}
-      <section style={{ background: 'rgba(24,24,28,1)' }} aria-labelledby="whom-h2">
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="whom-h2">
         <div className="wrap">
-          <div className="eyebrow center" style={{ justifyContent: 'center' }}>Para quem é</div>
-          <h2 id="whom-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 40px' }}>
+          <div className="eyebrow c">Para quem é</div>
+          <h2 id="whom-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 460, margin: '0 auto 40px' }}>
             Feito para quem <em>investe em mídia paga</em>
           </h2>
           <div className="for-whom-grid">
             {FOR_WHOM.map((f, i) => (
-              <div className="for-whom-item" key={i}>
-                <div className="for-whom-icon" aria-hidden="true">{f.icon}</div>
-                <div className="for-whom-name">{f.name}</div>
-                <p className="for-whom-desc">{f.desc}</p>
+              <div className="fw-item" key={i}>
+                <div className="fw-marker" aria-hidden="true">{f.marker}</div>
+                <div className="fw-name">{f.name}</div>
+                <p className="fw-desc">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── COMPARAÇÃO COM / SEM ── */}
-      <section style={{ background: 'var(--bg)' }} aria-labelledby="compare-h2">
+      {/* ── COMPARAÇÃO ── */}
+      <section style={{ background: 'var(--surface)' }} aria-labelledby="compare-h2">
         <div className="wrap">
-          <div className="eyebrow center" style={{ justifyContent: 'center' }}>A diferença na prática</div>
-          <h2 id="compare-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 40px' }}>
-            Com e sem <em>referência de mercado</em>
+          <div className="eyebrow c">A diferença na prática</div>
+          <h2 id="compare-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 40px' }}>
+            Quando você tem referência,<br /><em>a conversa muda.</em>
           </h2>
-          <div className="compare-grid">
-            <div className="compare-col">
-              <div className="compare-header bad">❌ Sem referência de mercado</div>
-              <div className="compare-body bad">
-                {BAD.map((t, i) => (
-                  <div className="compare-item" key={i}>
-                    <span className="compare-text" style={{ color: 'rgba(255,255,255,.45)' }}>{t}</span>
-                  </div>
-                ))}
-              </div>
+          <div className="compare-wrap" role="table" aria-label="Comparação sem referência vs com ELYON NOUS">
+            <div className="compare-head" role="row">
+              <div className="compare-head-cell topic" role="columnheader">Situação</div>
+              <div className="compare-head-cell bad" role="columnheader">Sem referência</div>
+              <div className="compare-head-cell good" role="columnheader">Com ELYON NOUS</div>
             </div>
-            <div className="compare-col">
-              <div className="compare-header good">✅ Com ELYON NOUS</div>
-              <div className="compare-body good">
-                {GOOD.map((t, i) => (
-                  <div className="compare-item" key={i}>
-                    <span className="compare-text">{t}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="compare-body" role="rowgroup">
+              {COMPARE_ROWS.map((r, i) => (
+                <div className="compare-row" key={i} role="row">
+                  <div className="compare-cell topic" role="cell">{r.topic}</div>
+                  <div className="compare-cell bad" role="cell">{r.bad}</div>
+                  <div className="compare-cell good" role="cell">{r.good}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* ── PLANOS ── */}
-      <section style={{ background: 'linear-gradient(180deg,var(--bg) 0%,rgba(24,24,28,1) 100%)' }} id="pricing" aria-labelledby="pricing-h2">
+      <section style={{ background: 'var(--bg)' }} id="pricing" aria-labelledby="pricing-h2">
         <div className="wrap">
-          <div className="eyebrow center" style={{ justifyContent: 'center' }}>Planos</div>
-          <h2 id="pricing-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 14px' }}>
+          <div className="eyebrow c">Planos</div>
+          <h2 id="pricing-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 14px' }}>
             Comece grátis. <em>Escale quando fizer sentido.</em>
           </h2>
-          <p className="section-sub center" style={{ marginBottom: 48 }}>
-            O diagnóstico é sempre gratuito. Os planos pagos são para quem quer monitoramento contínuo e acompanhamento ao longo do tempo.
+          <p className="section-sub c" style={{ marginBottom: 48 }}>
+            O diagnóstico é sempre gratuito. Os planos pagos são para quem quer monitoramento contínuo ao longo do tempo.
           </p>
           <div className="plans">
             {PLANS.map((p, i) => (
@@ -816,19 +1217,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── DE ONDE VÊM OS BENCHMARKS ── */}
-      <section style={{ background: 'rgba(24,24,28,1)' }} aria-labelledby="bench-h2">
+      {/* ── BENCHMARKS — TRANSPARÊNCIA ── */}
+      <section style={{ background: 'var(--surface)' }} aria-labelledby="bench-h2">
         <div className="wrap">
           <div className="bench-inner">
-            <div className="eyebrow center" style={{ justifyContent: 'center' }}>Transparência total</div>
-            <h2 id="bench-h2" className="section-title center" style={{ margin: '0 auto 20px', maxWidth: 520 }}>
+            <div className="eyebrow c">Transparência total</div>
+            <h2 id="bench-h2" className="section-title c" style={{ margin: '0 auto 20px', maxWidth: 480 }}>
               De onde vêm as <em>faixas de referência?</em>
             </h2>
-            <p className="section-sub center" style={{ marginBottom: 16 }}>
+            <p className="section-sub c" style={{ marginBottom: 14 }}>
               As faixas de CPL são estruturadas a partir de padrões estimados por nicho, região e tipo de mídia. Não são dados coletados de terceiros nem auditados externamente.
             </p>
-            <p style={{ fontSize: 14, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 32px' }}>
-              O diagnóstico não substitui uma auditoria profissional. O que ele entrega é uma leitura comparativa para identificar desvios evidentes — com linguagem clara sobre o que é estimado e o que não é. Acreditamos que transparência gera mais confiança do que promessas imprecisas.
+            <p style={{ fontSize: 13, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.7, maxWidth: 540, margin: '0 auto 28px' }}>
+              O diagnóstico não substitui uma auditoria profissional. O que ele entrega é uma leitura comparativa para identificar desvios evidentes — com linguagem clara sobre o que é estimado. Acreditamos que transparência gera mais confiança do que promessas imprecisas.
             </p>
             <div className="bench-tags" aria-label="Nichos cobertos pela plataforma">
               {BENCH_TAGS.map((t, i) => (
@@ -852,16 +1253,16 @@ export default function LandingPage() {
                 Você já paga por isso.<br /><em>Só não tem os dados.</em>
               </h2>
               <p className="section-sub">
-                Agência, planilha, tentativa e erro — você já investe para tentar entender o mercado. A diferença é que nenhuma dessas alternativas entrega uma faixa de referência de CPL por nicho.
+                Agência, planilha, tentativa e erro — você já investe para entender o mercado. A diferença é que nenhuma dessas alternativas entrega uma faixa de referência de CPL por nicho.
               </p>
-              <a href={ctaHref} className="cta-primary" style={{ display: 'inline-flex' }} aria-label="Ver meu CPL ideal grátis — sem cartão">
-                Ver meu CPL ideal grátis →
+              <a href={ctaHref} className="cta-primary" style={{ display: 'inline-flex' }} aria-label="Fazer diagnóstico gratuito — sem cartão">
+                Fazer diagnóstico grátis →
               </a>
             </div>
             <div className="obj-items">
               {OBJECTIONS.map((o, i) => (
                 <div className="obj-item" key={i}>
-                  <span className="obj-icon" aria-hidden="true">{o.icon}</span>
+                  <span className="obj-mark" aria-hidden="true" />
                   <p className="obj-text">{o.text}</p>
                   <span className="obj-cost">{o.cost}</span>
                 </div>
@@ -872,10 +1273,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section style={{ background: 'rgba(24,24,28,1)' }} id="faq" aria-labelledby="faq-h2">
+      <section style={{ background: 'var(--surface)' }} id="faq" aria-labelledby="faq-h2">
         <div className="wrap">
-          <div className="eyebrow center" style={{ justifyContent: 'center' }}>Perguntas frequentes</div>
-          <h2 id="faq-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 40px' }}>
+          <div className="eyebrow c">Perguntas frequentes</div>
+          <h2 id="faq-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 460, margin: '0 auto 40px' }}>
             Antes de começar, <em>tire suas dúvidas</em>
           </h2>
           <div className="faq-list">
@@ -892,20 +1293,22 @@ export default function LandingPage() {
       {/* ── CTA FINAL ── */}
       <section className="cta-final" aria-labelledby="cta-h2">
         <div className="wrap">
-          <h2 id="cta-h2">
-            Antes de aumentar sua verba,<br />
-            descubra se seu CPL <em>já está fora da faixa.</em>
-          </h2>
-          <p className="cta-final-sub">
-            Faça o diagnóstico gratuito e veja se suas campanhas estão crescendo com eficiência — ou apenas ficando mais caras.
-          </p>
-          <a href={ctaHref} className="cta-primary lg" aria-label="Ver meu CPL ideal grátis — diagnóstico sem cartão">
-            Ver meu CPL ideal grátis →
-          </a>
-          <div className="final-trust" aria-label="Garantias">
-            <span className="trust-item"><span className="trust-check" aria-hidden="true">✓</span> Diagnóstico em minutos</span>
-            <span className="trust-item"><span className="trust-check" aria-hidden="true">✓</span> Sem cartão de crédito</span>
-            <span className="trust-item"><span className="trust-check" aria-hidden="true">✓</span> Resultado estimado e transparente</span>
+          <div className="cta-final-inner">
+            <h2 id="cta-h2">
+              Antes de aumentar a verba,<br />
+              descubra se o CPL <em>já está fora da faixa.</em>
+            </h2>
+            <p className="cta-final-sub">
+              Faça o diagnóstico gratuito. Em minutos, você vê se suas campanhas estão dentro da faixa esperada — ou se há desvio que vale revisar antes de escalar.
+            </p>
+            <a href={ctaHref} className="cta-primary lg" aria-label="Fazer diagnóstico gratuito de CPL — sem cartão">
+              Fazer diagnóstico grátis →
+            </a>
+            <div className="final-trust" aria-label="Garantias">
+              <span className="trust-item"><span className="trust-ck" aria-hidden="true">✓</span> Em minutos</span>
+              <span className="trust-item"><span className="trust-ck" aria-hidden="true">✓</span> Sem cartão de crédito</span>
+              <span className="trust-item"><span className="trust-ck" aria-hidden="true">✓</span> Estimativa transparente</span>
+            </div>
           </div>
         </div>
       </section>
