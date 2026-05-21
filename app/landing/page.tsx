@@ -72,7 +72,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--f-body);-webkit-fo
 
 /* ── LAYOUT ── */
 .wrap{max-width:1100px;margin:0 auto;padding:0 28px;}
-section{padding:96px 0;}
+section{padding:108px 0;}
 
 /* ── HERO ── */
 .hero{
@@ -113,7 +113,7 @@ section{padding:96px 0;}
   border:none;cursor:pointer;font-family:var(--f-body);text-decoration:none;
   display:inline-flex;align-items:center;gap:7px;transition:all .2s;letter-spacing:-.1px;
 }
-.cta-primary:hover{box-shadow:0 0 40px var(--gold-glow),0 8px 24px rgba(0,0,0,.4);transform:translateY(-2px);}
+.cta-primary:hover{box-shadow:0 0 28px var(--gold-glow),0 8px 20px rgba(0,0,0,.3);transform:translateY(-2px);}
 .cta-primary:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 .cta-primary.lg{font-size:17px;padding:17px 36px;border-radius:16px;}
 .cta-ghost{
@@ -127,13 +127,14 @@ section{padding:96px 0;}
   border:1px solid rgba(255,255,255,.055);border-radius:6px;padding:4px 10px;
   font-size:11.5px;color:var(--muted);}
 .tc-check{color:var(--green);font-size:10px;font-weight:700;}
+.hero-micro{font-size:12.5px;color:var(--muted);letter-spacing:.01em;margin-top:16px;}
 
 /* ── FULL DASHBOARD MOCKUP ── */
 .hero-right{position:relative;padding-top:4px;}
 .dash-card{
-  background:var(--surface);border:1px solid rgba(212,175,55,.14);border-radius:var(--rxl);
+  background:var(--surface);border:1px solid rgba(212,175,55,.12);border-radius:var(--rxl);
   overflow:hidden;position:relative;
-  box-shadow:0 0 80px rgba(212,175,55,.05),0 36px 72px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.04);
+  box-shadow:0 0 60px rgba(212,175,55,.04),0 32px 64px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.03);
 }
 .dash-card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
@@ -255,19 +256,19 @@ section{padding:96px 0;}
 }
 .section-title em{color:var(--gold);font-style:normal;}
 .section-title.c{text-align:center;}
-.section-sub{font-size:16.5px;color:var(--sub);line-height:1.65;margin-bottom:40px;}
-.section-sub.c{text-align:center;max-width:560px;margin-left:auto;margin-right:auto;}
+.section-sub{font-size:16px;color:var(--sub);line-height:1.7;margin-bottom:40px;}
+.section-sub.c{text-align:center;max-width:540px;margin-left:auto;margin-right:auto;}
 
 /* ── INTELLIGENCE CONNECTION — "Uma inteligência que conecta os pontos" ── */
-.intel-section{padding:96px 0;}
+.intel-section{padding:108px 0;}
 .intel-flow{display:flex;align-items:stretch;gap:0;}
 .intel-block{
   flex:1;min-width:0;
   background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
-  padding:22px 18px;position:relative;overflow:hidden;
+  padding:26px 20px;position:relative;overflow:hidden;
   transition:border-color .2s,box-shadow .2s;
 }
-.intel-block:hover{border-color:rgba(212,175,55,.16);box-shadow:0 0 24px rgba(212,175,55,.03);}
+.intel-block:hover{border-color:rgba(212,175,55,.14);box-shadow:0 8px 24px rgba(0,0,0,.2);}
 .intel-block-line{
   position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--rl) var(--rl) 0 0;
 }
@@ -290,7 +291,7 @@ section{padding:96px 0;}
 .jrn-section{
   background:var(--surface);
   border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-  padding:96px 0;
+  padding:108px 0;
 }
 .jrn-track{display:grid;grid-template-columns:repeat(5,1fr);gap:0;position:relative;}
 .jrn-track::before{
@@ -316,8 +317,8 @@ section{padding:96px 0;}
   height:1px;background:linear-gradient(90deg,rgba(212,175,55,.3),rgba(212,175,55,.08));z-index:0;
 }
 .step{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
-  padding:28px 24px;transition:border-color .2s,box-shadow .2s;position:relative;z-index:1;}
-.step:hover{border-color:rgba(212,175,55,.2);box-shadow:0 0 24px rgba(212,175,55,.04);}
+  padding:32px 28px;transition:border-color .2s,box-shadow .2s;position:relative;z-index:1;}
+.step:hover{border-color:rgba(212,175,55,.16);box-shadow:0 8px 28px rgba(0,0,0,.22);}
 .step-badge{
   width:32px;height:32px;border-radius:50%;
   background:var(--gold-dim);border:1px solid rgba(212,175,55,.2);
@@ -500,12 +501,12 @@ section{padding:96px 0;}
 .pj-arr{color:var(--muted);font-size:14px;opacity:.25;flex-shrink:0;}
 .plans{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
 .plan{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
-  padding:24px 20px;display:flex;flex-direction:column;transition:all .2s;position:relative;}
-.plan:hover{border-color:rgba(212,175,55,.2);transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,0,0,.4);}
+  padding:28px 22px;display:flex;flex-direction:column;transition:border-color .2s,box-shadow .2s,transform .2s;position:relative;}
+.plan:hover{border-color:rgba(212,175,55,.16);transform:translateY(-2px);box-shadow:0 14px 36px rgba(0,0,0,.35);}
 .plan.featured{
-  border-color:rgba(212,175,55,.28);
-  background:linear-gradient(180deg,rgba(212,175,55,.06) 0%,var(--surface) 60%);
-  box-shadow:0 0 40px rgba(212,175,55,.06);
+  border-color:rgba(212,175,55,.24);
+  background:linear-gradient(180deg,rgba(212,175,55,.05) 0%,var(--surface) 55%);
+  box-shadow:0 0 32px rgba(212,175,55,.05);
 }
 .plan.featured::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--gold),transparent);}
@@ -538,8 +539,8 @@ section{padding:96px 0;}
   gap:1px;border:1px solid var(--border);border-radius:var(--rl);
   overflow:hidden;background:var(--border);
 }
-.trust-blk{background:var(--surface);padding:28px 30px;transition:background .15s;}
-.trust-blk:hover{background:rgba(255,255,255,.012);}
+.trust-blk{background:var(--surface);padding:32px 32px;transition:background .15s;}
+.trust-blk:hover{background:rgba(255,255,255,.01);}
 .trust-blk-num{
   font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.12em;
   color:var(--gold);opacity:.45;margin-bottom:10px;
@@ -610,11 +611,14 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
   .tier-cards{grid-template-columns:1fr;}
   .steps{grid-template-columns:1fr;}
   .steps::before{display:none;}
-  .hero h1{font-size:40px;letter-spacing:-2px;}
+  .hero h1{font-size:42px;letter-spacing:-2px;}
   .nav{padding:0 20px;}
   .nav-links{display:none;}
   .wrap{padding:0 18px;}
-  section{padding:72px 0;}
+  section{padding:80px 0;}
+  .intel-section{padding:80px 0;}
+  .jrn-section{padding:80px 0;}
+  .cta-final{padding:96px 0;}
   .cta-final h2{font-size:34px;}
   .section-title{font-size:32px;}
   .pp-metrics{grid-template-columns:repeat(3,1fr);}
@@ -629,12 +633,12 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
   .jrn-step:last-child{margin-bottom:0;}
   .jrn-badge{margin:0;}
   .mod-grid{grid-template-columns:1fr 1fr;}
-  .fdb-body{grid-template-columns:110px 1fr;}
+  .fdb-body{grid-template-columns:100px 1fr;}
 }
 @media(max-width:768px){
-  .hero{padding:104px 0 72px;}
-  .hero h1{font-size:34px;letter-spacing:-1.8px;}
-  .hero-sub{font-size:15.5px;}
+  .hero{padding:108px 0 72px;}
+  .hero h1{font-size:36px;letter-spacing:-1.8px;}
+  .hero-sub{font-size:15px;}
   .hero-ctas{flex-direction:column;align-items:flex-start;}
   .pp-metrics{grid-template-columns:1fr 1fr;}
   .pp-metrics .pp-m:nth-child(5){grid-column:span 2;border-right:none;border-top:1px solid var(--border);}
@@ -650,16 +654,18 @@ details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-off
 }
 @media(max-width:560px){
   .plans{grid-template-columns:1fr;}
-  .hero h1{font-size:28px;letter-spacing:-1px;}
+  .hero h1{font-size:30px;letter-spacing:-1px;}
   .cta-primary{font-size:14.5px;padding:14px 24px;}
   .cta-primary.lg{font-size:16px;padding:16px 28px;}
-  .trust-row{gap:5px;}
-  .tc{font-size:11px;}
+  .hero-micro{font-size:12px;}
   .tier-card{padding:24px 20px;}
   .cta-final h2{font-size:28px;letter-spacing:-.8px;}
   .pj-arr{display:none;}
   .mod-grid{grid-template-columns:1fr;}
   .cplinv-item{grid-template-columns:60px 1fr;}
+  section{padding:64px 0;}
+  .intel-section{padding:64px 0;}
+  .jrn-section{padding:64px 0;}
 }
 `
 
@@ -794,21 +800,21 @@ const MODULE_GROUPS = [
     group: 'Inteligência',
     color: '#A78BFA',
     bgColor: 'rgba(167,139,250,.08)',
-    question: 'O que os dados sugerem que ainda não foi visto?',
+    question: 'O problema está na atração, conversão ou qualificação?',
     modules: ['TrafficBrain IA', 'Pesquisa de Mercado', 'Histórico de Aprendizado', 'Automação de Rotina'],
   },
   {
     group: 'Conteúdo & Conversão',
     color: '#22C55E',
     bgColor: 'rgba(34,197,94,.08)',
-    question: 'A mensagem e a oferta sustentam o tráfego recebido?',
+    question: 'Como ajustar oferta, criativo e posicionamento?',
     modules: ['Concorrentes', 'Criar Conteúdo', 'Persona do Cliente', 'Otim. de Conversão com IA'],
   },
   {
     group: 'Plano de Ação',
     color: '#F87171',
     bgColor: 'rgba(248,113,113,.08)',
-    question: 'Qual é o próximo passo de maior impacto?',
+    question: 'O que deve ser feito agora?',
     modules: ['Estratégia', 'Ações Prioritárias', 'Relatórios'],
   },
 ]
@@ -816,7 +822,7 @@ const MODULE_GROUPS = [
 const PLANS = [
   {
     name: 'Diagnóstico',
-    target: 'Para quem quer identificar um primeiro sinal sem custo — em minutos.',
+    target: 'Para encontrar um primeiro sinal de ineficiência.',
     price: null,
     period: 'Gratuito',
     cta: 'Fazer diagnóstico grátis',
@@ -831,7 +837,7 @@ const PLANS = [
   },
   {
     name: 'Plataforma',
-    target: 'Para negócios que querem sair do diagnóstico pontual e monitorar continuamente.',
+    target: 'Para acompanhar uma operação própria com mais clareza.',
     price: 'R$297',
     period: '/mês',
     cta: 'Começar acompanhamento',
@@ -847,13 +853,13 @@ const PLANS = [
   },
   {
     name: 'Profissional',
-    target: 'Para gestores e agências que tomam decisões por vários clientes ao mesmo tempo.',
+    target: 'Para gestores e agências que precisam organizar múltiplos clientes.',
     price: 'R$997',
     period: '/mês',
     cta: 'Usar com clientes',
     ctaStyle: 'primary',
     featured: true,
-    badge: 'Ideal para agências',
+    badge: 'Recomendado para agências',
     features: [
       'Até 8 clientes',
       'TrafficBrain IA',
@@ -866,7 +872,7 @@ const PLANS = [
   },
   {
     name: 'Avançado',
-    target: 'Para operações com volume alto, múltiplas contas e necessidade de inteligência contínua.',
+    target: 'Para operações que precisam transformar análise em rotina contínua.',
     price: 'R$2.997',
     period: '/mês',
     cta: 'Falar sobre operação',
@@ -959,7 +965,7 @@ export default function LandingPage() {
         </div>
         <div className="nav-actions">
           <a href={ctaHref} className="nav-login">Entrar</a>
-          <a href={ctaHref} className="nav-cta" aria-label="Fazer diagnóstico gratuito">Diagnóstico grátis</a>
+          <a href={ctaHref} className="nav-cta" aria-label="Fazer diagnóstico gratuito">Diagnóstico gratuito</a>
         </div>
       </nav>
 
@@ -979,20 +985,17 @@ export default function LandingPage() {
                 antes de <em>gastar mais.</em>
               </h1>
               <p className="hero-sub">
-                A ELYON NOUS organiza sinais de negócio, campanhas, audiência, funil e mercado para identificar gargalos e priorizar as próximas ações — antes de escalar investimento.
+                A ELYON NOUS conecta sinais do negócio, campanhas, audiência, funil, mercado e conteúdo para ajudar a entender gargalos e priorizar as próximas ações.
               </p>
               <div className="hero-ctas">
                 <a href={ctaHref} className="cta-primary" aria-label="Fazer diagnóstico gratuito de CPL — sem cartão">
-                  Fazer diagnóstico grátis →
+                  Fazer diagnóstico gratuito →
                 </a>
                 <a href="#platform" className="cta-ghost">Conhecer a plataforma</a>
               </div>
-              <div className="trust-row" aria-label="Garantias">
-                <span className="tc"><span className="tc-check">✓</span> Sem cartão</span>
-                <span className="tc"><span className="tc-check">✓</span> Resultado em minutos</span>
-                <span className="tc"><span className="tc-check">✓</span> Tráfego, audiência e funil</span>
-                <span className="tc"><span className="tc-check">✓</span> Sem compromisso</span>
-              </div>
+              <p className="hero-micro" aria-label="Garantias">
+                Sem cartão · Resultado em minutos · Inteligência para tráfego, vendas e marketing
+              </p>
             </div>
 
             {/* Right: full platform dashboard mockup */}
@@ -1103,12 +1106,12 @@ export default function LandingPage() {
       <div className="intel-section" id="platform" aria-labelledby="intel-heading">
         <div className="wrap">
           <div className="eyebrow c">Uma inteligência que conecta os pontos</div>
-          <h2 id="intel-heading" className="section-title c" style={{ textAlign: 'center', maxWidth: 620, margin: '0 auto 14px' }}>
-            CPL, funil, audiência, verba, criativo e mercado<br />
-            <em>não vivem separados.</em>
+          <h2 id="intel-heading" className="section-title c" style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 14px' }}>
+            Diagnóstico, campanhas, audiência, funil e mercado<br />
+            <em>em uma visão integrada.</em>
           </h2>
           <p className="section-sub c" style={{ marginBottom: 48 }}>
-            A ELYON organiza esses sinais para mostrar onde agir primeiro — conectando diagnóstico, campanhas, audiência, conteúdo e plano de ação em uma visão integrada.
+            Cada dimensão do negócio tem um módulo. Juntos, eles formam o contexto que falta para decidir onde agir primeiro.
           </p>
 
           <div className="intel-flow">
@@ -1198,12 +1201,12 @@ export default function LandingPage() {
       {/* ── COMO FUNCIONA O DIAGNÓSTICO ── */}
       <section style={{ background: 'var(--bg)' }} id="how" aria-labelledby="how-h2">
         <div className="wrap">
-          <div className="eyebrow c">Por onde começar</div>
+          <div className="eyebrow c">Diagnóstico gratuito</div>
           <h2 id="how-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 14px' }}>
-            O diagnóstico gratuito é a <em>primeira porta de entrada</em>
+            Um primeiro sinal em <em>menos de 2 minutos</em>
           </h2>
           <p className="section-sub c" style={{ marginBottom: 48 }}>
-            Em menos de 2 minutos, identifique se o seu CPL está dentro da faixa esperada para o seu nicho — sem conectar conta, sem cartão.
+            Informe nicho, região e CPL atual. Receba a faixa estimada, o desvio e o próximo passo — sem conectar conta, sem cartão.
           </p>
           <div className="steps">
             {STEPS.map((s, i) => (
@@ -1225,9 +1228,9 @@ export default function LandingPage() {
       {/* ── O QUE O DIAGNÓSTICO REVELA ── */}
       <section style={{ background: 'var(--surface)' }} aria-labelledby="reveal-h2">
         <div className="wrap">
-          <div className="eyebrow c">O que você recebe</div>
-          <h2 id="reveal-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 40px' }}>
-            Clareza suficiente para a <em>próxima decisão</em>
+          <div className="eyebrow c">Resultado do diagnóstico</div>
+          <h2 id="reveal-h2" className="section-title c" style={{ textAlign: 'center', maxWidth: 460, margin: '0 auto 40px' }}>
+            Um sinal claro para a <em>próxima decisão</em>
           </h2>
 
           <div className="product-panel" role="img" aria-label="Exemplo de resultado do diagnóstico de CPL — dados demonstrativos">
@@ -1434,7 +1437,7 @@ export default function LandingPage() {
             da sua <em>operação.</em>
           </h2>
           <p className="section-sub c" style={{ marginBottom: 36 }}>
-            Comece com o diagnóstico gratuito — sem cartão, em minutos. Evolua para acompanhamento contínuo quando precisar de mais contexto para decidir.
+            Do diagnóstico pontual ao acompanhamento contínuo — escolha o nível que faz sentido para a sua operação agora.
           </p>
 
           <div className="pricing-journey" aria-hidden="true">
@@ -1524,18 +1527,18 @@ export default function LandingPage() {
               Decida <em>o que fazer primeiro.</em>
             </h2>
             <p className="cta-final-sub">
-              Comece com o diagnóstico gratuito. Sem cartão, sem compromisso.
+              Comece pelo diagnóstico gratuito e veja quais sinais do seu marketing merecem atenção antes de aumentar investimento.
             </p>
             <p className="cta-final-promise">
-              Baixa fricção · <em>Resultado em minutos</em> · Sem conectar conta
+              Sem cartão · <em>Baixa fricção</em> · Feito para quem investe em tráfego
             </p>
             <a href={ctaHref} className="cta-primary lg" aria-label="Fazer diagnóstico gratuito de CPL — sem cartão">
-              Fazer diagnóstico grátis →
+              Fazer diagnóstico gratuito →
             </a>
             <div className="final-trust" aria-label="Garantias">
               <span className="trust-item"><span className="trust-ck" aria-hidden="true">✓</span> Em minutos</span>
-              <span className="trust-item"><span className="trust-ck" aria-hidden="true">✓</span> Sem cartão de crédito</span>
-              <span className="trust-item"><span className="trust-ck" aria-hidden="true">✓</span> Estimativa transparente</span>
+              <span className="trust-item"><span className="trust-ck" aria-hidden="true">✓</span> Sem cartão</span>
+              <span className="trust-item"><span className="trust-ck" aria-hidden="true">✓</span> Sem conectar conta</span>
             </div>
           </div>
         </div>
