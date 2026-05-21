@@ -1,3 +1,19 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'ELYON NOUS | Diagnóstico gratuito de CPL',
+  description:
+    'Descubra se você está pagando caro por lead. Compare seu CPL com faixas de referência por nicho e região e identifique possíveis desvios nas suas campanhas.',
+  openGraph: {
+    title: 'ELYON NOUS | Diagnóstico gratuito de CPL',
+    description:
+      'Compare seu CPL com faixas de referência por nicho e região. Diagnóstico gratuito para gestores, agências e empresas que investem em mídia paga.',
+    url: 'https://elyonnous.com',
+    siteName: 'ELYON NOUS',
+    type: 'website',
+  },
+}
+
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -41,38 +57,49 @@ section{padding:96px 0;}
 /* HERO */
 .hero{padding:128px 0 88px;background:radial-gradient(ellipse 900px 500px at 50% 0%,rgba(212,175,55,.06) 0%,transparent 70%);}
 .hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.25);border-radius:999px;padding:5px 14px;font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:28px;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.25);border-radius:999px;padding:5px 14px;font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
 .hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.hero h1{font-family:var(--f-display);font-size:50px;font-weight:800;line-height:1.08;letter-spacing:-2px;color:var(--text);margin-bottom:22px;}
+.hero-pos{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.5;}
+.hero h1{font-family:var(--f-display);font-size:50px;font-weight:800;line-height:1.08;letter-spacing:-2px;color:var(--text);margin-bottom:18px;}
 .hero h1 em{color:var(--gold);font-style:normal;}
-.hero-sub{font-size:17px;color:var(--sub);line-height:1.65;margin-bottom:36px;max-width:500px;}
+.hero-sub{font-size:17px;color:var(--sub);line-height:1.65;margin-bottom:32px;max-width:500px;}
 .cta-primary{background:linear-gradient(135deg,var(--gold),var(--gold-hi));color:#000;font-weight:800;font-size:16px;padding:16px 32px;border-radius:12px;border:none;cursor:pointer;font-family:var(--f-body);text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s;letter-spacing:-.2px;}
 .cta-primary:hover{box-shadow:0 0 40px var(--gold-glow),0 8px 24px rgba(0,0,0,.4);transform:translateY(-2px);}
+.cta-primary:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 .cta-primary.lg{font-size:18px;padding:18px 40px;border-radius:14px;}
-.hero-micro{font-size:12px;color:var(--muted);margin-top:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.hero-micro .sep{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.2);}
+.trust-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.trust-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:5px 10px;font-size:12px;color:var(--muted);}
+.trust-badge .tck{color:var(--green);font-size:11px;}
 .trust-check{color:var(--green);}
 
 /* CPL CARD */
-.cpl-card{background:var(--surface);border:1px solid rgba(212,175,55,.2);border-radius:20px;padding:28px 28px 24px;box-shadow:0 0 80px rgba(212,175,55,.07),0 40px 80px rgba(0,0,0,.5);}
+.cpl-card{background:var(--surface);border:1px solid rgba(212,175,55,.2);border-radius:20px;padding:24px 24px 20px;box-shadow:0 0 80px rgba(212,175,55,.07),0 40px 80px rgba(0,0,0,.5);}
 .cpl-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
 .cpl-card-title{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;}
 .cpl-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block;}
 .cpl-platform-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid rgba(212,175,55,.2);font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;}
-.cpl-card-meta{font-size:11px;color:rgba(255,255,255,.25);font-family:var(--f-mono);margin-bottom:20px;}
-.cpl-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+.cpl-card-meta{font-size:11px;color:rgba(255,255,255,.25);font-family:var(--f-mono);margin-bottom:14px;}
+.cpl-status{display:flex;align-items:center;gap:7px;background:rgba(255,77,77,.07);border:1px solid rgba(255,77,77,.18);border-radius:8px;padding:7px 12px;margin-bottom:14px;font-size:12px;color:var(--red);font-weight:600;}
+.cpl-status-dot{width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;}
+.cpl-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
 .cpl-row:last-of-type{border-bottom:none;}
 .cpl-label{font-size:13px;color:var(--muted);}
-.cpl-value{font-family:var(--f-mono);font-size:20px;font-weight:700;}
+.cpl-value{font-family:var(--f-mono);font-size:19px;font-weight:700;}
 .cpl-value.green{color:var(--green);}
 .cpl-value.red{color:var(--red);}
 .cpl-value.white{color:var(--text);}
 .cpl-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:8px;font-family:var(--f-mono);background:rgba(255,77,77,.15);color:var(--red);}
-.cpl-loss{margin-top:18px;background:rgba(255,77,77,.07);border:1px solid rgba(255,77,77,.18);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}
+.cpl-bars{padding:12px 0 0;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;}
+.cpl-bar-row{display:flex;align-items:center;gap:10px;}
+.cpl-bar-lbl{font-size:10px;color:var(--muted);font-family:var(--f-mono);width:36px;flex-shrink:0;text-align:right;}
+.cpl-bar-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;min-width:0;}
+.cpl-bar-fill{height:100%;border-radius:3px;}
+.cpl-bar-v{font-size:11px;font-family:var(--f-mono);font-weight:700;width:34px;text-align:right;flex-shrink:0;}
+.cpl-loss{margin-top:14px;background:rgba(255,77,77,.07);border:1px solid rgba(255,77,77,.18);border-radius:11px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;}
 .cpl-loss-label{font-size:13px;color:var(--red);}
-.cpl-loss-value{font-family:var(--f-mono);font-size:22px;font-weight:800;color:var(--red);}
-.cpl-priority{margin-top:10px;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.cpl-loss-value{font-family:var(--f-mono);font-size:21px;font-weight:800;color:var(--red);}
+.cpl-priority{margin-top:8px;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:9px;padding:9px 13px;display:flex;align-items:center;gap:10px;}
 .cpl-priority-label{font-size:10px;color:var(--muted);font-family:var(--f-mono);white-space:nowrap;text-transform:uppercase;letter-spacing:.08em;}
 .cpl-priority-value{font-size:12px;color:var(--gold);font-weight:600;}
 
@@ -88,11 +115,11 @@ section{padding:96px 0;}
 .section-sub.center{text-align:center;max-width:560px;margin-left:auto;margin-right:auto;}
 
 /* PAIN */
-.pain-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;}
-.pain-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;display:flex;align-items:flex-start;gap:14px;}
-.pain-icon{font-size:20px;flex-shrink:0;margin-top:2px;}
-.pain-text{font-size:15px;color:var(--sub);line-height:1.5;}
-.pain-text strong{color:var(--text);}
+.pain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+.pain-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:10px;}
+.pain-icon{font-size:22px;}
+.pain-label{font-size:14px;font-weight:700;color:var(--text);}
+.pain-desc{font-size:13px;color:var(--muted);line-height:1.55;}
 .pain-close{background:rgba(255,77,77,.05);border:1px solid rgba(255,77,77,.18);border-radius:14px;padding:18px 24px;font-size:15px;color:var(--sub);line-height:1.6;text-align:center;}
 .pain-close strong{color:var(--text);}
 
@@ -115,6 +142,7 @@ section{padding:96px 0;}
 
 /* FREE VS PLATFORM */
 .tier-section{background:linear-gradient(135deg,rgba(34,197,94,.03) 0%,var(--bg) 40%,rgba(212,175,55,.04) 100%);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.tier-transition{text-align:center;font-size:14px;color:var(--muted);margin-bottom:40px;font-style:italic;}
 .tier-cards{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px;margin:0 auto;}
 .tier-card{border-radius:20px;padding:32px;display:flex;flex-direction:column;}
 .tier-card.free{background:rgba(34,197,94,.04);border:1px solid rgba(34,197,94,.22);}
@@ -132,6 +160,7 @@ section{padding:96px 0;}
 .tier-check-green{color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px;}
 .tier-check-gold{color:var(--gold);font-weight:700;flex-shrink:0;margin-top:1px;}
 .tier-cta{display:block;text-align:center;padding:13px 24px;border-radius:11px;font-weight:700;font-size:14px;text-decoration:none;transition:all .18s;margin-top:auto;}
+.tier-cta:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 .tier-cta.free{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.28);}
 .tier-cta.free:hover{background:rgba(34,197,94,.2);}
 .tier-cta.paid{background:linear-gradient(135deg,var(--gold),var(--gold-hi));color:#000;}
@@ -174,6 +203,7 @@ section{padding:96px 0;}
 .plan-features li{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sub);}
 .plan-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px;}
 .plan-cta{display:block;text-align:center;padding:11px;border-radius:9px;font-weight:700;font-size:14px;text-decoration:none;transition:all .18s;cursor:pointer;border:none;font-family:var(--f-body);}
+.plan-cta:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 .plan-cta.primary{background:linear-gradient(135deg,var(--gold),var(--gold-hi));color:#000;}
 .plan-cta.primary:hover{box-shadow:0 0 20px var(--gold-glow);}
 .plan-cta.secondary{background:transparent;color:var(--sub);border:1px solid var(--border);}
@@ -205,6 +235,7 @@ details.faq-item summary::-webkit-details-marker{display:none;}
 details.faq-item summary::after{content:'+';font-size:20px;color:var(--gold);font-weight:300;line-height:1;flex-shrink:0;}
 details.faq-item[open] summary::after{content:'−';}
 details.faq-item summary:hover{color:var(--gold);}
+details.faq-item summary:focus-visible{outline:2px solid var(--gold);outline-offset:-2px;}
 .faq-answer{padding:16px 22px 18px;font-size:14px;color:var(--muted);line-height:1.7;border-top:1px solid var(--border);}
 
 /* CTA FINAL */
@@ -237,83 +268,120 @@ details.faq-item summary:hover{color:var(--gold);}
   section{padding:64px 0;}
   .cta-final h2{font-size:32px;}
   .section-title{font-size:30px;}
+  .obj-grid{gap:32px;}
+}
+@media(max-width:768px){
+  .cpl-card{padding:20px 18px 16px;}
+  .hero h1{font-size:32px;letter-spacing:-1px;}
+  .hero-sub{font-size:16px;}
 }
 @media(max-width:560px){
   .plans{grid-template-columns:1fr;}
   .nav-logo{font-size:16px;}
-  .hero h1{font-size:28px;letter-spacing:-1px;}
+  .hero h1{font-size:28px;letter-spacing:-.8px;}
   .cta-primary{font-size:15px;padding:14px 24px;}
   .cta-primary.lg{font-size:16px;padding:16px 28px;}
+  .trust-badges{gap:6px;}
+  .trust-badge{font-size:11px;}
+  .cpl-bar-lbl{width:28px;}
+  .cpl-bar-v{width:30px;}
 }
 `
 
+// ── Pain: 3 focused bullets (escaneável) ──────────────────────────────────
 const PAINS = [
-  { icon: '💸', text: <><strong>Você não sabe qual deveria ser seu CPL.</strong> Sabe apenas o que paga agora — sem saber se está caro ou dentro do mercado.</> },
-  { icon: '🎯', text: <><strong>Sem referência, qualquer número parece normal.</strong> Você compara com você mesmo — não com o mercado real.</> },
-  { icon: '🔁', text: <><strong>Troca criativo, agência e plataforma.</strong> Mas o problema real é a falta de um ponto de comparação.</> },
-  { icon: '🔥', text: <><strong>O diagnóstico chega tarde demais.</strong> Quando percebe que estava pagando caro, já perdeu meses de verba.</> },
+  {
+    icon: '📊',
+    label: 'Você sabe quanto paga, mas não sabe se está caro.',
+    desc: 'Sem uma faixa de referência por nicho e região, qualquer CPL parece aceitável.',
+  },
+  {
+    icon: '🔄',
+    label: 'Você compara campanhas só com o próprio histórico.',
+    desc: 'Melhorar em relação a si mesmo não significa estar dentro da faixa esperada do mercado.',
+  },
+  {
+    icon: '🎯',
+    label: 'Você otimiza sem uma referência externa.',
+    desc: 'Decisões de criativo, segmentação e verba ficam baseadas em feeling, não em comparação.',
+  },
 ]
 
+// ── Steps: ação orientada ────────────────────────────────────────────────
 const STEPS = [
-  { icon: '📋', title: 'Informe seu nicho e CPL atual', desc: 'Seu segmento, região e o que está pagando por lead hoje. Menos de 2 minutos.' },
-  { icon: '📊', title: 'Comparamos com benchmarks de mercado', desc: 'Faixas de CPL por nicho, região e tipo de campanha — estruturadas a partir de padrões do setor.' },
-  { icon: '🎯', title: 'Você recebe o diagnóstico completo', desc: 'CPL ideal, diferença percentual, estimativa de desperdício e prioridade de ação. Claro e direto.' },
+  {
+    icon: '📋',
+    title: 'Informe nicho, região, plataforma e CPL atual',
+    desc: 'Preencha o formulário simples em menos de 2 minutos. Nenhuma conexão de conta necessária.',
+  },
+  {
+    icon: '📊',
+    title: 'Compare com a faixa de referência estimada',
+    desc: 'Cruzamos as informações com faixas estruturadas por nicho, região e tipo de campanha.',
+  },
+  {
+    icon: '🎯',
+    title: 'Receba diagnóstico, desvio percentual e prioridade',
+    desc: 'CPL estimado para o seu nicho, diferença do seu atual e o próximo passo mais claro.',
+  },
 ]
 
 const DELIVERABLES = [
-  { icon: '📊', title: 'CPL ideal estimado', desc: 'Faixa saudável de custo por lead para o seu nicho e região.' },
-  { icon: '⚖️', title: 'Comparação com o mercado', desc: 'Seu CPL atual versus o que o mercado espera para campanhas similares.' },
-  { icon: '📉', title: 'Diferença percentual', desc: 'Quanto acima (ou abaixo) da média você está pagando por cada lead.' },
-  { icon: '💸', title: 'Desperdício estimado', desc: 'Estimativa de quanto pode estar sendo gasto além do necessário por mês.' },
-  { icon: '🎯', title: 'Prioridade de otimização', desc: 'O que corrigir primeiro: segmentação, oferta, criativos ou orçamento.' },
-  { icon: '📋', title: 'Recomendação inicial', desc: 'Ponto de partida claro para quem quer parar de operar sem referência.' },
+  { icon: '📊', title: 'CPL de referência estimado', desc: 'Faixa esperada de custo por lead para o seu nicho e região.' },
+  { icon: '⚖️', title: 'Comparativo por segmento', desc: 'Seu CPL atual frente à faixa estruturada para campanhas similares.' },
+  { icon: '📉', title: 'Desvio percentual', desc: 'Quanto acima (ou abaixo) da faixa estimada você está pagando.' },
+  { icon: '💸', title: 'Desperdício estimado', desc: 'Estimativa do que pode estar sendo gasto além do esperado por mês.' },
+  { icon: '🎯', title: 'Prioridade de ajuste', desc: 'O que revisar primeiro: segmentação, oferta, criativo ou orçamento.' },
+  { icon: '📋', title: 'Ponto de partida claro', desc: 'Uma leitura objetiva para quem quer tomar decisões com mais contexto.' },
 ]
 
 const FOR_WHOM = [
-  { icon: '🚀', name: 'Gestores de tráfego', desc: 'Que precisam de referência real para defender resultados e propor ajustes com dados.' },
-  { icon: '🏢', name: 'Agências de marketing', desc: 'Que gerenciam múltiplos clientes e precisam de benchmarks por nicho para cada conta.' },
-  { icon: '🏪', name: 'Negócios locais', desc: 'Que investem em Google Ads ou Meta Ads e não sabem se o CPL está dentro do mercado.' },
-  { icon: '🏥', name: 'Clínicas e consultórios', desc: 'Saúde, odontologia, estética — segmentos com CPL muito variável por região.' },
-  { icon: '🏠', name: 'Imobiliárias', desc: 'Onde leads custam caro e a diferença entre benchmark e realidade pode ser enorme.' },
+  { icon: '🚀', name: 'Gestores de tráfego', desc: 'Que precisam de faixas de referência por nicho para embasar ajustes e apresentar resultados.' },
+  { icon: '🏢', name: 'Agências de marketing', desc: 'Que gerenciam múltiplos clientes e querem comparativos por segmento para cada conta.' },
+  { icon: '🏪', name: 'Negócios locais', desc: 'Que investem em Google Ads ou Meta Ads e não sabem se o CPL está dentro da faixa esperada.' },
+  { icon: '🏥', name: 'Clínicas e consultórios', desc: 'Saúde, odontologia, estética — segmentos com CPL muito variável por cidade e especialidade.' },
+  { icon: '🏠', name: 'Imobiliárias', desc: 'Onde leads custam caro e qualquer desvio da faixa esperada representa verba relevante.' },
   { icon: '🛒', name: 'E-commerces', desc: 'Que precisam entender o custo de aquisição dentro de margens sustentáveis.' },
 ]
 
+// ── Comparison: linguagem calibrada ─────────────────────────────────────
 const BAD = [
-  '❌ Decide no feeling, sem referência de mercado',
-  '❌ Testa às cegas — cada erro custa dinheiro real',
-  '❌ Descobre o desperdício tarde demais',
-  '❌ Troca de agência e o problema continua',
+  '❌ Decide no feeling, sem comparativo externo',
+  '❌ Testa sem saber qual faixa seria esperada',
+  '❌ Percebe o desvio tarde, depois de perda de verba',
+  '❌ Troca de agência sem entender o problema real',
 ]
 
 const GOOD = [
-  '✅ Sabe exatamente o CPL ideal do seu nicho',
-  '✅ Entende onde ajustar e quanto vai recuperar',
-  '✅ Decide com base em dado, não em achismo',
-  '✅ Para de perder dinheiro muito mais rápido',
+  '✅ Identifica se o CPL está acima da faixa estimada',
+  '✅ Prioriza ajustes com base em comparativo por nicho',
+  '✅ Reduz decisões baseadas apenas em feeling',
+  '✅ Começa a otimizar com um ponto de referência claro',
 ]
 
+// ── Plans: badge e CTAs específicos ──────────────────────────────────────
 const PLANS = [
   {
     name: 'Diagnóstico',
-    target: 'Para quem quer saber se está pagando caro por lead.',
+    target: 'Para quem quer entender se o CPL está fora da faixa esperada.',
     price: null,
     period: 'Gratuito para sempre',
     cta: 'Fazer diagnóstico grátis',
     ctaStyle: 'green-btn',
     features: [
-      'CPL ideal do seu nicho',
-      'Diferença e % de desvio',
+      'CPL de referência para o seu nicho',
+      'Desvio percentual do seu atual',
       'Estimativa de desperdício mensal',
-      'Prioridade de otimização',
+      'Prioridade de ajuste',
     ],
     href: '/sign-up',
   },
   {
     name: 'Plataforma',
-    target: 'Para negócios que querem acompanhar seus próprios indicadores.',
+    target: 'Para negócios que querem acompanhar seus indicadores ao longo do tempo.',
     price: 'R$297',
     period: '/mês',
-    cta: 'Começar agora',
+    cta: 'Começar acompanhamento',
     ctaStyle: 'secondary',
     features: [
       'Tudo do Diagnóstico',
@@ -328,10 +396,10 @@ const PLANS = [
     target: 'Para gestores de tráfego e agências com múltiplos clientes.',
     price: 'R$997',
     period: '/mês',
-    cta: 'Começar agora',
+    cta: 'Usar com clientes',
     ctaStyle: 'primary',
     featured: true,
-    badge: 'Mais escolhido',
+    badge: 'Ideal para agências',
     features: [
       'Tudo da Plataforma',
       'Até 8 clientes',
@@ -343,10 +411,10 @@ const PLANS = [
   },
   {
     name: 'Avançado',
-    target: 'Para operações maiores com múltiplas contas e relatórios avançados.',
+    target: 'Para operações maiores com múltiplas contas e acompanhamento avançado.',
     price: 'R$2.997',
     period: '/mês',
-    cta: 'Começar agora',
+    cta: 'Falar sobre operação',
     ctaStyle: 'secondary',
     features: [
       'Tudo do Profissional',
@@ -355,7 +423,7 @@ const PLANS = [
       'Acesso à API',
       'Suporte prioritário',
     ],
-    href: '/checkout?plan=avancada',
+    href: 'mailto:oi@elyonnous.com?subject=Plano Avançado',
   },
 ]
 
@@ -371,44 +439,45 @@ const BENCH_TAGS = [
 ]
 
 const OBJECTIONS = [
-  { icon: '🏢', text: <><strong>Agência sem contexto</strong> — cobra sem saber o benchmark</>, cost: '~R$2.000/mês' },
-  { icon: '📊', text: <><strong>Planilhas manuais</strong> — sempre atrasadas, fáceis de errar</>, cost: 'Horas/semana' },
-  { icon: '🎲', text: <><strong>Tentativa e erro</strong> — cada teste custa dinheiro real</>, cost: 'Variável' },
-  { icon: '🤖', text: <><strong>Ferramentas genéricas</strong> — sem dados reais do seu nicho</>, cost: 'R$300–800/mês' },
+  { icon: '🏢', text: <><strong>Agência sem referência de nicho</strong> — cobra sem saber a faixa esperada</>, cost: '~R$2.000/mês' },
+  { icon: '📊', text: <><strong>Planilhas manuais</strong> — sempre atrasadas, propensas a erro</>, cost: 'Horas/semana' },
+  { icon: '🎲', text: <><strong>Tentativa e erro</strong> — cada teste consome verba real</>, cost: 'Variável' },
+  { icon: '🤖', text: <><strong>Ferramentas genéricas</strong> — sem comparativos por nicho e região</>, cost: 'R$300–800/mês' },
 ]
 
+// ── FAQ: respostas curtas, seguras, escaneáveis ──────────────────────────
 const FAQ_ITEMS = [
   {
     q: 'O diagnóstico é gratuito mesmo?',
-    a: 'Sim, completamente gratuito e sem necessidade de cartão. Você informa seu nicho, região e CPL atual, e recebe o resultado na hora, sem compromisso.',
+    a: 'Sim, sem cartão e sem compromisso. Você informa seu nicho, região e CPL atual e recebe o resultado imediatamente.',
   },
   {
     q: 'Preciso conectar minha conta do Google Ads ou Meta Ads?',
-    a: 'Não para o diagnóstico gratuito. Você informa os dados manualmente. A conexão com plataformas de mídia é disponibilizada nos planos pagos, para monitoramento contínuo e auditorias automáticas.',
+    a: 'Não. O diagnóstico é manual — você informa os dados diretamente. A conexão com plataformas de anúncios é um recurso dos planos pagos.',
   },
   {
     q: 'De onde vêm os benchmarks?',
-    a: 'A ELYON NOUS estrutura faixas de CPL cruzando padrões de campanhas por nicho, região e tipo de mídia. Os benchmarks são estimativas de referência — não substituem uma auditoria completa, mas indicam rapidamente se seus números estão fora da média esperada para o seu segmento.',
+    a: 'As faixas de referência são estruturadas a partir de padrões estimados por nicho, região e tipo de mídia. Não são dados coletados de terceiros nem auditados externamente. São estimativas para orientar, não para substituir uma análise completa.',
   },
   {
     q: 'A ELYON NOUS substitui uma agência ou gestor de tráfego?',
-    a: 'Não. A ELYON NOUS complementa quem já roda campanhas. Ela fornece o benchmark de mercado que falta para tomar decisões mais embasadas — gestores, agências e negócios usam a plataforma para ter referência real de desempenho.',
+    a: 'Não. A ELYON NOUS fornece faixas de referência de CPL — o que faltava para embasar decisões. Gestores e agências usam a plataforma junto com sua operação.',
   },
   {
     q: 'Serve para qualquer nicho?',
-    a: 'A plataforma cobre os principais nichos do mercado brasileiro: saúde, imobiliário, educação, e-commerce, jurídico, beleza, fitness e outros. Se o seu nicho não estiver listado, o diagnóstico apresenta uma faixa de referência geral.',
+    a: 'A plataforma cobre os principais nichos do mercado brasileiro. Se o seu não estiver listado, o diagnóstico apresenta uma faixa geral de referência.',
   },
   {
     q: 'O resultado é exato ou estimado?',
-    a: 'É uma estimativa baseada em benchmarks de mercado. O diagnóstico mostra se você está fora da faixa esperada para o seu segmento — não é um dado exato do seu negócio específico, mas serve como ponto de partida claro para identificar desvios.',
+    a: 'Estimado. O diagnóstico indica se seu CPL está dentro ou fora da faixa esperada para o seu segmento. Não é um dado exato do seu negócio — é um ponto de comparação para identificar possíveis desvios.',
   },
   {
     q: 'Posso usar para clientes da minha agência?',
-    a: 'Sim. O plano Profissional foi criado exatamente para isso: gestores de tráfego e agências que precisam de benchmarks e diagnósticos para múltiplos clientes em um único painel.',
+    a: 'Sim. O plano Profissional é feito exatamente para isso: diagnósticos e monitoramento para múltiplos clientes em um único painel.',
   },
   {
     q: 'Meus dados ficam seguros?',
-    a: 'Sim. Dados inseridos no diagnóstico são usados apenas para calcular o resultado. Não vendemos, compartilhamos nem usamos seus dados para terceiros. Para conexões com plataformas de anúncios, usamos apenas os escopos de leitura necessários.',
+    a: 'Os dados informados no diagnóstico são usados apenas para gerar o resultado. Não são compartilhados nem vendidos. Para conexões com plataformas de anúncios, usamos somente escopos de leitura.',
   },
 ]
 
@@ -420,8 +489,8 @@ export default function LandingPage() {
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       {/* NAV */}
-      <nav className="nav">
-        <a href="/landing" className="nav-logo">ELYON NOUS</a>
+      <nav className="nav" aria-label="Navegação principal">
+        <a href="/landing" className="nav-logo" aria-label="ELYON NOUS — página inicial">ELYON NOUS</a>
         <div className="nav-links">
           <a href="#how" className="nav-link">Como funciona</a>
           <a href="#pricing" className="nav-link">Planos</a>
@@ -429,58 +498,64 @@ export default function LandingPage() {
         </div>
         <div className="nav-actions">
           <a href={ctaHref} className="nav-login">Entrar</a>
-          <a href={ctaHref} className="nav-cta">Diagnóstico grátis</a>
+          <a href={ctaHref} className="nav-cta" aria-label="Fazer diagnóstico gratuito de CPL">Diagnóstico grátis</a>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section className="hero">
+      {/* ── HERO ── */}
+      <section className="hero" aria-labelledby="hero-h1">
         <div className="wrap">
           <div className="hero-inner">
             <div>
-              <div className="hero-badge">
+              <div className="hero-badge" aria-hidden="true">
                 <span className="hero-badge-dot" />
                 Diagnóstico gratuito disponível agora
               </div>
-              <h1>
+              {/* Linha de posicionamento: responde "o que é" e "para quem" */}
+              <p className="hero-pos">
+                Ferramenta de diagnóstico de CPL para gestores, agências e empresas que investem em mídia paga.
+              </p>
+              <h1 id="hero-h1">
                 Descubra se você está<br />
                 pagando <em>caro por lead</em>
               </h1>
               <p className="hero-sub">
-                Compare seu CPL com benchmarks do seu nicho e veja, em poucos minutos, quanto dinheiro pode estar sendo desperdiçado nas suas campanhas.
+                Compare seu CPL com faixas de referência por nicho e região. Em poucos minutos, veja se há desvio nas suas campanhas — e qual seria o próximo ajuste.
               </p>
-              <a href={ctaHref} className="cta-primary">
+              <a href={ctaHref} className="cta-primary" aria-label="Ver meu CPL ideal grátis — diagnóstico sem cartão">
                 Ver meu CPL ideal grátis →
               </a>
-              <div className="hero-micro">
-                <span><span className="trust-check">✓</span> Sem cartão</span>
-                <span className="sep" />
-                <span><span className="trust-check">✓</span> Resultado em minutos</span>
-                <span className="sep" />
-                <span><span className="trust-check">✓</span> Google Ads e Meta Ads</span>
+              <div className="trust-badges" aria-label="Garantias do diagnóstico">
+                <span className="trust-badge"><span className="tck">✓</span> Sem cartão</span>
+                <span className="trust-badge"><span className="tck">✓</span> Resultado em minutos</span>
+                <span className="trust-badge"><span className="tck">✓</span> Meta Ads e Google Ads</span>
+                <span className="trust-badge"><span className="tck">✓</span> Sem compromisso</span>
               </div>
             </div>
 
-            {/* Mockup card — diagnóstico real de CPL */}
-            <div className="cpl-card">
+            {/* Mockup: card de diagnóstico — aspecto de produto real */}
+            <div className="cpl-card" role="img" aria-label="Exemplo de diagnóstico de CPL para clínica odontológica em São Paulo">
               <div className="cpl-card-header">
                 <span className="cpl-card-title">
-                  <span className="cpl-dot" />
+                  <span className="cpl-dot" aria-hidden="true" />
                   Diagnóstico de CPL
                 </span>
-                <span className="cpl-platform-badge">ELYON NOUS</span>
+                <span className="cpl-platform-badge" aria-hidden="true">ELYON NOUS</span>
               </div>
               <div className="cpl-card-meta">Odontologia · São Paulo · Meta Ads</div>
 
-              <div className="cpl-row">
-                <span className="cpl-label">CPL ideal (benchmark)</span>
-                <span className="cpl-value green">R$34</span>
+              {/* Status badge */}
+              <div className="cpl-status" role="status">
+                <span className="cpl-status-dot" aria-hidden="true" />
+                CPL acima da faixa de referência
               </div>
+
+              {/* Dados principais */}
               <div className="cpl-row">
                 <span className="cpl-label">CPL atual</span>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <span className="cpl-value red">R$68</span>
-                  <span className="cpl-badge">+100%</span>
+                  <span className="cpl-badge" aria-label="100% acima do ideal">+100%</span>
                 </div>
               </div>
               <div className="cpl-row">
@@ -488,161 +563,188 @@ export default function LandingPage() {
                 <span className="cpl-value white">210</span>
               </div>
 
+              {/* Barra comparativa: ideal vs atual */}
+              <div className="cpl-bars" aria-label="Comparação entre CPL ideal e atual">
+                <div className="cpl-bar-row">
+                  <span className="cpl-bar-lbl">Ideal</span>
+                  <div className="cpl-bar-track">
+                    <div className="cpl-bar-fill" style={{ width: '50%', background: 'var(--green)' }} />
+                  </div>
+                  <span className="cpl-bar-v" style={{ color: 'var(--green)' }}>R$34</span>
+                </div>
+                <div className="cpl-bar-row">
+                  <span className="cpl-bar-lbl">Atual</span>
+                  <div className="cpl-bar-track">
+                    <div className="cpl-bar-fill" style={{ width: '100%', background: 'var(--red)' }} />
+                  </div>
+                  <span className="cpl-bar-v" style={{ color: 'var(--red)' }}>R$68</span>
+                </div>
+              </div>
+
               <div className="cpl-loss">
-                <span className="cpl-loss-label">💸 Perda estimada/mês</span>
+                <span className="cpl-loss-label">💸 Estimativa de desperdício/mês</span>
                 <span className="cpl-loss-value">R$4.200</span>
               </div>
               <div className="cpl-priority">
-                <span className="cpl-priority-label">Prioridade →</span>
-                <span className="cpl-priority-value">Corrigir segmentação e oferta</span>
+                <span className="cpl-priority-label">Ajuste sugerido →</span>
+                <span className="cpl-priority-value">Revisar público, criativo e promessa da oferta</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* PROBLEM */}
-      <section style={{ background: 'linear-gradient(180deg,var(--bg) 0%,rgba(24,24,28,1) 100%)' }}>
+      {/* ── PROBLEMA ── */}
+      <section style={{ background: 'linear-gradient(180deg,var(--bg) 0%,rgba(24,24,28,1) 100%)' }} aria-labelledby="pain-h2">
         <div className="wrap">
           <div className="eyebrow">O problema real</div>
-          <h2 className="section-title" style={{ maxWidth: 560 }}>
-            O problema não é o tráfego.<br />
-            É que você está <em>operando sem referência.</em>
+          <h2 id="pain-h2" className="section-title" style={{ maxWidth: 580 }}>
+            O problema não é só gerar lead.<br />
+            É saber se o <em>lead está caro.</em>
           </h2>
-          <p className="section-sub" style={{ maxWidth: 540 }}>
-            Sem benchmark, você não sabe se sua campanha está performando bem ou apenas queimando verba de forma silenciosa.
+          <p className="section-sub" style={{ maxWidth: 560 }}>
+            Muitas campanhas parecem saudáveis porque geram contatos todos os dias. Mas sem uma faixa de referência por nicho, região e plataforma, fica difícil saber se o custo está dentro do esperado ou se a verba está sendo consumida sem eficiência.
           </p>
           <div className="pain-grid">
             {PAINS.map((p, i) => (
               <div className="pain-item" key={i}>
-                <span className="pain-icon">{p.icon}</span>
-                <p className="pain-text">{p.text}</p>
+                <span className="pain-icon" aria-hidden="true">{p.icon}</span>
+                <div className="pain-label">{p.label}</div>
+                <p className="pain-desc">{p.desc}</p>
               </div>
             ))}
           </div>
           <div className="pain-close">
-            Quem tem benchmark <strong>escala com controle.</strong> Quem não tem… continua testando — e <strong style={{ color: 'var(--red)' }}>perdendo dinheiro.</strong>
+            Quem tem referência externa <strong>prioriza com mais clareza.</strong> Quem não tem… continua otimizando no escuro — e <strong style={{ color: 'var(--red)' }}>potencialmente desperdiçando verba.</strong>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section style={{ background: 'rgba(24,24,28,1)' }} id="how">
+      {/* ── COMO FUNCIONA ── */}
+      <section style={{ background: 'rgba(24,24,28,1)' }} id="how" aria-labelledby="how-h2">
         <div className="wrap">
-          <div className="eyebrow center" style={{ justifyContent: 'center' }}>Simples. Direto. Sem achismo.</div>
-          <h2 className="section-title center" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 48px' }}>
+          <div className="eyebrow center" style={{ justifyContent: 'center' }}>Simples. Direto. Sem conexão de conta.</div>
+          <h2 id="how-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 48px' }}>
             Como funciona o <em>diagnóstico</em>
           </h2>
           <div className="steps">
             {STEPS.map((s, i) => (
               <div className="step" key={i}>
-                <div className="step-num">PASSO {String(i + 1).padStart(2, '0')}</div>
-                <div className="step-icon">{s.icon}</div>
+                <div className="step-num" aria-hidden="true">PASSO {String(i + 1).padStart(2, '0')}</div>
+                <div className="step-icon" aria-hidden="true">{s.icon}</div>
                 <div className="step-title">{s.title}</div>
                 <p className="step-desc">{s.desc}</p>
               </div>
             ))}
           </div>
           <div style={{ textAlign: 'center', marginTop: 40 }}>
-            <a href={ctaHref} className="cta-primary">Começar agora — é grátis →</a>
+            <a href={ctaHref} className="cta-primary" aria-label="Começar diagnóstico gratuito agora">Começar agora — é grátis →</a>
           </div>
         </div>
       </section>
 
-      {/* DELIVERABLES */}
-      <section style={{ background: 'var(--bg)' }}>
+      {/* ── O QUE VOCÊ RECEBE ── */}
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="deliver-h2">
         <div className="wrap">
           <div className="eyebrow center" style={{ justifyContent: 'center' }}>O que você recebe</div>
-          <h2 className="section-title center" style={{ textAlign: 'center', maxWidth: 500, margin: '0 auto 40px' }}>
-            Tudo que você precisa para <em>parar de operar no escuro</em>
+          <h2 id="deliver-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 500, margin: '0 auto 40px' }}>
+            Clareza suficiente para <em>tomar a próxima decisão</em>
           </h2>
           <div className="deliver-grid">
             {DELIVERABLES.map((d, i) => (
               <div className="deliver-item" key={i}>
-                <div className="deliver-icon">{d.icon}</div>
+                <div className="deliver-icon" aria-hidden="true">{d.icon}</div>
                 <div className="deliver-title">{d.title}</div>
                 <p className="deliver-desc">{d.desc}</p>
               </div>
             ))}
           </div>
           <div style={{ textAlign: 'center', marginTop: 40 }}>
-            <a href={ctaHref} className="cta-primary">Ver meu diagnóstico grátis →</a>
+            <a href={ctaHref} className="cta-primary" aria-label="Ver meu diagnóstico de CPL grátis">Ver meu diagnóstico grátis →</a>
           </div>
         </div>
       </section>
 
-      {/* FREE VS PLATFORM */}
-      <section className="tier-section">
+      {/* ── DIAGNÓSTICO GRÁTIS VS PLATAFORMA ── */}
+      <section className="tier-section" aria-labelledby="tier-h2">
         <div className="wrap">
           <div className="eyebrow center" style={{ justifyContent: 'center' }}>Gratuito agora. Plataforma depois.</div>
-          <h2 className="section-title center" style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 12px' }}>
+          <h2 id="tier-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 12px' }}>
             Diagnóstico gratuito agora.<br /><em>Plataforma contínua depois.</em>
           </h2>
-          <p className="section-sub center" style={{ marginBottom: 48 }}>
+          <p className="section-sub center" style={{ marginBottom: 16 }}>
             Comece sem custo. Se quiser monitorar indicadores de forma contínua, a plataforma está disponível quando precisar.
+          </p>
+          {/* Frase de transição */}
+          <p className="tier-transition">
+            O diagnóstico mostra o retrato atual. A plataforma ajuda a acompanhar a evolução.
           </p>
           <div className="tier-cards">
             <div className="tier-card free">
               <div className="tier-eyebrow free">Gratuito · Sempre disponível</div>
               <div className="tier-name">Diagnóstico de CPL</div>
-              <div className="tier-desc">Para quem quer saber, agora mesmo, se está pagando caro por lead — sem cartão, sem compromisso.</div>
+              <div className="tier-desc">
+                Para quem quer saber, agora mesmo, se o CPL está dentro da faixa esperada — sem cartão, sem compromisso, sem conexão de conta.
+              </div>
               <div className="tier-price-free">Grátis</div>
               <div className="tier-price-period">Para sempre</div>
               <ul className="tier-list">
                 {[
-                  'CPL ideal estimado para o seu nicho',
-                  'Comparação com benchmarks de mercado',
+                  'Faixa de CPL estimada para o seu nicho',
+                  'Comparativo com seu CPL atual',
                   'Estimativa de desperdício mensal',
-                  'Prioridade de otimização',
-                  'Recomendação inicial de ação',
+                  'Prioridade de ajuste',
+                  'Ponto de partida claro para otimização',
                 ].map((f, i) => (
                   <li key={i}>
-                    <span className="tier-check-green">✓</span>
+                    <span className="tier-check-green" aria-hidden="true">✓</span>
                     {f}
                   </li>
                 ))}
               </ul>
-              <a href={ctaHref} className="tier-cta free">Ver meu CPL ideal grátis →</a>
+              <a href={ctaHref} className="tier-cta free" aria-label="Ver meu CPL ideal grátis — sem cartão">Ver meu CPL ideal grátis →</a>
             </div>
 
             <div className="tier-card paid">
               <div className="tier-eyebrow paid">Plataforma · A partir de R$297/mês</div>
               <div className="tier-name">Plataforma ELYON NOUS</div>
-              <div className="tier-desc">Para quem quer acompanhar indicadores de forma contínua, conectar contas de anúncios e agir mais rápido quando algo muda.</div>
+              <div className="tier-desc">
+                Para quem quer acompanhar indicadores ao longo do tempo, conectar contas de anúncios e agir mais rápido quando algo muda.
+              </div>
               <div className="tier-price">R$297</div>
               <div className="tier-price-period">a partir de · por mês · cancele quando quiser</div>
               <ul className="tier-list">
                 {[
                   'Monitoramento contínuo de CPL',
                   'Alertas automáticos de variação',
-                  'Benchmarks atualizados por nicho e região',
+                  'Faixas de referência por nicho e região atualizadas',
                   'Conexão com Meta Ads e Google Ads',
                   'Relatórios para tomada de decisão',
                   'Múltiplos clientes (planos Profissional e Avançado)',
                 ].map((f, i) => (
                   <li key={i}>
-                    <span className="tier-check-gold">→</span>
+                    <span className="tier-check-gold" aria-hidden="true">→</span>
                     {f}
                   </li>
                 ))}
               </ul>
-              <a href="#pricing" className="tier-cta paid">Ver planos e preços →</a>
+              <a href="#pricing" className="tier-cta paid" aria-label="Ver planos e preços da plataforma ELYON NOUS">Ver planos e preços →</a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FOR WHOM */}
-      <section style={{ background: 'rgba(24,24,28,1)' }}>
+      {/* ── PARA QUEM É ── */}
+      <section style={{ background: 'rgba(24,24,28,1)' }} aria-labelledby="whom-h2">
         <div className="wrap">
           <div className="eyebrow center" style={{ justifyContent: 'center' }}>Para quem é</div>
-          <h2 className="section-title center" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 40px' }}>
+          <h2 id="whom-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 40px' }}>
             Feito para quem <em>investe em mídia paga</em>
           </h2>
           <div className="for-whom-grid">
             {FOR_WHOM.map((f, i) => (
               <div className="for-whom-item" key={i}>
-                <div className="for-whom-icon">{f.icon}</div>
+                <div className="for-whom-icon" aria-hidden="true">{f.icon}</div>
                 <div className="for-whom-name">{f.name}</div>
                 <p className="for-whom-desc">{f.desc}</p>
               </div>
@@ -651,16 +753,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* COMPARISON */}
-      <section style={{ background: 'var(--bg)' }}>
+      {/* ── COMPARAÇÃO COM / SEM ── */}
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="compare-h2">
         <div className="wrap">
           <div className="eyebrow center" style={{ justifyContent: 'center' }}>A diferença na prática</div>
-          <h2 className="section-title center" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 40px' }}>
-            Com e sem <em>referência real</em>
+          <h2 id="compare-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 440, margin: '0 auto 40px' }}>
+            Com e sem <em>referência de mercado</em>
           </h2>
           <div className="compare-grid">
             <div className="compare-col">
-              <div className="compare-header bad">❌ Sem benchmark</div>
+              <div className="compare-header bad">❌ Sem referência de mercado</div>
               <div className="compare-body bad">
                 {BAD.map((t, i) => (
                   <div className="compare-item" key={i}>
@@ -683,15 +785,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PRICING */}
-      <section style={{ background: 'linear-gradient(180deg,var(--bg) 0%,rgba(24,24,28,1) 100%)' }} id="pricing">
+      {/* ── PLANOS ── */}
+      <section style={{ background: 'linear-gradient(180deg,var(--bg) 0%,rgba(24,24,28,1) 100%)' }} id="pricing" aria-labelledby="pricing-h2">
         <div className="wrap">
           <div className="eyebrow center" style={{ justifyContent: 'center' }}>Planos</div>
-          <h2 className="section-title center" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 14px' }}>
+          <h2 id="pricing-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 14px' }}>
             Comece grátis. <em>Escale quando fizer sentido.</em>
           </h2>
           <p className="section-sub center" style={{ marginBottom: 48 }}>
-            O diagnóstico é sempre gratuito. Os planos pagos são para quem quer monitoramento contínuo.
+            O diagnóstico é sempre gratuito. Os planos pagos são para quem quer monitoramento contínuo e acompanhamento ao longo do tempo.
           </p>
           <div className="plans">
             {PLANS.map((p, i) => (
@@ -704,34 +806,34 @@ export default function LandingPage() {
                   ? <><div className="plan-price">{p.price}<span>{p.period}</span></div><div className="plan-period">por mês</div></>
                   : <><div className="plan-free">Grátis</div><div className="plan-period">Para sempre</div></>
                 }
-                <ul className="plan-features">
+                <ul className="plan-features" aria-label={`Recursos do plano ${p.name}`}>
                   {p.features.map((f, j) => <li key={j}>{f}</li>)}
                 </ul>
-                <a href={p.href} className={`plan-cta ${p.ctaStyle}`}>{p.cta}</a>
+                <a href={p.href} className={`plan-cta ${p.ctaStyle}`} aria-label={`${p.cta} — plano ${p.name}`}>{p.cta}</a>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* BENCHMARK TRUST */}
-      <section style={{ background: 'rgba(24,24,28,1)' }}>
+      {/* ── DE ONDE VÊM OS BENCHMARKS ── */}
+      <section style={{ background: 'rgba(24,24,28,1)' }} aria-labelledby="bench-h2">
         <div className="wrap">
           <div className="bench-inner">
             <div className="eyebrow center" style={{ justifyContent: 'center' }}>Transparência total</div>
-            <h2 className="section-title center" style={{ margin: '0 auto 20px', maxWidth: 520 }}>
-              De onde vêm os <em>benchmarks?</em>
+            <h2 id="bench-h2" className="section-title center" style={{ margin: '0 auto 20px', maxWidth: 520 }}>
+              De onde vêm as <em>faixas de referência?</em>
             </h2>
             <p className="section-sub center" style={{ marginBottom: 16 }}>
-              A ELYON NOUS cruza padrões de campanhas, nichos, regiões e tipos de mídia para estimar faixas saudáveis de CPL.
+              As faixas de CPL são estruturadas a partir de padrões estimados por nicho, região e tipo de mídia. Não são dados coletados de terceiros nem auditados externamente.
             </p>
             <p style={{ fontSize: 14, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 32px' }}>
-              O diagnóstico não substitui uma auditoria completa, mas mostra rapidamente se seus números estão fora da média esperada para o seu segmento. Não afirmamos ter acesso a bilhões de campanhas — o que entregamos são faixas de referência estruturadas para identificar desvios evidentes, com linguagem clara e honesta.
+              O diagnóstico não substitui uma auditoria profissional. O que ele entrega é uma leitura comparativa para identificar desvios evidentes — com linguagem clara sobre o que é estimado e o que não é. Acreditamos que transparência gera mais confiança do que promessas imprecisas.
             </p>
-            <div className="bench-tags">
+            <div className="bench-tags" aria-label="Nichos cobertos pela plataforma">
               {BENCH_TAGS.map((t, i) => (
                 <span className="bench-tag" key={i}>
-                  <span className="bench-dot" style={{ background: t.color }} />
+                  <span className="bench-dot" style={{ background: t.color }} aria-hidden="true" />
                   {t.label}
                 </span>
               ))}
@@ -740,26 +842,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* OBJECTION */}
-      <section style={{ background: 'var(--bg)' }}>
+      {/* ── OBJEÇÃO ── */}
+      <section style={{ background: 'var(--bg)' }} aria-labelledby="obj-h2">
         <div className="wrap">
           <div className="obj-grid">
             <div>
               <div className="eyebrow">Pense bem</div>
-              <h2 className="section-title">
+              <h2 id="obj-h2" className="section-title">
                 Você já paga por isso.<br /><em>Só não tem os dados.</em>
               </h2>
               <p className="section-sub">
-                Agência, planilha, tentativa e erro — você já gasta para tentar entender o mercado. A diferença é que nenhuma dessas alternativas entrega benchmark real de CPL para o seu nicho.
+                Agência, planilha, tentativa e erro — você já investe para tentar entender o mercado. A diferença é que nenhuma dessas alternativas entrega uma faixa de referência de CPL por nicho.
               </p>
-              <a href={ctaHref} className="cta-primary" style={{ display: 'inline-flex' }}>
+              <a href={ctaHref} className="cta-primary" style={{ display: 'inline-flex' }} aria-label="Ver meu CPL ideal grátis — sem cartão">
                 Ver meu CPL ideal grátis →
               </a>
             </div>
             <div className="obj-items">
               {OBJECTIONS.map((o, i) => (
                 <div className="obj-item" key={i}>
-                  <span className="obj-icon">{o.icon}</span>
+                  <span className="obj-icon" aria-hidden="true">{o.icon}</span>
                   <p className="obj-text">{o.text}</p>
                   <span className="obj-cost">{o.cost}</span>
                 </div>
@@ -769,11 +871,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section style={{ background: 'rgba(24,24,28,1)' }} id="faq">
+      {/* ── FAQ ── */}
+      <section style={{ background: 'rgba(24,24,28,1)' }} id="faq" aria-labelledby="faq-h2">
         <div className="wrap">
           <div className="eyebrow center" style={{ justifyContent: 'center' }}>Perguntas frequentes</div>
-          <h2 className="section-title center" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 40px' }}>
+          <h2 id="faq-h2" className="section-title center" style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 40px' }}>
             Antes de começar, <em>tire suas dúvidas</em>
           </h2>
           <div className="faq-list">
@@ -787,38 +889,38 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA FINAL */}
-      <section className="cta-final">
+      {/* ── CTA FINAL ── */}
+      <section className="cta-final" aria-labelledby="cta-h2">
         <div className="wrap">
-          <h2>
+          <h2 id="cta-h2">
             Antes de aumentar sua verba,<br />
-            descubra se seu CPL <em>já está fora do ideal.</em>
+            descubra se seu CPL <em>já está fora da faixa.</em>
           </h2>
           <p className="cta-final-sub">
             Faça o diagnóstico gratuito e veja se suas campanhas estão crescendo com eficiência — ou apenas ficando mais caras.
           </p>
-          <a href={ctaHref} className="cta-primary lg">
+          <a href={ctaHref} className="cta-primary lg" aria-label="Ver meu CPL ideal grátis — diagnóstico sem cartão">
             Ver meu CPL ideal grátis →
           </a>
-          <div className="final-trust">
-            <span className="trust-item"><span className="trust-check">✓</span> Resultado em minutos</span>
-            <span className="trust-item"><span className="trust-check">✓</span> Sem cartão de crédito</span>
-            <span className="trust-item"><span className="trust-check">✓</span> 100% gratuito</span>
+          <div className="final-trust" aria-label="Garantias">
+            <span className="trust-item"><span className="trust-check" aria-hidden="true">✓</span> Diagnóstico em minutos</span>
+            <span className="trust-item"><span className="trust-check" aria-hidden="true">✓</span> Sem cartão de crédito</span>
+            <span className="trust-item"><span className="trust-check" aria-hidden="true">✓</span> Resultado estimado e transparente</span>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ── */}
       <footer className="footer">
         <div className="wrap">
           <div className="footer-inner">
             <span className="footer-logo">ELYON NOUS</span>
-            <div className="footer-links">
+            <nav className="footer-links" aria-label="Links legais">
               <a href="/termos">Termos</a>
               <a href="/privacidade">Privacidade</a>
               <a href="/cookies">Cookies</a>
               <a href="mailto:oi@elyonnous.com">Contato</a>
-            </div>
+            </nav>
             <span className="footer-copy">© 2026 ELYON NOUS</span>
           </div>
         </div>
