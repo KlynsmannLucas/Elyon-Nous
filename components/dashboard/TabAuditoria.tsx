@@ -1132,8 +1132,26 @@ export function TabAuditoria({ clientData }: Props) {
               audit.criativos_meta && { label: 'Criativos', status: (audit.criativos_meta.problemas?.length || 0) > 0 ? 'atencao' : 'ok' },
               (audit.publicos?.meta || audit.publicos?.google) && { label: 'Públicos', status: 'ok' as const },
               audit.funil && { label: 'Funil', status: audit.funil.gargalo_principal ? 'atencao' : 'ok' as const },
-              (audit.gargalos?.length || 0) > 0 && { label: 'Gargalos', status: 'critico' as const },
-              (audit.o_que_eu_faria_agora as any[] | undefined)?.length! > 0 && { label: 'Ações agora', status: 'atencao' as const },
+              (audit.gargalos?.length || 0) > 0 && {
+                label: 'Gargalos',
+                status: (() => {
+                  const gs = audit.gargalos as any[]
+                  const hasCritical = gs.some((g: any) => {
+                    const imp = (g.impacto || g.severidade || '').toLowerCase()
+                    return imp.includes('crít') || imp.includes('alto') || imp.includes('alta') || imp.includes('crítico')
+                  })
+                  return hasCritical ? 'critico' : 'atencao'
+                })(),
+              },
+              (audit.o_que_eu_faria_agora as any[] | undefined)?.length! > 0 && {
+                label: 'Ações agora',
+                status: (() => {
+                  const acoes = audit.o_que_eu_faria_agora as any[]
+                  if (acoes.some((a: any) => (typeof a === 'object' ? a?.prioridade : null) === 'P1')) return 'critico'
+                  if (acoes.some((a: any) => (typeof a === 'object' ? a?.prioridade : null) === 'P2')) return 'atencao'
+                  return 'atencao'
+                })(),
+              },
             ].filter(Boolean) as { label: string; status: string }[]
             if (!navItems.length) return null
             return (
@@ -1269,7 +1287,8 @@ export function TabAuditoria({ clientData }: Props) {
           {(audit.o_que_eu_faria_agora as any[] | undefined)?.length! > 0 && (
             <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111114 0%, #0E0E11 100%)', border: '1px solid rgba(240,180,41,0.35)' }}>
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-lg">⚡</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(240,180,41,0.15)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.35)' }}>⚡ Ações Agora</span>
                 <h3 className="font-display font-bold text-white text-base">O que eu faria agora</h3>
                 <span className="ml-auto text-[10px] text-slate-600">Perspectiva do consultor sênior</span>
               </div>
@@ -1543,7 +1562,7 @@ export function TabAuditoria({ clientData }: Props) {
               <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
                 onClick={() => setCollapsed(prev => ({ ...prev, checklist: !prev.checklist }))}>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
-                  style={{ background: 'rgba(255,77,77,0.1)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>3B</span>
+                  style={{ background: 'rgba(255,77,77,0.1)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>TC</span>
                 <span className="text-base">✅</span>
                 <span className="font-display font-bold text-white text-sm">Checklist de Tracking</span>
                 {(() => {
@@ -1617,78 +1636,82 @@ export function TabAuditoria({ clientData }: Props) {
                 <span className="font-display font-bold text-white text-sm">Análise de Performance</span>
                 <span className="ml-auto text-slate-600 text-xs">{collapsed.performance ? '▼ Ver' : '▲ Ocultar'}</span>
               </button>
-              {!collapsed.performance && (<div className="px-5 pb-5 border-t border-[#2A2A30] pt-5">
-              {audit._realMetrics && audit._realMetrics.totalSpend === 0 && audit._realMetrics.totalLeads === 0 && (
-                <div className="mb-4 flex items-start gap-2 bg-[#F0B429]/06 border border-[#F0B429]/25 rounded-xl px-4 py-3 text-[11px] text-[#F0B429]">
-                  <span className="flex-shrink-0 mt-0.5">⚠</span>
-                  <span><strong>Sem dados de performance para o período selecionado.</strong>{' '}
-                    Verifique em <strong>Meta Ads IA</strong> ou <strong>Google Ads IA</strong> qual conta está selecionada, ou importe um relatório CSV.</span>
+              {!collapsed.performance && (
+                <div className="px-5 pb-5 border-t border-[#2A2A30] pt-5">
+                  {audit._realMetrics && audit._realMetrics.totalSpend === 0 && audit._realMetrics.totalLeads === 0 && (
+                    <div className="mb-4 flex items-start gap-2 bg-[#F0B429]/06 border border-[#F0B429]/25 rounded-xl px-4 py-3 text-[11px] text-[#F0B429]">
+                      <span className="flex-shrink-0 mt-0.5">⚠</span>
+                      <span><strong>Sem dados de performance para o período selecionado.</strong>{' '}
+                        Verifique em <strong>Meta Ads IA</strong> ou <strong>Google Ads IA</strong> qual conta está selecionada, ou importe um relatório CSV.</span>
+                    </div>
+                  )}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {audit.performance.meta && (
+                      <PlatformBlock label="Meta Ads" icon="📘" color="#1877F2">
+                        {audit.performance.meta.metricas && (() => {
+                          const m = audit.performance.meta.metricas
+                          const noData = !m.ctr && !m.cpa && !m.frequencia
+                          return (
+                            <>
+                              <div className="grid grid-cols-3 gap-2 mb-3">
+                                {[
+                                  { label: 'CTR', value: m.ctr > 0 ? `${m.ctr}%` : '—', warn: m.ctr > 0 && m.ctr < 1 },
+                                  { label: 'CPL', value: m.cpa > 0 ? `R$${m.cpa}` : '—', warn: false },
+                                  { label: 'Freq.', value: m.frequencia > 0 ? `${m.frequencia}×` : '—', warn: m.frequencia > 0 && m.frequencia > 4 },
+                                ].map(item => (
+                                  <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
+                                    <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
+                                    <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              {noData && (
+                                <div className="text-[10px] text-slate-500 text-center mb-2">Sem métricas disponíveis para o período</div>
+                              )}
+                            </>
+                          )
+                        })()}
+                        {audit.performance.meta.gargalos?.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-[10px] text-[#FB923C] font-bold uppercase mb-1.5">Gargalos</div>
+                            <ItemList items={audit.performance.meta.gargalos} color="#FB923C" icon="⚠" />
+                          </div>
+                        )}
+                        {audit.performance.meta.interpretacao && (
+                          <p className="text-xs text-slate-400 leading-relaxed border-t border-[#2A2A30] pt-2">{audit.performance.meta.interpretacao}</p>
+                        )}
+                      </PlatformBlock>
+                    )}
+                    {audit.performance.google && (
+                      <PlatformBlock label="Google Ads" icon="🔍" color="#EA4335">
+                        {audit.performance.google.metricas && (() => {
+                          const gm = audit.performance.google.metricas
+                          return (
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                              {[
+                                { label: 'CTR', value: gm.ctr > 0 ? `${gm.ctr}%` : '—', warn: gm.ctr > 0 && gm.ctr < 2 },
+                                { label: 'CPC', value: gm.cpc > 0 ? `R$${gm.cpc}` : '—', warn: false },
+                                { label: 'Conv.', value: gm.taxa_conversao > 0 ? `${gm.taxa_conversao}%` : '—', warn: gm.taxa_conversao > 0 && gm.taxa_conversao < 2 },
+                              ].map(item => (
+                                <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
+                                  <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
+                                  <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        })()}
+                        {audit.performance.google.palavras_chave_analise && (
+                          <p className="text-xs text-slate-400 mb-2">{audit.performance.google.palavras_chave_analise}</p>
+                        )}
+                        {audit.performance.google.interpretacao && (
+                          <p className="text-xs text-slate-400 leading-relaxed border-t border-[#2A2A30] pt-2">{audit.performance.google.interpretacao}</p>
+                        )}
+                      </PlatformBlock>
+                    )}
+                  </div>
                 </div>
               )}
-              <div className="grid md:grid-cols-2 gap-4">
-                {audit.performance.meta && (
-                  <PlatformBlock label="Meta Ads" icon="📘" color="#1877F2">
-                    {audit.performance.meta.metricas && (() => {
-                      const m = audit.performance.meta.metricas
-                      const noData = !m.ctr && !m.cpa && !m.frequencia
-                      return (
-                      <>
-                      <div className="grid grid-cols-3 gap-2 mb-3">
-                        {[
-                          { label: 'CTR', value: m.ctr > 0 ? `${m.ctr}%` : '—', warn: m.ctr > 0 && m.ctr < 1 },
-                          { label: 'CPL', value: m.cpa > 0 ? `R$${m.cpa}` : '—', warn: false },
-                          { label: 'Freq.', value: m.frequencia > 0 ? `${m.frequencia}×` : '—', warn: m.frequencia > 0 && m.frequencia > 4 },
-                        ].map(item => (
-                          <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
-                            <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
-                            <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
-                          </div>
-                        ))}
-                      </div>
-                      {noData && (
-                        <div className="text-[10px] text-slate-500 text-center mb-2">Sem métricas disponíveis para o período</div>
-                      )}
-                      </>
-                      )
-                    })()}
-                    {audit.performance.meta.gargalos?.length > 0 && (
-                      <div className="mb-3"><div className="text-[10px] text-[#FB923C] font-bold uppercase mb-1.5">Gargalos</div>
-                        <ItemList items={audit.performance.meta.gargalos} color="#FB923C" icon="⚠" /></div>
-                    )}
-                    {audit.performance.meta.interpretacao && (
-                      <p className="text-xs text-slate-400 leading-relaxed border-t border-[#2A2A30] pt-2">{audit.performance.meta.interpretacao}</p>
-                    )}
-                  </PlatformBlock>
-                )}
-                {audit.performance.google && (
-                  <PlatformBlock label="Google Ads" icon="🔍" color="#EA4335">
-                    {audit.performance.google.metricas && (() => {
-                      const gm = audit.performance.google.metricas
-                      return (
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                          {[
-                            { label: 'CTR', value: gm.ctr > 0 ? `${gm.ctr}%` : '—', warn: gm.ctr > 0 && gm.ctr < 2 },
-                            { label: 'CPC', value: gm.cpc > 0 ? `R$${gm.cpc}` : '—', warn: false },
-                            { label: 'Conv.', value: gm.taxa_conversao > 0 ? `${gm.taxa_conversao}%` : '—', warn: gm.taxa_conversao > 0 && gm.taxa_conversao < 2 },
-                          ].map(item => (
-                            <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
-                              <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
-                              <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    })()}
-                    {audit.performance.google.palavras_chave_analise && (
-                      <p className="text-xs text-slate-400 mb-2">{audit.performance.google.palavras_chave_analise}</p>
-                    )}
-                    {audit.performance.google.interpretacao && (
-                      <p className="text-xs text-slate-400 leading-relaxed border-t border-[#2A2A30] pt-2">{audit.performance.google.interpretacao}</p>
-                    )}
-                  </PlatformBlock>
-                )}
-              </div>
-              </div>)}
             </div>
           )}
 
