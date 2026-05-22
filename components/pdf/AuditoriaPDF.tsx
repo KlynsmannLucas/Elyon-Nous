@@ -245,6 +245,9 @@ function AuditoriaDocument({ audit, clientName, niche }: AuditoriaPDFProps) {
 
   // Tracking
   const tracking = audit._trackingChecklist || []
+  const unverifiedCount = tracking.filter((t: any) => t.status === 'nao_verificado').length
+  const hasMeta = (audit._platforms || []).some((p: string) => p.toLowerCase().includes('meta')) ||
+    audit._auditSource === 'upload' || audit._auditSource === 'consolidate'
 
   // Source info
   const sourceMap: Record<string, string> = {
@@ -334,6 +337,15 @@ function AuditoriaDocument({ audit, clientName, niche }: AuditoriaPDFProps) {
           )}
         </View>
 
+        {/* Aviso Google Ads conversões */}
+        {audit._hasGoogleConversions && (
+          <View style={{ flexDirection: 'row', backgroundColor: 'rgba(56,189,248,0.08)', borderRadius: 6, padding: 8, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(56,189,248,0.20)' }}>
+            <Text style={{ fontSize: 7, color: '#38BDF8', lineHeight: 1.55, flex: 1 }}>
+              No Google Ads, conversões podem incluir diferentes ações configuradas na conta (formulários, ligações, compras, eventos de site). Confirme se a conversão principal representa lead, venda ou outro evento relevante.
+            </Text>
+          </View>
+        )}
+
         {/* Campanhas críticas e de atenção */}
         {critical.length > 0 && (
           <>
@@ -405,6 +417,15 @@ function AuditoriaDocument({ audit, clientName, niche }: AuditoriaPDFProps) {
             <Text style={S.headerValue}>{clientName} · {niche}</Text>
           </View>
         </View>
+
+        {/* Dica Meta Ads exportação */}
+        {hasMeta && (
+          <View style={{ flexDirection: 'row', backgroundColor: 'rgba(56,189,248,0.06)', borderRadius: 6, padding: 8, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(56,189,248,0.15)' }}>
+            <Text style={{ fontSize: 7, color: '#38BDF8', lineHeight: 1.55, flex: 1 }}>
+              Dica Meta Ads: Para auditar criativos e frequência com mais precisão, exporte o relatório no nível de anúncio incluindo frequência, CTR, gasto, leads e CPL.
+            </Text>
+          </View>
+        )}
 
         {/* Campanhas vencedoras */}
         {winners.length > 0 && (
@@ -523,6 +544,15 @@ function AuditoriaDocument({ audit, clientName, niche }: AuditoriaPDFProps) {
               )
             })}
           </>
+        )}
+
+        {/* Tracking — aviso itens não verificados */}
+        {unverifiedCount >= 4 && (
+          <View style={{ flexDirection: 'row', backgroundColor: 'rgba(240,180,41,0.08)', borderRadius: 6, padding: 8, marginTop: 6, borderWidth: 1, borderColor: 'rgba(240,180,41,0.22)' }}>
+            <Text style={{ fontSize: 7, color: '#F0B429', lineHeight: 1.55, flex: 1 }}>
+              {unverifiedCount} de {tracking.length} itens do tracking não foram verificados automaticamente. Valide manualmente no Events Manager (Meta) ou Google Ads. Itens não verificados não indicam problema — apenas ausência de dados para confirmação.
+            </Text>
+          </View>
         )}
 
         {/* Insights senior */}
