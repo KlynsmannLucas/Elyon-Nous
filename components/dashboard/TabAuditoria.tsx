@@ -372,6 +372,11 @@ export function TabAuditoria({ clientData }: Props) {
   const [auditSource,   setAuditSource]   = useState<'api' | 'upload' | 'consolidate'>('api')
   const [sentActions,   setSentActions]   = useState<Set<number>>(new Set())
   const [actionToast,   setActionToast]   = useState<{ msg: string; ok: boolean } | null>(null)
+  const [campTab,       setCampTab]       = useState<'vencedoras' | 'atencao' | 'criticas'>('vencedoras')
+  const [collapsed,     setCollapsed]     = useState<Record<string, boolean>>({
+    visao_geral: true, estrutura: true, tracking: false, checklist: false,
+    performance: true, criativos: true, publicos: true, funil: true,
+  })
 
   const key = clientData?.clientName || ''
 
@@ -628,24 +633,6 @@ export function TabAuditoria({ clientData }: Props) {
             <option value="last_month">Mês anterior</option>
           </select>
 
-          {audit && (
-            <button
-              onClick={async () => {
-                if (!audit || !clientData) return
-                setPdfLoading(true)
-                try {
-                  const { generateAuditPDF } = await import('@/components/pdf/AuditoriaPDF')
-                  await generateAuditPDF(audit, clientData.clientName, clientData.niche)
-                } catch (e) { console.error(e) }
-                finally { setPdfLoading(false) }
-              }}
-              disabled={pdfLoading}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border transition-all hover:opacity-80 disabled:opacity-50"
-              style={{ border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429', background: 'rgba(240,180,41,0.05)' }}
-            >
-              {pdfLoading ? '⏳' : '↓'} PDF
-            </button>
-          )}
           <button
             onClick={handleAudit}
             disabled={loading || !canAudit}
@@ -979,7 +966,7 @@ export function TabAuditoria({ clientData }: Props) {
       {audit && !loading && (
         <div className="space-y-5 animate-fade-up">
 
-          {/* Banner de aviso quando dados são zerados / sem real data */}
+          {/* Benchmark warning */}
           {source === 'benchmark' && audit._realMetrics?.totalSpend === 0 && (
             <div className="flex items-start gap-3 bg-[#F0B429]/06 border border-[#F0B429]/30 rounded-2xl px-5 py-4">
               <span className="text-lg flex-shrink-0 mt-0.5">⚠️</span>
@@ -998,50 +985,72 @@ export function TabAuditoria({ clientData }: Props) {
             </div>
           )}
 
-          {/* ── RESUMO EXECUTIVO ─────────────────────────────────────────────── */}
-          {audit._realMetrics && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              {/* Cabeçalho */}
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">Resumo Executivo</div>
-                <div className="flex items-center gap-2 flex-wrap">
+          {/* ── AUDIT HERO (Score + KPIs + Metadata merged) ── */}
+          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+            {/* Top row: Score + Progress + Badges + PDF */}
+            <div className="flex items-start gap-4 mb-5 flex-wrap">
+              <div className="shrink-0">
+                <div className="flex items-end gap-2">
+                  <span className="font-display text-5xl font-bold leading-none" style={{ color: sc }}>{audit.health_score}</span>
+                  <span className="font-display text-xl text-slate-500 mb-0.5">/100</span>
+                  <span className="font-display text-3xl font-bold mb-0.5" style={{ color: sc }}>{audit.grade}</span>
+                </div>
+                <div className="text-[10px] text-slate-500 mt-1">Score de saúde</div>
+              </div>
+              <div className="flex-1 min-w-[160px]">
+                <div className="w-full h-2 bg-[#1E1E24] rounded-full overflow-hidden mb-2">
+                  <div className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${audit.health_score}%`, background: `linear-gradient(90deg, ${sc}, ${sc}88)` }} />
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Pill text={source === 'ai' ? '⚡ IA Sênior' : '📊 Benchmark'} color={source === 'ai' ? '#A78BFA' : '#38BDF8'} />
                   {audit._dataQuality && (
-                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{
                       color:      audit._dataQuality.confidence === 'alta' ? '#22C55E' : audit._dataQuality.confidence === 'media' ? '#F0B429' : '#FF4D4D',
                       background: audit._dataQuality.confidence === 'alta' ? 'rgba(34,197,94,0.12)' : audit._dataQuality.confidence === 'media' ? 'rgba(240,180,41,0.12)' : 'rgba(255,77,77,0.12)',
                       border:     `1px solid ${audit._dataQuality.confidence === 'alta' ? 'rgba(34,197,94,0.3)' : audit._dataQuality.confidence === 'media' ? 'rgba(240,180,41,0.3)' : 'rgba(255,77,77,0.3)'}`,
                     }}>
-                      {audit._dataQuality.confidence === 'alta' ? '✓ Alta confiança' : audit._dataQuality.confidence === 'media' ? '~ Média confiança' : '! Baixa confiança'}
+                      {audit._dataQuality.confidence === 'alta' ? '✓ Alta' : audit._dataQuality.confidence === 'media' ? '~ Média' : '! Baixa'}
                     </span>
                   )}
                   {audit._platforms?.length > 0 && (
-                    <span className="text-[10px] text-slate-500 font-semibold">{(audit._platforms as string[]).join(' + ')}</span>
+                    <span className="text-[10px] text-slate-500">{(audit._platforms as string[]).join(' + ')}</span>
                   )}
-                  {audit._period && (
-                    <span className="text-[10px] text-slate-600">{audit._period as string}</span>
+                  {audit._auditSource && audit._auditSource !== 'auto' && (
+                    <span className="text-[10px] font-semibold" style={{ color: audit._auditSource === 'api' ? '#38BDF8' : audit._auditSource === 'upload' ? '#22C55E' : '#F0B429' }}>
+                      {audit._auditSource === 'api' ? '🔗 API' : audit._auditSource === 'upload' ? '📂 Arquivo' : '⚡ Consolidado'}
+                    </span>
                   )}
                 </div>
               </div>
+              <button
+                onClick={async () => {
+                  if (!audit || !clientData) return
+                  setPdfLoading(true)
+                  try {
+                    const { generateAuditPDF } = await import('@/components/pdf/AuditoriaPDF')
+                    await generateAuditPDF(audit, clientData.clientName, clientData.niche)
+                  } catch (e) { console.error(e) }
+                  finally { setPdfLoading(false) }
+                }}
+                disabled={pdfLoading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all hover:opacity-80 disabled:opacity-50 shrink-0"
+                style={{ border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429', background: 'rgba(240,180,41,0.05)' }}
+              >
+                {pdfLoading ? '⏳' : '↓'} PDF
+              </button>
+            </div>
 
-              {/* Aviso de inconsistência */}
-              {(audit._dataWarnings as string[] | undefined)?.length! > 0 && (
-                <div className="mb-4 bg-[#F0B429]/08 border border-[#F0B429]/30 rounded-xl px-4 py-3">
-                  <div className="text-[10px] text-[#F0B429] font-bold uppercase mb-1.5">⚠ Atenção — possível inconsistência de dados</div>
-                  {(audit._dataWarnings as string[]).map((w: string, i: number) => (
-                    <p key={i} className="text-xs text-slate-400 leading-relaxed mt-1">{w}</p>
-                  ))}
-                </div>
-              )}
-
-              {/* KPIs */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            {/* KPIs grid */}
+            {audit._realMetrics && (
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
                 {[
-                  { label: 'Investimento', value: audit._realMetrics.totalSpend > 0    ? fmt(audit._realMetrics.totalSpend)                            : null, color: '#F0B429' },
-                  { label: 'Leads/Conv.',  value: audit._realMetrics.totalLeads  >= 0  ? audit._realMetrics.totalLeads.toLocaleString('pt-BR')          : null, color: '#22C55E' },
-                  { label: 'CPL médio',    value: audit._realMetrics.avgCPL             ? fmt(audit._realMetrics.avgCPL)                                : null, color: '#38BDF8' },
-                  { label: 'CTR médio',    value: audit._realMetrics.avgCTR             ? `${audit._realMetrics.avgCTR}%`                               : null, color: '#A78BFA' },
-                  { label: 'ROAS',         value: audit._realMetrics.avgROAS            ? `${audit._realMetrics.avgROAS}×`                              : null, color: '#22C55E' },
-                  { label: 'Campanhas',    value: audit._realMetrics.campaignCount > 0  ? String(audit._realMetrics.campaignCount)                      : null, color: '#64748B' },
+                  { label: 'Investimento', value: audit._realMetrics.totalSpend > 0   ? fmt(audit._realMetrics.totalSpend)                   : null, color: '#F0B429' },
+                  { label: 'Leads/Conv.',  value: audit._realMetrics.totalLeads >= 0  ? audit._realMetrics.totalLeads.toLocaleString('pt-BR') : null, color: '#22C55E' },
+                  { label: 'CPL médio',    value: audit._realMetrics.avgCPL           ? fmt(audit._realMetrics.avgCPL)                       : null, color: '#38BDF8' },
+                  { label: 'CTR médio',    value: audit._realMetrics.avgCTR           ? `${audit._realMetrics.avgCTR}%`                      : null, color: '#A78BFA' },
+                  { label: 'ROAS',         value: audit._realMetrics.avgROAS          ? `${audit._realMetrics.avgROAS}×`                     : null, color: '#22C55E' },
+                  { label: 'Campanhas',    value: audit._realMetrics.campaignCount > 0 ? String(audit._realMetrics.campaignCount)             : null, color: '#64748B' },
                 ].filter(k => k.value !== null).map(k => (
                   <div key={k.label} className="bg-[#0E0E11] border border-[#1E1E24] rounded-xl p-3 text-center">
                     <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-1">{k.label}</div>
@@ -1049,63 +1058,34 @@ export function TabAuditoria({ clientData }: Props) {
                   </div>
                 ))}
               </div>
+            )}
 
-              {/* Pontos cegos */}
-              {(audit._dataQuality?.issues as string[] | undefined)?.length! > 0 && (
-                <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-600 mt-2">
-                  <span>Pontos cegos:</span>
-                  {(audit._dataQuality.issues as string[]).map((issue: string, i: number) => (
-                    <span key={i} className="px-2 py-0.5 rounded-full bg-[#2A2A30] text-slate-400">{issue}</span>
-                  ))}
-                </div>
-              )}
-
-              {/* Razão da confiança (determinística) */}
-              {audit._dataQuality?.reason && (
-                <p className="text-[11px] text-slate-500 leading-relaxed mt-2 italic">{audit._dataQuality.reason}</p>
-              )}
-
-              {/* Fonte da auditoria usada */}
-              {audit._auditSource && audit._auditSource !== 'auto' && (
-                <div className="mt-2 flex items-center gap-1.5 text-[10px]">
-                  <span className="text-slate-600">Fonte desta auditoria:</span>
-                  <span className="font-semibold" style={{ color: audit._auditSource === 'api' ? '#38BDF8' : audit._auditSource === 'upload' ? '#22C55E' : '#F0B429' }}>
-                    {audit._auditSource === 'api' ? 'Somente API' : audit._auditSource === 'upload' ? 'Somente arquivo importado' : 'Consolidado (API + arquivo)'}
-                  </span>
-                </div>
-              )}
-
-              {/* qualidade_dados da IA, quando disponível */}
-              {audit.qualidade_dados && (
-                <p className="text-xs text-slate-500 leading-relaxed mt-3 pt-3 border-t border-[#1E1E24]">{audit.qualidade_dados}</p>
-              )}
-            </div>
-          )}
-
-          {/* ── Score Hero ── */}
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
-            <div className="flex items-start justify-between gap-6 mb-4">
-              <div>
-                <div className="text-xs text-slate-500 uppercase tracking-widest mb-2">Score de Saúde da Conta</div>
-                <div className="flex items-end gap-3">
-                  <span className="font-display text-6xl font-bold" style={{ color: sc }}>{audit.health_score}</span>
-                  <span className="font-display text-2xl text-slate-500 mb-1">/100</span>
-                  <span className="font-display text-4xl font-bold mb-1" style={{ color: sc }}>{audit.grade}</span>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-[10px] text-slate-500 uppercase mb-1">Fonte</div>
-                <Pill text={source === 'ai' ? '⚡ IA Sênior' : '📊 Benchmark'} color={source === 'ai' ? '#A78BFA' : '#38BDF8'} />
-              </div>
-            </div>
-            <div className="w-full h-2.5 bg-[#1E1E24] rounded-full overflow-hidden mb-5">
-              <div className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${audit.health_score}%`, background: `linear-gradient(90deg, ${sc}, ${sc}88)` }} />
-            </div>
+            {/* Executive summary */}
             {audit.executive_summary && (
               <p className="text-slate-300 text-sm leading-relaxed border-t border-[#2A2A30] pt-4">{audit.executive_summary}</p>
             )}
-            {/* ── Status de persistência Supabase ── */}
+
+            {/* Data warnings */}
+            {(audit._dataWarnings as string[] | undefined)?.length! > 0 && (
+              <div className="mt-3 bg-[#F0B429]/08 border border-[#F0B429]/30 rounded-xl px-4 py-3">
+                <div className="text-[10px] text-[#F0B429] font-bold uppercase mb-1.5">⚠ Atenção — possível inconsistência de dados</div>
+                {(audit._dataWarnings as string[]).map((w: string, i: number) => (
+                  <p key={i} className="text-xs text-slate-400 leading-relaxed mt-1">{w}</p>
+                ))}
+              </div>
+            )}
+
+            {/* Data quality issues */}
+            {(audit._dataQuality?.issues as string[] | undefined)?.length! > 0 && (
+              <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-600 mt-2">
+                <span>Pontos cegos:</span>
+                {(audit._dataQuality.issues as string[]).map((issue: string, i: number) => (
+                  <span key={i} className="px-2 py-0.5 rounded-full bg-[#2A2A30] text-slate-400">{issue}</span>
+                ))}
+              </div>
+            )}
+
+            {/* Supabase persistence */}
             {persistenceStatus && (() => {
               const allSaved  = persistenceStatus.auditReportSaved && persistenceStatus.priorityActionsSaved && persistenceStatus.healthScoreSaved
               const noneSaved = !persistenceStatus.auditReportSaved && !persistenceStatus.priorityActionsSaved && !persistenceStatus.healthScoreSaved
@@ -1113,11 +1093,7 @@ export function TabAuditoria({ clientData }: Props) {
               const bgColor = allSaved ? 'rgba(34,197,94,0.07)' : noneSaved ? 'rgba(239,68,68,0.07)' : 'rgba(245,158,11,0.07)'
               const borderColor = allSaved ? 'rgba(34,197,94,0.2)' : noneSaved ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'
               const icon   = allSaved ? '✅' : noneSaved ? '⚠' : '⚡'
-              const label  = allSaved
-                ? 'Auditoria salva no banco'
-                : noneSaved
-                ? 'Auditoria gerada, mas não sincronizada com o banco'
-                : 'Auditoria parcialmente sincronizada'
+              const label  = allSaved ? 'Auditoria salva no banco' : noneSaved ? 'Auditoria gerada, mas não sincronizada com o banco' : 'Auditoria parcialmente sincronizada'
               return (
                 <div style={{ marginTop: '12px', padding: '8px 12px', borderRadius: '8px', background: bgColor, border: `1px solid ${borderColor}`, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '12px' }}>{icon}</span>
@@ -1141,7 +1117,46 @@ export function TabAuditoria({ clientData }: Props) {
             })()}
           </div>
 
-          {/* ── CLASSIFICAÇÃO DE CAMPANHAS ──────────────────────────────────── */}
+          {/* ── SECTION STATUS NAV ── */}
+          {(() => {
+            const trackingChecklist = (audit._trackingChecklist as any[]) || []
+            const navItems = [
+              audit._campanhasClassificadas && {
+                label: 'Campanhas',
+                status: (audit._campanhasClassificadas.criticas?.length || 0) > 0 ? 'critico' : (audit._campanhasClassificadas.atencao?.length || 0) > 0 ? 'atencao' : 'ok',
+              },
+              (audit.tracking || trackingChecklist.length > 0) && {
+                label: 'Tracking',
+                status: audit.tracking?.prioridade_maxima ? 'critico' : trackingChecklist.filter((t: any) => t.status === 'nao_verificado').length >= 4 ? 'atencao' : 'ok',
+              },
+              audit.criativos_meta && { label: 'Criativos', status: (audit.criativos_meta.problemas?.length || 0) > 0 ? 'atencao' : 'ok' },
+              (audit.publicos?.meta || audit.publicos?.google) && { label: 'Públicos', status: 'ok' as const },
+              audit.funil && { label: 'Funil', status: audit.funil.gargalo_principal ? 'atencao' : 'ok' as const },
+              (audit.gargalos?.length || 0) > 0 && { label: 'Gargalos', status: 'critico' as const },
+              (audit.o_que_eu_faria_agora as any[] | undefined)?.length! > 0 && { label: 'Ações agora', status: 'atencao' as const },
+            ].filter(Boolean) as { label: string; status: string }[]
+            if (!navItems.length) return null
+            return (
+              <div className="flex gap-1.5 flex-wrap">
+                {navItems.map(({ label, status }) => {
+                  const nc = status === 'critico' ? '#FF4D4D' : status === 'atencao' ? '#F0B429' : '#22C55E'
+                  const nl = status === 'critico' ? 'Crítico' : status === 'atencao' ? 'Atenção' : 'OK'
+                  return (
+                    <div key={label}
+                      className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg"
+                      style={{ background: `${nc}08`, border: `1px solid ${nc}25`, color: '#94A3B8' }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: nc }} />
+                      {label}
+                      <span style={{ color: nc }}>{nl}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
+
+          {/* ── CLASSIFICAÇÃO DE CAMPANHAS (tabs) ── */}
           {audit._campanhasClassificadas && (
             audit._campanhasClassificadas.vencedoras.length > 0 ||
             audit._campanhasClassificadas.atencao.length   > 0 ||
@@ -1154,100 +1169,62 @@ export function TabAuditoria({ clientData }: Props) {
                 <span className="text-lg">📊</span>
                 <h3 className="font-display font-bold text-white text-base">Classificação de Campanhas</h3>
                 <span className="ml-auto text-[10px] text-slate-600">
-                  {(audit._campanhasClassificadas.vencedoras.length + audit._campanhasClassificadas.atencao.length + audit._campanhasClassificadas.criticas.length)} campanhas com gasto
+                  {audit._campanhasClassificadas.vencedoras.length + audit._campanhasClassificadas.atencao.length + audit._campanhasClassificadas.criticas.length} campanhas
                 </span>
               </div>
-              <div className="grid md:grid-cols-3 gap-4">
-                {/* Vencedoras */}
-                <div className="rounded-xl p-4" style={{ background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-bold text-[#22C55E] uppercase tracking-wider">🏆 Vencedoras</span>
-                    <span className="text-[10px] text-slate-500">{audit._campanhasClassificadas.vencedoras.length}</span>
-                  </div>
-                  {audit._campanhasClassificadas.vencedoras.length === 0 ? (
-                    <p className="text-[11px] text-slate-600">Nenhuma campanha abaixo do benchmark</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {(audit._campanhasClassificadas.vencedoras as any[]).map((c, i) => {
-                        const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
-                        return (
-                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2.5">
-                            <div className="text-[11px] font-semibold text-slate-200 truncate mb-1">{c.name}</div>
-                            <div className="flex flex-wrap gap-2 text-[10px]">
-                              <span className="text-slate-500">{fmt(c.spend)}</span>
-                              {cpl !== null && <span className="text-[#22C55E] font-semibold">CPL R${cpl}</span>}
-                              {c.ctr > 0 && <span className="text-slate-500">CTR {c.ctr.toFixed(1)}%</span>}
-                              {c.frequency > 0 && <span className="text-slate-500">Freq {c.frequency.toFixed(1)}×</span>}
-                              {c.platform && <span className="text-slate-600">{c.platform}</span>}
-                            </div>
-                            {c.evidence && <p className="text-[9px] text-[#22C55E]/70 mt-1 leading-tight">{c.evidence}</p>}
-                            {c.recommended_action && <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">→ {c.recommended_action}</p>}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Em Atenção */}
-                <div className="rounded-xl p-4" style={{ background: 'rgba(240,180,41,0.04)', border: '1px solid rgba(240,180,41,0.2)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-bold text-[#F0B429] uppercase tracking-wider">⚠ Em Atenção</span>
-                    <span className="text-[10px] text-slate-500">{audit._campanhasClassificadas.atencao.length}</span>
-                  </div>
-                  {audit._campanhasClassificadas.atencao.length === 0 ? (
-                    <p className="text-[11px] text-slate-600">Nenhuma</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {(audit._campanhasClassificadas.atencao as any[]).map((c, i) => {
-                        const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
-                        return (
-                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2.5">
-                            <div className="text-[11px] font-semibold text-slate-200 truncate mb-1">{c.name}</div>
-                            <div className="flex flex-wrap gap-2 text-[10px]">
-                              <span className="text-slate-500">{fmt(c.spend)}</span>
-                              {cpl !== null && <span className="text-[#F0B429] font-semibold">CPL R${cpl}</span>}
-                              {c.ctr > 0 && <span className="text-slate-500">CTR {c.ctr.toFixed(1)}%</span>}
-                              {c.frequency > 0 && <span className="text-slate-500">Freq {c.frequency.toFixed(1)}×</span>}
-                            </div>
-                            {c.evidence && <p className="text-[9px] text-[#F0B429]/70 mt-1 leading-tight">{c.evidence}</p>}
-                            {c.recommended_action && <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">→ {c.recommended_action}</p>}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Críticas */}
-                <div className="rounded-xl p-4" style={{ background: 'rgba(255,77,77,0.04)', border: '1px solid rgba(255,77,77,0.2)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-bold text-[#FF4D4D] uppercase tracking-wider">🔴 Críticas</span>
-                    <span className="text-[10px] text-slate-500">{audit._campanhasClassificadas.criticas.length}</span>
-                  </div>
-                  {audit._campanhasClassificadas.criticas.length === 0 ? (
-                    <p className="text-[11px] text-slate-600">Nenhuma</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {(audit._campanhasClassificadas.criticas as any[]).map((c, i) => {
-                        const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
-                        return (
-                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2.5">
-                            <div className="text-[11px] font-semibold text-slate-200 truncate mb-1">{c.name}</div>
-                            <div className="flex flex-wrap gap-2 text-[10px]">
-                              <span className="text-slate-500">{fmt(c.spend)}</span>
-                              {cpl !== null ? <span className="text-[#FF4D4D] font-semibold">CPL R${cpl}</span> : <span className="text-[#FF4D4D] font-semibold">0 conv.</span>}
-                              {c.ctr > 0 && <span className="text-slate-500">CTR {c.ctr.toFixed(1)}%</span>}
-                            </div>
-                            {c.evidence && <p className="text-[9px] text-[#FF4D4D]/70 mt-1 leading-tight">{c.evidence}</p>}
-                            {c.recommended_action && <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">→ {c.recommended_action}</p>}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
+              <div className="flex gap-2 mb-4">
+                {([
+                  { id: 'vencedoras', label: `🏆 Vencedoras (${audit._campanhasClassificadas.vencedoras.length})`, color: '#22C55E' },
+                  { id: 'atencao',   label: `⚠ Atenção (${audit._campanhasClassificadas.atencao.length})`,       color: '#F0B429' },
+                  { id: 'criticas',  label: `🔴 Críticas (${audit._campanhasClassificadas.criticas.length})`,     color: '#FF4D4D' },
+                ] as const).map(({ id, label, color }) => (
+                  <button key={id} onClick={() => setCampTab(id)}
+                    className="flex-1 py-2 rounded-xl text-[11px] font-bold transition-all"
+                    style={{
+                      background: campTab === id ? `${color}15` : 'transparent',
+                      border: campTab === id ? `1px solid ${color}40` : '1px solid #2A2A30',
+                      color: campTab === id ? color : '#64748B',
+                    }}
+                  >{label}</button>
+                ))}
               </div>
+              {(() => {
+                const camps: any[] = audit._campanhasClassificadas[campTab] || []
+                const tabColor = campTab === 'vencedoras' ? '#22C55E' : campTab === 'atencao' ? '#F0B429' : '#FF4D4D'
+                if (camps.length === 0) return <p className="text-[11px] text-slate-600 py-4 text-center">Nenhuma campanha nesta categoria.</p>
+                return (
+                  <div className="space-y-2">
+                    {camps.map((c: any, i: number) => {
+                      const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+                      return (
+                        <div key={i} className="rounded-xl px-4 py-3"
+                          style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${tabColor}15` }}>
+                          <div className="flex items-start gap-3 flex-wrap">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-semibold text-slate-200 truncate">{c.name}</div>
+                              <div className="flex flex-wrap gap-2 mt-1 text-[10px]">
+                                {c.spend > 0 && <span className="text-slate-500">{fmt(c.spend)}</span>}
+                                {cpl !== null && <span className="font-semibold" style={{ color: tabColor }}>CPL R${cpl}</span>}
+                                {!cpl && campTab === 'criticas' && <span className="font-semibold text-[#FF4D4D]">0 conv.</span>}
+                                {c.leads > 0 && <span className="text-slate-500">{c.leads} leads</span>}
+                                {c.ctr > 0 && <span className="text-slate-500">CTR {c.ctr.toFixed(1)}%</span>}
+                                {c.frequency > 0 && <span className="text-slate-500">Freq {c.frequency.toFixed(1)}×</span>}
+                                {c.platform && <span className="text-slate-600">{c.platform}</span>}
+                              </div>
+                            </div>
+                            {c.recommended_action && (
+                              <div className="text-[10px] text-slate-400 shrink-0 max-w-[200px] text-right">→ {c.recommended_action}</div>
+                            )}
+                          </div>
+                          {c.evidence && (
+                            <p className="text-[9px] mt-1.5 leading-tight" style={{ color: `${tabColor}80` }}>{c.evidence}</p>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </div>
           )}
 
@@ -1288,442 +1265,7 @@ export function TabAuditoria({ clientData }: Props) {
             </div>
           )}
 
-          {/* ── 01 VISÃO GERAL ── */}
-          {audit.visao_geral && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <SectionHeader num="01" icon="🏢" title="Visão Geral do Negócio" color="#38BDF8" />
-              <div className="space-y-4">
-                <div>
-                  <div className="text-[10px] text-[#38BDF8] uppercase tracking-widest mb-2 font-bold">Modelo de Aquisição</div>
-                  <p className="text-sm text-slate-300 leading-relaxed">{audit.visao_geral.modelo_aquisicao}</p>
-                </div>
-                {audit.visao_geral.desalinhamentos?.length > 0 && (
-                  <div>
-                    <div className="text-[10px] text-[#FB923C] uppercase tracking-widest mb-2 font-bold">Desalinhamentos Identificados</div>
-                    <ItemList items={audit.visao_geral.desalinhamentos} color="#FB923C" icon="⚠" />
-                  </div>
-                )}
-                {audit.visao_geral.riscos?.length > 0 && (
-                  <div>
-                    <div className="text-[10px] text-[#FF4D4D] uppercase tracking-widest mb-2 font-bold">Riscos Estratégicos</div>
-                    <ItemList items={audit.visao_geral.riscos} color="#FF4D4D" icon="▲" />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── 02 ESTRUTURA DAS CAMPANHAS ── */}
-          {audit.estrutura_campanhas && (audit.estrutura_campanhas.meta || audit.estrutura_campanhas.google) && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <SectionHeader num="02" icon="🏗️" title="Análise de Estrutura das Campanhas" color="#F0B429" />
-              <div className="grid md:grid-cols-2 gap-4">
-                {audit.estrutura_campanhas.meta && (
-                  <PlatformBlock label="Meta Ads" icon="📘" color="#1877F2">
-                    <div className="space-y-2.5 text-xs">
-                      <div><span className="text-slate-500">Organização:</span> <span className="text-slate-200">{audit.estrutura_campanhas.meta.organizacao_funil}</span></div>
-                      <div><span className="text-slate-500">Públicos:</span> <span className="text-slate-200">{audit.estrutura_campanhas.meta.separacao_publicos}</span></div>
-                      <div><span className="text-slate-500">Tipos:</span> <span className="text-slate-200">{audit.estrutura_campanhas.meta.tipos_campanha}</span></div>
-                      {audit.estrutura_campanhas.meta.erros?.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-[#2A2A30]">
-                          <div className="text-[10px] text-[#FF4D4D] font-bold mb-1.5 uppercase">Erros Estruturais</div>
-                          <ItemList items={audit.estrutura_campanhas.meta.erros} color="#FF4D4D" icon="✗" />
-                        </div>
-                      )}
-                    </div>
-                  </PlatformBlock>
-                )}
-                {audit.estrutura_campanhas.google && (
-                  <PlatformBlock label="Google Ads" icon="🔍" color="#EA4335">
-                    <div className="space-y-2.5 text-xs">
-                      <div><span className="text-slate-500">Organização:</span> <span className="text-slate-200">{audit.estrutura_campanhas.google.organizacao}</span></div>
-                      <div><span className="text-slate-500">Palavras-chave:</span> <span className="text-slate-200">{audit.estrutura_campanhas.google.palavras_chave_estrutura}</span></div>
-                      <div><span className="text-slate-500">Tipos:</span> <span className="text-slate-200">{audit.estrutura_campanhas.google.tipos_campanha}</span></div>
-                      {audit.estrutura_campanhas.google.erros?.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-[#2A2A30]">
-                          <div className="text-[10px] text-[#FF4D4D] font-bold mb-1.5 uppercase">Erros Estruturais</div>
-                          <ItemList items={audit.estrutura_campanhas.google.erros} color="#FF4D4D" icon="✗" />
-                        </div>
-                      )}
-                    </div>
-                  </PlatformBlock>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── 03 TRACKING ── */}
-          {audit.tracking && (
-            <div className="bg-[#111114] rounded-2xl p-5" style={{
-              border: audit.tracking.prioridade_maxima ? '2px solid rgba(255,77,77,0.5)' : '1px solid #2A2A30',
-            }}>
-              <div className="flex items-center gap-3 mb-4">
-                <SectionHeader num="03" icon="📡" title="Análise de Tracking e Dados" color="#FF4D4D" />
-                {audit.tracking.prioridade_maxima && (
-                  <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full animate-pulse"
-                    style={{ background: 'rgba(255,77,77,0.2)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.4)' }}>
-                    ⚠ PRIORIDADE MÁXIMA
-                  </span>
-                )}
-              </div>
-              {audit.tracking.alerta && (
-                <div className="bg-[#FF4D4D]/08 border border-[#FF4D4D]/20 rounded-xl px-4 py-3 text-sm text-slate-300 mb-4">
-                  {audit.tracking.alerta}
-                </div>
-              )}
-              <div className="grid md:grid-cols-2 gap-4">
-                {audit.tracking.meta && (
-                  <PlatformBlock label="Meta Ads — Pixel & API" icon="📘" color="#1877F2">
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between"><span className="text-slate-500">Pixel instalado:</span><BoolBadge val={audit.tracking.meta.pixel_ok} trueLabel="✓ OK" falseLabel="✗ Problema" /></div>
-                      <div className="flex items-center justify-between"><span className="text-slate-500">API de Conversões:</span><BoolBadge val={audit.tracking.meta.api_conversoes} trueLabel="✓ Ativa" falseLabel="✗ Inativa" /></div>
-                      <div className="flex items-center justify-between"><span className="text-slate-500">Eventos duplicados:</span><BoolBadge val={audit.tracking.meta.eventos_duplicados} trueLabel="✗ Detectado" falseLabel="✓ Limpo" /></div>
-                      {audit.tracking.meta.problemas?.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-[#2A2A30]">
-                          <ItemList items={audit.tracking.meta.problemas} color="#FB923C" icon="→" />
-                        </div>
-                      )}
-                    </div>
-                  </PlatformBlock>
-                )}
-                {audit.tracking.google && (
-                  <PlatformBlock label="Google Ads — Conversões" icon="🔍" color="#EA4335">
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between"><span className="text-slate-500">Conversões confiáveis:</span><BoolBadge val={audit.tracking.google.conversoes_confiaveis} trueLabel="✓ Sim" falseLabel="✗ Duvido" /></div>
-                      <div className="flex items-center justify-between"><span className="text-slate-500">Importação correta:</span><BoolBadge val={audit.tracking.google.importacao_correta} trueLabel="✓ Sim" falseLabel="✗ Verificar" /></div>
-                      <div className="flex items-center justify-between"><span className="text-slate-500">Conversão de vaidade:</span><BoolBadge val={audit.tracking.google.problema_vaidade} trueLabel="✗ Risco" falseLabel="✓ OK" /></div>
-                      {audit.tracking.google.problemas?.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-[#2A2A30]">
-                          <ItemList items={audit.tracking.google.problemas} color="#FB923C" icon="→" />
-                        </div>
-                      )}
-                    </div>
-                  </PlatformBlock>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── CHECKLIST DE TRACKING ── */}
-          {(audit._trackingChecklist as any[] | undefined)?.length! > 0 && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
-                  style={{ background: 'rgba(255,77,77,0.1)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>3B</span>
-                <span className="text-lg">✅</span>
-                <h3 className="font-display font-bold text-white text-base">Checklist de Tracking</h3>
-                <span className="ml-auto text-[10px] text-slate-600">Preencha manualmente conforme seu acesso</span>
-              </div>
-              {(audit._hasGoogleConversions || !!googleAccount) && (
-                <div className="mb-3 flex items-start gap-2 text-[10px] text-[#38BDF8] bg-[#38BDF8]/06 border border-[#38BDF8]/20 rounded-xl px-3 py-2">
-                  <span className="flex-shrink-0 mt-0.5">ℹ</span>
-                  <span>No Google Ads, conversões podem incluir diferentes ações configuradas na conta (formulários, ligações, compras, eventos de site). Confirme se a conversão principal representa o evento mais relevante — lead, venda ou contato.</span>
-                </div>
-              )}
-              <div className="space-y-1.5">
-                {(audit._trackingChecklist as any[]).map((item: any) => {
-                  const statusConfig = {
-                    verificado:       { color: '#22C55E', bg: 'rgba(34,197,94,0.08)',  label: '✓ Verificado' },
-                    nao_verificado:   { color: '#F0B429', bg: 'rgba(240,180,41,0.06)', label: '? Não verificado' },
-                    problema:         { color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)',  label: '✗ Problema' },
-                    indisponivel:     { color: '#64748B', bg: 'rgba(100,116,139,0.06)', label: '— Indisponível' },
-                    precisa_acesso:   { color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', label: '🔑 Precisa de acesso' },
-                  } as Record<string, { color: string; bg: string; label: string }>
-                  const cfg = statusConfig[item.status] || statusConfig['nao_verificado']
-                  return (
-                    <div key={item.id} className="flex items-center justify-between rounded-lg px-3 py-2"
-                      style={{ background: cfg.bg, border: `1px solid ${cfg.color}20` }}>
-                      <span className="text-[11px] text-slate-300">{item.label}</span>
-                      <span className="text-[10px] font-bold flex-shrink-0 ml-2" style={{ color: cfg.color }}>{cfg.label}</span>
-                    </div>
-                  )
-                })}
-              </div>
-              {(() => {
-                const unverified = (audit._trackingChecklist as any[]).filter((t: any) => t.status === 'nao_verificado').length
-                if (unverified < 4) return null
-                return (
-                  <div className="mt-3 flex items-start gap-2 bg-[#F0B429]/06 border border-[#F0B429]/20 rounded-xl px-3 py-2.5">
-                    <span className="flex-shrink-0 text-[#F0B429] text-[11px] mt-0.5">⚠</span>
-                    <p className="text-[11px] text-[#F0B429] leading-relaxed">
-                      Parte do tracking precisa ser validada manualmente. A auditoria não conseguiu confirmar todos os eventos com os dados disponíveis — <strong>{unverified} de 8</strong> itens sem verificação.
-                    </p>
-                  </div>
-                )
-              })()}
-              <p className="text-[10px] text-slate-600 mt-3">
-                Itens marcados como "Não verificado" requerem acesso ao Events Manager (Meta) ou Google Ads para confirmação manual.
-              </p>
-            </div>
-          )}
-
-          {/* ── 04 PERFORMANCE ── */}
-          {audit.performance && (audit.performance.meta || audit.performance.google) && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <SectionHeader num="04" icon="📊" title="Análise de Performance" color="#F0B429" />
-              {/* Aviso quando não há dados reais de performance */}
-              {audit._realMetrics && audit._realMetrics.totalSpend === 0 && audit._realMetrics.totalLeads === 0 && (
-                <div className="mb-4 flex items-start gap-2 bg-[#F0B429]/06 border border-[#F0B429]/25 rounded-xl px-4 py-3 text-[11px] text-[#F0B429]">
-                  <span className="flex-shrink-0 mt-0.5">⚠</span>
-                  <span>
-                    <strong>Sem dados de performance para o período selecionado.</strong>{' '}
-                    A conta conectada pode não ter campanhas ativas neste período, ou a conta selecionada é diferente da que tem os anúncios.
-                    Verifique em <strong>Meta Ads IA</strong> ou <strong>Google Ads IA</strong> qual conta está selecionada, ou importe um relatório CSV.
-                  </span>
-                </div>
-              )}
-              <div className="grid md:grid-cols-2 gap-4">
-                {audit.performance.meta && (
-                  <PlatformBlock label="Meta Ads" icon="📘" color="#1877F2">
-                    {audit.performance.meta.metricas && (() => {
-                      const m = audit.performance.meta.metricas
-                      const noData = !m.ctr && !m.cpa && !m.frequencia
-                      return (
-                      <>
-                      <div className="grid grid-cols-3 gap-2 mb-3">
-                        {[
-                          { label: 'CTR', value: m.ctr > 0 ? `${m.ctr}%` : '—', warn: m.ctr > 0 && m.ctr < 1 },
-                          { label: 'CPL', value: m.cpa > 0 ? `R$${m.cpa}` : '—', warn: false },
-                          { label: 'Freq.', value: m.frequencia > 0 ? `${m.frequencia}×` : '—', warn: m.frequencia > 0 && m.frequencia > 4 },
-                        ].map(item => (
-                          <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
-                            <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
-                            <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
-                          </div>
-                        ))}
-                      </div>
-                      {noData && (
-                        <div className="text-[10px] text-slate-500 text-center mb-2">Sem métricas disponíveis para o período</div>
-                      )}
-                      </>
-                      )
-                    })()}
-                    {audit.performance.meta.gargalos?.length > 0 && (
-                      <div className="mb-3"><div className="text-[10px] text-[#FB923C] font-bold uppercase mb-1.5">Gargalos</div>
-                        <ItemList items={audit.performance.meta.gargalos} color="#FB923C" icon="⚠" /></div>
-                    )}
-                    {audit.performance.meta.interpretacao && (
-                      <p className="text-xs text-slate-400 leading-relaxed border-t border-[#2A2A30] pt-2">{audit.performance.meta.interpretacao}</p>
-                    )}
-                  </PlatformBlock>
-                )}
-                {audit.performance.google && (
-                  <PlatformBlock label="Google Ads" icon="🔍" color="#EA4335">
-                    {audit.performance.google.metricas && (() => {
-                      const gm = audit.performance.google.metricas
-                      return (
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                          {[
-                            { label: 'CTR', value: gm.ctr > 0 ? `${gm.ctr}%` : '—', warn: gm.ctr > 0 && gm.ctr < 2 },
-                            { label: 'CPC', value: gm.cpc > 0 ? `R$${gm.cpc}` : '—', warn: false },
-                            { label: 'Conv.', value: gm.taxa_conversao > 0 ? `${gm.taxa_conversao}%` : '—', warn: gm.taxa_conversao > 0 && gm.taxa_conversao < 2 },
-                          ].map(item => (
-                            <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
-                              <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
-                              <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    })()}
-                    {audit.performance.google.palavras_chave_analise && (
-                      <p className="text-xs text-slate-400 mb-2">{audit.performance.google.palavras_chave_analise}</p>
-                    )}
-                    {audit.performance.google.interpretacao && (
-                      <p className="text-xs text-slate-400 leading-relaxed border-t border-[#2A2A30] pt-2">{audit.performance.google.interpretacao}</p>
-                    )}
-                  </PlatformBlock>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── 05 CRIATIVOS ── */}
-          {audit.criativos_meta && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <SectionHeader num="05" icon="🎨" title="Análise de Criativos (Meta Ads)" color="#A78BFA" />
-              <div className="grid md:grid-cols-2 gap-4">
-                {[
-                  { label: 'Quantidade',    value: audit.criativos_meta.quantidade },
-                  { label: 'Ganchos',       value: audit.criativos_meta.qualidade_ganchos },
-                  { label: 'Clareza da oferta', value: audit.criativos_meta.clareza_oferta },
-                  { label: 'Prova social',  value: audit.criativos_meta.prova_social },
-                  { label: 'Testes A/B',    value: audit.criativos_meta.teste_ab },
-                  { label: 'Fadiga',        value: audit.criativos_meta.fadiga },
-                  { label: 'Ângulo criativo', value: audit.criativos_meta.angulo },
-                ].filter(i => i.value).map(item => (
-                  <div key={item.label} className="bg-[#16161A] rounded-xl px-3 py-2.5">
-                    <div className="text-[10px] text-[#A78BFA] uppercase font-bold mb-1">{item.label}</div>
-                    <div className="text-xs text-slate-300 leading-relaxed">{item.value}</div>
-                  </div>
-                ))}
-              </div>
-              {audit.criativos_meta.problemas?.length > 0 && (
-                <div className="mt-4 bg-[#FF4D4D]/06 border border-[#FF4D4D]/20 rounded-xl p-3">
-                  <div className="text-[10px] text-[#FF4D4D] font-bold uppercase mb-2">Problemas Críticos de Criativo</div>
-                  <ItemList items={audit.criativos_meta.problemas} color="#FF4D4D" icon="✗" />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── 06 PÚBLICOS ── */}
-          {audit.publicos && (audit.publicos.meta || audit.publicos.google) && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <SectionHeader num="06" icon="👥" title="Análise de Públicos" color="#38BDF8" />
-              <div className="grid md:grid-cols-2 gap-4">
-                {audit.publicos.meta && (
-                  <PlatformBlock label="Meta Ads" icon="📘" color="#1877F2">
-                    <div className="space-y-2.5 text-xs">
-                      {audit.publicos.meta.amplos_segmentados && <div><span className="text-slate-500 block mb-0.5">Amplos vs Segmentados:</span><span className="text-slate-200">{audit.publicos.meta.amplos_segmentados}</span></div>}
-                      {audit.publicos.meta.lookalikes && <div><span className="text-slate-500 block mb-0.5">Lookalikes:</span><span className="text-slate-200">{audit.publicos.meta.lookalikes}</span></div>}
-                      {audit.publicos.meta.remarketing && <div><span className="text-slate-500 block mb-0.5">Remarketing:</span><span className="text-slate-200">{audit.publicos.meta.remarketing}</span></div>}
-                      {audit.publicos.meta.problemas?.length > 0 && <div className="pt-2 border-t border-[#2A2A30]"><ItemList items={audit.publicos.meta.problemas} color="#FB923C" icon="→" /></div>}
-                    </div>
-                  </PlatformBlock>
-                )}
-                {audit.publicos.google && (
-                  <PlatformBlock label="Google Ads" icon="🔍" color="#EA4335">
-                    <div className="space-y-2.5 text-xs">
-                      {audit.publicos.google.qualidade_kws && <div><span className="text-slate-500 block mb-0.5">Palavras-chave:</span><span className="text-slate-200">{audit.publicos.google.qualidade_kws}</span></div>}
-                      {audit.publicos.google.correspondencia && <div><span className="text-slate-500 block mb-0.5">Correspondência:</span><span className="text-slate-200">{audit.publicos.google.correspondencia}</span></div>}
-                      {audit.publicos.google.negativacao && <div><span className="text-slate-500 block mb-0.5">Negativação:</span><span className="text-slate-200">{audit.publicos.google.negativacao}</span></div>}
-                      {audit.publicos.google.problemas?.length > 0 && <div className="pt-2 border-t border-[#2A2A30]"><ItemList items={audit.publicos.google.problemas} color="#FB923C" icon="→" /></div>}
-                    </div>
-                  </PlatformBlock>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── 07 FUNIL ── */}
-          {audit.funil && (
-            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
-              <SectionHeader num="07" icon="🔄" title="Análise de Funil e Conversão" color="#22C55E" />
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                {[
-                  { label: 'Landing Page',  value: audit.funil.landing_page,  icon: '🖥️' },
-                  { label: 'Atendimento',   value: audit.funil.atendimento,    icon: '💬' },
-                  { label: 'Follow-up',     value: audit.funil.follow_up,      icon: '📱' },
-                ].filter(i => i.value).map(item => (
-                  <div key={item.label} className="bg-[#16161A] rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span>{item.icon}</span>
-                      <span className="text-[10px] text-[#22C55E] font-bold uppercase">{item.label}</span>
-                    </div>
-                    <p className="text-xs text-slate-300 leading-relaxed">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-              {audit.funil.nota && (
-                <div className="bg-[#22C55E]/06 border border-[#22C55E]/20 rounded-xl px-4 py-3 flex items-start gap-2">
-                  <span className="text-[#22C55E] mt-0.5">→</span>
-                  <p className="text-sm text-slate-300">{audit.funil.nota}</p>
-                  {audit.funil.gargalo_principal && (
-                    <span className="ml-auto shrink-0">
-                      <Pill text={`Gargalo: ${audit.funil.gargalo_principal}`}
-                        color={audit.funil.gargalo_principal === 'trafego' ? '#FB923C' : audit.funil.gargalo_principal === 'pos-clique' ? '#38BDF8' : '#F0B429'} />
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── 08 GARGALOS ── */}
-          {audit.gargalos?.length > 0 && (
-            <div className="bg-[#111114] border border-[#FF4D4D]/25 rounded-2xl p-5">
-              <SectionHeader num="08" icon="🚨" title="Principais Gargalos" color="#FF4D4D" />
-              <div className="space-y-3">
-                {audit.gargalos.map((g: any, i: number) => (
-                  <div key={i} className="rounded-xl p-4 border" style={{ background: 'rgba(255,77,77,0.04)', borderColor: 'rgba(255,77,77,0.15)' }}>
-                    <div className="flex items-start gap-3">
-                      <span className="w-6 h-6 rounded-full bg-[#FF4D4D] text-black text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-                        {g.rank}
-                      </span>
-                      <div className="flex-1">
-                        <div className="font-semibold text-white text-sm mb-1">{g.titulo}</div>
-                        <p className="text-xs text-slate-400 leading-relaxed mb-2">{g.descricao}</p>
-                        {g.impacto && (
-                          <div className="text-xs font-semibold" style={{ color: '#FF4D4D' }}>
-                            💸 Impacto: {g.impacto}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── 09 OPORTUNIDADES ── */}
-          {audit.oportunidades?.length > 0 && (
-            <div className="bg-[#111114] border border-[#22C55E]/20 rounded-2xl p-5">
-              <SectionHeader num="09" icon="🚀" title="Oportunidades de Escala" color="#22C55E" />
-              <div className="grid md:grid-cols-2 gap-3">
-                {audit.oportunidades.map((op: any, i: number) => (
-                  <div key={i} className="bg-[#16161A] border border-[#22C55E]/15 rounded-xl p-4">
-                    <div className="font-semibold text-white text-sm mb-2">{op.titulo}</div>
-                    <p className="text-xs text-slate-400 leading-relaxed mb-2">{op.descricao}</p>
-                    {op.potencial && (
-                      <div className="text-xs font-semibold text-[#22C55E]">📈 Potencial: {op.potencial}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── 10 PLANO DE AÇÃO ── */}
-          {audit.plano_acao && (
-            <div className="bg-[#111114] border border-[#F0B429]/20 rounded-2xl p-5">
-              <SectionHeader num="10" icon="📋" title="Plano de Ação Estratégico" color="#F0B429" />
-
-              {/* Tabs */}
-              <div className="flex gap-2 mb-4">
-                {([['curto', '0–15 dias', '#22C55E'], ['medio', '15–45 dias', '#F0B429'], ['longo', '45+ dias', '#A78BFA']] as const).map(([key, label, color]) => (
-                  <button
-                    key={key}
-                    onClick={() => setActiveAction(key)}
-                    className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
-                    style={{
-                      background: activeAction === key ? `${color}15` : 'transparent',
-                      border: activeAction === key ? `1px solid ${color}40` : '1px solid #2A2A30',
-                      color: activeAction === key ? color : '#64748B',
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Ações */}
-              <div className="space-y-3">
-                {(audit.plano_acao[activeAction] || []).map((item: any, i: number) => {
-                  const color = activeAction === 'curto' ? '#22C55E' : activeAction === 'medio' ? '#F0B429' : '#A78BFA'
-                  return (
-                    <div key={i} className="bg-[#16161A] border border-[#2A2A30] rounded-xl p-4">
-                      <div className="flex items-start gap-3">
-                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 text-black"
-                          style={{ background: color }}>{i + 1}</span>
-                        <div>
-                          <div className="font-semibold text-white text-sm mb-1">{item.acao}</div>
-                          <p className="text-xs text-slate-400 mb-2">{item.como}</p>
-                          {item.impacto && <div className="text-xs font-semibold" style={{ color }}>→ {item.impacto}</div>}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-                {!(audit.plano_acao[activeAction]?.length) && (
-                  <div className="text-center text-xs text-slate-600 py-4">Nenhuma ação definida para este período.</div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── O QUE EU FARIA AGORA ─────────────────────────────────────────── */}
+          {/* ── O QUE EU FARIA AGORA (before plano) ── */}
           {(audit.o_que_eu_faria_agora as any[] | undefined)?.length! > 0 && (
             <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111114 0%, #0E0E11 100%)', border: '1px solid rgba(240,180,41,0.35)' }}>
               <div className="flex items-center gap-3 mb-4">
@@ -1733,7 +1275,6 @@ export function TabAuditoria({ clientData }: Props) {
               </div>
               <div className="space-y-2.5">
                 {(audit.o_que_eu_faria_agora as any[]).map((action: any, i: number) => {
-                  // Suporte a formato legado (string) e novo (objeto)
                   const isObj = typeof action === 'object' && action !== null
                   const titulo    = isObj ? action.titulo    : action
                   const prioridade = isObj ? action.prioridade : null
@@ -1743,7 +1284,6 @@ export function TabAuditoria({ clientData }: Props) {
                   const prazo     = isObj ? action.prazo     : null
                   const esforco   = isObj ? action.esforco   : null
                   const prioColor = prioridade === 'P1' ? '#FF4D4D' : prioridade === 'P2' ? '#F0B429' : '#64748B'
-
                   return (
                     <div key={i} className="rounded-xl px-4 py-3"
                       style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
@@ -1809,6 +1349,532 @@ export function TabAuditoria({ clientData }: Props) {
                     </div>
                   )
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* ── 08 GARGALOS (compact ranked list) ── */}
+          {audit.gargalos?.length > 0 && (
+            <div className="bg-[#111114] border border-[#FF4D4D]/25 rounded-2xl p-5">
+              <SectionHeader num="08" icon="🚨" title="Principais Gargalos" color="#FF4D4D" />
+              <div className="space-y-2">
+                {audit.gargalos.map((g: any, i: number) => (
+                  <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3"
+                    style={{ background: 'rgba(255,77,77,0.04)', border: '1px solid rgba(255,77,77,0.12)' }}>
+                    <span className="w-5 h-5 rounded-full bg-[#FF4D4D] text-black text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                      {g.rank}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2 flex-wrap">
+                        <span className="font-semibold text-white text-sm">{g.titulo}</span>
+                        {g.impacto && <span className="text-[10px] font-semibold text-[#FF4D4D] ml-auto shrink-0">{g.impacto}</span>}
+                      </div>
+                      {g.descricao && <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{g.descricao}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── 09 OPORTUNIDADES ── */}
+          {audit.oportunidades?.length > 0 && (
+            <div className="bg-[#111114] border border-[#22C55E]/20 rounded-2xl p-5">
+              <SectionHeader num="09" icon="🚀" title="Oportunidades de Escala" color="#22C55E" />
+              <div className="grid md:grid-cols-2 gap-3">
+                {audit.oportunidades.map((op: any, i: number) => (
+                  <div key={i} className="bg-[#16161A] border border-[#22C55E]/15 rounded-xl p-4">
+                    <div className="font-semibold text-white text-sm mb-2">{op.titulo}</div>
+                    <p className="text-xs text-slate-400 leading-relaxed mb-2">{op.descricao}</p>
+                    {op.potencial && (
+                      <div className="text-xs font-semibold text-[#22C55E]">📈 Potencial: {op.potencial}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── 01 VISÃO GERAL (collapsible) ── */}
+          {audit.visao_geral && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+              <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
+                onClick={() => setCollapsed(prev => ({ ...prev, visao_geral: !prev.visao_geral }))}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(56,189,248,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.2)' }}>01</span>
+                <span className="text-base">🏢</span>
+                <span className="font-display font-bold text-white text-sm">Visão Geral do Negócio</span>
+                <span className="ml-auto text-slate-600 text-xs">{collapsed.visao_geral ? '▼ Ver' : '▲ Ocultar'}</span>
+              </button>
+              {!collapsed.visao_geral && (
+                <div className="px-5 pb-5 space-y-4 border-t border-[#2A2A30] pt-4">
+                  <div>
+                    <div className="text-[10px] text-[#38BDF8] uppercase tracking-widest mb-2 font-bold">Modelo de Aquisição</div>
+                    <p className="text-sm text-slate-300 leading-relaxed">{audit.visao_geral.modelo_aquisicao}</p>
+                  </div>
+                  {audit.visao_geral.desalinhamentos?.length > 0 && (
+                    <div>
+                      <div className="text-[10px] text-[#FB923C] uppercase tracking-widest mb-2 font-bold">Desalinhamentos Identificados</div>
+                      <ItemList items={audit.visao_geral.desalinhamentos} color="#FB923C" icon="⚠" />
+                    </div>
+                  )}
+                  {audit.visao_geral.riscos?.length > 0 && (
+                    <div>
+                      <div className="text-[10px] text-[#FF4D4D] uppercase tracking-widest mb-2 font-bold">Riscos Estratégicos</div>
+                      <ItemList items={audit.visao_geral.riscos} color="#FF4D4D" icon="▲" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 02 ESTRUTURA (collapsible) ── */}
+          {audit.estrutura_campanhas && (audit.estrutura_campanhas.meta || audit.estrutura_campanhas.google) && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+              <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
+                onClick={() => setCollapsed(prev => ({ ...prev, estrutura: !prev.estrutura }))}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.2)' }}>02</span>
+                <span className="text-base">🏗️</span>
+                <span className="font-display font-bold text-white text-sm">Análise de Estrutura das Campanhas</span>
+                <span className="ml-auto text-slate-600 text-xs">{collapsed.estrutura ? '▼ Ver' : '▲ Ocultar'}</span>
+              </button>
+              {!collapsed.estrutura && (
+                <div className="px-5 pb-5 border-t border-[#2A2A30] pt-5">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {audit.estrutura_campanhas.meta && (
+                      <PlatformBlock label="Meta Ads" icon="📘" color="#1877F2">
+                        <div className="space-y-2.5 text-xs">
+                          <div><span className="text-slate-500">Organização:</span> <span className="text-slate-200">{audit.estrutura_campanhas.meta.organizacao_funil}</span></div>
+                          <div><span className="text-slate-500">Públicos:</span> <span className="text-slate-200">{audit.estrutura_campanhas.meta.separacao_publicos}</span></div>
+                          <div><span className="text-slate-500">Tipos:</span> <span className="text-slate-200">{audit.estrutura_campanhas.meta.tipos_campanha}</span></div>
+                          {audit.estrutura_campanhas.meta.erros?.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-[#2A2A30]">
+                              <div className="text-[10px] text-[#FF4D4D] font-bold mb-1.5 uppercase">Erros Estruturais</div>
+                              <ItemList items={audit.estrutura_campanhas.meta.erros} color="#FF4D4D" icon="✗" />
+                            </div>
+                          )}
+                        </div>
+                      </PlatformBlock>
+                    )}
+                    {audit.estrutura_campanhas.google && (
+                      <PlatformBlock label="Google Ads" icon="🔍" color="#EA4335">
+                        <div className="space-y-2.5 text-xs">
+                          <div><span className="text-slate-500">Organização:</span> <span className="text-slate-200">{audit.estrutura_campanhas.google.organizacao}</span></div>
+                          <div><span className="text-slate-500">Palavras-chave:</span> <span className="text-slate-200">{audit.estrutura_campanhas.google.palavras_chave_estrutura}</span></div>
+                          <div><span className="text-slate-500">Tipos:</span> <span className="text-slate-200">{audit.estrutura_campanhas.google.tipos_campanha}</span></div>
+                          {audit.estrutura_campanhas.google.erros?.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-[#2A2A30]">
+                              <div className="text-[10px] text-[#FF4D4D] font-bold mb-1.5 uppercase">Erros Estruturais</div>
+                              <ItemList items={audit.estrutura_campanhas.google.erros} color="#FF4D4D" icon="✗" />
+                            </div>
+                          )}
+                        </div>
+                      </PlatformBlock>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 03 TRACKING (collapsible) ── */}
+          {audit.tracking && (
+            <div className="rounded-2xl overflow-hidden" style={{
+              border: audit.tracking.prioridade_maxima ? '2px solid rgba(255,77,77,0.5)' : '1px solid #2A2A30',
+              background: '#111114',
+            }}>
+              <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
+                onClick={() => setCollapsed(prev => ({ ...prev, tracking: !prev.tracking }))}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(255,77,77,0.1)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>03</span>
+                <span className="text-base">📡</span>
+                <span className="font-display font-bold text-white text-sm">Análise de Tracking e Dados</span>
+                {audit.tracking.prioridade_maxima && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-2 animate-pulse"
+                    style={{ background: 'rgba(255,77,77,0.2)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.4)' }}>
+                    ⚠ PRIORIDADE MÁXIMA
+                  </span>
+                )}
+                <span className="ml-auto text-slate-600 text-xs">{collapsed.tracking ? '▼ Ver' : '▲ Ocultar'}</span>
+              </button>
+              {!collapsed.tracking && (
+                <div className="px-5 pb-5 border-t border-[#2A2A30] pt-5 space-y-4">
+                  {audit.tracking.alerta && (
+                    <div className="bg-[#FF4D4D]/08 border border-[#FF4D4D]/20 rounded-xl px-4 py-3 text-sm text-slate-300">
+                      {audit.tracking.alerta}
+                    </div>
+                  )}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {audit.tracking.meta && (
+                      <PlatformBlock label="Meta Ads — Pixel & API" icon="📘" color="#1877F2">
+                        <div className="space-y-2 text-xs">
+                          <div className="flex items-center justify-between"><span className="text-slate-500">Pixel instalado:</span><BoolBadge val={audit.tracking.meta.pixel_ok} trueLabel="✓ OK" falseLabel="✗ Problema" /></div>
+                          <div className="flex items-center justify-between"><span className="text-slate-500">API de Conversões:</span><BoolBadge val={audit.tracking.meta.api_conversoes} trueLabel="✓ Ativa" falseLabel="✗ Inativa" /></div>
+                          <div className="flex items-center justify-between"><span className="text-slate-500">Eventos duplicados:</span><BoolBadge val={audit.tracking.meta.eventos_duplicados} trueLabel="✗ Detectado" falseLabel="✓ Limpo" /></div>
+                          {audit.tracking.meta.problemas?.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-[#2A2A30]"><ItemList items={audit.tracking.meta.problemas} color="#FB923C" icon="→" /></div>
+                          )}
+                        </div>
+                      </PlatformBlock>
+                    )}
+                    {audit.tracking.google && (
+                      <PlatformBlock label="Google Ads — Conversões" icon="🔍" color="#EA4335">
+                        <div className="space-y-2 text-xs">
+                          <div className="flex items-center justify-between"><span className="text-slate-500">Conversões confiáveis:</span><BoolBadge val={audit.tracking.google.conversoes_confiaveis} trueLabel="✓ Sim" falseLabel="✗ Duvido" /></div>
+                          <div className="flex items-center justify-between"><span className="text-slate-500">Importação correta:</span><BoolBadge val={audit.tracking.google.importacao_correta} trueLabel="✓ Sim" falseLabel="✗ Verificar" /></div>
+                          <div className="flex items-center justify-between"><span className="text-slate-500">Conversão de vaidade:</span><BoolBadge val={audit.tracking.google.problema_vaidade} trueLabel="✗ Risco" falseLabel="✓ OK" /></div>
+                          {audit.tracking.google.problemas?.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-[#2A2A30]"><ItemList items={audit.tracking.google.problemas} color="#FB923C" icon="→" /></div>
+                          )}
+                        </div>
+                      </PlatformBlock>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── CHECKLIST DE TRACKING (collapsible with summary) ── */}
+          {(audit._trackingChecklist as any[] | undefined)?.length! > 0 && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+              <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
+                onClick={() => setCollapsed(prev => ({ ...prev, checklist: !prev.checklist }))}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(255,77,77,0.1)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>3B</span>
+                <span className="text-base">✅</span>
+                <span className="font-display font-bold text-white text-sm">Checklist de Tracking</span>
+                {(() => {
+                  const checklist = audit._trackingChecklist as any[]
+                  const v = checklist.filter((t: any) => t.status === 'verificado').length
+                  const u = checklist.filter((t: any) => t.status === 'nao_verificado').length
+                  const p = checklist.filter((t: any) => t.status === 'problema').length
+                  return (
+                    <div className="ml-2 flex items-center gap-1.5">
+                      {v > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>{v} ✓</span>}
+                      {u > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(240,180,41,0.15)', color: '#F0B429' }}>{u} ?</span>}
+                      {p > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,77,77,0.15)', color: '#FF4D4D' }}>{p} ✗</span>}
+                    </div>
+                  )
+                })()}
+                <span className="ml-auto text-slate-600 text-xs">{collapsed.checklist ? '▼ Ver' : '▲ Ocultar'}</span>
+              </button>
+              {!collapsed.checklist && (
+                <div className="px-5 pb-5 border-t border-[#2A2A30] pt-4 space-y-3">
+                  {(audit._hasGoogleConversions || !!googleAccount) && (
+                    <div className="flex items-start gap-2 text-[10px] text-[#38BDF8] bg-[#38BDF8]/06 border border-[#38BDF8]/20 rounded-xl px-3 py-2">
+                      <span className="flex-shrink-0 mt-0.5">ℹ</span>
+                      <span>No Google Ads, conversões podem incluir diferentes ações configuradas na conta (formulários, ligações, compras, eventos de site). Confirme se a conversão principal representa o evento mais relevante — lead, venda ou contato.</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                    {(audit._trackingChecklist as any[]).map((item: any) => {
+                      const statusConfig = {
+                        verificado:     { color: '#22C55E', bg: 'rgba(34,197,94,0.08)',   label: '✓ Verificado' },
+                        nao_verificado: { color: '#F0B429', bg: 'rgba(240,180,41,0.06)',  label: '? Não verificado' },
+                        problema:       { color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)',   label: '✗ Problema' },
+                        indisponivel:   { color: '#64748B', bg: 'rgba(100,116,139,0.06)', label: '— Indisponível' },
+                        precisa_acesso: { color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', label: '🔑 Precisa de acesso' },
+                      } as Record<string, { color: string; bg: string; label: string }>
+                      const cfg = statusConfig[item.status] || statusConfig['nao_verificado']
+                      return (
+                        <div key={item.id} className="flex items-center justify-between rounded-lg px-3 py-2"
+                          style={{ background: cfg.bg, border: `1px solid ${cfg.color}20` }}>
+                          <span className="text-[11px] text-slate-300">{item.label}</span>
+                          <span className="text-[10px] font-bold flex-shrink-0 ml-2" style={{ color: cfg.color }}>{cfg.label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {(() => {
+                    const unverified = (audit._trackingChecklist as any[]).filter((t: any) => t.status === 'nao_verificado').length
+                    if (unverified < 4) return null
+                    return (
+                      <div className="flex items-start gap-2 bg-[#F0B429]/06 border border-[#F0B429]/20 rounded-xl px-3 py-2.5">
+                        <span className="flex-shrink-0 text-[#F0B429] text-[11px] mt-0.5">⚠</span>
+                        <p className="text-[11px] text-[#F0B429] leading-relaxed">
+                          Parte do tracking precisa ser validada manualmente. A auditoria não conseguiu confirmar todos os eventos com os dados disponíveis — <strong>{unverified} de 8</strong> itens sem verificação.
+                        </p>
+                      </div>
+                    )
+                  })()}
+                  <p className="text-[10px] text-slate-600">Itens "Não verificado" requerem acesso ao Events Manager (Meta) ou Google Ads para confirmação manual.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 04 PERFORMANCE (collapsible) ── */}
+          {audit.performance && (audit.performance.meta || audit.performance.google) && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+              <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
+                onClick={() => setCollapsed(prev => ({ ...prev, performance: !prev.performance }))}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.2)' }}>04</span>
+                <span className="text-base">📊</span>
+                <span className="font-display font-bold text-white text-sm">Análise de Performance</span>
+                <span className="ml-auto text-slate-600 text-xs">{collapsed.performance ? '▼ Ver' : '▲ Ocultar'}</span>
+              </button>
+              {!collapsed.performance && (<div className="px-5 pb-5 border-t border-[#2A2A30] pt-5">
+              {audit._realMetrics && audit._realMetrics.totalSpend === 0 && audit._realMetrics.totalLeads === 0 && (
+                <div className="mb-4 flex items-start gap-2 bg-[#F0B429]/06 border border-[#F0B429]/25 rounded-xl px-4 py-3 text-[11px] text-[#F0B429]">
+                  <span className="flex-shrink-0 mt-0.5">⚠</span>
+                  <span><strong>Sem dados de performance para o período selecionado.</strong>{' '}
+                    Verifique em <strong>Meta Ads IA</strong> ou <strong>Google Ads IA</strong> qual conta está selecionada, ou importe um relatório CSV.</span>
+                </div>
+              )}
+              <div className="grid md:grid-cols-2 gap-4">
+                {audit.performance.meta && (
+                  <PlatformBlock label="Meta Ads" icon="📘" color="#1877F2">
+                    {audit.performance.meta.metricas && (() => {
+                      const m = audit.performance.meta.metricas
+                      const noData = !m.ctr && !m.cpa && !m.frequencia
+                      return (
+                      <>
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        {[
+                          { label: 'CTR', value: m.ctr > 0 ? `${m.ctr}%` : '—', warn: m.ctr > 0 && m.ctr < 1 },
+                          { label: 'CPL', value: m.cpa > 0 ? `R$${m.cpa}` : '—', warn: false },
+                          { label: 'Freq.', value: m.frequencia > 0 ? `${m.frequencia}×` : '—', warn: m.frequencia > 0 && m.frequencia > 4 },
+                        ].map(item => (
+                          <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
+                            <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
+                            <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {noData && (
+                        <div className="text-[10px] text-slate-500 text-center mb-2">Sem métricas disponíveis para o período</div>
+                      )}
+                      </>
+                      )
+                    })()}
+                    {audit.performance.meta.gargalos?.length > 0 && (
+                      <div className="mb-3"><div className="text-[10px] text-[#FB923C] font-bold uppercase mb-1.5">Gargalos</div>
+                        <ItemList items={audit.performance.meta.gargalos} color="#FB923C" icon="⚠" /></div>
+                    )}
+                    {audit.performance.meta.interpretacao && (
+                      <p className="text-xs text-slate-400 leading-relaxed border-t border-[#2A2A30] pt-2">{audit.performance.meta.interpretacao}</p>
+                    )}
+                  </PlatformBlock>
+                )}
+                {audit.performance.google && (
+                  <PlatformBlock label="Google Ads" icon="🔍" color="#EA4335">
+                    {audit.performance.google.metricas && (() => {
+                      const gm = audit.performance.google.metricas
+                      return (
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          {[
+                            { label: 'CTR', value: gm.ctr > 0 ? `${gm.ctr}%` : '—', warn: gm.ctr > 0 && gm.ctr < 2 },
+                            { label: 'CPC', value: gm.cpc > 0 ? `R$${gm.cpc}` : '—', warn: false },
+                            { label: 'Conv.', value: gm.taxa_conversao > 0 ? `${gm.taxa_conversao}%` : '—', warn: gm.taxa_conversao > 0 && gm.taxa_conversao < 2 },
+                          ].map(item => (
+                            <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
+                              <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
+                              <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()}
+                    {audit.performance.google.palavras_chave_analise && (
+                      <p className="text-xs text-slate-400 mb-2">{audit.performance.google.palavras_chave_analise}</p>
+                    )}
+                    {audit.performance.google.interpretacao && (
+                      <p className="text-xs text-slate-400 leading-relaxed border-t border-[#2A2A30] pt-2">{audit.performance.google.interpretacao}</p>
+                    )}
+                  </PlatformBlock>
+                )}
+              </div>
+              </div>)}
+            </div>
+          )}
+
+          {/* ── 05 CRIATIVOS (collapsible) ── */}
+          {audit.criativos_meta && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+              <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
+                onClick={() => setCollapsed(prev => ({ ...prev, criativos: !prev.criativos }))}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(167,139,250,0.1)', color: '#A78BFA', border: '1px solid rgba(167,139,250,0.2)' }}>05</span>
+                <span className="text-base">🎨</span>
+                <span className="font-display font-bold text-white text-sm">Análise de Criativos (Meta Ads)</span>
+                <span className="ml-auto text-slate-600 text-xs">{collapsed.criativos ? '▼ Ver' : '▲ Ocultar'}</span>
+              </button>
+              {!collapsed.criativos && (
+                <div className="px-5 pb-5 border-t border-[#2A2A30] pt-5">
+                  {uploadedFiles.length > 0 && !uploadedFiles.some(f => f.level === 'ad') ? (
+                    <div className="flex items-start gap-3 bg-[#A78BFA]/06 border border-[#A78BFA]/20 rounded-xl px-4 py-4">
+                      <span className="text-[#A78BFA] text-lg flex-shrink-0">🎨</span>
+                      <div>
+                        <div className="text-sm font-semibold text-[#A78BFA] mb-1">Dados de nível de anúncio não encontrados</div>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          Para analisar criativos com mais precisão, exporte no <strong className="text-slate-300">nível de anúncio</strong> incluindo: Frequência, CTR, Gasto e Leads por anúncio.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {[
+                          { label: 'Quantidade',       value: audit.criativos_meta.quantidade },
+                          { label: 'Ganchos',           value: audit.criativos_meta.qualidade_ganchos },
+                          { label: 'Clareza da oferta', value: audit.criativos_meta.clareza_oferta },
+                          { label: 'Prova social',      value: audit.criativos_meta.prova_social },
+                          { label: 'Testes A/B',        value: audit.criativos_meta.teste_ab },
+                          { label: 'Fadiga',            value: audit.criativos_meta.fadiga },
+                          { label: 'Ângulo criativo',   value: audit.criativos_meta.angulo },
+                        ].filter(i => i.value).map(item => (
+                          <div key={item.label} className="bg-[#16161A] rounded-xl px-3 py-2.5">
+                            <div className="text-[10px] text-[#A78BFA] uppercase font-bold mb-1">{item.label}</div>
+                            <div className="text-xs text-slate-300 leading-relaxed">{item.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {audit.criativos_meta.problemas?.length > 0 && (
+                        <div className="mt-4 bg-[#FF4D4D]/06 border border-[#FF4D4D]/20 rounded-xl p-3">
+                          <div className="text-[10px] text-[#FF4D4D] font-bold uppercase mb-2">Problemas Críticos de Criativo</div>
+                          <ItemList items={audit.criativos_meta.problemas} color="#FF4D4D" icon="✗" />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 06 PÚBLICOS (collapsible) ── */}
+          {audit.publicos && (audit.publicos.meta || audit.publicos.google) && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+              <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
+                onClick={() => setCollapsed(prev => ({ ...prev, publicos: !prev.publicos }))}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(56,189,248,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.2)' }}>06</span>
+                <span className="text-base">👥</span>
+                <span className="font-display font-bold text-white text-sm">Análise de Públicos</span>
+                <span className="ml-auto text-slate-600 text-xs">{collapsed.publicos ? '▼ Ver' : '▲ Ocultar'}</span>
+              </button>
+              {!collapsed.publicos && (
+                <div className="px-5 pb-5 border-t border-[#2A2A30] pt-5">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {audit.publicos.meta && (
+                      <PlatformBlock label="Meta Ads" icon="📘" color="#1877F2">
+                        <div className="space-y-2.5 text-xs">
+                          {audit.publicos.meta.amplos_segmentados && <div><span className="text-slate-500 block mb-0.5">Amplos vs Segmentados:</span><span className="text-slate-200">{audit.publicos.meta.amplos_segmentados}</span></div>}
+                          {audit.publicos.meta.lookalikes && <div><span className="text-slate-500 block mb-0.5">Lookalikes:</span><span className="text-slate-200">{audit.publicos.meta.lookalikes}</span></div>}
+                          {audit.publicos.meta.remarketing && <div><span className="text-slate-500 block mb-0.5">Remarketing:</span><span className="text-slate-200">{audit.publicos.meta.remarketing}</span></div>}
+                          {audit.publicos.meta.problemas?.length > 0 && <div className="pt-2 border-t border-[#2A2A30]"><ItemList items={audit.publicos.meta.problemas} color="#FB923C" icon="→" /></div>}
+                        </div>
+                      </PlatformBlock>
+                    )}
+                    {audit.publicos.google && (
+                      <PlatformBlock label="Google Ads" icon="🔍" color="#EA4335">
+                        <div className="space-y-2.5 text-xs">
+                          {audit.publicos.google.qualidade_kws && <div><span className="text-slate-500 block mb-0.5">Palavras-chave:</span><span className="text-slate-200">{audit.publicos.google.qualidade_kws}</span></div>}
+                          {audit.publicos.google.correspondencia && <div><span className="text-slate-500 block mb-0.5">Correspondência:</span><span className="text-slate-200">{audit.publicos.google.correspondencia}</span></div>}
+                          {audit.publicos.google.negativacao && <div><span className="text-slate-500 block mb-0.5">Negativação:</span><span className="text-slate-200">{audit.publicos.google.negativacao}</span></div>}
+                          {audit.publicos.google.problemas?.length > 0 && <div className="pt-2 border-t border-[#2A2A30]"><ItemList items={audit.publicos.google.problemas} color="#FB923C" icon="→" /></div>}
+                        </div>
+                      </PlatformBlock>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 07 FUNIL (collapsible) ── */}
+          {audit.funil && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+              <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
+                onClick={() => setCollapsed(prev => ({ ...prev, funil: !prev.funil }))}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)' }}>07</span>
+                <span className="text-base">🔄</span>
+                <span className="font-display font-bold text-white text-sm">Análise de Funil e Conversão</span>
+                {audit.funil.gargalo_principal && (
+                  <span className="ml-2">
+                    <Pill text={`Gargalo: ${audit.funil.gargalo_principal}`}
+                      color={audit.funil.gargalo_principal === 'trafego' ? '#FB923C' : audit.funil.gargalo_principal === 'pos-clique' ? '#38BDF8' : '#F0B429'} />
+                  </span>
+                )}
+                <span className="ml-auto text-slate-600 text-xs">{collapsed.funil ? '▼ Ver' : '▲ Ocultar'}</span>
+              </button>
+              {!collapsed.funil && (
+                <div className="px-5 pb-5 border-t border-[#2A2A30] pt-5">
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    {[
+                      { label: 'Landing Page', value: audit.funil.landing_page, icon: '🖥️' },
+                      { label: 'Atendimento',  value: audit.funil.atendimento,   icon: '💬' },
+                      { label: 'Follow-up',    value: audit.funil.follow_up,     icon: '📱' },
+                    ].filter(i => i.value).map(item => (
+                      <div key={item.label} className="bg-[#16161A] rounded-xl p-3">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span>{item.icon}</span>
+                          <span className="text-[10px] text-[#22C55E] font-bold uppercase">{item.label}</span>
+                        </div>
+                        <p className="text-xs text-slate-300 leading-relaxed">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {audit.funil.nota && (
+                    <div className="bg-[#22C55E]/06 border border-[#22C55E]/20 rounded-xl px-4 py-3 flex items-start gap-2">
+                      <span className="text-[#22C55E] mt-0.5">→</span>
+                      <p className="text-sm text-slate-300">{audit.funil.nota}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 10 PLANO DE AÇÃO ── */}
+          {audit.plano_acao && (
+            <div className="bg-[#111114] border border-[#F0B429]/20 rounded-2xl p-5">
+              <SectionHeader num="10" icon="📋" title="Plano de Ação Estratégico" color="#F0B429" />
+
+              {/* Tabs */}
+              <div className="flex gap-2 mb-4">
+                {([['curto', '0–15 dias', '#22C55E'], ['medio', '15–45 dias', '#F0B429'], ['longo', '45+ dias', '#A78BFA']] as const).map(([key, label, color]) => (
+                  <button
+                    key={key}
+                    onClick={() => setActiveAction(key)}
+                    className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
+                    style={{
+                      background: activeAction === key ? `${color}15` : 'transparent',
+                      border: activeAction === key ? `1px solid ${color}40` : '1px solid #2A2A30',
+                      color: activeAction === key ? color : '#64748B',
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Ações */}
+              <div className="space-y-3">
+                {(audit.plano_acao[activeAction] || []).map((item: any, i: number) => {
+                  const color = activeAction === 'curto' ? '#22C55E' : activeAction === 'medio' ? '#F0B429' : '#A78BFA'
+                  return (
+                    <div key={i} className="bg-[#16161A] border border-[#2A2A30] rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 text-black"
+                          style={{ background: color }}>{i + 1}</span>
+                        <div>
+                          <div className="font-semibold text-white text-sm mb-1">{item.acao}</div>
+                          <p className="text-xs text-slate-400 mb-2">{item.como}</p>
+                          {item.impacto && <div className="text-xs font-semibold" style={{ color }}>→ {item.impacto}</div>}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+                {!(audit.plano_acao[activeAction]?.length) && (
+                  <div className="text-center text-xs text-slate-600 py-4">Nenhuma ação definida para este período.</div>
+                )}
               </div>
             </div>
           )}
