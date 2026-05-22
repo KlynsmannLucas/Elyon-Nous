@@ -647,6 +647,85 @@ export async function POST(req: NextRequest) {
       dataSource:    hasMeta && hasGoogle ? 'meta+google' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'upload',
     }
 
+    // ── Classificação determinística de campanhas ─────────────────────────────
+    // Roda ANTES do prompt para que a IA receba classificações pré-calculadas
+    // e para que a resposta final inclua os dados mesmo no fallback.
+    const classifiedCampaigns = (() => {
+      const camps = allCampaigns.filter((c: any) => (c.spend || 0) > 0)
+      const vencedoras: any[] = [], atencao: any[] = [], criticas: any[] = []
+      const leadsValid = camps.filter((x: any) => (x.leads || 0) > 0)
+      const avgCPL = leadsValid.length > 0
+        ? leadsValid.reduce((s: number, x: any) => s + x.spend / x.leads, 0) / leadsValid.length
+        : 0
+      for (const c of camps) {
+        const cpl = (c.leads || 0) > 0 ? c.spend / c.leads : null
+        if (bench) {
+          if (cpl !== null && cpl <= bench.cpl_min * 1.3)       vencedoras.push(c)
+          else if (cpl !== null && cpl <= bench.cpl_max * 1.2)  atencao.push(c)
+          else                                                    criticas.push(c)
+        } else {
+          if (avgCPL > 0 && cpl !== null && cpl < avgCPL * 0.7) vencedoras.push(c)
+          else if (avgCPL > 0 && cpl !== null && cpl < avgCPL * 1.5) atencao.push(c)
+          else                                                    criticas.push(c)
+        }
+      }
+      return {
+        vencedoras: vencedoras.sort((a, b) => (a.spend / Math.max(a.leads, 1)) - (b.spend / Math.max(b.leads, 1))).slice(0, 8),
+        atencao:    atencao.sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8),
+        criticas:   criticas.sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8),
+      }
+    })()
+
+    // ── Desperdício de verba ──────────────────────────────────────────────────
+    const wasteCampaigns = allCampaigns
+      .filter((c: any) => (c.spend || 0) > 0 && (c.leads || 0) === 0)
+      .sort((a: any, b: any) => (b.spend || 0) - (a.spend || 0))
+      .slice(0, 8)
+    const totalWaste     = wasteCampaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
+    const wastePercent   = Number(totalSpend) > 0 ? +((totalWaste / Number(totalSpend)) * 100).toFixed(1) : 0
+
+    // ── Qualidade dos dados ───────────────────────────────────────────────────
+    const dataQuality = (() => {
+      const issues: string[] = []
+      let score = 0
+      if (hasMeta || hasGoogle) score += 35; else if (hasUpload) score += 25
+      if (Number(totalSpend) > 0) score += 25; else issues.push('Sem dados de investimento')
+      if (totalLeads > 0) score += 25; else issues.push('Sem dados de conversão')
+      if (avgROAS !== null) score += 10
+      if (allCampaigns.length > 0) score += 5
+      const confidence: 'alta' | 'media' | 'baixa' = score >= 70 ? 'alta' : score >= 40 ? 'media' : 'baixa'
+      return { confidence, issues }
+    })()
+
+    // ── Detecção de inconsistência API + arquivo do mesmo canal ───────────────
+    const dataWarnings: string[] = []
+    {
+      const metaUploads = allUploadedFiles.filter((f: any) => f.platform === 'meta')
+      if (hasMeta && metaUploads.length > 0) {
+        const metaUp  = metaUploads.reduce((s: number, f: any) => s + f.campaigns.reduce((ss: number, c: any) => ss + (c.spend || 0), 0), 0)
+        const metaApi = metaTotals?.spend || 0
+        if (metaUp > metaApi * 0.3 && metaApi > 0) {
+          dataWarnings.push(`Meta Ads: API retornou R$${Math.round(metaApi).toLocaleString('pt-BR')} e o arquivo importado contém R$${Math.round(metaUp).toLocaleString('pt-BR')}. Se cobrem o mesmo período e conta, o investimento total pode estar duplicado nesta auditoria.`)
+        }
+      }
+      const gUploads = allUploadedFiles.filter((f: any) => f.platform === 'google')
+      if (hasGoogle && gUploads.length > 0) {
+        const gUp  = gUploads.reduce((s: number, f: any) => s + f.campaigns.reduce((ss: number, c: any) => ss + (c.spend || 0), 0), 0)
+        const gApi = googleTotals?.spend || 0
+        if (gUp > gApi * 0.3 && gApi > 0) {
+          dataWarnings.push(`Google Ads: API (R$${Math.round(gApi).toLocaleString('pt-BR')}) + arquivo importado (R$${Math.round(gUp).toLocaleString('pt-BR')}) — totais podem estar duplicados se cobrem o mesmo período.`)
+        }
+      }
+    }
+
+    // ── Período legível ────────────────────────────────────────────────────────
+    const periodLabel = period ? `${period.startDate} a ${period.endDate}`
+      : datePreset === 'last_7d'    ? 'Últimos 7 dias'
+      : datePreset === 'last_90d'   ? 'Últimos 90 dias'
+      : datePreset === 'this_month' ? 'Este mês'
+      : datePreset === 'last_month' ? 'Mês anterior'
+      : 'Últimos 30 dias'
+
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (apiKey) {
       try {
@@ -939,7 +1018,17 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
       "titulo": "<título do insight — não genérico>",
       "texto": "<insight que conecta marketing, comportamento do consumidor e estratégia — nível consultor premium>"
     }
-  ]
+  ],
+
+  "o_que_eu_faria_agora": [
+    "<ação imediata #1 — direta, 1 frase, com nome de campanha/canal quando aplicável>",
+    "<ação #2>",
+    "<ação #3>",
+    "<ação #4>",
+    "<ação #5>"
+  ],
+
+  "qualidade_dados": "<1-2 frases: os dados disponíveis são suficientes para tomar decisões? Qual é o maior ponto cego desta auditoria — o que não conseguimos ver com estes dados?>"
 }`
 
         const message = await anthropic.messages.create({
@@ -967,8 +1056,15 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
           if (objMatch) audit = JSON.parse(objMatch[1])
           else throw new Error('Resposta da IA não contém JSON válido')
         }
-        audit.generated_at = new Date().toISOString()
-        audit._realMetrics = realMetrics
+        audit.generated_at             = new Date().toISOString()
+        audit._realMetrics             = realMetrics
+        audit._campanhasClassificadas  = classifiedCampaigns
+        audit._wasteCampaigns          = wasteCampaigns
+        audit._wastePercent            = wastePercent
+        audit._dataQuality             = dataQuality
+        audit._dataWarnings            = dataWarnings
+        audit._period                  = periodLabel
+        audit._platforms               = [hasMeta && 'Meta Ads', hasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean)
 
         // ── Salva padrões na memória RAG (fire-and-forget) ─────────────────
         saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
@@ -1001,7 +1097,14 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
       return NextResponse.json({ success: false, error: 'Nicho não reconhecido e API indisponível.' }, { status: 400 })
     }
     const audit: Record<string, any> = buildFallbackAudit(clientName, niche, allCampaigns, metaTotals, googleTotals, bench)
-    audit._realMetrics = realMetrics
+    audit._realMetrics             = realMetrics
+    audit._campanhasClassificadas  = classifiedCampaigns
+    audit._wasteCampaigns          = wasteCampaigns
+    audit._wastePercent            = wastePercent
+    audit._dataQuality             = dataQuality
+    audit._dataWarnings            = dataWarnings
+    audit._period                  = periodLabel
+    audit._platforms               = [hasMeta && 'Meta Ads', hasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean)
 
     saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
 

@@ -927,6 +927,75 @@ export function TabAuditoria({ clientData }: Props) {
             </div>
           )}
 
+          {/* ── RESUMO EXECUTIVO ─────────────────────────────────────────────── */}
+          {audit._realMetrics && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+              {/* Cabeçalho */}
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">Resumo Executivo</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {audit._dataQuality && (
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{
+                      color:      audit._dataQuality.confidence === 'alta' ? '#22C55E' : audit._dataQuality.confidence === 'media' ? '#F0B429' : '#FF4D4D',
+                      background: audit._dataQuality.confidence === 'alta' ? 'rgba(34,197,94,0.12)' : audit._dataQuality.confidence === 'media' ? 'rgba(240,180,41,0.12)' : 'rgba(255,77,77,0.12)',
+                      border:     `1px solid ${audit._dataQuality.confidence === 'alta' ? 'rgba(34,197,94,0.3)' : audit._dataQuality.confidence === 'media' ? 'rgba(240,180,41,0.3)' : 'rgba(255,77,77,0.3)'}`,
+                    }}>
+                      {audit._dataQuality.confidence === 'alta' ? '✓ Alta confiança' : audit._dataQuality.confidence === 'media' ? '~ Média confiança' : '! Baixa confiança'}
+                    </span>
+                  )}
+                  {audit._platforms?.length > 0 && (
+                    <span className="text-[10px] text-slate-500 font-semibold">{(audit._platforms as string[]).join(' + ')}</span>
+                  )}
+                  {audit._period && (
+                    <span className="text-[10px] text-slate-600">{audit._period as string}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Aviso de inconsistência */}
+              {(audit._dataWarnings as string[] | undefined)?.length! > 0 && (
+                <div className="mb-4 bg-[#F0B429]/08 border border-[#F0B429]/30 rounded-xl px-4 py-3">
+                  <div className="text-[10px] text-[#F0B429] font-bold uppercase mb-1.5">⚠ Atenção — possível inconsistência de dados</div>
+                  {(audit._dataWarnings as string[]).map((w: string, i: number) => (
+                    <p key={i} className="text-xs text-slate-400 leading-relaxed mt-1">{w}</p>
+                  ))}
+                </div>
+              )}
+
+              {/* KPIs */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                {[
+                  { label: 'Investimento', value: audit._realMetrics.totalSpend > 0    ? fmt(audit._realMetrics.totalSpend)                            : null, color: '#F0B429' },
+                  { label: 'Leads/Conv.',  value: audit._realMetrics.totalLeads  >= 0  ? audit._realMetrics.totalLeads.toLocaleString('pt-BR')          : null, color: '#22C55E' },
+                  { label: 'CPL médio',    value: audit._realMetrics.avgCPL             ? fmt(audit._realMetrics.avgCPL)                                : null, color: '#38BDF8' },
+                  { label: 'CTR médio',    value: audit._realMetrics.avgCTR             ? `${audit._realMetrics.avgCTR}%`                               : null, color: '#A78BFA' },
+                  { label: 'ROAS',         value: audit._realMetrics.avgROAS            ? `${audit._realMetrics.avgROAS}×`                              : null, color: '#22C55E' },
+                  { label: 'Campanhas',    value: audit._realMetrics.campaignCount > 0  ? String(audit._realMetrics.campaignCount)                      : null, color: '#64748B' },
+                ].filter(k => k.value !== null).map(k => (
+                  <div key={k.label} className="bg-[#0E0E11] border border-[#1E1E24] rounded-xl p-3 text-center">
+                    <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-1">{k.label}</div>
+                    <div className="text-base font-bold" style={{ color: k.color }}>{k.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pontos cegos */}
+              {(audit._dataQuality?.issues as string[] | undefined)?.length! > 0 && (
+                <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-600 mt-2">
+                  <span>Pontos cegos:</span>
+                  {(audit._dataQuality.issues as string[]).map((issue: string, i: number) => (
+                    <span key={i} className="px-2 py-0.5 rounded-full bg-[#2A2A30] text-slate-400">{issue}</span>
+                  ))}
+                </div>
+              )}
+
+              {/* qualidade_dados da IA, quando disponível */}
+              {audit.qualidade_dados && (
+                <p className="text-xs text-slate-500 leading-relaxed mt-3 pt-3 border-t border-[#1E1E24]">{audit.qualidade_dados}</p>
+              )}
+            </div>
+          )}
+
           {/* ── Score Hero ── */}
           <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
             <div className="flex items-start justify-between gap-6 mb-4">
@@ -985,6 +1054,142 @@ export function TabAuditoria({ clientData }: Props) {
               )
             })()}
           </div>
+
+          {/* ── CLASSIFICAÇÃO DE CAMPANHAS ──────────────────────────────────── */}
+          {audit._campanhasClassificadas && (
+            audit._campanhasClassificadas.vencedoras.length > 0 ||
+            audit._campanhasClassificadas.atencao.length   > 0 ||
+            audit._campanhasClassificadas.criticas.length  > 0
+          ) && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.2)' }}>C</span>
+                <span className="text-lg">📊</span>
+                <h3 className="font-display font-bold text-white text-base">Classificação de Campanhas</h3>
+                <span className="ml-auto text-[10px] text-slate-600">
+                  {(audit._campanhasClassificadas.vencedoras.length + audit._campanhasClassificadas.atencao.length + audit._campanhasClassificadas.criticas.length)} campanhas com gasto
+                </span>
+              </div>
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* Vencedoras */}
+                <div className="rounded-xl p-4" style={{ background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[11px] font-bold text-[#22C55E] uppercase tracking-wider">🏆 Vencedoras</span>
+                    <span className="text-[10px] text-slate-500">{audit._campanhasClassificadas.vencedoras.length}</span>
+                  </div>
+                  {audit._campanhasClassificadas.vencedoras.length === 0 ? (
+                    <p className="text-[11px] text-slate-600">Nenhuma campanha abaixo do benchmark</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(audit._campanhasClassificadas.vencedoras as any[]).map((c, i) => {
+                        const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+                        return (
+                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2">
+                            <div className="text-[11px] font-semibold text-slate-200 truncate">{c.name}</div>
+                            <div className="flex gap-3 mt-0.5 text-[10px] text-slate-500">
+                              <span>{fmt(c.spend)}</span>
+                              {cpl !== null && <span className="text-[#22C55E]">CPL R${cpl}</span>}
+                              {c.platform && <span>{c.platform}</span>}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Em Atenção */}
+                <div className="rounded-xl p-4" style={{ background: 'rgba(240,180,41,0.04)', border: '1px solid rgba(240,180,41,0.2)' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[11px] font-bold text-[#F0B429] uppercase tracking-wider">⚠ Em Atenção</span>
+                    <span className="text-[10px] text-slate-500">{audit._campanhasClassificadas.atencao.length}</span>
+                  </div>
+                  {audit._campanhasClassificadas.atencao.length === 0 ? (
+                    <p className="text-[11px] text-slate-600">Nenhuma</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(audit._campanhasClassificadas.atencao as any[]).map((c, i) => {
+                        const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+                        return (
+                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2">
+                            <div className="text-[11px] font-semibold text-slate-200 truncate">{c.name}</div>
+                            <div className="flex gap-3 mt-0.5 text-[10px] text-slate-500">
+                              <span>{fmt(c.spend)}</span>
+                              {cpl !== null && <span className="text-[#F0B429]">CPL R${cpl}</span>}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Críticas */}
+                <div className="rounded-xl p-4" style={{ background: 'rgba(255,77,77,0.04)', border: '1px solid rgba(255,77,77,0.2)' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[11px] font-bold text-[#FF4D4D] uppercase tracking-wider">🔴 Críticas</span>
+                    <span className="text-[10px] text-slate-500">{audit._campanhasClassificadas.criticas.length}</span>
+                  </div>
+                  {audit._campanhasClassificadas.criticas.length === 0 ? (
+                    <p className="text-[11px] text-slate-600">Nenhuma</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(audit._campanhasClassificadas.criticas as any[]).map((c, i) => {
+                        const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+                        return (
+                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2">
+                            <div className="text-[11px] font-semibold text-slate-200 truncate">{c.name}</div>
+                            <div className="flex gap-3 mt-0.5 text-[10px] text-slate-500">
+                              <span>{fmt(c.spend)}</span>
+                              {cpl !== null ? <span className="text-[#FF4D4D]">CPL R${cpl}</span> : <span className="text-[#FF4D4D]">0 conv.</span>}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── DESPERDÍCIO DE VERBA ─────────────────────────────────────────── */}
+          {(audit._wasteCampaigns as any[] | undefined)?.length! > 0 && (
+            <div className="rounded-2xl p-5" style={{ background: '#111114', border: '1px solid rgba(255,77,77,0.3)' }}>
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                    style={{ background: 'rgba(255,77,77,0.12)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.25)' }}>D</span>
+                  <span className="text-lg">💸</span>
+                  <h3 className="font-display font-bold text-white text-base">Desperdício de Verba</h3>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-[#FF4D4D]">{fmt(audit._wasteCampaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0))}</div>
+                  <div className="text-[10px] text-slate-500">{audit._wastePercent}% do investimento · 0 conversões</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {(audit._wasteCampaigns as any[]).map((c: any, i: number) => (
+                  <div key={i} className="flex items-center gap-3 rounded-xl px-4 py-3"
+                    style={{ background: 'rgba(255,77,77,0.04)', border: '1px solid rgba(255,77,77,0.15)' }}>
+                    <span className="text-sm flex-shrink-0">⛔</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-white truncate">{c.name}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">
+                        {c.platform && <span>{c.platform} · </span>}
+                        {c.status && <span>{c.status}</span>}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-sm font-bold text-[#FF4D4D]">{fmt(c.spend)}</div>
+                      <div className="text-[10px] text-slate-600">0 conversões</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ── 01 VISÃO GERAL ── */}
           {audit.visao_geral && (
@@ -1364,6 +1569,27 @@ export function TabAuditoria({ clientData }: Props) {
                 {!(audit.plano_acao[activeAction]?.length) && (
                   <div className="text-center text-xs text-slate-600 py-4">Nenhuma ação definida para este período.</div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ── O QUE EU FARIA AGORA ─────────────────────────────────────────── */}
+          {(audit.o_que_eu_faria_agora as string[] | undefined)?.length! > 0 && (
+            <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111114 0%, #0E0E11 100%)', border: '1px solid rgba(240,180,41,0.35)' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-lg">⚡</span>
+                <h3 className="font-display font-bold text-white text-base">O que eu faria agora</h3>
+                <span className="ml-auto text-[10px] text-slate-600">Perspectiva do consultor sênior</span>
+              </div>
+              <div className="space-y-2.5">
+                {(audit.o_que_eu_faria_agora as string[]).map((action: string, i: number) => (
+                  <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3"
+                    style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 text-black"
+                      style={{ background: '#F0B429' }}>{i + 1}</span>
+                    <p className="text-sm text-slate-200 leading-relaxed">{action}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
