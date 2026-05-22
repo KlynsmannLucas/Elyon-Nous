@@ -171,8 +171,8 @@ function confidenceColor(conf: string): string {
 }
 
 function prioColor(p: string): string {
-  if (p === 'alta' || p === 'crítica') return '#FF4D4D'
-  if (p === 'média') return '#F0B429'
+  if (p === 'P1' || p === 'alta' || p === 'crítica') return '#FF4D4D'
+  if (p === 'P2' || p === 'média') return '#F0B429'
   return '#22C55E'
 }
 
@@ -515,7 +515,7 @@ function AuditoriaDocument({ audit, clientName, niche }: AuditoriaPDFProps) {
               const tc = trackingColor(t.status)
               return (
                 <View key={i} style={S.checkRow}>
-                  <Text style={S.checkLabel}>{t.item}</Text>
+                  <Text style={S.checkLabel}>{t.label || t.item}</Text>
                   <Text style={[S.checkStatus, { color: tc.color, backgroundColor: tc.bg }]}>
                     {trackingLabel(t.status)}
                   </Text>

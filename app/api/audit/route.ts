@@ -1191,7 +1191,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
       refundCredits(userId, effectivePlan, 'audit').catch(() => {})
       return NextResponse.json({ success: false, error: 'Nicho não reconhecido e API indisponível.' }, { status: 400 })
     }
-    const audit: Record<string, any> = buildFallbackAudit(clientName, niche, allCampaigns, metaTotals, googleTotals, bench)
+    const audit: Record<string, any> = buildFallbackAudit(clientName, niche, allCampaigns, srcMetaTotals, srcGoogleTotals, bench)
     audit._realMetrics             = realMetrics
     audit._campanhasClassificadas  = classifiedCampaigns
     audit._wasteCampaigns          = wasteCampaigns
