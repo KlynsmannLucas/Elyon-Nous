@@ -1,6 +1,12 @@
 // lib/google-ads.ts — Shared Google Ads REST API helpers
 
-export const API_VERSIONS = ['v19', 'v18', 'v17']
+// v17/v18/v19 estão sunset. Usar apenas versões suportadas:
+// v20 (ago/2024), v21 (nov/2024), v22 (fev/2025), v23 (mai/2025).
+// Variável de ambiente GOOGLE_ADS_API_VERSION sobrescreve o padrão.
+const _envVersion = process.env.GOOGLE_ADS_API_VERSION
+export const API_VERSIONS: string[] = _envVersion
+  ? [_envVersion, 'v23', 'v22', 'v21', 'v20'].filter((v, i, a) => a.indexOf(v) === i)
+  : ['v23', 'v22', 'v21', 'v20']
 
 /** Remove hyphens, preserve leading zeros — never coerce to number */
 export function normalizeCustomerId(id: string | number): string {
@@ -170,8 +176,11 @@ export async function gaqlSearch(
   if (lastDetail) {
     throw new Error(friendlyGoogleAdsError(lastDetail, customerId))
   }
+  const isAllHtml = lastError.startsWith('HTTP ')
   throw new Error(
     `Google Ads API indisponível após testar ${API_VERSIONS.join(', ')} (${lastError}). ` +
-    `Verifique se o Customer ID ${customerId} está correto e se o Developer Token tem acesso de produção.`
+    (isAllHtml
+      ? `A API retornou HTML em vez de JSON — causas prováveis: (1) Google Ads API não habilitada no Google Cloud Console; (2) Developer Token em modo de teste. Acesse console.cloud.google.com → APIs & Services → Google Ads API → Ativar.`
+      : `Verifique se o Customer ID ${customerId} está correto e se o Developer Token tem acesso de produção.`)
   )
 }

@@ -105,6 +105,13 @@ export async function POST(req: NextRequest) {
         break
       }
     }
+    // All versions returned non-JSON (HTML 404) — API not enabled or endpoint unreachable
+    if (!checks.some(c => c.id === 'list_accounts')) {
+      checks.push({
+        id: 'list_accounts', label: 'Listar contas acessíveis', status: 'error',
+        detail: `A API retornou HTML (não JSON) para todas as versões testadas (${API_VERSIONS.join(', ')}). Causas prováveis: (1) Google Ads API não está habilitada no Google Cloud Console para este projeto; (2) Developer Token em modo de teste bloqueando produção; (3) problema de rede ou CORS. Acesse console.cloud.google.com → APIs & Services → Google Ads API → Ativar.`,
+      })
+    }
   } catch (err: any) {
     checks.push({ id: 'list_accounts', label: 'Listar contas acessíveis', status: 'error', detail: err.message })
   }

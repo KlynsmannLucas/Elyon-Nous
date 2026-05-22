@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { saveConnection } from '@/repositories/user-connections'
+import { API_VERSIONS } from '@/lib/google-ads'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -182,7 +183,7 @@ export async function GET(req: NextRequest) {
       if (devToken) {
         try {
           const customerRes = await fetch(
-            'https://googleads.googleapis.com/v19/customers:listAccessibleCustomers',
+            `https://googleads.googleapis.com/${API_VERSIONS[0]}/customers:listAccessibleCustomers`,
             { headers: { 'Authorization': `Bearer ${accessToken}`, 'developer-token': devToken } }
           )
           const customerCT = customerRes.headers.get('content-type') || ''
