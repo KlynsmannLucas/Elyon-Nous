@@ -370,6 +370,8 @@ export function TabAuditoria({ clientData }: Props) {
   const [activeAction,  setActiveAction]  = useState<'curto' | 'medio' | 'longo'>('curto')
   const [datePreset,    setDatePreset]    = useState<string>('last_30d')
   const [auditSource,   setAuditSource]   = useState<'api' | 'upload' | 'consolidate'>('api')
+  const [sentActions,   setSentActions]   = useState<Set<number>>(new Set())
+  const [actionToast,   setActionToast]   = useState<{ msg: string; ok: boolean } | null>(null)
 
   const key = clientData?.clientName || ''
 
@@ -394,6 +396,16 @@ export function TabAuditoria({ clientData }: Props) {
       setSource('ai')
     }
   }, [clientData?.clientName])
+
+  // Toast auto-dismiss
+  useEffect(() => {
+    if (!actionToast) return
+    const t = setTimeout(() => setActionToast(null), 2500)
+    return () => clearTimeout(t)
+  }, [actionToast])
+
+  // Resetar "enviado" ao trocar de auditoria
+  useEffect(() => { setSentActions(new Set()) }, [audit?.generated_at])
 
   const fileRef = useRef<HTMLInputElement>(null)
   const metaAccount   = connectedAccounts.find(a => a.platform === 'meta')
@@ -684,6 +696,16 @@ export function TabAuditoria({ clientData }: Props) {
             Aceita múltiplos arquivos — exportações do Meta Ads (Gerenciador) e Google Ads · XLSX ou CSV
           </div>
         </div>
+
+        {/* Dica de exportação Meta (nível de anúncio) */}
+        {metaAccount && (
+          <div className="flex items-start gap-2 px-1">
+            <span className="flex-shrink-0 mt-0.5 text-[10px] text-[#38BDF8]">ℹ</span>
+            <p className="text-[10px] text-slate-500 leading-relaxed">
+              Para auditar criativos e frequência com mais precisão, exporte no <strong className="text-slate-400">nível de anúncio</strong> incluindo: Frequência, CTR, Gasto, Leads e CPL.
+            </p>
+          </div>
+        )}
 
         {/* Lista de arquivos carregados */}
         {uploadedFiles.length > 0 && (
@@ -1392,10 +1414,10 @@ export function TabAuditoria({ clientData }: Props) {
                 <h3 className="font-display font-bold text-white text-base">Checklist de Tracking</h3>
                 <span className="ml-auto text-[10px] text-slate-600">Preencha manualmente conforme seu acesso</span>
               </div>
-              {audit._hasGoogleConversions && (
+              {(audit._hasGoogleConversions || !!googleAccount) && (
                 <div className="mb-3 flex items-start gap-2 text-[10px] text-[#38BDF8] bg-[#38BDF8]/06 border border-[#38BDF8]/20 rounded-xl px-3 py-2">
                   <span className="flex-shrink-0 mt-0.5">ℹ</span>
-                  <span>Conversões do Google Ads podem incluir múltiplas ações configuradas na conta (formulários, ligações, compras, etc.). Verifique se o evento otimizado corresponde ao objetivo real da campanha.</span>
+                  <span>No Google Ads, conversões podem incluir diferentes ações configuradas na conta (formulários, ligações, compras, eventos de site). Confirme se a conversão principal representa o evento mais relevante — lead, venda ou contato.</span>
                 </div>
               )}
               <div className="space-y-1.5">
@@ -1417,6 +1439,18 @@ export function TabAuditoria({ clientData }: Props) {
                   )
                 })}
               </div>
+              {(() => {
+                const unverified = (audit._trackingChecklist as any[]).filter((t: any) => t.status === 'nao_verificado').length
+                if (unverified < 4) return null
+                return (
+                  <div className="mt-3 flex items-start gap-2 bg-[#F0B429]/06 border border-[#F0B429]/20 rounded-xl px-3 py-2.5">
+                    <span className="flex-shrink-0 text-[#F0B429] text-[11px] mt-0.5">⚠</span>
+                    <p className="text-[11px] text-[#F0B429] leading-relaxed">
+                      Parte do tracking precisa ser validada manualmente. A auditoria não conseguiu confirmar todos os eventos com os dados disponíveis — <strong>{unverified} de 8</strong> itens sem verificação.
+                    </p>
+                  </div>
+                )
+              })()}
               <p className="text-[10px] text-slate-600 mt-3">
                 Itens marcados como "Não verificado" requerem acesso ao Events Manager (Meta) ou Google Ads para confirmação manual.
               </p>
@@ -1736,8 +1770,12 @@ export function TabAuditoria({ clientData }: Props) {
                         </div>
                         {clientData && (
                           <button
-                            title="Enviar para Ações Prioritárias"
+                            title={sentActions.has(i) ? 'Esta ação já está em Ações Prioritárias' : 'Enviar para Ações Prioritárias'}
                             onClick={() => {
+                              if (sentActions.has(i)) {
+                                setActionToast({ msg: 'Esta ação já está em Ações Prioritárias.', ok: false })
+                                return
+                              }
                               const newAction = {
                                 id: `oqef_${Date.now()}_${i}`,
                                 clientId: '',
@@ -1756,10 +1794,16 @@ export function TabAuditoria({ clientData }: Props) {
                                 updatedAt: new Date().toISOString(),
                               }
                               addPendingActions(clientData.clientName, [newAction])
+                              setSentActions(prev => new Set(prev).add(i))
+                              setActionToast({ msg: 'Ação enviada para Ações Prioritárias.', ok: true })
                             }}
-                            className="flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-lg transition-opacity hover:opacity-80"
-                            style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.25)' }}
-                          >+ Ações</button>
+                            className="flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-lg transition-all"
+                            style={{
+                              background: sentActions.has(i) ? 'rgba(34,197,94,0.1)' : 'rgba(240,180,41,0.1)',
+                              color:      sentActions.has(i) ? '#22C55E' : '#F0B429',
+                              border:     `1px solid ${sentActions.has(i) ? 'rgba(34,197,94,0.3)' : 'rgba(240,180,41,0.25)'}`,
+                            }}
+                          >{sentActions.has(i) ? '✓ Enviado' : '+ Ações'}</button>
                         )}
                       </div>
                     </div>
@@ -1784,6 +1828,19 @@ export function TabAuditoria({ clientData }: Props) {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* Toast de feedback "Enviar para Ações" */}
+      {actionToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold animate-fade-up"
+          style={{
+            background: actionToast.ok ? 'rgba(15,15,18,0.97)' : 'rgba(15,15,18,0.97)',
+            border:     `1px solid ${actionToast.ok ? 'rgba(34,197,94,0.5)' : 'rgba(240,180,41,0.5)'}`,
+            color:      actionToast.ok ? '#22C55E' : '#F0B429',
+          }}>
+          <span>{actionToast.ok ? '✓' : '!'}</span>
+          {actionToast.msg}
         </div>
       )}
     </div>

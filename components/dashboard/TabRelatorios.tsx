@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
+import { getBenchmark } from '@/lib/niche_benchmarks'
+import { generateRelatorioInteligentePDF } from '@/components/pdf/RelatorioInteligentePDF'
 
 interface ReportShare {
   token: string
@@ -75,6 +77,56 @@ function IconWarning({ size = 16 }: { size?: number }) {
   )
 }
 
+function IconReport({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="1.5" width="14" height="15" rx="2" stroke="#A78BFA" strokeWidth="1.5" />
+      <line x1="5" y1="6" x2="13" y2="6" stroke="#A78BFA" strokeWidth="1.2" strokeLinecap="round" />
+      <line x1="5" y1="9" x2="13" y2="9" stroke="#A78BFA" strokeWidth="1.2" strokeLinecap="round" />
+      <line x1="5" y1="12" x2="9" y2="12" stroke="#A78BFA" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+// ── Relatório Inteligente helpers ───────────────────────────────────────────
+
+function rlPrioColor(p: string): string {
+  const s = (p || '').toLowerCase()
+  if (s === 'p1' || s === 'alta' || s === 'crítica' || s === 'critica') return '#FF4D4D'
+  if (s === 'p2' || s === 'média' || s === 'media') return '#F0B429'
+  return '#22C55E'
+}
+
+function rlScoreColor(s: number): string {
+  if (s >= 75) return '#22C55E'
+  if (s >= 55) return '#F0B429'
+  return '#EF4444'
+}
+
+function rlFmt(n: number | undefined | null, prefix = '', suffix = '', decimals = 0): string {
+  if (n == null || n === 0) return '—'
+  return `${prefix}${n.toFixed(decimals)}${suffix}`
+}
+
+function rlTrunc(s: string | undefined, max = 40): string {
+  if (!s) return '—'
+  return s.length > max ? s.slice(0, max) + '…' : s
+}
+
+function rlStatusIcon(status: string): string {
+  if (status === 'verificado') return '✓'
+  if (status === 'problema') return '✗'
+  if (status === 'nao_verificado') return '?'
+  return '—'
+}
+
+function rlStatusColor(status: string): string {
+  if (status === 'verificado') return '#22C55E'
+  if (status === 'problema') return '#EF4444'
+  if (status === 'nao_verificado') return '#F0B429'
+  return '#64748B'
+}
+
 // ── Shared style constants ──────────────────────────────────────────────────
 
 const S = {
@@ -137,7 +189,7 @@ const S = {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function TabRelatorios({ onNavigateToConnections }: Props) {
-  const { clientData, auditCache, connectedAccounts } = useAppStore()
+  const { clientData, auditCache, connectedAccounts, pendingActionsCache } = useAppStore()
 
   // ── Share state ──
   const [shareLoading, setShareLoading]   = useState(false)
@@ -149,6 +201,10 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
   // ── Branding state ──
   const [agencyName,    setAgencyName]    = useState('')
   const [primaryColor,  setPrimaryColor]  = useState('#7C3AED')
+
+  // ── Relatório Inteligente state ──
+  const [reportMode, setReportMode] = useState<'executivo' | 'tecnico' | 'agencia'>('executivo')
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   // ── Schedule state ──
   const [scheduleEmails,    setScheduleEmails]    = useState('')
@@ -216,6 +272,47 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
       alerts:          globalRecs.slice(0, 5),
       channels,
       highlights,
+    }
+  }
+
+  // ── Relatório Inteligente derived data ────────────────────────────
+  const audit      = audits[0]?.audit
+  const rRm        = audit?._realMetrics || {}
+  const rDq        = audit?._dataQuality || {}
+  const rScore: number = audit?._intelligenceData?.score ?? audit?.score ?? audit?.health_score ?? 0
+  const rGrade: string = audit?.grade || '?'
+  const rClass     = audit?._campanhasClassificadas || {}
+  const rWinners   = rClass.vencedoras || []
+  const rCritical  = rClass.criticas   || []
+  const rAttn      = rClass.atencao    || []
+  const rAllCamps  = [...rWinners, ...rAttn, ...rCritical]
+  const rWaste     = audit?._wasteCampaigns || []
+  const rChecklist = audit?._trackingChecklist || []
+  const rGargalos  = audit?.gargalos    || []
+  const rOport     = audit?.oportunidades || []
+  const rInsights  = audit?.insights_senior || []
+  const rPlano     = audit?.plano_acao  || {}
+  const rActions   = (audit?.o_que_eu_faria_agora || []).map((a: any) =>
+    typeof a === 'string' ? { titulo: a, prioridade: 'P2' } : a
+  )
+  const rBench     = clientData ? getBenchmark(clientData.niche) : null
+  const rCompleted = (pendingActionsCache[cacheKey] || []).filter(a => a.status === 'concluida')
+  const rPending   = (pendingActionsCache[cacheKey] || []).filter(a => a.status !== 'concluida' && a.status !== 'ignorada')
+
+  // ── PDF Export ─────────────────────────────────────────────────────
+  const handleExportPDF = async () => {
+    if (!audit || !clientData) return
+    setPdfLoading(true)
+    try {
+      const benchArg = rBench ? {
+        cpl_min: rBench.cpl_min, cpl_max: rBench.cpl_max,
+        roas_good: rBench.kpi_thresholds.roas_good, best_channels: rBench.best_channels,
+      } : null
+      await generateRelatorioInteligentePDF(audit, clientData.clientName, clientData.niche, reportMode, agencyName || undefined, benchArg)
+    } catch (e) {
+      console.error('PDF export failed:', e)
+    } finally {
+      setPdfLoading(false)
     }
   }
 
@@ -333,6 +430,531 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
           )}
         </div>
       )}
+
+      {/* ── 0. RELATÓRIO INTELIGENTE ────────────────────────────────────── */}
+      {(() => {
+        const sectionLabel: React.CSSProperties = {
+          fontSize: '9px', fontWeight: 700, color: '#7C3AED',
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+          marginBottom: '8px', marginTop: '4px',
+        }
+        const sectionBox: React.CSSProperties = {
+          background: '#0A0D18',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '10px',
+          padding: '12px',
+        }
+        const benchBox: React.CSSProperties = {
+          background: '#0A0D18',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '8px',
+          padding: '10px',
+          textAlign: 'center' as const,
+        }
+
+        const hasAudit = !!audit?._realMetrics
+
+        return (
+          <div style={S.card}>
+            {/* Heading + mode tabs */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconReport size={17} />
+                <div>
+                  <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Relatório Inteligente</h3>
+                  <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>
+                    {reportMode === 'executivo'
+                      ? 'Visão geral para o decisor — sem jargão técnico.'
+                      : reportMode === 'tecnico'
+                      ? 'Análise completa para o gestor de tráfego.'
+                      : 'Apresentação consultiva para o cliente.'}
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '3px', background: '#131E35', borderRadius: '10px', padding: '3px' }}>
+                  {(['executivo', 'tecnico', 'agencia'] as const).map(m => (
+                    <button key={m} onClick={() => setReportMode(m)} style={{
+                      padding: '5px 11px', fontSize: '11px', fontWeight: 700, borderRadius: '7px',
+                      cursor: 'pointer', border: 'none', transition: 'all 0.15s',
+                      background: reportMode === m ? 'linear-gradient(135deg, #7C3AED, #A78BFA)' : 'transparent',
+                      color: reportMode === m ? '#fff' : '#64748B',
+                    }}>
+                      {m === 'executivo' ? 'Executivo' : m === 'tecnico' ? 'Técnico' : 'Agência'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* No-data guard */}
+            {!hasAudit ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '40px 0', textAlign: 'center' }}>
+                <IconReport size={36} />
+                <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Dados insuficientes</h4>
+                <p style={{ fontSize: '13px', color: '#64748B', margin: 0, maxWidth: '300px' }}>
+                  Execute a Análise Profunda para gerar o Relatório Inteligente com dados reais da conta.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* ── Cover: client + score + KPIs ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '14px', marginBottom: '18px', background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '16px' }}>
+                  <div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#F1F5F9', marginBottom: '2px' }}>{clientData.clientName}</div>
+                    <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '12px' }}>
+                      {clientData.niche} · {audit._period || 'Últimos 30 dias'} · Fonte:{' '}
+                      {audit._auditSource === 'api' ? 'Somente API' : audit._auditSource === 'upload' ? 'Somente arquivo' : 'Consolidado'}
+                    </div>
+                    <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
+                      {[
+                        { label: 'Investimento', value: rlFmt(rRm.totalSpend, 'R$', '', 0), color: '#F0B429' },
+                        { label: 'Leads', value: rlFmt(rRm.totalLeads, '', '', 0), color: '#38BDF8' },
+                        { label: 'CPL Médio', value: rlFmt(rRm.avgCPL, 'R$', '', 2), color: '#A78BFA' },
+                        ...(rRm.avgROAS > 0 ? [{ label: 'ROAS', value: rlFmt(rRm.avgROAS, '', '×', 2), color: '#22C55E' }] : []),
+                      ].map(k => (
+                        <div key={k.label}>
+                          <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>{k.label}</div>
+                          <div style={{ fontSize: '16px', fontWeight: 700, color: k.color }}>{k.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', minWidth: '72px' }}>
+                    <div style={{ fontSize: '36px', fontWeight: 700, color: rlScoreColor(rScore), lineHeight: 1 }}>{rScore}</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: rlScoreColor(rScore) }}>{rGrade}</div>
+                    <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score IA</div>
+                  </div>
+                </div>
+
+                {/* ── EXECUTIVO MODE ── */}
+                {reportMode === 'executivo' && (
+                  <>
+                    {audit.executive_summary && (
+                      <div style={{ ...sectionBox, marginBottom: '14px' }}>
+                        <div style={sectionLabel}>RESUMO EXECUTIVO</div>
+                        <p style={{ fontSize: '13px', color: '#CBD5E1', lineHeight: '1.65', margin: 0 }}>{audit.executive_summary}</p>
+                      </div>
+                    )}
+
+                    {rWinners.length > 0 && (
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={sectionLabel}>O QUE ESTÁ FUNCIONANDO BEM</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          {rWinners.slice(0, 4).map((c: any, i: number) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: '8px' }}>
+                              <span style={{ fontSize: '12px', color: '#22C55E', flexShrink: 0 }}>✓</span>
+                              <span style={{ fontSize: '12px', color: '#CBD5E1', flex: 1 }}>{rlTrunc(c.campaign_name || c.name, 52)}</span>
+                              {c.cpl > 0 && <span style={{ fontSize: '11px', color: '#22C55E', fontWeight: 700, flexShrink: 0 }}>R${c.cpl.toFixed(2)}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {rCritical.length > 0 && (
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={sectionLabel}>O QUE PRECISA DE ATENÇÃO</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          {rCritical.slice(0, 3).map((c: any, i: number) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 10px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '8px' }}>
+                              <span style={{ fontSize: '12px', color: '#EF4444', flexShrink: 0, marginTop: '1px' }}>!</span>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '12px', color: '#CBD5E1' }}>{rlTrunc(c.campaign_name || c.name, 46)}</div>
+                                {c.evidence && <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>{rlTrunc(c.evidence, 80)}</div>}
+                              </div>
+                              {c.cpl > 0 && <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, flexShrink: 0 }}>R${c.cpl.toFixed(2)}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(audit._wastePercent || 0) > 0 && (
+                      <div style={{ marginBottom: '14px', padding: '10px 14px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '8px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#EF4444', flexShrink: 0 }}>⚠</span>
+                        <p style={{ fontSize: '12px', color: '#CBD5E1', margin: 0, lineHeight: '1.5' }}>
+                          <strong style={{ color: '#EF4444' }}>Desperdício estimado:</strong>{' '}
+                          {audit._wastePercent}% do orçamento em campanhas sem resultado
+                          {rRm.totalSpend > 0 ? ` — aproximadamente ${rlFmt(rRm.totalSpend * audit._wastePercent / 100, 'R$', '', 0)} no período` : ''}.
+                        </p>
+                      </div>
+                    )}
+
+                    {rActions.length > 0 && (
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={sectionLabel}>O QUE FAZER AGORA</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {rActions.slice(0, 3).map((a: any, i: number) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 10px', background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: rlPrioColor(a.prioridade), background: `${rlPrioColor(a.prioridade)}18`, border: `1px solid ${rlPrioColor(a.prioridade)}35`, borderRadius: '4px', padding: '1px 5px', flexShrink: 0, marginTop: '1px' }}>
+                                {a.prioridade || 'P1'}
+                              </span>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '12px', color: '#F1F5F9', fontWeight: 600 }}>{a.titulo || String(a)}</div>
+                                {a.prazo && <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Prazo: {a.prazo}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(rPlano.trinta_dias || []).length > 0 && (
+                      <div>
+                        <div style={sectionLabel}>PRÓXIMOS 30 DIAS</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {(rPlano.trinta_dias as string[]).slice(0, 4).map((item: string, i: number) => (
+                            <div key={i} style={{ fontSize: '12px', color: '#94A3B8', paddingLeft: '12px', position: 'relative', lineHeight: '1.5' }}>
+                              <span style={{ position: 'absolute', left: 0, color: '#7C3AED' }}>·</span>
+                              {item}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* ── TÉCNICO MODE ── */}
+                {reportMode === 'tecnico' && (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '14px' }}>
+                      {[
+                        { label: 'Investimento', value: rlFmt(rRm.totalSpend, 'R$', '', 0), color: '#F0B429' },
+                        { label: 'Leads', value: rlFmt(rRm.totalLeads, '', '', 0), color: '#38BDF8' },
+                        { label: 'CPL Médio', value: rlFmt(rRm.avgCPL, 'R$', '', 2), color: '#A78BFA' },
+                        { label: 'ROAS', value: rRm.avgROAS > 0 ? rlFmt(rRm.avgROAS, '', '×', 2) : '—', color: '#22C55E' },
+                        { label: 'CTR Médio', value: rRm.avgCTR > 0 ? rlFmt(rRm.avgCTR, '', '%', 2) : '—', color: '#CBD5E1' },
+                        { label: 'Impressões', value: rRm.totalImpressions > 0 ? `${((rRm.totalImpressions as number) / 1000).toFixed(0)}k` : '—', color: '#CBD5E1' },
+                        { label: 'Campanhas', value: String(rAllCamps.length) || '—', color: '#CBD5E1' },
+                        { label: 'Confiança', value: rDq.level === 'alto' ? 'Alta' : rDq.level === 'medio' ? 'Média' : 'Baixa', color: rDq.level === 'alto' ? '#22C55E' : rDq.level === 'medio' ? '#F0B429' : '#EF4444' },
+                      ].map(k => (
+                        <div key={k.label} style={{ background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '8px 10px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px' }}>{k.label}</div>
+                          <div style={{ fontSize: '14px', fontWeight: 700, color: k.color }}>{k.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {rDq.reason && (
+                      <div style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '14px' }}>
+                        <span style={{ fontSize: '11px', color: '#64748B', fontStyle: 'italic' }}>{rDq.reason}</span>
+                      </div>
+                    )}
+
+                    {rBench && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={sectionLabel}>BENCHMARK — {clientData.niche.toUpperCase()}</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                          <div style={benchBox}>
+                            <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', marginBottom: '3px' }}>CPL de mercado</div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: '#CBD5E1' }}>R${rBench.cpl_min}–R${rBench.cpl_max}</div>
+                            {rRm.avgCPL > 0 && (
+                              <div style={{ fontSize: '10px', marginTop: '3px', color: rRm.avgCPL <= rBench.kpi_thresholds.cpl_good ? '#22C55E' : rRm.avgCPL >= rBench.kpi_thresholds.cpl_bad ? '#EF4444' : '#F0B429' }}>
+                                Seu CPL: {rlFmt(rRm.avgCPL, 'R$', '', 2)}{' '}
+                                {rRm.avgCPL <= rBench.kpi_thresholds.cpl_good ? '✓' : rRm.avgCPL >= rBench.kpi_thresholds.cpl_bad ? '✗' : '~'}
+                              </div>
+                            )}
+                          </div>
+                          <div style={benchBox}>
+                            <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', marginBottom: '3px' }}>ROAS referência</div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: '#CBD5E1' }}>{rBench.kpi_thresholds.roas_good}×</div>
+                            {rRm.avgROAS > 0 && (
+                              <div style={{ fontSize: '10px', marginTop: '3px', color: rRm.avgROAS >= rBench.kpi_thresholds.roas_good ? '#22C55E' : '#64748B' }}>
+                                Seu ROAS: {rlFmt(rRm.avgROAS, '', '×', 2)}
+                              </div>
+                            )}
+                          </div>
+                          <div style={benchBox}>
+                            <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', marginBottom: '3px' }}>Melhores canais</div>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#CBD5E1' }}>{rBench.best_channels.slice(0, 2).join(', ')}</div>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '10px', color: '#64748B', margin: '6px 0 0', fontStyle: 'italic' }}>* Benchmark baseado em médias de mercado — não representa dados específicos desta conta.</p>
+                      </div>
+                    )}
+
+                    {rAllCamps.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={sectionLabel}>CAMPANHAS CLASSIFICADAS ({rAllCamps.length})</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {rAllCamps.map((c: any, i: number) => {
+                            const isW = rWinners.some((w: any) => (w.campaign_name || w.name) === (c.campaign_name || c.name))
+                            const isC = rCritical.some((x: any) => (x.campaign_name || x.name) === (c.campaign_name || c.name))
+                            const borderCol  = isW ? 'rgba(34,197,94,0.15)' : isC ? 'rgba(239,68,68,0.15)' : 'rgba(240,180,41,0.12)'
+                            const badgeBg    = isW ? 'rgba(34,197,94,0.10)' : isC ? 'rgba(239,68,68,0.10)' : 'rgba(240,180,41,0.10)'
+                            const badgeColor = isW ? '#22C55E' : isC ? '#EF4444' : '#F0B429'
+                            const badgeLabel = isW ? 'Vencedora' : isC ? 'Crítica' : 'Atenção'
+                            return (
+                              <div key={i} style={{ padding: '8px 10px', background: '#0A0D18', border: `1px solid ${borderCol}`, borderRadius: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                                  <span style={{ fontSize: '9px', fontWeight: 700, color: badgeColor, background: badgeBg, borderRadius: '4px', padding: '1px 5px', flexShrink: 0 }}>{badgeLabel}</span>
+                                  <span style={{ fontSize: '11px', color: '#CBD5E1', fontWeight: 600, flex: 1 }}>{rlTrunc(c.campaign_name || c.name, 48)}</span>
+                                  <span style={{ fontSize: '11px', color: '#94A3B8', fontFamily: 'monospace', flexShrink: 0 }}>CPL: {rlFmt(c.cpl, 'R$', '', 2)}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '12px', marginBottom: (c.evidence || c.recommended_action) ? '4px' : 0 }}>
+                                  {c.spend > 0 && <span style={{ fontSize: '10px', color: '#64748B' }}>Gasto: {rlFmt(c.spend, 'R$')}</span>}
+                                  {c.leads > 0 && <span style={{ fontSize: '10px', color: '#64748B' }}>Leads: {c.leads}</span>}
+                                  {c.ctr  > 0 && <span style={{ fontSize: '10px', color: '#64748B' }}>CTR: {rlFmt(c.ctr, '', '%', 2)}</span>}
+                                </div>
+                                {c.evidence && <div style={{ fontSize: '10px', color: '#94A3B8', lineHeight: '1.45' }}>{c.evidence}</div>}
+                                {c.recommended_action && <div style={{ fontSize: '10px', color: '#A78BFA', marginTop: '3px', fontWeight: 600 }}>→ {c.recommended_action}</div>}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {rWaste.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={sectionLabel}>DESPERDÍCIO ESTIMADO</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {rWaste.map((w: any, i: number) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.10)', borderRadius: '8px' }}>
+                              <span style={{ fontSize: '10px', color: '#EF4444', fontWeight: 700, flexShrink: 0 }}>−</span>
+                              <span style={{ fontSize: '11px', color: '#CBD5E1', flex: 1 }}>{rlTrunc(w.campaign_name || w.name, 46)}</span>
+                              <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, flexShrink: 0 }}>{rlFmt(w.wasted_spend || w.spend, 'R$')}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {rChecklist.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={sectionLabel}>TRACKING CHECKLIST</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                          {rChecklist.map((t: any, i: number) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px', background: '#0A0D18', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                              <span style={{ fontSize: '11px', color: rlStatusColor(t.status), flexShrink: 0 }}>{rlStatusIcon(t.status)}</span>
+                              <span style={{ fontSize: '10px', color: '#94A3B8' }}>{t.label || t.item || '—'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {rActions.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={sectionLabel}>O QUE EU FARIA AGORA</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {rActions.map((a: any, i: number) => (
+                            <div key={i} style={{ padding: '10px', background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '5px' }}>
+                                <span style={{ fontSize: '10px', fontWeight: 700, color: rlPrioColor(a.prioridade), background: `${rlPrioColor(a.prioridade)}18`, border: `1px solid ${rlPrioColor(a.prioridade)}35`, borderRadius: '4px', padding: '1px 5px', flexShrink: 0 }}>
+                                  {a.prioridade || 'P1'}
+                                </span>
+                                <span style={{ fontSize: '12px', color: '#F1F5F9', fontWeight: 600 }}>{a.titulo || String(a)}</span>
+                              </div>
+                              {a.motivo    && <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '2px' }}><strong>Motivo:</strong> {a.motivo}</div>}
+                              {a.evidencia && <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '2px' }}><strong>Evidência:</strong> {a.evidencia}</div>}
+                              <div style={{ display: 'flex', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
+                                {a.prazo   && <span style={{ fontSize: '10px', color: '#64748B' }}>Prazo: {a.prazo}</span>}
+                                {a.esforco && <span style={{ fontSize: '10px', color: '#64748B' }}>Esforço: {a.esforco}</span>}
+                                {a.impacto && <span style={{ fontSize: '10px', color: '#64748B' }}>Impacto: {a.impacto}</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(rPlano.sete_dias || rPlano.quinze_dias || rPlano.trinta_dias) && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={sectionLabel}>PLANO DE AÇÃO</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                          {[
+                            { title: '7 dias', items: (rPlano.sete_dias || []) as string[], color: '#EF4444' },
+                            { title: '15 dias', items: (rPlano.quinze_dias || []) as string[], color: '#F0B429' },
+                            { title: '30 dias', items: (rPlano.trinta_dias || []) as string[], color: '#22C55E' },
+                          ].map(col => (
+                            <div key={col.title} style={{ background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '10px' }}>
+                              <div style={{ fontSize: '10px', fontWeight: 700, color: col.color, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{col.title}</div>
+                              {col.items.map((item, i) => (
+                                <div key={i} style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '4px', paddingLeft: '10px', position: 'relative', lineHeight: '1.45' }}>
+                                  <span style={{ position: 'absolute', left: 0, color: col.color }}>·</span>
+                                  {item}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(rGargalos.length > 0 || rOport.length > 0) && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                        {rGargalos.length > 0 && (
+                          <div>
+                            <div style={sectionLabel}>GARGALOS</div>
+                            {rGargalos.slice(0, 4).map((g: any, i: number) => (
+                              <div key={i} style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '5px', paddingLeft: '12px', position: 'relative', lineHeight: '1.45' }}>
+                                <span style={{ position: 'absolute', left: 0, color: '#EF4444' }}>✗</span>
+                                {typeof g === 'string' ? g : g.titulo || g.descricao || ''}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {rOport.length > 0 && (
+                          <div>
+                            <div style={sectionLabel}>OPORTUNIDADES</div>
+                            {rOport.slice(0, 4).map((o: any, i: number) => (
+                              <div key={i} style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '5px', paddingLeft: '12px', position: 'relative', lineHeight: '1.45' }}>
+                                <span style={{ position: 'absolute', left: 0, color: '#22C55E' }}>→</span>
+                                {typeof o === 'string' ? o : o.titulo || o.descricao || ''}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {rInsights.length > 0 && (
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={sectionLabel}>COMENTÁRIO DO ESPECIALISTA</div>
+                        {rInsights.slice(0, 3).map((ins: any, i: number) => {
+                          const txt = typeof ins === 'string' ? ins : `${ins.titulo ? ins.titulo + ': ' : ''}${ins.texto || ''}`
+                          return (
+                            <div key={i} style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '5px', paddingLeft: '12px', position: 'relative', lineHeight: '1.55' }}>
+                              <span style={{ position: 'absolute', left: 0, color: '#A78BFA' }}>→</span>
+                              {txt}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* ── AGÊNCIA MODE ── */}
+                {reportMode === 'agencia' && (
+                  <>
+                    {(audit.executive_summary || audit.comentario_ia) && (
+                      <div style={{ ...sectionBox, marginBottom: '14px' }}>
+                        <div style={sectionLabel}>ANÁLISE DO PERÍODO</div>
+                        <p style={{ fontSize: '13px', color: '#CBD5E1', lineHeight: '1.65', margin: 0 }}>
+                          {audit.executive_summary || audit.comentario_ia}
+                        </p>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                      {[
+                        { label: 'Investimento', value: rlFmt(rRm.totalSpend, 'R$', '', 0), color: '#F0B429', show: rRm.totalSpend > 0 },
+                        { label: 'Leads gerados', value: rlFmt(rRm.totalLeads, '', '', 0), color: '#38BDF8', show: rRm.totalLeads > 0 },
+                        { label: 'CPL Médio', value: rlFmt(rRm.avgCPL, 'R$', '', 2), color: '#A78BFA', show: rRm.avgCPL > 0 },
+                        { label: 'ROAS', value: rlFmt(rRm.avgROAS, '', '×', 2), color: '#22C55E', show: rRm.avgROAS > 0 },
+                      ].filter(k => k.show).map(k => (
+                        <div key={k.label} style={{ flex: 1, minWidth: '90px', padding: '10px 12px', background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px' }}>{k.label}</div>
+                          <div style={{ fontSize: '16px', fontWeight: 700, color: k.color }}>{k.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {rWinners.length > 0 && (
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={sectionLabel}>CAMPANHAS DE DESTAQUE</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          {rWinners.slice(0, 4).map((c: any, i: number) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: '8px' }}>
+                              <span style={{ fontSize: '12px', color: '#22C55E', flexShrink: 0 }}>★</span>
+                              <span style={{ fontSize: '12px', color: '#CBD5E1', flex: 1 }}>{rlTrunc(c.campaign_name || c.name, 52)}</span>
+                              {c.cpl > 0 && <span style={{ fontSize: '11px', color: '#22C55E', fontWeight: 700, flexShrink: 0 }}>CPL R${c.cpl.toFixed(2)}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {rOport.length > 0 && (
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={sectionLabel}>OPORTUNIDADES IDENTIFICADAS</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {rOport.slice(0, 4).map((o: any, i: number) => {
+                            const txt = typeof o === 'string' ? o : o.titulo || o.descricao || ''
+                            return (
+                              <div key={i} style={{ fontSize: '12px', color: '#94A3B8', paddingLeft: '14px', position: 'relative', lineHeight: '1.55' }}>
+                                <span style={{ position: 'absolute', left: 0, color: '#7C3AED' }}>→</span>
+                                {txt}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {rCompleted.length > 0 && (
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={sectionLabel}>O QUE JÁ FIZEMOS</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {rCompleted.slice(0, 5).map((a, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94A3B8' }}>
+                              <span style={{ color: '#22C55E', flexShrink: 0 }}>✓</span>
+                              <span>{a.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(rPending.length > 0 || (rPlano.quinze_dias || []).length > 0) && (
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={sectionLabel}>PRÓXIMAS AÇÕES</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {rPending.slice(0, 3).map((a, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94A3B8' }}>
+                              <span style={{ color: '#7C3AED', flexShrink: 0 }}>·</span>
+                              <span>{a.title}</span>
+                            </div>
+                          ))}
+                          {(rPlano.quinze_dias as string[] || []).slice(0, 3).map((item: string, i: number) => (
+                            <div key={`p-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94A3B8' }}>
+                              <span style={{ color: '#7C3AED', flexShrink: 0 }}>·</span>
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {rInsights.length > 0 && (
+                      <div>
+                        <div style={sectionLabel}>COMENTÁRIO DO ESPECIALISTA</div>
+                        {rInsights.slice(0, 2).map((ins: any, i: number) => {
+                          const txt = typeof ins === 'string' ? ins : `${ins.titulo ? ins.titulo + ': ' : ''}${ins.texto || ''}`
+                          return (
+                            <div key={i} style={{ fontSize: '12px', color: '#CBD5E1', marginBottom: '6px', lineHeight: '1.6', paddingLeft: '12px', position: 'relative' }}>
+                              <span style={{ position: 'absolute', left: 0, color: '#A78BFA' }}>→</span>
+                              {txt}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* PDF Export */}
+                <div style={{ marginTop: '18px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                  <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>
+                    O PDF exportado reflete exatamente as informações exibidas acima.
+                  </p>
+                  <button
+                    onClick={handleExportPDF}
+                    disabled={pdfLoading}
+                    style={{ ...S.ctaBtn, opacity: pdfLoading ? 0.5 : 1, cursor: pdfLoading ? 'not-allowed' : 'pointer' }}
+                  >
+                    {pdfLoading ? 'Gerando PDF…' : '↓ Exportar PDF'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── 1. LINK COMPARTILHÁVEL ──────────────────────────────────────── */}
       <div style={S.card}>
