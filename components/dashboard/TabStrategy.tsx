@@ -2,7 +2,6 @@
 'use client'
 
 import { useState } from 'react'
-import { StatCard } from './StatCard'
 import { useAppStore } from '@/lib/store'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 
@@ -39,7 +38,9 @@ interface Props {
   analysis: Record<string, any>
 }
 
-// ── Sub-components (unchanged) ────────────────────────────────────────────────
+// ── Utilitários ───────────────────────────────────────────────────────────────
+
+function label(x: string | undefined, fallback = '—') { return x || fallback }
 
 function ChipList({ items, color, icon, limit = 4 }: { items: string[]; color: string; icon: string; limit?: number }) {
   const [showAll, setShowAll] = useState(false)
@@ -78,7 +79,7 @@ function ChipList({ items, color, icon, limit = 4 }: { items: string[]; color: s
   )
 }
 
-function FunnelStageCard({ label, icon, goal, tactics, color }: {
+function FunnelStageCard({ label: lbl, icon, goal, tactics, color }: {
   label: string; icon: string; goal: string; tactics: string[]; color: string
 }) {
   const [open, setOpen] = useState(false)
@@ -87,12 +88,11 @@ function FunnelStageCard({ label, icon, goal, tactics, color }: {
       <button onClick={() => setOpen(v => !v)} style={{
         width: '100%', padding: '16px 20px', textAlign: 'left',
         background: open ? `${color}08` : 'transparent', cursor: 'pointer', border: 'none',
-        transition: 'background 0.2s',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 18 }}>{icon}</span>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color }}>{label}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color }}>{lbl}</span>
           </div>
           <span style={{ color: C.text3, fontSize: 10 }}>{open ? '▲' : '▼'}</span>
         </div>
@@ -110,118 +110,6 @@ function FunnelStageCard({ label, icon, goal, tactics, color }: {
             ))}
           </div>
         </div>
-      )}
-    </div>
-  )
-}
-
-function Plan90Days({ plan }: { plan: any[] }) {
-  const [activeMonth, setActiveMonth] = useState(0)
-  const [openWeek,   setOpenWeek]     = useState<number | null>(0)
-  const month = plan[activeMonth]
-  if (!month) return null
-  const weeks = [month.week_1, month.week_2, month.week_3, month.week_4].filter(Boolean)
-  return (
-    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}` }}>
-        {plan.map((m, i) => (
-          <button key={i} onClick={() => { setActiveMonth(i); setOpenWeek(0) }}
-            style={{
-              flex: 1, padding: '12px 0', fontSize: 12, fontWeight: 700,
-              cursor: 'pointer', border: 'none', transition: 'all 0.2s',
-              color:      activeMonth === i ? C.purpleL : C.text3,
-              background: activeMonth === i ? 'rgba(124,58,237,0.08)' : 'transparent',
-              borderBottom: activeMonth === i ? `2px solid ${C.purpleL}` : '2px solid transparent',
-            }}>
-            Mês {m.month}
-          </button>
-        ))}
-      </div>
-      <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}` }}>
-        <span style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Objetivo · </span>
-        <span style={{ fontSize: 12, color: C.text1, fontWeight: 600 }}>{month.goal}</span>
-      </div>
-      <div>
-        {weeks.map((week: string[], wi: number) => (
-          <div key={wi} style={{ borderBottom: wi < weeks.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-            <button onClick={() => setOpenWeek(openWeek === wi ? null : wi)}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 20px', cursor: 'pointer', border: 'none', background: 'transparent', textAlign: 'left',
-              }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: C.text2, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Semana {wi + 1}
-              </span>
-              <span style={{ color: C.text3, fontSize: 10 }}>
-                {openWeek === wi ? '▲' : `${week.length} ações ▼`}
-              </span>
-            </button>
-            {openWeek === wi && (
-              <div style={{ padding: '0 20px 14px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {week.map((action: string, ai: number) => (
-                  <span key={ai} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    fontSize: 11, padding: '4px 10px', borderRadius: 20,
-                    background: 'rgba(124,58,237,0.08)', color: C.purpleL, border: '1px solid rgba(124,58,237,0.25)',
-                  }}>· {action}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function KeyActionsSection({ actions }: { actions: string[] }) {
-  const [showAll, setShowAll] = useState(false)
-  const limit   = 5
-  const visible = showAll ? actions : actions.slice(0, limit)
-  const extra   = actions.length - limit
-  return (
-    <div style={card}>
-      <div style={{ fontWeight: 700, color: C.text1, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{
-          width: 28, height: 28, borderRadius: 8, background: 'rgba(124,58,237,0.12)',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-        }}>⚡</span>
-        Ações Prioritárias
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {visible.map((action: string, i: number) => (
-          <div key={i} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '10px 14px', background: C.elevated, borderRadius: 10,
-          }}>
-            <span style={{
-              width: 22, height: 22, borderRadius: 6, background: `${C.gold}20`,
-              color: C.gold, fontSize: 10, fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              {i + 1}
-            </span>
-            <span style={{ fontSize: 12, color: C.text1 }}>{action}</span>
-          </div>
-        ))}
-      </div>
-      {!showAll && extra > 0 && (
-        <button onClick={() => setShowAll(true)} style={{
-          marginTop: 10, width: '100%', fontSize: 11, color: C.text3,
-          padding: '8px 0', borderRadius: 10, cursor: 'pointer',
-          background: 'transparent', border: `1px solid ${C.border}`, transition: 'all 0.2s',
-        }}>
-          Ver todas (+{extra} ações) ▼
-        </button>
-      )}
-      {showAll && actions.length > limit && (
-        <button onClick={() => setShowAll(false)} style={{
-          marginTop: 10, width: '100%', fontSize: 11, color: C.text3,
-          padding: '8px 0', borderRadius: 10, cursor: 'pointer',
-          background: 'transparent', border: `1px solid ${C.border}`,
-        }}>
-          Ver menos ▲
-        </button>
       )}
     </div>
   )
@@ -266,7 +154,7 @@ function FunnelHealthRow({ funnel_health }: { funnel_health: Record<string, any>
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-        {stages.map(({ key, label, short }) => {
+        {stages.map(({ key, label: lbl, short }) => {
           const s = funnel_health[key]
           if (!s) return null
           const c = color(s.status)
@@ -280,7 +168,7 @@ function FunnelHealthRow({ funnel_health }: { funnel_health: Record<string, any>
                 background: isActive ? `${c}18` : `${c}0D`,
                 color: c, border: `1px solid ${isActive ? c : `${c}30`}`,
               }}>
-              {emoji(s.status)} {label}: {s.status === 'ok' ? 'Saudável' : s.status === 'atenção' ? 'Atenção' : 'Crítico'}
+              {emoji(s.status)} {lbl}: {s.status === 'ok' ? 'Saudável' : s.status === 'atenção' ? 'Atenção' : 'Crítico'}
               <span style={{ fontSize: 10, opacity: 0.6 }}>({short})</span>
             </button>
           )
@@ -306,237 +194,7 @@ function FunnelHealthRow({ funnel_health }: { funnel_health: Record<string, any>
   )
 }
 
-// ── Nova seção: Estratégia por Campanhas ─────────────────────────────────────
-
-function CampanhaEstrategiaSection({
-  campanhasClassificadas,
-  bench,
-}: {
-  campanhasClassificadas: any
-  bench: any
-}) {
-  const [tab, setTab] = useState<'vencedoras' | 'atencao' | 'criticas'>('vencedoras')
-  const vencedoras: any[] = campanhasClassificadas?.vencedoras || []
-  const atencao: any[]    = campanhasClassificadas?.atencao    || []
-  const criticas: any[]   = campanhasClassificadas?.criticas   || []
-  const total = vencedoras.length + atencao.length + criticas.length
-  if (total === 0) return null
-
-  const tabs = [
-    { id: 'vencedoras' as const, label: `🏆 Vencedoras (${vencedoras.length})`, color: C.green,
-      strategy: 'Escalar com cautela: aumentar orçamento em 15–20% a cada 3–5 dias desde que o CPL permaneça estável.' },
-    { id: 'atencao'    as const, label: `⚠ Atenção (${atencao.length})`,       color: C.gold,
-      strategy: 'Revisar segmentação, criativo e oferta. Candidatas a teste A/B antes de aumentar verba.' },
-    { id: 'criticas'   as const, label: `🔴 Críticas (${criticas.length})`,     color: C.red,
-      strategy: 'Reduzir verba ou pausar. Revisar tracking, segmentação e criativo antes de reinvestir.' },
-  ]
-
-  const active = tabs.find(t => t.id === tab)!
-  const camps: any[] = campanhasClassificadas?.[tab] || []
-
-  return (
-    <CollapsibleSection title="Estratégia por Campanhas" icon="📊" defaultOpen={true}>
-      {/* estratégia orientada */}
-      <div style={{
-        padding: '10px 14px', borderRadius: 10, marginBottom: 14,
-        background: `${active.color}08`, border: `1px solid ${active.color}20`,
-        fontSize: 12, color: C.text2, lineHeight: 1.6,
-      }}>
-        <span style={{ fontWeight: 700, color: active.color }}>Diretriz: </span>
-        {active.strategy}
-        {bench && tab === 'vencedoras' && (
-          <span> Benchmark do nicho: R${bench.cpl_min}–{bench.cpl_max} CPL.</span>
-        )}
-      </div>
-
-      {/* tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            style={{
-              flex: 1, padding: '8px 4px', borderRadius: 10, fontSize: 11, fontWeight: 700,
-              cursor: 'pointer', border: 'none', transition: 'all 0.2s',
-              background: tab === t.id ? `${t.color}18` : 'transparent',
-              color:      tab === t.id ? t.color : C.text3,
-              outline:    tab === t.id ? `1px solid ${t.color}40` : '1px solid rgba(255,255,255,0.06)',
-            }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* listagem */}
-      {camps.length === 0 ? (
-        <p style={{ fontSize: 12, color: C.text3, textAlign: 'center', padding: '16px 0' }}>
-          Nenhuma campanha nesta categoria.
-        </p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {camps.map((c: any, i: number) => {
-            const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
-            const cplColor = bench && cpl
-              ? cpl < bench.cpl_min ? C.green : cpl <= bench.cpl_max ? C.gold : C.red
-              : active.color
-            return (
-              <div key={i} style={{
-                borderRadius: 10, padding: '12px 14px',
-                background: 'rgba(255,255,255,0.02)',
-                border: `1px solid ${active.color}18`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>{c.name}</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-                      {c.spend > 0 && (
-                        <span style={{ fontSize: 10, color: C.text3 }}>
-                          R${c.spend.toLocaleString('pt-BR')}
-                        </span>
-                      )}
-                      {cpl !== null && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: cplColor }}>
-                          CPL R${cpl}
-                          {bench && ` (bench R$${bench.cpl_min}–${bench.cpl_max})`}
-                        </span>
-                      )}
-                      {c.leads > 0 && <span style={{ fontSize: 10, color: C.text3 }}>{c.leads} leads</span>}
-                      {c.ctr > 0 && <span style={{ fontSize: 10, color: C.text3 }}>CTR {c.ctr.toFixed(1)}%</span>}
-                      {c.frequency > 0 && <span style={{ fontSize: 10, color: c.frequency > 4 ? C.red : C.text3 }}>Freq {c.frequency.toFixed(1)}×</span>}
-                    </div>
-                  </div>
-                  {c.recommended_action && (
-                    <div style={{ fontSize: 10, color: C.text2, maxWidth: 200, textAlign: 'right', flexShrink: 0 }}>
-                      → {c.recommended_action}
-                    </div>
-                  )}
-                </div>
-                {c.evidence && (
-                  <p style={{ fontSize: 9, color: `${active.color}80`, marginTop: 6, lineHeight: 1.5 }}>
-                    {c.evidence}
-                  </p>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </CollapsibleSection>
-  )
-}
-
-// ── Nova seção: Prioridades Estratégicas (de o_que_eu_faria_agora) ────────────
-
-function PrioridadesEstrategicas({
-  acoes,
-  clientData,
-  addPendingActions,
-}: {
-  acoes: any[]
-  clientData: any
-  addPendingActions: (name: string, actions: any[]) => void
-}) {
-  const [sentActions, setSentActions] = useState<Set<number>>(new Set())
-  if (!acoes?.length) return null
-
-  return (
-    <CollapsibleSection title="Prioridades Estratégicas" icon="⚡" defaultOpen={true}>
-      <p style={{ fontSize: 11, color: C.text3, marginBottom: 14, lineHeight: 1.5 }}>
-        Derivadas da última Análise Profunda — execute primeiro, depois escale.
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {acoes.map((action: any, i: number) => {
-          const isObj      = typeof action === 'object' && action !== null
-          const titulo     = isObj ? action.titulo    : action
-          const prioridade = isObj ? action.prioridade : null
-          const motivo     = isObj ? action.motivo    : null
-          const evidencia  = isObj ? action.evidencia : null
-          const impacto    = isObj ? action.impacto   : null
-          const prazo      = isObj ? action.prazo     : null
-          const esforco    = isObj ? action.esforco   : null
-          const prioColor  = prioridade === 'P1' ? C.red : prioridade === 'P2' ? C.gold : C.text3
-          const sent       = sentActions.has(i)
-
-          return (
-            <div key={i} style={{
-              borderRadius: 10, padding: '12px 14px',
-              background: 'rgba(240,180,41,0.04)',
-              border: `1px solid rgba(240,180,41,0.15)`,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                {/* número */}
-                <span style={{
-                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 2,
-                  background: C.gold, color: '#000', fontSize: 10, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {i + 1}
-                </span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: C.text1, margin: 0, lineHeight: 1.4 }}>{titulo}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                      {prioridade && (
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                          color: prioColor, background: `${prioColor}18`, border: `1px solid ${prioColor}30`,
-                        }}>
-                          {prioridade}
-                        </span>
-                      )}
-                      {prazo && <span style={{ fontSize: 9, color: C.text3 }}>{prazo}</span>}
-                      {esforco && <span style={{ fontSize: 9, color: C.text3 }}>esforço {esforco}</span>}
-                    </div>
-                  </div>
-                  {motivo   && <p style={{ fontSize: 11, color: C.text2, margin: '6px 0 0', lineHeight: 1.5 }}>{motivo}</p>}
-                  {evidencia && <p style={{ fontSize: 10, color: 'rgba(240,180,41,0.7)', margin: '4px 0 0', lineHeight: 1.4 }}>📊 {evidencia}</p>}
-                  {impacto  && <p style={{ fontSize: 10, color: 'rgba(34,197,94,0.8)', margin: '4px 0 0', lineHeight: 1.4 }}>→ {impacto}</p>}
-                </div>
-                {/* botão enviar para ações */}
-                {clientData && (
-                  <button
-                    title={sent ? 'Já enviada para Ações Prioritárias' : 'Enviar para Ações Prioritárias'}
-                    onClick={() => {
-                      if (sent) return
-                      const newAction = {
-                        id: `strategy_${Date.now()}_${i}`,
-                        clientId: '',
-                        title: titulo,
-                        description: [motivo, evidencia].filter(Boolean).join(' — '),
-                        platform: 'ambos' as const,
-                        urgency: (prioridade === 'P1' ? 'critica' : prioridade === 'P2' ? 'alta' : 'media') as 'critica' | 'alta' | 'media',
-                        priority: i + 1,
-                        impact: impacto || '',
-                        evidence: evidencia,
-                        status: 'pendente' as const,
-                        source: 'auditoria' as const,
-                        origin: 'strategy',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                      }
-                      addPendingActions(clientData.clientName, [newAction])
-                      setSentActions(prev => new Set(prev).add(i))
-                    }}
-                    style={{
-                      flexShrink: 0, fontSize: 10, fontWeight: 600,
-                      padding: '4px 8px', borderRadius: 8, cursor: sent ? 'default' : 'pointer',
-                      background: sent ? 'rgba(34,197,94,0.1)' : 'rgba(240,180,41,0.1)',
-                      color:      sent ? C.green : C.gold,
-                      border:     `1px solid ${sent ? 'rgba(34,197,94,0.3)' : 'rgba(240,180,41,0.25)'}`,
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {sent ? '✓ Enviado' : '+ Ações'}
-                  </button>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </CollapsibleSection>
-  )
-}
-
-// ── Score Growth baseado na auditoria ─────────────────────────────────────────
+// ── Score Growth ──────────────────────────────────────────────────────────────
 
 function calcScoreGrowth(
   strategyScore: number,
@@ -546,234 +204,263 @@ function calcScoreGrowth(
   if (!latestAudit) {
     return { score: strategyScore, label: strategyScore >= 75 ? 'Boa' : 'Regular', breakdown: 'Baseado na estratégia gerada.' }
   }
-
   const healthScore = latestAudit?.health_score || strategyScore
   let score = healthScore
   const notes: string[] = []
-
-  const venc    = (latestAudit._campanhasClassificadas?.vencedoras || []).length
-  const criticas = (latestAudit._campanhasClassificadas?.criticas  || []).length
+  const venc     = (latestAudit._campanhasClassificadas?.vencedoras || []).length
+  const criticas = (latestAudit._campanhasClassificadas?.criticas   || []).length
   const checklist: any[] = latestAudit._trackingChecklist || []
-  const unverified = checklist.filter((t: any) => t.status === 'nao_verificado').length
-  const problems   = checklist.filter((t: any) => t.status === 'problema').length
-  const confidence = latestAudit._dataQuality?.confidence
+  const unverified   = checklist.filter((t: any) => t.status === 'nao_verificado').length
+  const problems     = checklist.filter((t: any) => t.status === 'problema').length
+  const confidence   = latestAudit._dataQuality?.confidence
   const wastePercent = latestAudit._wastePercent || 0
-  const realCPL = Number(latestAudit._realMetrics?.avgCPL || 0)
-  const oqef: any[] = latestAudit.o_que_eu_faria_agora || []
+  const realCPL      = Number(latestAudit._realMetrics?.avgCPL || 0)
+  const oqef: any[]  = latestAudit.o_que_eu_faria_agora || []
   const hasP1 = oqef.some((a: any) => (typeof a === 'object' ? a?.prioridade : null) === 'P1')
 
-  if (venc >= 3) { score += 5; notes.push('+5 por ≥3 campanhas vencedoras') }
-  else if (venc >= 1) { score += 2; notes.push('+2 por campanha vencedora') }
-
+  if (venc >= 3) { score += 5; notes.push('+5 campanhas vencedoras') }
+  else if (venc >= 1) { score += 2; notes.push('+2 campanha vencedora') }
   if (bench && realCPL > 0) {
-    if (realCPL < bench.cpl_min) { score += 8; notes.push('+8 CPL abaixo do benchmark') }
-    else if (realCPL <= bench.cpl_max) { score += 3; notes.push('+3 CPL dentro do benchmark') }
-    else { score -= 5; notes.push('−5 CPL acima do benchmark') }
+    if (realCPL < bench.cpl_min) { score += 8; notes.push('+8 CPL abaixo benchmark') }
+    else if (realCPL <= bench.cpl_max) { score += 3; notes.push('+3 CPL no benchmark') }
+    else { score -= 5; notes.push('−5 CPL acima benchmark') }
   }
-
-  if (criticas >= 3) { score -= 8; notes.push('−8 por ≥3 campanhas críticas') }
-  else if (criticas >= 1) { score -= 3; notes.push('−3 por campanhas críticas') }
-
+  if (criticas >= 3) { score -= 8; notes.push('−8 campanhas críticas') }
+  else if (criticas >= 1) { score -= 3; notes.push('−3 campanha crítica') }
   if (unverified >= 4) { score -= 6; notes.push('−6 tracking não verificado') }
-  else if (unverified >= 2) { score -= 2; notes.push('−2 itens de tracking pendentes') }
-
-  if (problems > 0) { score -= 4 * problems; notes.push(`−${4 * problems} problemas de tracking`) }
-
-  if (confidence === 'baixa') { score -= 10; notes.push('−10 confiança baixa dos dados') }
+  else if (unverified >= 2) { score -= 2; notes.push('−2 tracking pendente') }
+  if (problems > 0) { score -= 4 * problems; notes.push(`−${4 * problems} problemas tracking`) }
+  if (confidence === 'baixa') { score -= 10; notes.push('−10 confiança baixa') }
   else if (confidence === 'media') { score -= 3; notes.push('−3 confiança média') }
-
   if (wastePercent > 30) { score -= 6; notes.push(`−6 desperdício ${wastePercent}%`) }
   else if (wastePercent > 15) { score -= 3; notes.push(`−3 desperdício ${wastePercent}%`) }
-
-  if (hasP1) { score -= 3; notes.push('−3 ação crítica P1 pendente') }
+  if (hasP1) { score -= 3; notes.push('−3 ação P1 pendente') }
 
   score = Math.min(100, Math.max(0, Math.round(score)))
-  const label = score >= 80 ? 'Excelente' : score >= 65 ? 'Boa' : score >= 50 ? 'Regular' : 'Crítico'
-  return { score, label, breakdown: notes.slice(0, 4).join(' · ') || 'Baseado no score de saúde da auditoria.' }
+  const lbl = score >= 80 ? 'Excelente' : score >= 65 ? 'Boa' : score >= 50 ? 'Regular' : 'Crítico'
+  return { score, label: lbl, breakdown: notes.slice(0, 4).join(' · ') || 'Baseado no score de saúde.' }
 }
 
-// ── Head of Growth inteligente ─────────────────────────────────────────────────
+// ── Status estratégico da conta (calculado a partir da auditoria) ──────────────
 
-function buildHeadOfGrowthText(
+type StrategicStatusKey = 'pronta_escalar' | 'escala_controlada' | 'corrigir_antes' | 'diagnostico_insuficiente' | 'alto_risco'
+
+function calcStrategicStatus(
   latestAudit: any,
-  strategyRec: string,
   bench: any,
-  clientData: any,
-): string {
-  if (!latestAudit) return strategyRec
+  strategy: any,
+): { key: StrategicStatusKey; label: string; color: string; description: string } {
+  // Usa o status retornado pela IA se disponível
+  const apiStatus = strategy?.strategic_status as StrategicStatusKey | undefined
 
-  const healthScore = latestAudit.health_score || 0
-  const grade = latestAudit.grade || '—'
-  const realCPL = Number(latestAudit._realMetrics?.avgCPL || 0)
-  const realSpend = Number(latestAudit._realMetrics?.totalSpend || 0)
-  const realLeads = Number(latestAudit._realMetrics?.totalLeads || 0)
-  const confidence = latestAudit._dataQuality?.confidence
-  const checklist: any[] = latestAudit._trackingChecklist || []
-  const unverified = checklist.filter((t: any) => t.status === 'nao_verificado').length
-  const problems   = checklist.filter((t: any) => t.status === 'problema').length
-  const gargalos: any[] = latestAudit.gargalos || []
-  const venc = (latestAudit._campanhasClassificadas?.vencedoras || []).length
-  const criticas = (latestAudit._campanhasClassificadas?.criticas || []).length
-  const wastePercent = latestAudit._wastePercent || 0
-  const tracking = latestAudit.tracking
-  const trackingCritico = tracking?.prioridade_maxima
+  const healthScore  = latestAudit?.health_score || 0
+  const confidence   = latestAudit?._dataQuality?.confidence
+  const checklist: any[] = latestAudit?._trackingChecklist || []
+  const problems     = checklist.filter((t: any) => t.status === 'problema').length
+  const unverified   = checklist.filter((t: any) => t.status === 'nao_verificado').length
+  const trackingRuim = latestAudit?.tracking?.prioridade_maxima || problems > 0
+  const wastePercent = latestAudit?._wastePercent || 0
+  const venc         = (latestAudit?._campanhasClassificadas?.vencedoras || []).length
+  const realSpend    = Number(latestAudit?._realMetrics?.totalSpend || 0)
+  const realLeads    = Number(latestAudit?._realMetrics?.totalLeads || 0)
+  const realCPL      = Number(latestAudit?._realMetrics?.avgCPL || 0)
+  const hasData      = realSpend > 0 || realLeads > 0 || healthScore > 0
 
-  const parts: string[] = []
-
-  // Fase da conta
-  if (realSpend > 100000 || realLeads > 10000) {
-    parts.push(`Esta conta está em fase de escala madura — R$${Math.round(realSpend / 1000)}k investidos e ${realLeads.toLocaleString('pt-BR')} leads gerados.`)
-  } else if (realSpend > 20000 || realLeads > 1000) {
-    parts.push(`Conta em crescimento com dados suficientes para otimização — R$${Math.round(realSpend / 1000)}k investidos e ${realLeads.toLocaleString('pt-BR')} leads.`)
-  } else if (realSpend > 0) {
-    parts.push(`Conta em fase inicial de aprendizado — dados em acumulação.`)
+  const map: Record<StrategicStatusKey, { label: string; color: string; description: string }> = {
+    pronta_escalar: {
+      label: 'Pronta para Escalar',
+      color: C.green,
+      description: 'Tracking verificado, dados confiáveis, campanhas vencedoras. Prioridade: aumentar budget.',
+    },
+    escala_controlada: {
+      label: 'Escala Controlada',
+      color: C.gold,
+      description: 'Bons resultados, mas com riscos moderados. Escalar com monitoramento semanal.',
+    },
+    corrigir_antes: {
+      label: 'Corrigir antes de Escalar',
+      color: C.orange,
+      description: 'Tracking fraco, dados de baixa confiança ou desperdício alto. Escala amplificará problemas.',
+    },
+    diagnostico_insuficiente: {
+      label: 'Diagnóstico Insuficiente',
+      color: C.text3,
+      description: 'Dados insuficientes para estratégia confiável. Execute a Análise Profunda primeiro.',
+    },
+    alto_risco: {
+      label: 'Alto Risco',
+      color: C.red,
+      description: 'Performance baixa + tracking ruim + desperdício alto. Revisão completa necessária.',
+    },
   }
 
-  // Score e eficiência de CPL
-  if (bench && realCPL > 0) {
-    if (realCPL < bench.cpl_min) {
-      parts.push(`CPL real de R$${realCPL} está ${Math.round((1 - realCPL / bench.cpl_min) * 100)}% abaixo do benchmark (R$${bench.cpl_min}–${bench.cpl_max}) — sinal claro de eficiência.`)
-    } else if (realCPL <= bench.cpl_max) {
-      parts.push(`CPL de R$${realCPL} está dentro do benchmark do nicho (R$${bench.cpl_min}–${bench.cpl_max}) — conta equilibrada.`)
+  // Calcula localmente
+  let computedKey: StrategicStatusKey = 'diagnostico_insuficiente'
+  if (hasData) {
+    if (healthScore < 40 && (trackingRuim || wastePercent > 30)) {
+      computedKey = 'alto_risco'
+    } else if (trackingRuim || confidence === 'baixa' || wastePercent > 25 || unverified >= 5) {
+      computedKey = 'corrigir_antes'
+    } else if (healthScore >= 70 && confidence !== 'baixa' && !trackingRuim && venc > 0 && wastePercent < 15) {
+      computedKey = 'pronta_escalar'
     } else {
-      parts.push(`CPL de R$${realCPL} está acima do benchmark (R$${bench.cpl_min}–${bench.cpl_max}) — otimização é prioridade antes de escalar.`)
+      computedKey = 'escala_controlada'
     }
   }
 
-  // Alerta de tracking
-  if (trackingCritico || problems > 0) {
-    parts.push(`⚠ Tracking com problemas críticos detectados — escala agressiva antes de corrigir pode multiplicar erros de dados e prejudicar a otimização dos algoritmos.`)
-  } else if (unverified >= 4) {
-    parts.push(`Tracking parcialmente não verificado (${unverified} itens). Valide os eventos de conversão antes de aumentar investimento.`)
-  }
-
-  // Maior gargalo
-  if (gargalos.length > 0) {
-    const top = gargalos[0]
-    parts.push(`Maior gargalo identificado: ${top.titulo}${top.impacto ? ` (${top.impacto})` : ''}.`)
-  }
-
-  // Campanhas
-  if (venc > 0 && criticas === 0) {
-    parts.push(`${venc} campanha${venc > 1 ? 's vencedoras' : ' vencedora'} identificada${venc > 1 ? 's' : ''} — candidata${venc > 1 ? 's' : ''} à escala controlada de 15–20% a cada 3–5 dias.`)
-  } else if (venc > 0 && criticas > 0) {
-    parts.push(`${venc} campanha${venc > 1 ? 's vencedoras' : ' vencedora'} com potencial de escala, mas ${criticas} crítica${criticas > 1 ? 's' : ''} consumindo verba sem retorno — realoque antes de escalar.`)
-  }
-
-  // O que não fazer
-  if (wastePercent > 20) {
-    parts.push(`Não escale com ${wastePercent}% de verba desperdiçada em campanhas sem conversão — corrija o desperdício primeiro.`)
-  }
-  if (confidence === 'baixa') {
-    parts.push(`Confiança dos dados baixa — estratégia conservadora recomendada até enriquecer o histórico.`)
-  }
-
-  return parts.length > 0 ? parts.slice(0, 4).join(' ') : (strategyRec || 'Análise em processamento.')
+  const finalKey = apiStatus && map[apiStatus] ? apiStatus : computedKey
+  return { key: finalKey, ...map[finalKey] }
 }
 
 // ── Componente principal ───────────────────────────────────────────────────────
 
 export function TabStrategy({ strategy, analysis }: Props) {
   const { clientData, auditCache, connectedAccounts, addPendingActions } = useAppStore()
-  const hasRealData   = strategy && strategy.priority_ranking?.length > 0
-  const hasGrowthData = strategy?.growth_diagnosis || strategy?.funnel_strategy
 
   const cacheKey    = clientData?.clientName || ''
   const auditEntry  = auditCache[cacheKey]?.[0]
   const latestAudit = auditEntry?.audit
   const auditDate   = auditEntry?.createdAt
 
-  // Dados da auditoria
-  const realMetrics         = latestAudit?._realMetrics
-  const hasRealMetrics      = Boolean(realMetrics?.totalSpend > 0 || realMetrics?.totalLeads > 0)
-  const campanhasClass      = latestAudit?._campanhasClassificadas
-  const dataQuality         = latestAudit?._dataQuality
-  const trackingChecklist   = (latestAudit?._trackingChecklist as any[]) || []
-  const auditSource         = latestAudit?._auditSource
-  const gargalos            = (latestAudit?.gargalos as any[]) || []
-  const oportunidades       = (latestAudit?.oportunidades as any[]) || []
-  const oQueEuFariaAgora    = (latestAudit?.o_que_eu_faria_agora as any[]) || []
-  const healthScore         = latestAudit?.health_score
-  const grade               = latestAudit?.grade
-  const hasFullAudit        = Boolean(latestAudit && (healthScore || campanhasClass || gargalos.length > 0))
-  const metaConnected       = connectedAccounts.some(a => a.platform === 'meta')
+  const realMetrics       = latestAudit?._realMetrics
+  const hasRealMetrics    = Boolean(realMetrics?.totalSpend > 0 || realMetrics?.totalLeads > 0)
+  const campanhasClass    = latestAudit?._campanhasClassificadas
+  const dataQuality       = latestAudit?._dataQuality
+  const trackingChecklist = (latestAudit?._trackingChecklist as any[]) || []
+  const auditSource       = latestAudit?._auditSource
+  const gargalos          = (latestAudit?.gargalos as any[]) || []
+  const oQueEuFariaAgora  = (latestAudit?.o_que_eu_faria_agora as any[]) || []
+  const healthScore       = latestAudit?.health_score
+  const grade             = latestAudit?.grade
+  const hasFullAudit      = Boolean(latestAudit && (healthScore || campanhasClass || gargalos.length > 0))
+  const metaConnected     = connectedAccounts.some(a => a.platform === 'meta')
 
-  // Tracking alerta
-  const unverifiedCount     = trackingChecklist.filter((t: any) => t.status === 'nao_verificado').length
-  const problemCount        = trackingChecklist.filter((t: any) => t.status === 'problema').length
-  const trackingCritico     = latestAudit?.tracking?.prioridade_maxima || problemCount > 0
-  const trackingFraco       = trackingCritico || unverifiedCount >= 4
-  const confidenceBaixa     = dataQuality?.confidence === 'baixa'
-  const blockAgressiveScale = trackingFraco || confidenceBaixa
+  const unverifiedCount = trackingChecklist.filter((t: any) => t.status === 'nao_verificado').length
+  const problemCount    = trackingChecklist.filter((t: any) => t.status === 'problema').length
+  const trackingCritico = latestAudit?.tracking?.prioridade_maxima || problemCount > 0
+  const trackingFraco   = trackingCritico || unverifiedCount >= 4
+  const confidenceBaixa = dataQuality?.confidence === 'baixa'
 
-  // Benchmark
   const bench = clientData?.niche ? getBenchmark(clientData.niche) : null
 
-  // Score Growth calculado com base na auditoria
-  const growthCalc = calcScoreGrowth(
-    strategy?.intelligence_score || 0,
-    latestAudit,
-    bench,
-  )
+  const growthCalc     = calcScoreGrowth(strategy?.intelligence_score || 0, latestAudit, bench)
+  const strategicStatus = calcStrategicStatus(latestAudit, bench, strategy)
 
-  // Orçamento
-  const channels = hasRealData
-    ? strategy.priority_ranking.map((ch: any) => ({
-        name: ch.channel, priority: ch.priority,
-        budget: `R$${(ch.budget_brl || 0).toLocaleString('pt-BR')}`,
-        cpl: `R$${ch.cpl_min}–${ch.cpl_max}`,
-        status: 'Ativo', rationale: ch.rationale, budgetPct: ch.budget_pct,
-      }))
-    : []
+  const hasRealData  = strategy && strategy.priority_ranking?.length > 0
+  const hasGrowthData = strategy?.growth_diagnosis || strategy?.funnel_strategy
 
-  const totalBudgetNum = hasRealData
+  // Tese de crescimento: prioriza o campo da IA, fallback para buildHeadOfGrowthText
+  const growthThesis = strategy?.growth_thesis || (() => {
+    if (!latestAudit) return strategy?.recommendation || ''
+    const parts: string[] = []
+    const rs = realMetrics?.totalSpend ? Number(realMetrics.totalSpend) : 0
+    const rl = realMetrics?.totalLeads ? Number(realMetrics.totalLeads) : 0
+    const rc = realMetrics?.avgCPL ? Number(realMetrics.avgCPL) : 0
+    if (rs > 0) parts.push(`Conta com R$${Math.round(rs / 1000)}k investidos e ${rl.toLocaleString('pt-BR')} leads gerados.`)
+    if (bench && rc > 0) {
+      if (rc < bench.cpl_min) parts.push(`CPL de R$${rc} está ${Math.round((1 - rc / bench.cpl_min) * 100)}% abaixo do benchmark — escala é a prioridade.`)
+      else if (rc <= bench.cpl_max) parts.push(`CPL de R$${rc} está dentro do benchmark — otimizar antes de escalar agressivamente.`)
+      else parts.push(`CPL de R$${rc} acima do benchmark (R$${bench.cpl_min}–${bench.cpl_max}) — revisar segmentação antes de escalar.`)
+    }
+    if (trackingFraco) parts.push(`Tracking parcialmente não verificado — validar eventos de conversão é pré-requisito para qualquer escala.`)
+    if (gargalos.length > 0) parts.push(`Maior bloqueio: ${gargalos[0]?.titulo}.`)
+    return parts.join(' ') || strategy?.recommendation || ''
+  })()
+
+  // Budget
+  const budgetIsReal     = hasRealMetrics && realMetrics?.totalSpend > 0
+  const totalBudgetNum   = hasRealData
     ? strategy.priority_ranking.reduce((s: number, ch: any) => s + (ch.budget_brl || 0), 0)
     : 0
   const totalBudget = totalBudgetNum > 0 ? `R$${totalBudgetNum.toLocaleString('pt-BR')}` : '—'
-  const budgetIsReal = hasRealMetrics && realMetrics?.totalSpend > 0
 
-  // Head of Growth text
-  const headOfGrowthText = buildHeadOfGrowthText(
-    latestAudit,
-    strategy?.recommendation || '',
-    bench,
-    clientData,
-  )
+  // Matriz estratégica: API ou calculada localmente
+  const strategicMatrix = strategy?.strategic_matrix || null
+  const budgetDecision  = strategy?.budget_decision  || null
+  const plan7_30_90     = strategy?.plan_7_30_90     || null
+  const strategicRisks  = strategy?.strategic_risks  || []
+  const nextMoves       = strategy?.next_moves       || strategy?.key_actions || []
 
-  // Fonte da estratégia: auditoria → dados reais → estimativa
-  const strategySourceLabel = hasFullAudit
-    ? `Estratégia baseada na última Análise Profunda${auditDate ? ` · ${new Date(auditDate).toLocaleDateString('pt-BR')}` : ''}`
-    : hasRealMetrics
-    ? 'Estratégia baseada em dados reais de Meta Ads'
-    : 'Estratégia baseada em estimativas do nicho'
+  // Gargalos como bloqueios estratégicos
+  const gargalosComoDecisoes = gargalos.map((g: any) => ({
+    bloqueio: g.titulo,
+    decisao: (() => {
+      const t = (g.titulo || '').toLowerCase()
+      const d = (g.descricao || '').toLowerCase()
+      if (t.includes('tracking') || d.includes('tracking')) return 'Não escalar antes de validar eventos de conversão no Events Manager.'
+      if (t.includes('frequência') || t.includes('frequencia') || d.includes('criativo')) return 'Renovar criativos antes de aumentar orçamento para evitar queda de CTR.'
+      if (t.includes('remarketing') || t.includes('mofu') || t.includes('bofu')) return 'Criar camada MOFU/BOFU antes de expandir tráfego frio.'
+      if (t.includes('cpl') || t.includes('custo por lead')) return `Revisar segmentação e criativos até CPL atingir benchmark (R$${bench?.cpl_min || 'X'}–${bench?.cpl_max || 'Y'}).`
+      if (t.includes('desperdício') || t.includes('desperdicio') || t.includes('verba')) return 'Pausar grupos sem conversão antes de alocar mais budget.'
+      return g.descricao ? g.descricao.split('.')[0] + '.' : 'Revisar antes de escalar.'
+    })(),
+    impacto: g.impacto || g.severidade || '',
+  }))
 
-  const PriorityBadge = ({ priority }: { priority: string | number }) => {
-    const p = typeof priority === 'number' ? priority : Number(String(priority).match(/^\d+$/) ? priority : 2)
-    const map = [
-      { label: '🥇 Alta',  color: C.gold },
-      { label: '🥈 Média', color: C.text2 },
-      { label: '🥉 Baixa', color: C.text3 },
-    ]
-    const { label, color } = map[(p - 1)] ?? map[1]
-    return <span style={{ fontSize: 12, fontWeight: 600, color }}>{label}</span>
-  }
+  // Vencedoras com decisão de escala
+  const vencedoras: any[] = campanhasClass?.vencedoras || []
+  const criticas: any[]   = campanhasClass?.criticas   || []
+  const vencediretriz = (() => {
+    if (!vencedoras.length) return null
+    const topCPL = vencedoras
+      .filter((c: any) => c.spend > 0 && c.leads > 0)
+      .map((c: any) => ({ name: c.name, cpl: Math.round(c.spend / c.leads) }))
+      .sort((a, b) => a.cpl - b.cpl)
+    const abaixoBench = bench ? topCPL.filter(c => c.cpl < bench.cpl_min) : []
+    return {
+      count: vencedoras.length,
+      exemplos: topCPL.slice(0, 2),
+      abaixoBench: abaixoBench.length,
+      recomendacao: bench
+        ? abaixoBench.length > 0
+          ? `Aumentar orçamento 15–20%/semana nas ${abaixoBench.length} campanha${abaixoBench.length > 1 ? 's' : ''} com CPL abaixo de R$${bench.cpl_min}. Pausar automaticamente se CPL passar de R$${bench.cpl_max}.`
+          : `Escalar com cautela — manter CPL abaixo de R$${bench.cpl_max}. Aumentar 10–15%/semana e monitorar frequência.`
+        : 'Aumentar orçamento 15–20% por semana nas vencedoras com estabilidade de CPL.',
+    }
+  })()
+
+  const [sentActions, setSentActions] = useState<Set<number>>(new Set())
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* ── Empty state — sem dados ── */}
+      {!hasFullAudit && !hasRealMetrics && !metaConnected && !hasRealData && (
+        <div style={{
+          ...card, textAlign: 'center', padding: '40px 24px',
+          background: 'rgba(124,58,237,0.03)', border: '1px solid rgba(124,58,237,0.12)',
+        }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🧭</div>
+          <div style={{ fontWeight: 700, color: C.text1, fontSize: 16, marginBottom: 8 }}>
+            Execute a Análise Profunda primeiro
+          </div>
+          <p style={{ color: C.text2, fontSize: 13, lineHeight: 1.6, marginBottom: 20, maxWidth: 420, margin: '0 auto 20px' }}>
+            Para gerar uma estratégia real baseada nos dados da conta, execute a Análise Profunda antes. Sem diagnóstico, só há estimativas de benchmark.
+          </p>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('elyon:navigate', { detail: 'analise' }))}
+            style={{
+              padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.4)',
+              color: C.purpleL,
+            }}>
+            Ir para Análise Profunda →
+          </button>
+        </div>
+      )}
 
       {/* ── Banner de fonte ── */}
       {hasFullAudit ? (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12,
-          background: C.greenBg, border: '1px solid rgba(34,197,94,0.25)',
-          flexWrap: 'wrap',
+          background: C.greenBg, border: '1px solid rgba(34,197,94,0.25)', flexWrap: 'wrap',
         }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.green, flexShrink: 0, boxShadow: `0 0 6px ${C.green}` }} />
           <div style={{ flex: 1 }}>
             <span style={{ color: C.green, fontWeight: 700, fontSize: 12 }}>Estratégia baseada na última Análise Profunda</span>
             {auditDate && (
               <span style={{ color: C.text3, fontSize: 11, marginLeft: 8 }}>
-                · auditoria de {new Date(auditDate).toLocaleDateString('pt-BR')}
+                · {new Date(auditDate).toLocaleDateString('pt-BR')}
               </span>
             )}
             {hasRealMetrics && (
@@ -800,13 +487,12 @@ export function TabStrategy({ strategy, analysis }: Props) {
           background: C.goldBg, border: '1px solid rgba(245,158,11,0.25)',
         }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.gold, flexShrink: 0 }} />
-          <span style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}>Estratégia baseada em dados reais de Meta Ads</span>
-          <span style={{ color: C.text3, fontSize: 11 }}>· Execute a Análise Profunda para enriquecer com auditoria completa</span>
+          <span style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}>Estratégia baseada em dados reais — Análise Profunda não executada</span>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('elyon:navigate', { detail: 'analise' }))}
             style={{
-              marginLeft: 'auto', flexShrink: 0,
-              padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              marginLeft: 'auto', flexShrink: 0, padding: '5px 12px', borderRadius: 8,
+              fontSize: 11, fontWeight: 700, cursor: 'pointer',
               background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: C.gold,
             }}>
             Analisar conta →
@@ -815,160 +501,131 @@ export function TabStrategy({ strategy, analysis }: Props) {
       ) : metaConnected ? (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-          padding: '10px 16px', borderRadius: 12,
-          background: C.goldBg, border: '1px solid rgba(245,158,11,0.25)',
+          padding: '10px 16px', borderRadius: 12, background: C.goldBg, border: '1px solid rgba(245,158,11,0.25)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.gold, flexShrink: 0 }} />
-            <span style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}>Estratégia baseada em estimativas do nicho</span>
-            <span style={{ color: C.text3, fontSize: 12 }}>· Execute a Análise Profunda para usar dados reais</span>
-          </div>
+          <span style={{ color: C.gold, fontWeight: 600, fontSize: 12 }}>Estratégia baseada em estimativas do nicho · Execute a Análise Profunda para usar dados reais</span>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('elyon:navigate', { detail: 'analise' }))}
             style={{ fontSize: 12, color: C.gold, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
             Ir para Análise Profunda →
           </button>
         </div>
-      ) : (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-          padding: '12px 16px', borderRadius: 12,
-          background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.15)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 16, flexShrink: 0 }}>💡</span>
-            <div>
-              <div style={{ color: '#A78BFA', fontWeight: 600, fontSize: 12, marginBottom: 2 }}>
-                Estratégia baseada em estimativas do nicho
-              </div>
-              <div style={{ color: C.text3, fontSize: 11, lineHeight: 1.5 }}>
-                Execute a Análise Profunda primeiro para gerar uma estratégia baseada nos dados reais da conta.
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('elyon:navigate', { detail: 'analise' }))}
-            style={{
-              padding: '7px 14px', borderRadius: 8, flexShrink: 0,
-              background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)',
-              color: '#A78BFA', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-              whiteSpace: 'nowrap',
+      ) : null}
+
+      {/* ── Header: Status estratégico + scores ── */}
+      {(hasFullAudit || hasRealData) && (
+        <div style={{ ...card, padding: '16px 20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
+            {/* Status estratégico — destaque principal */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 16px', borderRadius: 10,
+              background: `${strategicStatus.color}10`,
+              border: `1px solid ${strategicStatus.color}35`,
             }}>
-            Ir para Análise Profunda →
-          </button>
-        </div>
-      )}
-
-      {/* ── Header estratégico — metadados da auditoria ── */}
-      {hasFullAudit && (
-        <div style={{ ...card, padding: '14px 18px', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
-          {/* score de saúde */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-            <span style={{
-              fontSize: 32, fontWeight: 800, lineHeight: 1,
-              color: grade === 'A' ? C.green : grade === 'B' ? C.gold : grade === 'C' ? C.orange : C.red,
-            }}>
-              {healthScore}
-            </span>
-            <span style={{ fontSize: 14, color: C.text3 }}>/100</span>
-            <span style={{
-              fontSize: 20, fontWeight: 700, marginLeft: 4,
-              color: grade === 'A' ? C.green : grade === 'B' ? C.gold : grade === 'C' ? C.orange : C.red,
-            }}>
-              {grade}
-            </span>
-            <span style={{ fontSize: 10, color: C.text3, marginLeft: 4 }}>saúde</span>
-          </div>
-
-          <div style={{ width: '1px', height: 32, background: C.border, flexShrink: 0 }} />
-
-          {/* score growth */}
-          <div>
-            <div style={{ fontSize: 10, color: C.text3, marginBottom: 2 }}>Score Growth</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: growthCalc.score >= 70 ? C.green : growthCalc.score >= 50 ? C.gold : C.red }}>
-              {growthCalc.score}<span style={{ fontSize: 11, color: C.text3 }}>/100</span>
-            </div>
-          </div>
-
-          {/* confiança */}
-          {dataQuality?.confidence && (
-            <div>
-              <div style={{ fontSize: 10, color: C.text3, marginBottom: 2 }}>Confiança</div>
-              <span style={{
-                fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8,
-                color:      dataQuality.confidence === 'alta' ? C.green : dataQuality.confidence === 'media' ? C.gold : C.red,
-                background: dataQuality.confidence === 'alta' ? 'rgba(34,197,94,0.1)' : dataQuality.confidence === 'media' ? 'rgba(240,180,41,0.1)' : 'rgba(239,68,68,0.1)',
-              }}>
-                {dataQuality.confidence === 'alta' ? '✓ Alta' : dataQuality.confidence === 'media' ? '~ Média' : '! Baixa'}
+              <span style={{ fontSize: 22, fontWeight: 800, color: strategicStatus.color }}>
+                {strategicStatus.key === 'pronta_escalar'         ? '🚀'
+                  : strategicStatus.key === 'escala_controlada'   ? '📈'
+                  : strategicStatus.key === 'corrigir_antes'      ? '⚠'
+                  : strategicStatus.key === 'alto_risco'          ? '🚨'
+                  : '🔍'}
               </span>
-            </div>
-          )}
-
-          {/* plataformas */}
-          {latestAudit?._platforms?.length > 0 && (
-            <div>
-              <div style={{ fontSize: 10, color: C.text3, marginBottom: 2 }}>Plataformas</div>
-              <div style={{ fontSize: 11, color: C.text1 }}>{(latestAudit._platforms as string[]).join(' + ')}</div>
-            </div>
-          )}
-
-          {/* score growth breakdown */}
-          {growthCalc.breakdown && (
-            <div style={{ marginLeft: 'auto', maxWidth: 300 }}>
-              <div style={{ fontSize: 9, color: C.text3, lineHeight: 1.4 }}>
-                Score Growth: {growthCalc.breakdown}
+              <div>
+                <div style={{ fontSize: 11, color: C.text3, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 2 }}>
+                  Status estratégico
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: strategicStatus.color }}>
+                  {strategicStatus.label}
+                </div>
               </div>
             </div>
-          )}
+
+            <div style={{ width: '1px', height: 40, background: C.border, flexShrink: 0 }} />
+
+            {/* Score saúde */}
+            {hasFullAudit && (
+              <div>
+                <div style={{ fontSize: 10, color: C.text3, marginBottom: 2 }}>Saúde da conta</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                  <span style={{
+                    fontSize: 28, fontWeight: 800, lineHeight: 1,
+                    color: grade === 'A' ? C.green : grade === 'B' ? C.gold : grade === 'C' ? C.orange : C.red,
+                  }}>{healthScore}</span>
+                  <span style={{ fontSize: 12, color: C.text3 }}>/100</span>
+                  <span style={{
+                    fontSize: 16, fontWeight: 700, marginLeft: 4,
+                    color: grade === 'A' ? C.green : grade === 'B' ? C.gold : grade === 'C' ? C.orange : C.red,
+                  }}>{grade}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Score growth */}
+            <div>
+              <div style={{ fontSize: 10, color: C.text3, marginBottom: 2 }}>Score Growth</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: growthCalc.score >= 70 ? C.green : growthCalc.score >= 50 ? C.gold : C.red }}>
+                {growthCalc.score}<span style={{ fontSize: 11, color: C.text3 }}>/100</span>
+              </div>
+            </div>
+
+            {/* Confiança */}
+            {dataQuality?.confidence && (
+              <div>
+                <div style={{ fontSize: 10, color: C.text3, marginBottom: 2 }}>Confiança</div>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 8,
+                  color:      dataQuality.confidence === 'alta' ? C.green : dataQuality.confidence === 'media' ? C.gold : C.red,
+                  background: dataQuality.confidence === 'alta' ? 'rgba(34,197,94,0.1)' : dataQuality.confidence === 'media' ? 'rgba(240,180,41,0.1)' : 'rgba(239,68,68,0.1)',
+                }}>
+                  {dataQuality.confidence === 'alta' ? '✓ Alta' : dataQuality.confidence === 'media' ? '~ Média' : '! Baixa'}
+                </span>
+              </div>
+            )}
+
+            {/* Budget */}
+            <div style={{ marginLeft: 'auto', textAlign: 'right' as const }}>
+              <div style={{ fontSize: 10, color: C.text3, marginBottom: 2 }}>Budget</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: C.gold }}>{totalBudget}</div>
+              <div style={{ fontSize: 9, color: C.text3 }}>
+                {budgetIsReal ? '● Real' : '○ Estimado'}
+              </div>
+            </div>
+          </div>
+
+          {/* Descrição do status */}
+          <div style={{ marginTop: 12, fontSize: 11, color: C.text2, lineHeight: 1.5, padding: '8px 12px', borderRadius: 8, background: `${strategicStatus.color}06`, border: `1px solid ${strategicStatus.color}15` }}>
+            {strategicStatus.description}
+            {hasFullAudit && growthCalc.breakdown && (
+              <span style={{ color: C.text3, marginLeft: 8 }}>· {growthCalc.breakdown}</span>
+            )}
+          </div>
         </div>
       )}
 
-      {/* ── KPIs ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-        <div style={{ ...card, position: 'relative' as const }}>
-          <div style={{ fontSize: 10, color: C.text3, marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>
-            Budget total
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: C.gold }}>{totalBudget}</div>
-          <div style={{ fontSize: 9, color: C.text3, marginTop: 4 }}>
-            {budgetIsReal ? '● Real (baseado em investimento)' : '○ Estimado (benchmark)'}
-          </div>
-        </div>
-        <StatCard label="Canais ativos" value={String(channels.length || '—')} color={C.green} />
-        <div style={card}>
-          <div style={{ fontSize: 10, color: C.text3, marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>
-            Score Growth
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: growthCalc.score >= 70 ? C.green : growthCalc.score >= 50 ? C.gold : C.red }}>
-            {growthCalc.score}/100
-          </div>
-          <div style={{ fontSize: 9, color: C.text3, marginTop: 4 }}>
-            {growthCalc.label} · {hasFullAudit ? 'baseado na auditoria' : 'baseado na estratégia'}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Head of Growth ── */}
-      <div style={{
-        borderRadius: 14, padding: '16px 20px',
-        display: 'flex', alignItems: 'flex-start', gap: 12,
-        background: 'linear-gradient(135deg, rgba(124,58,237,0.08), rgba(124,58,237,0.02))',
-        border: '1px solid rgba(124,58,237,0.22)',
-      }}>
+      {/* ── Tese de Crescimento ── */}
+      {growthThesis && (
         <div style={{
-          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-          background: 'rgba(124,58,237,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-        }}>🧠</div>
-        <div>
-          <div style={{ fontSize: 10, color: C.purpleL, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 6 }}>
-            Head of Growth
+          borderRadius: 14, padding: '18px 22px',
+          background: 'linear-gradient(135deg, rgba(124,58,237,0.09), rgba(124,58,237,0.02))',
+          border: '1px solid rgba(124,58,237,0.22)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+              background: 'rgba(124,58,237,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+            }}>🧭</div>
+            <div>
+              <div style={{ fontSize: 10, color: C.purpleL, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 8 }}>
+                Tese de Crescimento
+              </div>
+              <p style={{ fontSize: 13, color: C.text1, lineHeight: 1.7, margin: 0 }}>{growthThesis}</p>
+            </div>
           </div>
-          <p style={{ fontSize: 13, color: C.text1, lineHeight: 1.65, margin: 0 }}>{headOfGrowthText}</p>
         </div>
-      </div>
+      )}
 
-      {/* ── Alerta de tracking fraco — antes de qualquer recomendação de escala ── */}
-      {blockAgressiveScale && (
+      {/* ── Alerta de tracking fraco ── */}
+      {(trackingFraco || confidenceBaixa) && (
         <div style={{
           padding: '12px 16px', borderRadius: 12, display: 'flex', alignItems: 'flex-start', gap: 10,
           background: trackingCritico ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
@@ -977,123 +634,306 @@ export function TabStrategy({ strategy, analysis }: Props) {
           <span style={{ fontSize: 16, flexShrink: 0 }}>{trackingCritico ? '🚨' : '⚠'}</span>
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: trackingCritico ? C.red : C.gold, marginBottom: 4 }}>
-              {trackingCritico ? 'Escala bloqueada — tracking com problemas críticos' : `Escala cautelosa — ${unverifiedCount} itens de tracking não verificados`}
+              {trackingCritico ? 'Decisão bloqueada: escala agressiva com tracking com problemas' : `Atenção: ${unverifiedCount} itens de tracking não verificados`}
             </div>
             <p style={{ fontSize: 11, color: C.text2, margin: 0, lineHeight: 1.5 }}>
               {trackingCritico
-                ? 'Problemas de tracking detectados. Escalar budget antes de corrigir pode multiplicar erros e distorcer a otimização dos algoritmos. Corrija tracking antes de aumentar investimento.'
-                : `${unverifiedCount} itens do checklist de tracking sem confirmação. Valide os eventos de conversão no Events Manager (Meta) ou Google Ads antes de escalar agressivamente.`}
+                ? 'Escalar budget com tracking com problemas pode otimizar para o evento errado, multiplicando o custo por lead inválido. Corrija os eventos de conversão antes de qualquer aumento de investimento.'
+                : `${unverifiedCount} itens do checklist de tracking sem confirmação. Valide os eventos de conversão no Events Manager antes de escalar agressivamente.`}
             </p>
           </div>
         </div>
       )}
 
-      {/* ── Estratégia por Campanhas (de _campanhasClassificadas) ── */}
-      {campanhasClass && (
-        <CampanhaEstrategiaSection
-          campanhasClassificadas={campanhasClass}
-          bench={bench}
-        />
-      )}
+      {/* ── Matriz Estratégica ── */}
+      {(strategicMatrix || gargalosComoDecisoes.length > 0 || vencediretriz) && (
+        <div>
+          <div style={{ fontWeight: 700, color: C.text1, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
+            <span style={{ width: 30, height: 30, borderRadius: 8, background: C.elevated, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>⚡</span>
+            Matriz Estratégica
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
 
-      {/* ── Diagnóstico de Crescimento ── */}
-      {(hasGrowthData && strategy.growth_diagnosis) || gargalos.length > 0 ? (
-        <CollapsibleSection title="Diagnóstico de Crescimento" icon="🔍">
-          {/* Gargalos da auditoria (prioridade sobre os genéricos) */}
-          {gargalos.length > 0 ? (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.red, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 8 }}>
-                🚨 Gargalos identificados na auditoria
+            {/* ESCALAR */}
+            <div style={{ ...card, borderLeft: `3px solid ${C.green}` }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: C.green, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 12 }}>
+                🚀 Escalar
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {gargalos.map((g: any, i: number) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 10,
-                    background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)',
-                  }}>
-                    <span style={{
-                      width: 20, height: 20, borderRadius: '50%', background: C.red,
-                      color: '#000', fontSize: 9, fontWeight: 700, flexShrink: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1,
-                    }}>
-                      {g.rank || i + 1}
-                    </span>
+              {/* Vencedoras da auditoria */}
+              {vencediretriz && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: C.text1 }}>{g.titulo}</span>
-                        {g.impacto && <span style={{ fontSize: 10, fontWeight: 700, color: C.red }}>{g.impacto}</span>}
+                      <div style={{ fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 4 }}>
+                        Campanhas vencedoras ({vencediretriz.count})
                       </div>
-                      {g.descricao && <p style={{ fontSize: 11, color: C.text2, margin: '4px 0 0', lineHeight: 1.4 }}>{g.descricao}</p>}
+                      {vencediretriz.exemplos.length > 0 && (
+                        <div style={{ fontSize: 10, color: C.text3, marginBottom: 6 }}>
+                          Evidência: {vencediretriz.exemplos.map(c => `${c.name} (CPL R$${c.cpl})`).join(', ')}
+                        </div>
+                      )}
+                      <p style={{ fontSize: 11, color: C.text2, margin: 0, lineHeight: 1.5 }}>
+                        {vencediretriz.recomendacao}
+                      </p>
+                      {bench && (
+                        <div style={{ fontSize: 10, color: C.text3, marginTop: 4 }}>
+                          Condição: CPL deve permanecer abaixo de R${bench.cpl_max}
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
+              {/* Da IA */}
+              {strategicMatrix?.escalar?.map((item: any, i: number) => (
+                <div key={i} style={{ borderTop: i > 0 || vencediretriz ? `1px solid ${C.border}` : 'none', paddingTop: i > 0 || vencediretriz ? 10 : 0, marginTop: i > 0 || vencediretriz ? 10 : 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 4 }}>{item.decision}</div>
+                  {item.evidence && <div style={{ fontSize: 10, color: C.text3, marginBottom: 4 }}>Evidência: {item.evidence}</div>}
+                  {item.condition && <div style={{ fontSize: 10, color: C.gold, marginBottom: 4 }}>Condição: {item.condition}</div>}
+                  {item.action && <p style={{ fontSize: 11, color: C.text2, margin: 0 }}>→ {item.action}</p>}
+                </div>
+              ))}
+              {!vencediretriz && !strategicMatrix?.escalar?.length && (
+                <p style={{ fontSize: 11, color: C.text3, margin: 0 }}>Identifique campanhas com CPL abaixo do benchmark para escalar.</p>
+              )}
             </div>
-          ) : strategy.growth_diagnosis?.main_problem ? (
+
+            {/* CORRIGIR */}
+            <div style={{ ...card, borderLeft: `3px solid ${C.orange}` }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: C.orange, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 12 }}>
+                🔧 Corrigir
+              </div>
+              {/* Gargalos da auditoria como decisões */}
+              {gargalosComoDecisoes.slice(0, 3).map((g, i) => (
+                <div key={i} style={{ borderTop: i > 0 ? `1px solid ${C.border}` : 'none', paddingTop: i > 0 ? 10 : 0, marginTop: i > 0 ? 10 : 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 4 }}>{g.bloqueio}</div>
+                  {g.impacto && <div style={{ fontSize: 10, color: C.red, marginBottom: 4 }}>{g.impacto}</div>}
+                  <p style={{ fontSize: 11, color: C.text2, margin: 0 }}>→ {g.decisao}</p>
+                </div>
+              ))}
+              {/* Da IA */}
+              {strategicMatrix?.corrigir?.map((item: any, i: number) => (
+                <div key={`ai-${i}`} style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10, marginTop: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 4 }}>{item.decision}</div>
+                  {item.risk && <div style={{ fontSize: 10, color: C.red, marginBottom: 4 }}>Risco: {item.risk}</div>}
+                  {item.action && <p style={{ fontSize: 11, color: C.text2, margin: 0 }}>→ {item.action}</p>}
+                </div>
+              ))}
+              {!gargalosComoDecisoes.length && !strategicMatrix?.corrigir?.length && (
+                <p style={{ fontSize: 11, color: C.text3, margin: 0 }}>Nenhum bloqueio crítico identificado na auditoria.</p>
+              )}
+            </div>
+
+            {/* TESTAR */}
+            <div style={{ ...card, borderLeft: `3px solid ${C.purpleL}` }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: C.purpleL, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 12 }}>
+                🧪 Testar
+              </div>
+              {strategicMatrix?.testar?.map((item: any, i: number) => (
+                <div key={i} style={{ borderTop: i > 0 ? `1px solid ${C.border}` : 'none', paddingTop: i > 0 ? 10 : 0, marginTop: i > 0 ? 10 : 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 4 }}>{item.hypothesis}</div>
+                  {item.metric && <div style={{ fontSize: 10, color: C.text3, marginBottom: 4 }}>Métrica: {item.metric}</div>}
+                  {item.deadline && <div style={{ fontSize: 10, color: C.purpleL }}>Prazo: {item.deadline}</div>}
+                </div>
+              ))}
+              {/* fallback com campanhas de atenção */}
+              {!strategicMatrix?.testar?.length && campanhasClass?.atencao?.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 4 }}>
+                    {campanhasClass.atencao.length} campanha{campanhasClass.atencao.length > 1 ? 's' : ''} em atenção
+                  </div>
+                  <p style={{ fontSize: 11, color: C.text2, margin: 0 }}>→ Candidatas a teste A/B de criativo, segmentação ou oferta antes de aumentar verba.</p>
+                  {bench && <div style={{ fontSize: 10, color: C.text3, marginTop: 4 }}>Métrica: CPL abaixo de R${bench.cpl_max}</div>}
+                </div>
+              )}
+              {!strategicMatrix?.testar?.length && !campanhasClass?.atencao?.length && (
+                <p style={{ fontSize: 11, color: C.text3, margin: 0 }}>Testar novos criativos com ângulos diferentes (dor / aspiração / prova social).</p>
+              )}
+            </div>
+
+            {/* CORTAR */}
+            <div style={{ ...card, borderLeft: `3px solid ${C.red}` }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: C.red, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 12 }}>
+                ✂️ Cortar
+              </div>
+              {/* Campanhas críticas */}
+              {criticas.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 4 }}>
+                    {criticas.length} campanha{criticas.length > 1 ? 's' : ''} crítica{criticas.length > 1 ? 's' : ''}
+                  </div>
+                  <p style={{ fontSize: 11, color: C.text2, margin: '0 0 4px' }}>
+                    → Reduzir verba ou pausar. {bench ? `Campanhas com CPL acima de R$${bench.cpl_max} por 3+ dias.` : 'Revisar tracking e segmentação antes de reinvestir.'}
+                  </p>
+                  {latestAudit?._wastePercent > 0 && (
+                    <div style={{ fontSize: 10, color: C.red }}>
+                      {latestAudit._wastePercent}% do budget em campanhas sem retorno
+                    </div>
+                  )}
+                </div>
+              )}
+              {strategicMatrix?.cortar?.map((item: any, i: number) => (
+                <div key={i} style={{ borderTop: i > 0 || criticas.length > 0 ? `1px solid ${C.border}` : 'none', paddingTop: i > 0 || criticas.length > 0 ? 10 : 0, marginTop: i > 0 || criticas.length > 0 ? 10 : 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 4 }}>{item.decision}</div>
+                  {item.criterion && <p style={{ fontSize: 11, color: C.text2, margin: 0 }}>Critério: {item.criterion}</p>}
+                </div>
+              ))}
+              {!criticas.length && !strategicMatrix?.cortar?.length && bench && (
+                <p style={{ fontSize: 11, color: C.text3, margin: 0 }}>Pausar grupos com CPL acima de R${bench.cpl_max} por mais de 3 dias consecutivos.</p>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ── Decisão de Orçamento ── */}
+      {(budgetDecision || hasRealData) && (
+        <div style={{ ...card }}>
+          <div style={{ fontWeight: 700, color: C.text1, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+            <span style={{ width: 30, height: 30, borderRadius: 8, background: C.elevated, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>💰</span>
+            Decisão de Orçamento
+            <span style={{ fontSize: 10, color: C.text3, fontWeight: 400, marginLeft: 4 }}>
+              {budgetIsReal ? '● Real' : '○ Estimado (benchmark)'}
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            {[
+              { key: 'maintain',             label: 'Manter',    color: C.blue,   icon: '⟷' },
+              { key: 'reallocate',            label: 'Realocar',  color: C.gold,   icon: '⇄' },
+              { key: 'scale',                 label: 'Escalar',   color: C.green,  icon: '↑' },
+              { key: 'cut',                   label: 'Cortar',    color: C.red,    icon: '↓' },
+            ].map(({ key, label: lbl, color, icon }) => {
+              const text = budgetDecision?.[key]
+              if (!text) return null
+              return (
+                <div key={key} style={{
+                  padding: '10px 12px', borderRadius: 10,
+                  background: `${color}06`, border: `1px solid ${color}20`,
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 4 }}>
+                    {icon} {lbl}
+                  </div>
+                  <p style={{ fontSize: 11, color: C.text2, margin: 0, lineHeight: 1.5 }}>{text}</p>
+                </div>
+              )
+            })}
+          </div>
+          {budgetDecision?.condition_to_increase && (
             <div style={{
-              marginBottom: 14, padding: '10px 14px', borderRadius: 10,
-              display: 'flex', alignItems: 'flex-start', gap: 8,
-              background: C.redBg, border: '1px solid rgba(239,68,68,0.2)',
+              marginTop: 10, padding: '10px 14px', borderRadius: 10,
+              background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.18)',
             }}>
-              <span style={{ fontSize: 16, flexShrink: 0 }}>🚨</span>
-              <p style={{ fontSize: 12, color: C.text1, lineHeight: 1.6, margin: 0 }}>
-                {strategy.growth_diagnosis.main_problem}
-              </p>
+              <span style={{ fontSize: 10, fontWeight: 700, color: C.purpleL, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>Condição para aumentar investimento:</span>
+              <p style={{ fontSize: 11, color: C.text2, margin: '4px 0 0', lineHeight: 1.5 }}>{budgetDecision.condition_to_increase}</p>
             </div>
-          ) : null}
+          )}
+          {/* fallback com distribuição por canal */}
+          {!budgetDecision && hasRealData && strategy.priority_ranking?.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {strategy.priority_ranking.map((ch: any, i: number) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: C.elevated, borderRadius: 10 }}>
+                  <div style={{ flex: 1, fontWeight: 600, color: C.text1, fontSize: 12 }}>{ch.channel}</div>
+                  <span style={{ color: C.gold, fontWeight: 700, fontSize: 13 }}>R${(ch.budget_brl || 0).toLocaleString('pt-BR')}</span>
+                  {ch.budget_pct && <span style={{ fontSize: 11, color: C.text3 }}>({ch.budget_pct}%)</span>}
+                  <span style={{ fontSize: 11, color: C.text2 }}>CPL R${ch.cpl_min}–{ch.cpl_max}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-          {/* Oportunidades da auditoria */}
-          {oportunidades.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.green, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 8 }}>
-                🚀 Oportunidades de escala
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {oportunidades.map((op: any, i: number) => (
-                  <span key={i} style={{
-                    fontSize: 11, padding: '4px 10px', borderRadius: 20,
-                    background: 'rgba(34,197,94,0.1)', color: C.green, border: '1px solid rgba(34,197,94,0.2)',
+      {/* ── Plano 7 / 30 / 90 dias ── */}
+      {(plan7_30_90 || hasRealData) && (() => {
+        type PlanTab = '7d' | '30d' | '90d'
+        const Plan730 = () => {
+          const [tab, setTab] = useState<PlanTab>('7d')
+          const tabs: { id: PlanTab; label: string; color: string; data: any[] | undefined }[] = [
+            { id: '7d',  label: '7 dias',   color: C.red,    data: plan7_30_90?.seven_days },
+            { id: '30d', label: '30 dias',  color: C.gold,   data: plan7_30_90?.thirty_days },
+            { id: '90d', label: '90 dias',  color: C.green,  data: plan7_30_90?.ninety_days },
+          ]
+          const active = tabs.find(t => t.id === tab)!
+          const items = active.data || []
+
+          // Fallback para plan_90_days da IA se plan_7_30_90 ausente
+          const fallbackItems: string[] = !plan7_30_90 && strategy.plan_90_days?.length > 0
+            ? (tab === '7d'
+              ? strategy.plan_90_days[0]?.week_1 || []
+              : tab === '30d'
+              ? strategy.plan_90_days[1]?.week_1 || []
+              : strategy.plan_90_days[2]?.week_1 || [])
+            : []
+
+          return (
+            <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}` }}>
+                {tabs.map(t => (
+                  <button key={t.id} onClick={() => setTab(t.id)} style={{
+                    flex: 1, padding: '12px 0', fontSize: 12, fontWeight: 700,
+                    cursor: 'pointer', border: 'none', transition: 'all 0.2s',
+                    color:      tab === t.id ? t.color : C.text3,
+                    background: tab === t.id ? `${t.color}08` : 'transparent',
+                    borderBottom: tab === t.id ? `2px solid ${t.color}` : '2px solid transparent',
                   }}>
-                    → {op.titulo || op}
-                  </span>
+                    {t.label}
+                  </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Desperdícios e gargalos genéricos (fallback) */}
-          {!gargalos.length && hasGrowthData && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {strategy.growth_diagnosis?.waste_analysis?.length > 0 && (
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: C.gold, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 8 }}>
-                    💸 Desperdícios
+              <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Enriquecido com gargalos no 7d */}
+                {tab === '7d' && hasFullAudit && gargalos.length > 0 && (
+                  <div style={{
+                    padding: '8px 12px', borderRadius: 8, fontSize: 11,
+                    background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)',
+                    color: C.text2, lineHeight: 1.5,
+                  }}>
+                    🎯 <span style={{ fontWeight: 600, color: C.red }}>Prioridade 7d: </span>
+                    {gargalos[0]?.titulo} — {gargalosComoDecisoes[0]?.decisao}
                   </div>
-                  <ChipList items={strategy.growth_diagnosis.waste_analysis} color={C.gold} icon="!" limit={4} />
-                </div>
-              )}
-              {strategy.growth_diagnosis?.growth_blockers?.length > 0 && (
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: C.red, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 8 }}>
-                    🚧 Gargalos
+                )}
+                {items.length > 0 ? items.map((item: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 14px', background: `${active.color}05`, borderRadius: 10, border: `1px solid ${active.color}18` }}>
+                    <span style={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                      background: `${active.color}20`, color: active.color, fontSize: 10, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{i + 1}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: C.text1, marginBottom: 4 }}>
+                        {item.objective || item}
+                      </div>
+                      {item.action && <p style={{ fontSize: 11, color: C.text2, margin: '0 0 4px', lineHeight: 1.5 }}>→ {item.action}</p>}
+                      {item.metric && <div style={{ fontSize: 10, color: active.color }}>✓ {item.metric}</div>}
+                    </div>
                   </div>
-                  <ChipList items={strategy.growth_diagnosis.growth_blockers} color={C.red} icon="→" limit={4} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Saúde do funil */}
-          {strategy.growth_diagnosis?.funnel_health && (
-            <div style={{ marginTop: gargalos.length > 0 ? 14 : 0 }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: C.text3, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 8 }}>
-                Saúde do Funil
+                )) : fallbackItems.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {fallbackItems.map((a: string, i: number) => (
+                      <span key={i} style={{
+                        fontSize: 11, padding: '4px 10px', borderRadius: 20,
+                        background: `${active.color}10`, color: active.color, border: `1px solid ${active.color}25`,
+                      }}>→ {a}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 12, color: C.text3, margin: 0 }}>Dados não disponíveis para este período.</p>
+                )}
               </div>
-              <FunnelHealthRow funnel_health={strategy.growth_diagnosis.funnel_health} />
             </div>
-          )}
-        </CollapsibleSection>
-      ) : null}
+          )
+        }
+        return (
+          <div>
+            <div style={{ fontWeight: 700, color: C.text1, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+              <span style={{ width: 30, height: 30, borderRadius: 8, background: C.elevated, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>📅</span>
+              Plano 7 / 30 / 90 Dias
+            </div>
+            <Plan730 />
+          </div>
+        )
+      })()}
 
       {/* ── Estratégia de Funil ── */}
       {hasGrowthData && strategy.funnel_strategy && (
@@ -1104,7 +944,7 @@ export function TabStrategy({ strategy, analysis }: Props) {
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
             }}>🎯</span>
             <span style={{ fontSize: 14 }}>Estratégia de Funil</span>
-            <span style={{ fontSize: 10, color: C.text3, fontWeight: 400 }}>clique na fase para ver táticas</span>
+            <span style={{ fontSize: 10, color: C.text3, fontWeight: 400 }}>clique para ver táticas</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             <FunnelStageCard label="TOFU — Atração"   icon="📣" color={C.blue}
@@ -1117,95 +957,117 @@ export function TabStrategy({ strategy, analysis }: Props) {
         </div>
       )}
 
-      {/* ── Distribuição por Canal ── */}
-      {channels.length > 0 && (
-        <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
-          <div style={{
-            padding: '16px 20px', borderBottom: `1px solid ${C.border}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <div>
-              <h3 style={{ fontWeight: 700, color: C.text1, fontSize: 14, margin: 0 }}>Distribuição por Canal</h3>
-              <p style={{ fontSize: 11, color: C.text3, marginTop: 4, marginBottom: 0 }}>
-                Budget{budgetIsReal ? ' real' : ' estimado'}, CPL estimado e prioridade
-              </p>
-            </div>
-          </div>
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-            padding: '10px 20px',
-            fontSize: 10, color: C.text3, textTransform: 'uppercase' as const, letterSpacing: '0.08em',
-            borderBottom: `1px solid ${C.border}`,
-          }}>
-            <span>Canal</span><span>Prioridade</span><span>Budget/mês</span><span>CPL est.</span>
-          </div>
-          {channels.map((ch: any, i: number) => (
-            <div key={ch.name} style={{
-              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-              padding: '12px 20px', alignItems: 'center',
-              borderBottom: i < channels.length - 1 ? `1px solid ${C.border}` : 'none',
-              transition: 'background 0.15s',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.background = C.elevated)}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-              <div>
-                <div style={{ fontWeight: 600, color: C.text1, fontSize: 13 }}>{ch.name}</div>
-                {hasRealData && ch.rationale && (
-                  <div style={{ fontSize: 10, color: C.text3, marginTop: 2, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
-                    title={ch.rationale}>{ch.rationale}</div>
+      {/* ── Riscos Estratégicos ── */}
+      {strategicRisks.length > 0 && (
+        <CollapsibleSection title="Riscos Estratégicos" icon="⚠" defaultOpen={false}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {strategicRisks.map((item: any, i: number) => (
+              <div key={i} style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 4 }}>
+                  🔴 {item.risk || item}
+                </div>
+                {item.prevention && (
+                  <p style={{ fontSize: 11, color: C.text2, margin: 0, lineHeight: 1.5 }}>
+                    → Prevenção: {item.prevention}
+                  </p>
                 )}
               </div>
-              <PriorityBadge priority={ch.priority} />
-              <div>
-                <span style={{ color: C.gold, fontWeight: 700, fontSize: 13 }}>{ch.budget}</span>
-                {hasRealData && ch.budgetPct && <span style={{ fontSize: 11, color: C.text3, marginLeft: 4 }}>({ch.budgetPct}%)</span>}
-              </div>
-              <span style={{ color: C.text1, fontSize: 13 }}>{ch.cpl}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Otimização e Escala (gated se tracking fraco) ── */}
-      {hasGrowthData && strategy.optimization_scale && (
-        <CollapsibleSection title={blockAgressiveScale ? 'Otimização e Escala ⚠ (dados fracos)' : 'Otimização e Escala'} icon="📈">
-          {blockAgressiveScale && (
-            <div style={{
-              padding: '8px 12px', borderRadius: 8, marginBottom: 14, fontSize: 11,
-              background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)',
-              color: C.gold, lineHeight: 1.5,
-            }}>
-              ⚠ Recomendações de escala devem ser aplicadas com cautela — corrija tracking e/ou qualidade de dados primeiro.
-            </div>
-          )}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.green, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 8 }}>🚀 Escalar</div>
-              <ChipList items={strategy.optimization_scale.scale_actions || []} color={C.green} icon="↑" />
-            </div>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.red, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 8 }}>✂️ Cortar</div>
-              <ChipList items={strategy.optimization_scale.cut_immediately || []} color={C.red} icon="✕" />
-            </div>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.purpleL, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 8 }}>🧪 Testes A/B</div>
-              <ChipList items={strategy.optimization_scale.ab_tests || []} color={C.purpleL} icon="⚡" />
-            </div>
+            ))}
           </div>
-          {strategy.optimization_scale.cpl_target && (
-            <div style={{
-              marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 8,
-              fontSize: 12, color: C.text2,
-              background: C.elevated, borderRadius: 10, padding: '8px 16px',
-            }}>
-              <span style={{ color: C.gold }}>🎯</span>
-              CPL alvo: <strong style={{ color: C.text1 }}>R${strategy.optimization_scale.cpl_target}</strong>
-            </div>
-          )}
         </CollapsibleSection>
       )}
 
-      {/* ── Posicionamento de Marca ── */}
+      {/* ── Próximos Movimentos ── */}
+      {nextMoves.length > 0 && (
+        <div style={{ ...card }}>
+          <div style={{ fontWeight: 700, color: C.text1, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+            <span style={{
+              width: 30, height: 30, borderRadius: 8, background: 'rgba(124,58,237,0.12)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+            }}>▶</span>
+            Próximos 5 Movimentos
+            <span style={{ fontSize: 10, color: C.text3, fontWeight: 400 }}>Execute nessa ordem</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {nextMoves.slice(0, 5).map((move: string, i: number) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 14px', background: C.elevated, borderRadius: 10 }}>
+                <span style={{
+                  width: 24, height: 24, borderRadius: 7, flexShrink: 0, marginTop: 1,
+                  background: 'rgba(124,58,237,0.15)', color: C.purpleL,
+                  fontSize: 11, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{i + 1}</span>
+                <span style={{ fontSize: 12, color: C.text1, lineHeight: 1.5 }}>{move}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Ações da auditoria → Ações Prioritárias (colapsável, não é destaque) ── */}
+      {oQueEuFariaAgora.length > 0 && (
+        <CollapsibleSection title="Ações da Análise Profunda" icon="📋" defaultOpen={false}>
+          <p style={{ fontSize: 11, color: C.text3, marginBottom: 14, lineHeight: 1.5 }}>
+            Ações identificadas na Análise Profunda. Já incorporadas na Matriz Estratégica acima.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {oQueEuFariaAgora.map((action: any, i: number) => {
+              const isObj  = typeof action === 'object' && action !== null
+              const titulo = isObj ? action.titulo : action
+              const prio   = isObj ? action.prioridade : null
+              const sent   = sentActions.has(i)
+              const prioColor = prio === 'P1' ? C.red : prio === 'P2' ? C.gold : C.text3
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: `1px solid ${C.border}` }}>
+                  {prio && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, flexShrink: 0,
+                      color: prioColor, background: `${prioColor}18`, border: `1px solid ${prioColor}30`,
+                    }}>{prio}</span>
+                  )}
+                  <span style={{ flex: 1, fontSize: 12, color: C.text1 }}>{titulo}</span>
+                  {clientData && (
+                    <button
+                      title={sent ? 'Já enviada' : 'Enviar para Ações Prioritárias'}
+                      onClick={() => {
+                        if (sent) return
+                        addPendingActions(clientData.clientName, [{
+                          id: `strategy_${Date.now()}_${i}`,
+                          clientId: '',
+                          title: titulo,
+                          description: isObj ? [action.motivo, action.evidencia].filter(Boolean).join(' — ') : '',
+                          platform: 'ambos' as const,
+                          urgency: (prio === 'P1' ? 'critica' : prio === 'P2' ? 'alta' : 'media') as 'critica' | 'alta' | 'media',
+                          priority: i + 1,
+                          impact: isObj ? (action.impacto || '') : '',
+                          evidence: isObj ? action.evidencia : undefined,
+                          status: 'pendente' as const,
+                          source: 'auditoria' as const,
+                          origin: 'strategy',
+                          createdAt: new Date().toISOString(),
+                          updatedAt: new Date().toISOString(),
+                        }])
+                        setSentActions(prev => new Set(prev).add(i))
+                      }}
+                      style={{
+                        flexShrink: 0, fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 8,
+                        cursor: sent ? 'default' : 'pointer',
+                        background: sent ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.04)',
+                        color: sent ? C.green : C.text3,
+                        border: `1px solid ${sent ? 'rgba(34,197,94,0.3)' : C.border}`,
+                      }}
+                    >
+                      {sent ? '✓' : '+ Ações'}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {/* ── Colapsáveis secundários ── */}
       {hasGrowthData && strategy.brand_positioning && (
         <CollapsibleSection title="Posicionamento de Marca" icon="🏆" defaultOpen={false}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
@@ -1225,7 +1087,6 @@ export function TabStrategy({ strategy, analysis }: Props) {
         </CollapsibleSection>
       )}
 
-      {/* ── Visão 360° ── */}
       {hasGrowthData && strategy.vision_360 && (
         <CollapsibleSection title="Visão 360°" icon="🌐" defaultOpen={false}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
@@ -1245,37 +1106,10 @@ export function TabStrategy({ strategy, analysis }: Props) {
         </CollapsibleSection>
       )}
 
-      {/* ── Prioridades Estratégicas (de o_que_eu_faria_agora) ── */}
-      {oQueEuFariaAgora.length > 0 && (
-        <PrioridadesEstrategicas
-          acoes={oQueEuFariaAgora}
-          clientData={clientData}
-          addPendingActions={addPendingActions}
-        />
-      )}
-
-      {/* ── Plano 90 dias ── */}
-      {hasRealData && strategy.plan_90_days?.length > 0 && (
-        <div>
-          <div style={{ fontWeight: 700, color: C.text1, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              width: 30, height: 30, borderRadius: 8, background: C.elevated,
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-            }}>📅</span>
-            <span style={{ fontSize: 14 }}>Plano de 90 Dias</span>
-            {hasFullAudit && gargalos.length > 0 && (
-              <span style={{ fontSize: 10, color: C.text3, fontWeight: 400 }}>
-                · Semana 1 prioriza: {gargalos[0]?.titulo || 'gargalo identificado'}
-              </span>
-            )}
-          </div>
-          <Plan90Days plan={strategy.plan_90_days} />
-        </div>
-      )}
-
-      {/* ── Ações prioritárias da estratégia ── */}
-      {hasRealData && strategy.key_actions?.length > 0 && (
-        <KeyActionsSection actions={strategy.key_actions} />
+      {hasGrowthData && strategy.growth_diagnosis?.funnel_health && (
+        <CollapsibleSection title="Saúde do Funil" icon="📊" defaultOpen={false}>
+          <FunnelHealthRow funnel_health={strategy.growth_diagnosis.funnel_health} />
+        </CollapsibleSection>
       )}
 
     </div>

@@ -260,6 +260,76 @@ function buildFallbackStrategy(data: {
         `Google Meu Negócio otimizado: fotos, posts semanais, resposta a reviews — canal gratuito com alta intenção`,
       ],
     },
+    strategic_status: (() => {
+      if (!hasReal) return 'diagnostico_insuficiente'
+      if (maturity.stage === 'veterana' && realCPL > 0 && bench && realCPL <= bench.cpl_min) return 'pronta_escalar'
+      if (maturity.stage === 'veterana' || maturity.stage === 'madura') return 'escala_controlada'
+      return 'escala_controlada'
+    })(),
+    growth_thesis: hasReal
+      ? `${maturity.label} com R$${Math.round(realSpend / 1000)}k investidos e ${realLeads.toLocaleString('pt-BR')} leads gerados. ${bench && realCPL > 0
+        ? realCPL < bench.cpl_min
+          ? `CPL de R$${realCPL} está ${Math.round((1 - realCPL / bench.cpl_min) * 100)}% abaixo do benchmark (R$${bench.cpl_min}–${bench.cpl_max}) — escala é a prioridade: aumentar budget 15–20%/semana nas campanhas vencedoras enquanto CPL permanecer abaixo de R$${bench.cpl_max}.`
+          : realCPL <= bench.cpl_max
+            ? `CPL de R$${realCPL} está dentro do benchmark — foco em otimização gradual e teste de novos criativos antes de escala agressiva. Aumentar budget somente após identificar conjuntos com CPL abaixo de R$${bench.cpl_min}.`
+            : `CPL de R$${realCPL} está acima do benchmark (R$${bench.cpl_min}–${bench.cpl_max}) — não escalar antes de revisar segmentação e criativos. Pausar grupos acima de R$${bench.cpl_max} imediatamente.`
+        : 'Identificar criativos e públicos vencedores antes de escalar budget.'}`
+      : `Estratégia estimada com base no benchmark do nicho ${data.niche}. Execute a Análise Profunda com dados reais para gerar uma tese de crescimento personalizada.`,
+    strategic_matrix: {
+      escalar: bench ? [{
+        decision: `Escalar campanhas com CPL abaixo de R$${bench.cpl_min}`,
+        evidence: realCPL > 0 && realCPL < bench.cpl_min
+          ? `CPL real de R$${realCPL} está abaixo do benchmark`
+          : `Benchmark do nicho: R$${bench.cpl_min}–${bench.cpl_max}`,
+        condition: `CPL deve permanecer abaixo de R$${bench.cpl_max} após aumento`,
+        action: `Aumentar budget em 15–20% a cada 3–5 dias; pausar automaticamente se CPL ultrapassar R$${bench.cpl_max}`,
+      }] : [],
+      corrigir: [
+        { decision: 'Validar tracking antes de escalar', risk: 'Otimizar para evento errado multiplica investimento em leads não qualificados', action: 'Verificar todos os eventos de conversão no Events Manager — prazo: 7 dias' },
+      ],
+      testar: [
+        { hypothesis: `Novo criativo com ângulo de prova social reduz CPL vs criativo atual`, metric: `CPL abaixo de R$${bench ? bench.cpl_min : 'benchmark'}`, deadline: '14 dias' },
+        { hypothesis: 'Público lookalike 1% da base de clientes converte melhor que interesse', metric: 'CPL e taxa de lead qualificado', deadline: '21 dias' },
+      ],
+      cortar: bench ? [
+        { decision: `Pausar grupos com CPL acima de R$${bench.cpl_max} por 3+ dias`, criterion: `CPL > R$${bench.cpl_max} com mais de 500 impressões` },
+        { decision: 'Desativar criativos com CTR abaixo de 0.8%', criterion: 'CTR < 0.8% após 2.000 impressões' },
+      ] : [],
+    },
+    budget_decision: {
+      maintain: `Manter budget base de R$${data.budget.toLocaleString('pt-BR')}/mês no canal principal enquanto CPL permanecer dentro do benchmark`,
+      reallocate: realCPL > 0 && bench && realCPL > bench.cpl_max
+        ? `Realocar 20–30% das campanhas com CPL acima de R$${bench.cpl_max} para os conjuntos mais eficientes`
+        : `Manter distribuição atual e realocar apenas após identificar vencedores claros (CPL < R$${bench?.cpl_min || 'benchmark'})`,
+      scale: `Escalar 15–20%/semana nas campanhas com CPL abaixo de R$${bench?.cpl_min || 'benchmark'} — somente após validar tracking`,
+      cut: `Pausar campanhas com CPL acima de R$${bench?.cpl_max || 'benchmark'} por mais de 3 dias consecutivos`,
+      condition_to_increase: `Aumentar budget total somente após: (1) tracking validado, (2) CPL estável por 7 dias, (3) pelo menos 1 campanha com CPL abaixo de R$${bench?.cpl_min || 'benchmark'}`,
+    },
+    plan_7_30_90: {
+      seven_days: [
+        { objective: 'Corrigir bloqueios críticos de tracking', action: 'Validar todos os eventos de conversão no Events Manager e definir CPL máximo de corte', metric: `100% dos eventos verificados e regra de corte em R$${bench?.cpl_max || 'X'} ativada` },
+        { objective: 'Mapear campanhas vencedoras', action: `Identificar grupos com CPL abaixo de R$${bench?.cpl_min || 'benchmark'} e suspender os acima de R$${bench?.cpl_max || 'benchmark'}`, metric: 'Lista de campanhas elegíveis para escala definida' },
+      ],
+      thirty_days: [
+        { objective: 'Otimizar CPL e testar criativos', action: 'Lançar 3 criativos com ângulos diferentes (dor/aspiração/prova social) e testar lookalike 1%', metric: `CPL médio abaixo de R$${bench ? Math.round((bench.cpl_min + bench.cpl_max) / 2) : 'benchmark'}` },
+        { objective: 'Escalar canais vencedores', action: 'Aumentar budget 15–20% por semana nos grupos validados; criar estrutura de remarketing', metric: 'Volume de leads 20% acima do mês 1 sem aumento de CPL' },
+      ],
+      ninety_days: [
+        { objective: 'Previsibilidade e escala sustentável', action: `Consolidar os canais vencedores, diversificar para ${channels[1] || 'segundo canal recomendado'}, estruturar funil MOFU`, metric: `CPL sustentável abaixo de R$${bench ? Math.round(bench.cpl_min * 1.1) : 'benchmark'} e funil MOFU/BOFU ativo` },
+      ],
+    },
+    strategic_risks: [
+      { risk: 'Escala antes de validar tracking resulta em otimização para evento errado', prevention: 'Verificar todos os eventos antes de qualquer aumento de budget' },
+      { risk: 'Saturação criativa com frequência alta causa queda de CTR e aumento de CPL', prevention: 'Monitorar frequência semanalmente — renovar criativos quando frequência ultrapassar 3×' },
+      { risk: `CPL acima de R$${bench?.cpl_max || 'benchmark'} por mais de 5 dias sem intervenção drena budget`, prevention: `Criar regra automática de pausa: CPL > R$${bench?.cpl_max || 'X'} por 3 dias consecutivos` },
+    ],
+    next_moves: [
+      `Validar eventos de conversão no Events Manager — prazo: 48h`,
+      `Pausar grupos com CPL acima de R$${bench?.cpl_max || 'X'} imediatamente`,
+      `Definir CPL máximo de corte de R$${bench?.cpl_max || 'X'} como regra automática no Meta`,
+      `Concentrar 70% do budget nas 3 campanhas com menor CPL`,
+      `Criar 2 novos criativos com prova social para testar em paralelo`,
+    ],
     priority_ranking,
     recommended_channels_names: channels,
     plan_90_days: [
@@ -447,7 +517,9 @@ ${benchmarkSection ? `BENCHMARKS INTERNOS DO SISTEMA:\n${benchmarkSection}` : ''
 ${realtimeData || ''}
 ${nicheContext ? `\nCONTEXTO ESPECIALIZADO DO NICHO:${nicheContext}` : ''}
 
-Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth. Responda APENAS com JSON válido:
+REGRA CRÍTICA: Você está gerando uma ESTRATÉGIA, não uma auditoria. NÃO repita os problemas encontrados. TRANSFORME cada problema em uma decisão concreta: o que fazer, com qual campanha/público/criativo, qual critério de corte, qual condição para escalar, qual prazo. Se há gargalo, diga o que ele BLOQUEIA e qual DECISÃO tomar. Se há campanha vencedora, diga QUANTO escalar e com qual CONDIÇÃO. Respostas genéricas como "criar criativos melhores" ou "melhorar funil" não são aceitas — use dados específicos do cliente.
+
+Entregue uma estratégia de crescimento baseada no diagnóstico. Responda APENAS com JSON válido:
 
 {
   "intelligence_score": <0-100>,
@@ -513,7 +585,30 @@ Entregue uma análise completa de crescimento com as 5 etapas do Head de Growth.
       "week_4": ["<ação1>", "<ação2>"]
     }
   ],
-  "key_actions": ["<ação prioritária 1>", "<ação 2>", "<ação 3>", "<ação 4>", "<ação 5>"]
+  "key_actions": ["<ação prioritária 1>", "<ação 2>", "<ação 3>", "<ação 4>", "<ação 5>"],
+
+  "strategic_status": "<pronta_escalar|escala_controlada|corrigir_antes|diagnostico_insuficiente|alto_risco>",
+  "growth_thesis": "<1 parágrafo direto: tese de crescimento desta conta — o que escalar, o que corrigir, qual condição e qual risco principal. Use dados reais. Não repita o diagnóstico — diga a DIREÇÃO.>",
+  "strategic_matrix": {
+    "escalar": [{"decision": "<decisão de escala>", "evidence": "<evidência da auditoria>", "condition": "<condição para escalar>", "action": "<ação concreta com critério>"}],
+    "corrigir": [{"decision": "<o que corrigir>", "risk": "<risco de não corrigir>", "action": "<ação com prazo>"}],
+    "testar": [{"hypothesis": "<hipótese específica>", "metric": "<métrica de validação>", "deadline": "<prazo>"}],
+    "cortar": [{"decision": "<o que cortar>", "criterion": "<critério objetivo de corte>"}]
+  },
+  "budget_decision": {
+    "maintain": "<o que manter e por quê>",
+    "reallocate": "<de onde para onde realocar>",
+    "scale": "<o que escalar — campanha/canal — e condição>",
+    "cut": "<o que cortar e critério>",
+    "condition_to_increase": "<condição objetiva para aumentar total investido>"
+  },
+  "plan_7_30_90": {
+    "seven_days": [{"objective": "<objetivo>", "action": "<ação específica>", "metric": "<métrica de sucesso>"}],
+    "thirty_days": [{"objective": "<objetivo>", "action": "<ação>", "metric": "<métrica>"}],
+    "ninety_days": [{"objective": "<objetivo>", "action": "<ação>", "metric": "<métrica>"}]
+  },
+  "strategic_risks": [{"risk": "<risco estratégico>", "prevention": "<como prevenir>"}],
+  "next_moves": ["<decisão clara e específica 1>", "<decisão 2>", "<decisão 3>", "<decisão 4>", "<decisão 5>"]
 }`
 
       // IA com 23s — Tavily já rodou em paralelo (2s max), SSE keepalive mantém conexão
