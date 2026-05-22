@@ -466,10 +466,10 @@ function AuditoriaDocument({ audit, clientName, niche }: AuditoriaPDFProps) {
         {gargalos.length > 0 && (
           <>
             <Text style={S.sectionTitle}>Gargalos Identificados</Text>
-            {gargalos.slice(0, 4).map((g: string, i: number) => (
+            {gargalos.slice(0, 4).map((g: any, i: number) => (
               <View key={i} style={S.issueRow}>
                 <Text style={[S.issueDot, { color: '#FF4D4D' }]}>✕</Text>
-                <Text style={S.issueText}>{g}</Text>
+                <Text style={S.issueText}>{typeof g === 'string' ? g : g.titulo || g.descricao || ''}</Text>
               </View>
             ))}
           </>
@@ -478,10 +478,10 @@ function AuditoriaDocument({ audit, clientName, niche }: AuditoriaPDFProps) {
         {oportunidades.length > 0 && (
           <>
             <Text style={S.sectionTitle}>Oportunidades</Text>
-            {oportunidades.slice(0, 4).map((o: string, i: number) => (
+            {oportunidades.slice(0, 4).map((o: any, i: number) => (
               <View key={i} style={S.issueRow}>
                 <Text style={[S.issueDot, { color: '#22C55E' }]}>+</Text>
-                <Text style={S.issueText}>{o}</Text>
+                <Text style={S.issueText}>{typeof o === 'string' ? o : o.titulo || o.descricao || ''}</Text>
               </View>
             ))}
           </>
@@ -529,12 +529,15 @@ function AuditoriaDocument({ audit, clientName, niche }: AuditoriaPDFProps) {
         {(audit.insights_senior || []).length > 0 && (
           <>
             <Text style={S.sectionTitle}>Insights do Especialista</Text>
-            {(audit.insights_senior as string[]).slice(0, 3).map((ins, i) => (
-              <View key={i} style={S.issueRow}>
-                <Text style={[S.issueDot, { color: '#38BDF8' }]}>→</Text>
-                <Text style={S.issueText}>{ins}</Text>
-              </View>
-            ))}
+            {(audit.insights_senior as any[]).slice(0, 3).map((ins: any, i: number) => {
+              const txt = typeof ins === 'string' ? ins : `${ins.titulo ? ins.titulo + ': ' : ''}${ins.texto || ''}`
+              return (
+                <View key={i} style={S.issueRow}>
+                  <Text style={[S.issueDot, { color: '#38BDF8' }]}>→</Text>
+                  <Text style={S.issueText}>{txt}</Text>
+                </View>
+              )
+            })}
           </>
         )}
 
