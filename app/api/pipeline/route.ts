@@ -10,8 +10,9 @@ import Anthropic from '@anthropic-ai/sdk'
 // Aumenta o timeout do Vercel para 300s (suporta streaming long-running)
 export const maxDuration = 300
 
-// Timeout por chamada Anthropic — cada agente tem no máximo 75s para responder
-const AGENT_TIMEOUT_MS = 75_000
+// Timeout por chamada Anthropic — cada agente tem no máximo 90s para responder
+// (Claude Sonnet gera ~60-80 tokens/s; max_tokens por agente agora ~4000-5000 = ~50-83s)
+const AGENT_TIMEOUT_MS = 90_000
 // Watchdog: se o pipeline ultrapassar este limite, envia resultado parcial e fecha
 const PIPELINE_MAX_MS = 255_000
 
@@ -109,6 +110,25 @@ function normalizeCampaigns(campaigns: any[], platform: 'meta' | 'google'): any[
   })
 }
 
+// Traduz erros técnicos em mensagens legíveis antes de enviar ao cliente
+function humanizeError(e: any, agentKey: string): string {
+  const label = AGENT_LABELS[agentKey]?.split(' —')[0] || agentKey
+  const msg   = (e?.message || '').toLowerCase()
+  if (e?.name === 'AbortError' || msg.includes('aborted') || msg.includes('request was aborted')) {
+    return `O agente ${label} demorou mais que o esperado (${AGENT_TIMEOUT_MS / 1000}s) e foi interrompido. Os demais agentes continuarão normalmente. Tente reanalisar se precisar deste resultado.`
+  }
+  if (msg.includes('json inválido') || msg.includes('json')) {
+    return `O agente ${label} retornou uma resposta incompleta da IA. Tente reanalisar.`
+  }
+  if (e?.status === 429 || msg.includes('rate limit') || msg.includes('overloaded')) {
+    return `Limite de uso da IA atingido no agente ${label}. Aguarde alguns segundos e tente novamente.`
+  }
+  if (msg.includes('anthropic_api_key') || msg.includes('api key')) {
+    return `Chave de API não configurada. Contate o suporte.`
+  }
+  return e?.message || `Erro inesperado no agente ${label}.`
+}
+
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -167,6 +187,8 @@ export async function POST(req: NextRequest) {
 
       try {
         // ── FASE 1: Auditor + Estrategista em paralelo (independentes) ──────────
+        // Ambos são independentes entre si, então rodam juntos para economizar tempo.
+        // Cada um tem seu próprio AbortSignal de 90s — se um falhar o outro continua.
         const phase1 = (['auditor', 'estrategista'] as const).filter(a => !skip.has(a))
         if (phase1.length > 0) {
           for (const a of phase1) send({ type: 'agent_start', agent: a, label: AGENT_LABELS[a] })
@@ -179,19 +201,21 @@ export async function POST(req: NextRequest) {
               executed.push(agent)
               send({ type: 'agent_done', agent, result: r.value, duration_ms: Date.now() - startedAt })
             } else {
-              errors.push({ agent, message: r.reason?.message || 'Erro desconhecido' })
-              send({ type: 'agent_error', agent, message: r.reason?.message || 'Erro desconhecido' })
+              const msg = humanizeError(r.reason, agent)
+              errors.push({ agent, message: msg })
+              send({ type: 'agent_error', agent, message: msg })
             }
           }
         }
 
-        // ── FASE 2: Data Analyst (pós-Auditor) + Copywriter (pós-Estrategista) ─
+        // ── FASE 2: Data Analyst (usa Auditor) + Copywriter (usa Estrategista) ─
         const phase2 = (['data_analyst', 'copywriter'] as const).filter(a => !skip.has(a))
         if (phase2.length > 0) {
           if (timedOut()) {
             for (const a of phase2) {
-              errors.push({ agent: a, message: 'Pipeline interrompido: tempo máximo excedido' })
-              send({ type: 'agent_error', agent: a, message: 'Pipeline interrompido: tempo máximo excedido' })
+              const msg = 'Pipeline interrompido antes de chegar a este agente (tempo máximo excedido). Tente reanalisar.'
+              errors.push({ agent: a, message: msg })
+              send({ type: 'agent_error', agent: a, message: msg })
             }
           } else {
             for (const a of phase2) send({ type: 'agent_start', agent: a, label: AGENT_LABELS[a] })
@@ -204,8 +228,9 @@ export async function POST(req: NextRequest) {
                 executed.push(agent)
                 send({ type: 'agent_done', agent, result: r.value, duration_ms: Date.now() - startedAt })
               } else {
-                errors.push({ agent, message: r.reason?.message || 'Erro desconhecido' })
-                send({ type: 'agent_error', agent, message: r.reason?.message || 'Erro desconhecido' })
+                const msg = humanizeError(r.reason, agent)
+                errors.push({ agent, message: msg })
+                send({ type: 'agent_error', agent, message: msg })
               }
             }
           }
@@ -214,8 +239,9 @@ export async function POST(req: NextRequest) {
         // ── FASE 3: Report (consolida tudo) ────────────────────────────────────
         if (!skip.has('report')) {
           if (timedOut()) {
-            errors.push({ agent: 'report', message: 'Pipeline interrompido: tempo máximo excedido' })
-            send({ type: 'agent_error', agent: 'report', message: 'Pipeline interrompido: tempo máximo excedido' })
+            const msg = 'Pipeline interrompido antes de chegar ao Report (tempo máximo excedido). Tente reanalisar.'
+            errors.push({ agent: 'report', message: msg })
+            send({ type: 'agent_error', agent: 'report', message: msg })
           } else {
             send({ type: 'agent_start', agent: 'report', label: AGENT_LABELS['report'] })
             try {
@@ -223,8 +249,9 @@ export async function POST(req: NextRequest) {
               executed.push('report')
               send({ type: 'agent_done', agent: 'report', result: results['report'], duration_ms: Date.now() - startedAt })
             } catch (e: any) {
-              errors.push({ agent: 'report', message: e.message })
-              send({ type: 'agent_error', agent: 'report', message: e.message })
+              const msg = humanizeError(e, 'report')
+              errors.push({ agent: 'report', message: msg })
+              send({ type: 'agent_error', agent: 'report', message: msg })
             }
           }
         }
@@ -327,7 +354,7 @@ PLATAFORMAS:
 ${platformSection}
 
 ${anomalies.length > 0 ? `ANOMALIAS DETECTADAS:\n${anomalies.join('\n')}\n` : 'QUALIDADE DOS DADOS: OK\n'}
-${ranked.length > 0 ? `RANKING (eficiência por CPL):\n${ranked.slice(0, 15).map((c: any, i: number) => {
+${ranked.length > 0 ? `RANKING (eficiência por CPL):\n${ranked.slice(0, 10).map((c: any, i: number) => {
   const cpl_c = (c.leads || 0) > 0 ? Math.round((c.spend || 0) / (c.leads || 1)) : null
   const eff = cpl_c === null ? '⛔ SEM CONVERSÃO'
     : bench && cpl_c <= bench.cpl_min * 1.1 ? '🏆 EXCELENTE'
@@ -342,7 +369,7 @@ ${benchmarkText ? `\nBENCHMARK (${niche}):\n${benchmarkText}` : ''}
 JSON:
 {"score_conta":<0-100>,"grade":"<A+|A|A-|B+|B|B-|C+|C|D>","resumo_executivo":"<2-3 frases com números>","plataformas_analisadas":["<platform>"],"diagnostico":["<1>","<2>","<3>"],"erros_criticos":["<erro com nome da campanha>"],"gargalos":[{"rank":1,"titulo":"<gargalo>","descricao":"<métricas>","impacto":"<R$ ou %>","plataforma":"<meta|google|ambos>"}],"oportunidades":[{"titulo":"<oportunidade>","descricao":"<como capitalizar>","potencial":"<resultado>","plataforma":"<meta|google|ambos>"}],"campanhas_destaque":[{"nome":"<campanha>","acao":"<ESCALAR|MANTER|PAUSAR>","motivo":"<razão com número>","plataforma":"<meta|google>"}],"plano_acao":{"curto":[{"acao":"<7d>","como":"<passos>","impacto":"<resultado>"}],"medio":[{"acao":"<30d>","como":"<execução>","impacto":"<resultado>"}],"longo":[{"acao":"<90d>","como":"<estratégia>","impacto":"<transformação>"}]}}`
 
-  const result = await callLLMJson<any>(anthropic, prompt, 8000, AbortSignal.timeout(AGENT_TIMEOUT_MS))
+  const result = await callLLMJson<any>(anthropic, prompt, 4000, AbortSignal.timeout(AGENT_TIMEOUT_MS))
   return {
     agent: 'auditor',
     ...result,
@@ -399,7 +426,7 @@ ${benchmarkText ? `\nBENCHMARK:\n${benchmarkText}` : ''}
 JSON:
 {"insights":["<insight com %>","<insight 2>","<insight 3>"],"anomalias":[{"titulo":"<anomalia>","descricao":"<dado>","impacto":"<R$/%>"}],"segmentos_vencedores":[{"segmento":"<canal>","motivo":"<com dados>","metrica":"<CPL/CVR/ROAS>"}],"segmentos_perdedores":[{"segmento":"<canal>","motivo":"<com dados>","metrica":"<CPL/CVR/ROAS>"}],"recomendacoes":["<ação 1>","<ação 2>","<ação 3>"],"health_score":<0-100>,"grade":"<A+|A|B+|B|C>","executive_summary":"<2-3 frases>","saude_financeira":{"break_even_roas":${breakEvenROAS},"cpl_maximo_lucrativo":${maxCPL},"ltv_estimado":${ltv},"cac_payback_meses":<num>,"ltv_cac_ratio":${ltvCacRatio},"sustentabilidade":"<sustentavel|fragil|insustentavel>","interpretacao":"<o que esses números significam>"},"matriz_risco":[{"rank":1,"risco":"<risco>","probabilidade":"<alta|media|baixa>","impacto":"<critico|alto|medio|baixo>","mitigacao":"<ação>"},{"rank":2,"risco":"<risco 2>","probabilidade":"<alta|media|baixa>","impacto":"<critico|alto|medio|baixo>","mitigacao":"<ação>"},{"rank":3,"risco":"<risco 3>","probabilidade":"<alta|media|baixa>","impacto":"<critico|alto|medio|baixo>","mitigacao":"<ação>"}],"prontidao_para_escalar":{"score":<0-100>,"pode_escalar_agora":<bool>,"prerequisitos_faltando":["<pré-req>"],"quando_escalar":"<condição>","projecao_escala":{"budget_2x":${(budget || 0) * 2},"leads_projetados":<num>,"receita_projetada":<num>}},"diagnostico_funil":{"etapas":[{"etapa":"Tráfego → Clique","status":"<saudavel|problema|nao_auditado>","observacao":"<CTR>"},{"etapa":"Clique → Lead","status":"<saudavel|problema|nao_auditado>","observacao":"<CPL>"},{"etapa":"Lead → Atendimento","status":"<saudavel|problema|nao_auditado>","observacao":"<SLA>"},{"etapa":"Atendimento → Venda","status":"<saudavel|problema|nao_auditado>","observacao":"<CVR>"}],"gargalo_principal":"<trafego|pos-clique|atendimento|ambos>","impacto_financeiro":"<R$/%>"},"recomendacao_principal":{"titulo":"<ação>","descricao":"<por quê supera as outras>","acao_semana_1":"<7d>","acao_mes_1":"<30d>","acao_trimestre":"<90d>"},"inteligencia":[{"tipo":"oportunidade_mercado","icone":"🎯","titulo":"<oportunidade>","categoria":"Mercado","categoriaColor":"#F0B429","insight":"<insight>","dados":"<dados>","acao_concreta":"<ação>","potencial":"<resultado>"},{"tipo":"audiencia_avancada","icone":"👥","titulo":"<segmento>","categoria":"Audiência","categoriaColor":"#22C55E","insight":"<insight>","dados":"<dados>","acao_concreta":"<ação>","potencial":"<resultado>"},{"tipo":"alocacao_orcamento","icone":"💰","titulo":"<redistribuição>","categoria":"Orçamento","categoriaColor":"#38BDF8","insight":"<insight>","dados":"<dados>","acao_concreta":"<ação>","potencial":"<resultado>"}],"benchmark_comparativo":{"cpl_atual":${currentCPL || 0},"cpl_benchmark":<num>,"cpl_status":"<excelente|bom|atencao|critico>","roas_break_even":${breakEvenROAS},"roas_bom_nicho":<num>,"melhores_canais":["<canal>"],"insights_nicho":["<insight>"]}}`
 
-  const result = await callLLMJson<any>(anthropic, prompt, 8000, AbortSignal.timeout(AGENT_TIMEOUT_MS))
+  const result = await callLLMJson<any>(anthropic, prompt, 5000, AbortSignal.timeout(AGENT_TIMEOUT_MS))
   return { agent: 'data_analyst', ...result, generated_at: new Date().toISOString(), source: 'ai' }
 }
 
@@ -438,7 +465,7 @@ ${benchmarkSection ? `\nBENCHMARKS:\n${benchmarkSection}` : ''}${nicheContext ? 
 JSON:
 {"intelligence_score":<0-100>,"score_label":"<Básica|Boa|Avançada|Excelente>","recommendation":"<2-3 frases>","estimated_monthly_revenue_range":"R$X–Y","regulatory_alerts":["<alerta>"],"growth_diagnosis":{"main_problem":"<problema>","waste_analysis":["<desperdício>","<2>","<3>"],"growth_blockers":["<gargalo>","<2>","<3>"],"funnel_health":{"tofu":{"status":"<ok|atenção|crítico>","issue":"<problema>","action":"<ação>"},"mofu":{"status":"<ok|atenção|crítico>","issue":"<problema>","action":"<ação>"},"bofu":{"status":"<ok|atenção|crítico>","issue":"<problema>","action":"<ação>"}}},"funnel_strategy":{"tofu":{"goal":"<meta>","channels":["<canal>"],"tactics":["<tática>","<2>","<3>"]},"mofu":{"goal":"<meta>","tactics":["<tática>","<2>"]},"bofu":{"goal":"<meta>","tactics":["<tática>","<2>"]}},"optimization_scale":{"cpl_target":<num>,"scale_actions":["<escalar>","<2>"],"cut_immediately":["<cortar>","<2>"],"ab_tests":["<teste>","<2>","<3>"]},"brand_positioning":{"authority_strategies":["<estratégia>","<2>"],"communication_adjustments":["<ajuste>","<2>"],"value_perception":["<ação>","<2>"]},"vision_360":{"website_improvements":["<melhoria>","<2>"],"sales_alignment":["<alinhamento>","<2>"],"off_ads_opportunities":["<oportunidade>","<2>"]},"priority_ranking":[{"channel":"<nome>","priority":1,"budget_pct":<0-100>,"budget_brl":<val>,"cpl_min":<num>,"cpl_max":<num>,"cpl_avg":<num>,"leads_min":<num>,"leads_max":<num>,"roi_range":"<X%–Y%>","revenue_min":<num>,"revenue_max":<num>,"rationale":"<por que>"}],"recommended_channels_names":["<canal>"],"plan_90_days":[{"month":1,"goal":"<objetivo>","week_1":["<ação>"],"week_2":["<ação>"],"week_3":["<ação>"],"week_4":["<ação>"]},{"month":2,"goal":"<objetivo>","week_1":["<ação>"],"week_2":["<ação>"],"week_3":["<ação>"],"week_4":["<ação>"]},{"month":3,"goal":"<objetivo>","week_1":["<ação>"],"week_2":["<ação>"],"week_3":["<ação>"],"week_4":["<ação>"]}],"key_actions":["<ação>","<2>","<3>","<4>","<5>"]}`
 
-  const result = await callLLMJson<any>(anthropic, prompt, 8000, AbortSignal.timeout(AGENT_TIMEOUT_MS))
+  const result = await callLLMJson<any>(anthropic, prompt, 4500, AbortSignal.timeout(AGENT_TIMEOUT_MS))
   return { agent: 'estrategista', ...result, generated_at: new Date().toISOString(), source: 'ai' }
 }
 
@@ -485,7 +512,7 @@ ${benchmarkSection ? `\nBENCHMARK:\n${benchmarkSection}` : ''}${nicheContext ? `
 Gere ${frameworks.length * 2} variações (2 por framework). JSON:
 {"briefing_resumo":"<1 frase>","tom_de_voz":"<vocabulário, ritmo>","big_idea":"<conceito central>","criativos_vencedores":["<criativo com maior CTR>"],"variacoes":[{"framework":"<dor|desejo|prova_social|autoridade|urgencia|transformacao>","titulo":"<40 chars>","subtitulo":"<60 chars>","corpo":"<2-4 frases>","cta":"<verbo + ação>","formato_sugerido":"<imagem|carrossel|video_curto>","plataforma":"<meta_feed|meta_reels|google_search>","gancho":"<1ª frase>","beneficio_principal":"<benefício>","prova":"<dado/garantia>","quebra_objecao":"<objeção>","notas_criativo":"<instrução visual>","teste_hipotese":"<o que testa>"}],"recomendacoes_criativas":["<recomendação>","<2>","<3>"],"headlines_alternativas":["<h1>","<h2>","<h3>","<h4>","<h5>"],"ctas_alternativos":["<cta1>","<cta2>","<cta3>"],"angulos_a_evitar":["<ângulo ineficiente>"],"plano_de_teste":[{"fase":"Semana 1","teste":"<teste A/B>","metrica":"<CTR|CPL>"},{"fase":"Semana 2","teste":"<teste>","metrica":"<métrica>"},{"fase":"Semana 3","teste":"<teste>","metrica":"<métrica>"}]}`
 
-  const result = await callLLMJson<any>(anthropic, prompt, 7000, AbortSignal.timeout(AGENT_TIMEOUT_MS))
+  const result = await callLLMJson<any>(anthropic, prompt, 4000, AbortSignal.timeout(AGENT_TIMEOUT_MS))
   return { agent: 'copywriter', ...result, generated_at: new Date().toISOString(), source: 'ai' }
 }
 
@@ -540,7 +567,7 @@ ${cpCtx}
 Gere 5 a 8 ações em plano_acao. JSON:
 {"titulo":"Diagnóstico 360° — ${clientName}","cliente":"${clientName}","nicho":"${niche}","plataformas":"${platforms}","score_geral":<0-100>,"grade":"<A+|A|A-|B+|B|B-|C+|C|D>","sumario_executivo":"<3-5 frases com números reais>","sumario_cliente":"<2-3 frases simples para o cliente, sem jargão>","kpis_chave":[{"nome":"CPL atual","valor":"<R$X>","status":"<excelente|bom|atencao|critico>","benchmark":"<vs benchmark>"},{"nome":"ROAS break-even","valor":"<X×>","status":"<status>","benchmark":"<vs atual>"},{"nome":"LTV:CAC","valor":"<X×>","status":"<status>","benchmark":"<mínimo 3×>"},{"nome":"Health score","valor":"<X/100>","status":"<status>","benchmark":"<posição>"},{"nome":"Budget eficiência","valor":"<%>","status":"<status>","benchmark":"<ideal>"}],"principais_descobertas":["<descoberta>","<2>","<3>","<4>","<5>"],"riscos_criticos":["<risco com R$/%>","<2>","<3>"],"oportunidades_principais":["<oportunidade quantificada>","<2>","<3>"],"plano_acao":[{"id":"acao_1","prioridade":"<critica|alta|media|baixa>","categoria":"<Tracking|Criativos|Audiências|Funil|Escala|Estrutura|Orçamento|Copy|Processo>","titulo":"<até 8 palavras>","descricao":"<o que e por quê com números>","como":"<passo a passo>","impacto":"<% ou R$>","prazo":"<Imediato|7 dias|30 dias|90 dias>","responsavel_sugerido":"<Gestor|Copy|Designer|Vendas|Cliente>","plataforma":"<meta|google|ambos>"}],"projecao_90_dias":{"cenario_base":"<leads/receita mantendo atual>","cenario_otimizado":"<leads/receita executando o plano>","premissas":["<premissa>","<2>","<3>"]},"proximos_passos_imediatos":["<ação 7 dias #1>","<2>","<3>","<4>","<5>"],"slide_pitch":"<3-5 bullets com \\n• para reunião>","alertas_imediatos":["<alerta urgente>"]}`
 
-  const result = await callLLMJson<any>(anthropic, prompt, 4500, AbortSignal.timeout(AGENT_TIMEOUT_MS))
+  const result = await callLLMJson<any>(anthropic, prompt, 3000, AbortSignal.timeout(AGENT_TIMEOUT_MS))
   const plano = (result.plano_acao || []).map((a: any, i: number) => ({ ...a, id: a.id || `acao_${i + 1}` }))
   return { agent: 'report', ...result, plano_acao: plano, generated_at: new Date().toISOString(), source: 'ai' }
 }

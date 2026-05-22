@@ -560,13 +560,14 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
       let   buffer  = ''
       const resultsMap: Record<string, any> = {}
 
-      // Detecta inatividade: se o servidor não enviar nada por 90s, aborta
-      const INACTIVITY_MS = 90_000
+      // Detecta inatividade: se o servidor não enviar nada por 120s, aborta
+      // Deve ser maior que AGENT_TIMEOUT_MS (90s) no backend para que o backend envie agent_error antes
+      const INACTIVITY_MS = 120_000
       const readWithTimeout = () => Promise.race([
         reader.read(),
         new Promise<never>((_, reject) =>
           setTimeout(
-            () => reject(new Error('Servidor parou de responder por 90s. Tente novamente ou cancele.')),
+            () => reject(new Error('Servidor parou de responder por 120s. Tente novamente ou cancele.')),
             INACTIVITY_MS,
           )
         ),
