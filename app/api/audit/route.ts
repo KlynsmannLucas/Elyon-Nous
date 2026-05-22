@@ -572,6 +572,7 @@ export async function POST(req: NextRequest) {
       uploadedPlatform  = null,
       datePreset        = 'last_30d',
       period            = null,
+      auditSource       = 'auto',
     } = body
     const clientName = sanitizeText(_cn, 120)
     const niche      = sanitizeText(_ni, 120)
@@ -581,6 +582,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'clientName e niche são obrigatórios.' }, { status: 400 })
     }
 
+    // hasMeta/hasGoogle reflect o que está conectado (para contexto de UI e fallback)
     const hasMeta   = metaTotals !== null || metaCampaigns.length > 0
     const hasGoogle = googleTotals !== null || googleCampaigns.length > 0
 
@@ -591,10 +593,22 @@ export async function POST(req: NextRequest) {
         ? [{ filename: 'arquivo.csv', platform: uploadedPlatform || 'desconhecido', campaigns: uploadedCampaigns }]
         : []
 
-    const allUploadedCampaigns = allUploadedFiles.flatMap(f => f.campaigns)
-    const hasUpload = allUploadedCampaigns.length > 0
+    // ── Source selection — qual fonte alimenta as métricas desta auditoria ────
+    // 'api':        só dados da API (ignora uploads da mesma plataforma)
+    // 'upload':     só arquivo importado (ignora dados da API)
+    // 'consolidate': soma tudo (comportamento legado — só usar se períodos compatíveis)
+    // 'auto':       padrão — consolida com aviso quando há conflito
+    const srcMetaTotals      = auditSource === 'upload' ? null : metaTotals
+    const srcMetaCampaigns   = auditSource === 'upload' ? [] : [...metaCampaigns]
+    const srcGoogleTotals    = auditSource === 'upload' ? null : googleTotals
+    const srcGoogleCampaigns = auditSource === 'upload' ? [] : [...googleCampaigns]
+    const srcUploadedFiles   = auditSource === 'api'    ? [] : allUploadedFiles
+    const srcUploadedCampaigns = srcUploadedFiles.flatMap((f: any) => f.campaigns)
+    const srcHasMeta   = srcMetaTotals !== null || srcMetaCampaigns.length > 0
+    const srcHasGoogle = srcGoogleTotals !== null || srcGoogleCampaigns.length > 0
+    const hasUpload    = srcUploadedCampaigns.length > 0
 
-    if (!hasMeta && !hasGoogle && !hasUpload) {
+    if (!srcHasMeta && !srcHasGoogle && !hasUpload) {
       return NextResponse.json({
         success: false,
         error: 'Conecte uma conta de anúncios ou importe pelo menos um arquivo CSV/XLSX para auditar.',
@@ -603,34 +617,35 @@ export async function POST(req: NextRequest) {
 
     const bench = getBenchmark(niche)
     const benchmarkText = getBenchmarkSummary(niche)
-    const allCampaigns = [...metaCampaigns, ...googleCampaigns, ...allUploadedCampaigns]
+    // allCampaigns usa SOMENTE as fontes selecionadas pelo usuário
+    const allCampaigns = [...srcMetaCampaigns, ...srcGoogleCampaigns, ...srcUploadedCampaigns]
 
     // ── Totais de arquivos enviados — usa MAX spend por plataforma ─────────────
     // Quando o usuário sobe 2 arquivos do mesmo Meta (ex: conjuntos + anúncios),
     // os totais seriam duplicados se simplesmente somados. A heurística: para
     // cada plataforma, usa o arquivo com maior investimento total (mais completo).
     const platformBest: Record<string, { spend: number; leads: number }> = {}
-    for (const file of allUploadedFiles) {
-      const p = file.platform || 'unknown'
-      const fs = file.campaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
-      const fl = file.campaigns.reduce((s: number, c: any) => s + (c.leads || 0), 0)
+    for (const file of srcUploadedFiles) {
+      const p = (file as any).platform || 'unknown'
+      const fs = (file as any).campaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
+      const fl = (file as any).campaigns.reduce((s: number, c: any) => s + (c.leads || 0), 0)
       if (!platformBest[p] || fs > platformBest[p].spend) {
         platformBest[p] = { spend: fs, leads: fl }
       }
     }
     const uploadTotalSpend = Object.values(platformBest).reduce((s, v) => s + v.spend, 0)
     const uploadTotalLeads = Object.values(platformBest).reduce((s, v) => s + v.leads, 0)
-    const totalSpend = (metaTotals?.spend || 0) + (googleTotals?.spend || 0) + uploadTotalSpend
-    const totalLeads = (metaTotals?.leads || 0) + (googleTotals?.leads || 0) + uploadTotalLeads
+    const totalSpend = (srcMetaTotals?.spend || 0) + (srcGoogleTotals?.spend || 0) + uploadTotalSpend
+    const totalLeads = (srcMetaTotals?.leads || 0) + (srcGoogleTotals?.leads || 0) + uploadTotalLeads
     const realCPL    = totalLeads > 0 ? +(totalSpend / totalLeads).toFixed(2) : 0
 
     // ── Métricas reais agregadas (usadas pelo Overview) ────────────────────────
     const totalImpressions = allCampaigns.reduce((s: number, c: any) => s + (c.impressions || 0), 0)
-      + (metaTotals?.impressions || 0) + (googleTotals?.impressions || 0)
+      + (srcMetaTotals?.impressions || 0) + (srcGoogleTotals?.impressions || 0)
     const totalClicks = allCampaigns.reduce((s: number, c: any) => s + (c.clicks || 0), 0)
-      + (metaTotals?.clicks || 0) + (googleTotals?.clicks || 0)
+      + (srcMetaTotals?.clicks || 0) + (srcGoogleTotals?.clicks || 0)
     const totalRevenue = allCampaigns.reduce((s: number, c: any) => s + (c.revenue || c.conversionValue || 0), 0)
-      + (metaTotals?.revenue || 0) + (googleTotals?.revenue || 0)
+      + (srcMetaTotals?.revenue || 0) + (srcGoogleTotals?.revenue || 0)
     const avgROAS = totalSpend > 0 && totalRevenue > 0 ? +(totalRevenue / Number(totalSpend)).toFixed(2) : null
     const avgCTR  = totalImpressions > 0 ? +((totalClicks / totalImpressions) * 100).toFixed(2) : null
 
@@ -644,7 +659,7 @@ export async function POST(req: NextRequest) {
       avgROAS,
       avgCTR,
       campaignCount: allCampaigns.length,
-      dataSource:    hasMeta && hasGoogle ? 'meta+google' : hasMeta ? 'meta' : hasGoogle ? 'google' : 'upload',
+      dataSource:    srcHasMeta && srcHasGoogle ? 'meta+google' : srcHasMeta ? 'meta' : srcHasGoogle ? 'google' : 'upload',
     }
 
     // ── Classificação determinística de campanhas ─────────────────────────────
@@ -654,7 +669,7 @@ export async function POST(req: NextRequest) {
       const camps = allCampaigns.filter((c: any) => (c.spend || 0) > 0)
       const vencedoras: any[] = [], atencao: any[] = [], criticas: any[] = []
       const leadsValid = camps.filter((x: any) => (x.leads || 0) > 0)
-      const avgCPL = leadsValid.length > 0
+      const avgCPLRef = leadsValid.length > 0
         ? leadsValid.reduce((s: number, x: any) => s + x.spend / x.leads, 0) / leadsValid.length
         : 0
       for (const c of camps) {
@@ -664,15 +679,46 @@ export async function POST(req: NextRequest) {
           else if (cpl !== null && cpl <= bench.cpl_max * 1.2)  atencao.push(c)
           else                                                    criticas.push(c)
         } else {
-          if (avgCPL > 0 && cpl !== null && cpl < avgCPL * 0.7) vencedoras.push(c)
-          else if (avgCPL > 0 && cpl !== null && cpl < avgCPL * 1.5) atencao.push(c)
+          if (avgCPLRef > 0 && cpl !== null && cpl < avgCPLRef * 0.7) vencedoras.push(c)
+          else if (avgCPLRef > 0 && cpl !== null && cpl < avgCPLRef * 1.5) atencao.push(c)
           else                                                    criticas.push(c)
         }
       }
+
+      const enrich = (c: any, type: 'vencedora' | 'atencao' | 'critica') => {
+        const cpl = (c.leads || 0) > 0 ? c.spend / c.leads : null
+        let evidence = ''
+        let recommended_action = ''
+        if (type === 'vencedora') {
+          const pctBelow = bench && cpl && bench.cpl_min > 0 ? Math.round((1 - cpl / bench.cpl_min) * 100) : 0
+          evidence = cpl
+            ? `CPL R$${Math.round(cpl)}${bench ? ` — ${pctBelow > 0 ? `${pctBelow}% abaixo do mínimo benchmark (R$${bench.cpl_min})` : 'no mínimo do benchmark'}` : ' — melhor CPL da conta'}`
+            : 'Alta performance relativa à conta'
+          recommended_action = 'Escalar gradualmente: +20–30% de verba por semana mantendo CPL controlado.'
+        } else if (type === 'atencao') {
+          evidence = cpl
+            ? `CPL R$${Math.round(cpl)}${bench ? ` — dentro do benchmark (R$${bench.cpl_min}–R$${bench.cpl_max})` : ' — acima da média mas com conversões'}`
+            : 'Conversões registradas, mas volume baixo'
+          recommended_action = 'Manter e otimizar: revisar público, criativo e oferta antes de escalar.'
+        } else {
+          if (!c.leads || c.leads === 0) {
+            evidence = `R$${Math.round(c.spend || 0).toLocaleString('pt-BR')} investidos sem nenhuma conversão registrada`
+            recommended_action = 'Pausar e investigar: verificar criativo, público, página de destino e evento de conversão.'
+          } else {
+            const pctAbove = bench && cpl && bench.cpl_max > 0 ? Math.round((cpl / bench.cpl_max - 1) * 100) : 0
+            evidence = cpl
+              ? `CPL R$${Math.round(cpl)}${bench ? ` — ${pctAbove > 0 ? `${pctAbove}% acima do máximo benchmark (R$${bench.cpl_max})` : 'no limite do benchmark'}` : ' — acima da média da conta'}`
+              : 'Performance insuficiente'
+            recommended_action = 'Reduzir verba em 50% e revisar: novo ângulo criativo e segmentação de público.'
+          }
+        }
+        return { ...c, evidence, recommended_action }
+      }
+
       return {
-        vencedoras: vencedoras.sort((a, b) => (a.spend / Math.max(a.leads, 1)) - (b.spend / Math.max(b.leads, 1))).slice(0, 8),
-        atencao:    atencao.sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8),
-        criticas:   criticas.sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8),
+        vencedoras: vencedoras.sort((a, b) => (a.spend / Math.max(a.leads, 1)) - (b.spend / Math.max(b.leads, 1))).slice(0, 8).map(c => enrich(c, 'vencedora')),
+        atencao:    atencao.sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8).map(c => enrich(c, 'atencao')),
+        criticas:   criticas.sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8).map(c => enrich(c, 'critica')),
       }
     })()
 
@@ -684,28 +730,17 @@ export async function POST(req: NextRequest) {
     const totalWaste     = wasteCampaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
     const wastePercent   = Number(totalSpend) > 0 ? +((totalWaste / Number(totalSpend)) * 100).toFixed(1) : 0
 
-    // ── Qualidade dos dados ───────────────────────────────────────────────────
-    const dataQuality = (() => {
-      const issues: string[] = []
-      let score = 0
-      if (hasMeta || hasGoogle) score += 35; else if (hasUpload) score += 25
-      if (Number(totalSpend) > 0) score += 25; else issues.push('Sem dados de investimento')
-      if (totalLeads > 0) score += 25; else issues.push('Sem dados de conversão')
-      if (avgROAS !== null) score += 10
-      if (allCampaigns.length > 0) score += 5
-      const confidence: 'alta' | 'media' | 'baixa' = score >= 70 ? 'alta' : score >= 40 ? 'media' : 'baixa'
-      return { confidence, issues }
-    })()
-
     // ── Detecção de inconsistência API + arquivo do mesmo canal ───────────────
+    // Só avisa quando o usuário NÃO fez escolha explícita de fonte.
+    // Em modo 'api' ou 'upload' a inconsistência foi resolvida pelo seletor.
     const dataWarnings: string[] = []
-    {
+    if (auditSource === 'auto' || auditSource === 'consolidate') {
       const metaUploads = allUploadedFiles.filter((f: any) => f.platform === 'meta')
       if (hasMeta && metaUploads.length > 0) {
         const metaUp  = metaUploads.reduce((s: number, f: any) => s + f.campaigns.reduce((ss: number, c: any) => ss + (c.spend || 0), 0), 0)
         const metaApi = metaTotals?.spend || 0
         if (metaUp > metaApi * 0.3 && metaApi > 0) {
-          dataWarnings.push(`Meta Ads: API retornou R$${Math.round(metaApi).toLocaleString('pt-BR')} e o arquivo importado contém R$${Math.round(metaUp).toLocaleString('pt-BR')}. Se cobrem o mesmo período e conta, o investimento total pode estar duplicado nesta auditoria.`)
+          dataWarnings.push(`Meta Ads: API retornou R$${Math.round(metaApi).toLocaleString('pt-BR')} e o arquivo importado contém R$${Math.round(metaUp).toLocaleString('pt-BR')}. Se cobrem o mesmo período e conta, o investimento total pode estar duplicado. Use o seletor de fonte para escolher qual usar.`)
         }
       }
       const gUploads = allUploadedFiles.filter((f: any) => f.platform === 'google')
@@ -717,6 +752,55 @@ export async function POST(req: NextRequest) {
         }
       }
     }
+
+    // ── Qualidade dos dados ───────────────────────────────────────────────────
+    const dataQuality = (() => {
+      const issues: string[] = []
+      let score = 0
+      if (srcHasMeta || srcHasGoogle) score += 35; else if (hasUpload) score += 25
+      if (Number(totalSpend) > 0) score += 25; else issues.push('Sem dados de investimento')
+      if (totalLeads > 0) score += 25; else issues.push('Sem dados de conversão')
+      if (avgROAS !== null) score += 10
+      if (allCampaigns.length > 0) score += 5
+      const confidence: 'alta' | 'media' | 'baixa' = score >= 70 ? 'alta' : score >= 40 ? 'media' : 'baixa'
+
+      const reasonParts: string[] = []
+      if (srcHasMeta || srcHasGoogle) reasonParts.push(`dados reais de API (${auditSource === 'api' ? 'somente API' : 'consolidado'})`)
+      else if (hasUpload) reasonParts.push('dados de arquivo importado')
+      if (totalLeads === 0) reasonParts.push('sem conversões registradas')
+      if (avgROAS === null) reasonParts.push('ROAS não calculado')
+      if (dataWarnings.length > 0) reasonParts.push('possível inconsistência de fontes detectada')
+      const apiOrUpload = reasonParts.find(p => p.startsWith('dados'))
+      const problems = reasonParts.filter(p => !p.startsWith('dados'))
+      const reason = confidence === 'alta'
+        ? `Dados reais de API disponíveis com investimento, conversões e métricas completas.`
+        : `Confiança ${confidence === 'media' ? 'média' : 'baixa'}: ${[apiOrUpload, ...problems].filter(Boolean).join(', ')}.`
+      return { confidence, issues, reason }
+    })()
+
+    // ── Checklist de tracking (determinístico — base para a seção de tracking) ─
+    const trackingChecklist = [
+      {
+        id: 'pixel', label: 'Pixel instalado',
+        status: (srcHasMeta || hasUpload) ? (totalLeads > 0 ? 'verificado' : 'nao_verificado') : 'indisponivel',
+      },
+      { id: 'api_conv',    label: 'API de Conversões ativa',               status: 'nao_verificado' as const },
+      {
+        id: 'evento_lead', label: 'Evento Lead configurado',
+        status: totalLeads > 0 ? 'verificado' : 'nao_verificado',
+      },
+      { id: 'deduplicacao', label: 'Deduplicação ativa',                   status: 'nao_verificado' as const },
+      {
+        id: 'evento_compra', label: 'Evento de compra/receita configurado',
+        status: totalRevenue > 0 ? 'verificado' : 'nao_verificado',
+      },
+      { id: 'utms',          label: 'UTMs instaladas',                     status: 'nao_verificado' as const },
+      { id: 'crm',           label: 'CRM/planilha confere leads reais',    status: 'nao_verificado' as const },
+      {
+        id: 'evento_otimizado', label: 'Evento otimizado corresponde ao objetivo da campanha',
+        status: totalLeads > 0 ? 'verificado' : 'nao_verificado',
+      },
+    ]
 
     // ── Período legível ────────────────────────────────────────────────────────
     const periodLabel = period ? `${period.startDate} a ${period.endDate}`
@@ -733,27 +817,30 @@ export async function POST(req: NextRequest) {
         const anthropic = new Anthropic({ apiKey })
 
         // ── Monta o contexto completo de dados ─────────────────────────────
-        const metaSummary = hasMeta ? `
+        const metaSummary = srcHasMeta ? `
 === META ADS ===
-Gasto: R$${(metaTotals?.spend || 0).toFixed(2)} | Impressões: ${(metaTotals?.impressions || 0).toLocaleString('pt-BR')} | Cliques: ${metaTotals?.clicks || 0}
-CTR: ${metaTotals?.ctr || 0}% | CPL: R$${metaTotals?.cpl || 0} | ROAS: ${metaTotals?.roas || 0}× | Leads: ${metaTotals?.leads || 0}
-Campanhas (${metaCampaigns.length}):
-${metaCampaigns.slice(0, 20).map((c: any) =>
+Fonte dos dados: ${auditSource === 'upload' ? 'arquivo importado' : 'API Meta Ads'}
+Gasto: R$${(srcMetaTotals?.spend || 0).toFixed(2)} | Impressões: ${(srcMetaTotals?.impressions || 0).toLocaleString('pt-BR')} | Cliques: ${srcMetaTotals?.clicks || 0}
+CTR: ${srcMetaTotals?.ctr || 0}% | CPL: R$${srcMetaTotals?.cpl || 0} | ROAS: ${srcMetaTotals?.roas || 0}× | Leads: ${srcMetaTotals?.leads || 0}
+Campanhas (${srcMetaCampaigns.length}):
+${srcMetaCampaigns.slice(0, 20).map((c: any) =>
   `  [${c.status || 'ACTIVE'}] ${c.name}
    Gasto: R$${(c.spend||0).toFixed(2)} | Leads: ${c.leads||0} | CPL: R$${(c.cpl||0).toFixed(2)} | CTR: ${(c.ctr||0).toFixed(2)}% | ROAS: ${(c.roas||0).toFixed(2)}× | Frequência: ${(c.frequency||0).toFixed(1)}`
 ).join('\n')}` : ''
 
-        const googleSummary = hasGoogle ? `
+        const googleSummary = srcHasGoogle ? `
 === GOOGLE ADS ===
-Gasto: R$${(googleTotals?.spend || 0).toFixed(2)} | Impressões: ${(googleTotals?.impressions || 0).toLocaleString('pt-BR')} | Cliques: ${googleTotals?.clicks || 0}
-CTR: ${googleTotals?.ctr || 0}% | CPL: R$${googleTotals?.cpl || 0} | ROAS: ${googleTotals?.roas || 0}× | Conversões: ${googleTotals?.leads || 0}
-Campanhas (${googleCampaigns.length}):
-${googleCampaigns.slice(0, 20).map((c: any) =>
+Fonte dos dados: ${auditSource === 'upload' ? 'arquivo importado' : 'API Google Ads'}
+Gasto: R$${(srcGoogleTotals?.spend || 0).toFixed(2)} | Impressões: ${(srcGoogleTotals?.impressions || 0).toLocaleString('pt-BR')} | Cliques: ${srcGoogleTotals?.clicks || 0}
+CTR: ${srcGoogleTotals?.ctr || 0}% | CPL: R$${srcGoogleTotals?.cpl || 0} | ROAS: ${srcGoogleTotals?.roas || 0}× | Conversões: ${srcGoogleTotals?.leads || 0}
+(ATENÇÃO: conversões no Google Ads podem incluir múltiplas ações configuradas na conta — verificar se o evento otimizado é o correto)
+Campanhas (${srcGoogleCampaigns.length}):
+${srcGoogleCampaigns.slice(0, 20).map((c: any) =>
   `  [${c.status || 'ACTIVE'}] ${c.name}
-   Gasto: R$${(c.spend||0).toFixed(2)} | Leads: ${c.leads||0} | CPL: R$${(c.cpl||0).toFixed(2)} | CTR: ${(c.ctr||0).toFixed(2)}%`
+   Gasto: R$${(c.spend||0).toFixed(2)} | Conv.: ${c.leads||0} | CPA: R$${(c.cpl||0).toFixed(2)} | CTR: ${(c.ctr||0).toFixed(2)}%`
 ).join('\n')}` : ''
 
-        const uploadSummary = allUploadedFiles.length > 0 ? allUploadedFiles.map(file => `
+        const uploadSummary = srcUploadedFiles.length > 0 ? srcUploadedFiles.map((file: any) => `
 === ARQUIVO IMPORTADO: ${file.filename.toUpperCase()} [${(file.platform || 'desconhecido').toUpperCase()}] ===
 Total de campanhas/anúncios: ${file.campaigns.length}
 ${file.campaigns.slice(0, 25).map((c: any) =>
@@ -764,7 +851,7 @@ Subtotal: Gasto R$${file.campaigns.reduce((s:number,c:any)=>s+(c.spend||0),0).to
         ).join('\n') : ''
 
         // ── Detecção de anomalias e qualidade de dados ─────────────────
-        const allCamps = [...metaCampaigns, ...googleCampaigns, ...allUploadedCampaigns]
+        const allCamps = allCampaigns  // já filtrado pelo auditSource
         const anomalies: string[] = []
 
         // CTR suspeito (possível tráfego bot ou erro de tracking)
@@ -847,7 +934,8 @@ Nicho: ${niche}
 Investimento mensal configurado: R$${budget}
 Objetivo: ${objective}
 Período analisado: ${period ? `${period.startDate} a ${period.endDate}` : datePreset === 'last_7d' ? 'Últimos 7 dias' : datePreset === 'last_90d' ? 'Últimos 90 dias' : datePreset === 'this_month' ? 'Este mês' : datePreset === 'last_month' ? 'Mês anterior' : 'Últimos 30 dias'}
-Fontes de dados: ${[hasMeta && 'Meta Ads', hasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean).join(' + ')}
+Fonte selecionada: ${auditSource === 'api' ? 'Somente API' : auditSource === 'upload' ? 'Somente arquivo importado' : 'Consolidado'}
+Dados disponíveis: ${[srcHasMeta && 'Meta Ads', srcHasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean).join(' + ')}
 
 ${anomalySection}
 
@@ -882,14 +970,14 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
   },
 
   "estrutura_campanhas": {
-    "meta": ${hasMeta ? `{
+    "meta": ${srcHasMeta ? `{
       "resumo": "<análise da estrutura geral — organize ou não? Por quê?>",
       "organizacao_funil": "<as campanhas estão divididas por etapa do funil? TOFU/MOFU/BOFU?>",
       "separacao_publicos": "<há separação clara de frio, morno e quente? Cite nomes das campanhas>",
       "tipos_campanha": "<objetivos estão corretos para a fase do funil?>",
       "erros": ["<erro estrutural grave específico com nome da campanha>"]
     }` : 'null'},
-    "google": ${hasGoogle ? `{
+    "google": ${srcHasGoogle ? `{
       "resumo": "<análise da estrutura do Google Ads>",
       "organizacao": "<estrutura de campanhas está lógica?>",
       "palavras_chave_estrutura": "<separação por intenção está correta?>",
@@ -899,37 +987,37 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
   },
 
   "tracking": {
-    "meta": ${hasMeta ? `{
+    "meta": ${srcHasMeta ? `{
       "pixel_ok": <true|false|null — inferir dos dados se possível>,
       "api_conversoes": <true|false|null>,
       "eventos_duplicados": <true|false|null>,
       "problemas": ["<problema específico de tracking com impacto>"]
     }` : 'null'},
-    "google": ${hasGoogle ? `{
-      "conversoes_confiaveis": <true|false|null>,
+    "google": ${srcHasGoogle ? `{
+      "conversoes_confiaveis": <true|false|null — LEMBRE: conversões Google podem ser múltiplas ações configuradas>,
       "importacao_correta": <true|false|null>,
       "problema_vaidade": <true|false>,
-      "problemas": ["<problema de tracking Google>"]
+      "problemas": ["<problema de tracking Google — mencionar se conversões incluem ações de vaidade>"]
     }` : 'null'},
     "prioridade_maxima": <true se há problemas críticos de tracking>,
     "alerta": "<se há problema de tracking, descreva o impacto no negócio>"
   },
 
   "performance": {
-    "meta": ${hasMeta ? `{
+    "meta": ${srcHasMeta ? `{
       "metricas": {
         "cpm": <valor ou 0>,
-        "ctr": <${metaTotals?.ctr || 0}>,
+        "ctr": <${srcMetaTotals?.ctr || 0}>,
         "cpc": <valor ou 0>,
-        "cpa": <${metaTotals?.cpl || 0}>,
+        "cpa": <${srcMetaTotals?.cpl || 0}>,
         "frequencia": <valor médio ou 0>
       },
       "gargalos": ["<gargalo identificado com causa raiz — NÃO genérico>"],
       "interpretacao": "<o que essas métricas SIGNIFICAM para o negócio — impacto financeiro>"
     }` : 'null'},
-    "google": ${hasGoogle ? `{
+    "google": ${srcHasGoogle ? `{
       "metricas": {
-        "ctr": <${googleTotals?.ctr || 0}>,
+        "ctr": <${srcGoogleTotals?.ctr || 0}>,
         "cpc": <valor ou 0>,
         "taxa_conversao": <valor ou 0>
       },
@@ -938,7 +1026,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     }` : 'null'}
   },
 
-  "criativos_meta": ${hasMeta || allUploadedCampaigns.length > 0 ? `{
+  "criativos_meta": ${srcHasMeta || srcUploadedCampaigns.length > 0 ? `{
     "quantidade": "<suficiente ou insuficiente — cite dados>",
     "qualidade_ganchos": "<os ganchos capturam atenção ou são genéricos?>",
     "clareza_oferta": "<a oferta está clara nos 3 primeiros segundos?>",
@@ -950,13 +1038,13 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
   }` : 'null'},
 
   "publicos": {
-    "meta": ${hasMeta ? `{
+    "meta": ${srcHasMeta ? `{
       "amplos_segmentados": "<está usando público amplo (Advantage+) ou hiper-segmentado? O que indica os dados?>",
       "lookalikes": "<há uso de lookalike? De qual fonte?>",
       "remarketing": "<há estrutura de remarketing? Cite campanhas se existirem>",
       "problemas": ["<problema de segmentação com impacto financeiro>"]
     }` : 'null'},
-    "google": ${hasGoogle ? `{
+    "google": ${srcHasGoogle ? `{
       "qualidade_kws": "<palavras-chave estão com intenção comercial ou desperdiçando em buscas genéricas?>",
       "correspondencia": "<uso de correspondência exata/frase/ampla está equilibrado?>",
       "negativacao": "<há lista de negativos robusta?>",
@@ -1021,11 +1109,15 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
   ],
 
   "o_que_eu_faria_agora": [
-    "<ação imediata #1 — direta, 1 frase, com nome de campanha/canal quando aplicável>",
-    "<ação #2>",
-    "<ação #3>",
-    "<ação #4>",
-    "<ação #5>"
+    {
+      "titulo": "<ação direta — máx 8 palavras>",
+      "prioridade": "<P1|P2|P3>",
+      "motivo": "<por que é urgente — 1 frase específica>",
+      "evidencia": "<dado real que justifica — cite número exato>",
+      "impacto": "<resultado esperado em 1 frase>",
+      "prazo": "<48h|3 dias|7 dias|15 dias>",
+      "esforco": "<baixo|medio|alto>"
+    }
   ],
 
   "qualidade_dados": "<1-2 frases: os dados disponíveis são suficientes para tomar decisões? Qual é o maior ponto cego desta auditoria — o que não conseguimos ver com estes dados?>"
@@ -1064,7 +1156,10 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
         audit._dataQuality             = dataQuality
         audit._dataWarnings            = dataWarnings
         audit._period                  = periodLabel
-        audit._platforms               = [hasMeta && 'Meta Ads', hasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean)
+        audit._platforms               = [srcHasMeta && 'Meta Ads', srcHasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean)
+        audit._auditSource             = auditSource
+        audit._trackingChecklist       = trackingChecklist
+        audit._hasGoogleConversions    = srcHasGoogle && (srcGoogleTotals?.leads || 0) > 0
 
         // ── Salva padrões na memória RAG (fire-and-forget) ─────────────────
         saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
@@ -1104,7 +1199,10 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     audit._dataQuality             = dataQuality
     audit._dataWarnings            = dataWarnings
     audit._period                  = periodLabel
-    audit._platforms               = [hasMeta && 'Meta Ads', hasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean)
+    audit._platforms               = [srcHasMeta && 'Meta Ads', srcHasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean)
+    audit._auditSource             = auditSource
+    audit._trackingChecklist       = trackingChecklist
+    audit._hasGoogleConversions    = srcHasGoogle && (srcGoogleTotals?.leads || 0) > 0
 
     saveAuditMemory(userId, clientName, niche, audit, realMetrics).catch(() => {})
 

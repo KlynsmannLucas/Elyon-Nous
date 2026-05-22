@@ -369,6 +369,7 @@ export function TabAuditoria({ clientData }: Props) {
   const [parseError,    setParseError]    = useState('')
   const [activeAction,  setActiveAction]  = useState<'curto' | 'medio' | 'longo'>('curto')
   const [datePreset,    setDatePreset]    = useState<string>('last_30d')
+  const [auditSource,   setAuditSource]   = useState<'api' | 'upload' | 'consolidate'>('api')
 
   const key = clientData?.clientName || ''
 
@@ -399,6 +400,11 @@ export function TabAuditoria({ clientData }: Props) {
   const googleAccount = connectedAccounts.find(a => a.platform === 'google')
   const hasUpload      = uploadedFiles.length > 0
   const canAudit       = (!!metaAccount || !!googleAccount || hasUpload) && !!clientData
+
+  // Conflito = API + arquivo da MESMA plataforma → usuário precisa escolher fonte
+  const hasMetaConflict   = !!metaAccount && uploadedFiles.some(f => f.platform === 'meta')
+  const hasGoogleConflict = !!googleAccount && uploadedFiles.some(f => f.platform === 'google')
+  const hasSourceConflict  = hasMetaConflict || hasGoogleConflict
 
   // ── Parse de arquivo ────────────────────────────────────────────────────────
   const parseFile = useCallback(async (file: File) => {
@@ -540,6 +546,7 @@ export function TabAuditoria({ clientData }: Props) {
             platform: f.platform,
             campaigns: f.campaigns,
           })),
+          auditSource: hasSourceConflict ? auditSource : 'auto',
         }),
       })
 
@@ -813,6 +820,48 @@ export function TabAuditoria({ clientData }: Props) {
         )}
       </div>
 
+      {/* ── Seletor de fonte quando API + CSV do mesmo canal estão presentes ── */}
+      {hasSourceConflict && canAudit && (
+        <div className="rounded-2xl p-5" style={{ background: '#111114', border: '2px solid rgba(240,180,41,0.4)' }}>
+          <div className="flex items-start gap-3 mb-4">
+            <span className="text-xl flex-shrink-0">⚡</span>
+            <div>
+              <div className="font-bold text-[#F0B429] text-sm mb-1">Conflito de fontes detectado</div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {[hasMetaConflict && 'Meta Ads', hasGoogleConflict && 'Google Ads'].filter(Boolean).join(' e ')} tem{' '}
+                dados da API <strong>e</strong> arquivo importado. Escolha qual fonte usar para garantir métricas corretas.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            {([
+              { value: 'api' as const,         icon: '🔗', label: 'Usar somente API',     desc: 'Dados em tempo real da plataforma conectada' },
+              { value: 'upload' as const,       icon: '📂', label: 'Usar somente arquivo', desc: 'Dados do relatório CSV/XLSX importado' },
+              { value: 'consolidate' as const,  icon: '⚠',  label: 'Consolidar tudo',      desc: 'Soma API + arquivo — pode duplicar se mesmo período' },
+            ] as const).map(({ value, icon, label, desc }) => (
+              <button
+                key={value}
+                onClick={() => setAuditSource(value)}
+                className="flex items-start gap-3 rounded-xl px-4 py-3 text-left transition-all"
+                style={{
+                  background:   auditSource === value ? 'rgba(240,180,41,0.1)' : 'rgba(255,255,255,0.02)',
+                  border:       `1px solid ${auditSource === value ? 'rgba(240,180,41,0.5)' : '#2A2A30'}`,
+                }}
+              >
+                <span className="text-base flex-shrink-0 mt-0.5">{icon}</span>
+                <div>
+                  <div className="text-xs font-bold" style={{ color: auditSource === value ? '#F0B429' : '#94A3B8' }}>{label}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{desc}</div>
+                </div>
+                {auditSource === value && (
+                  <span className="ml-auto flex-shrink-0 text-[10px] font-bold text-[#F0B429]">✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Estado vazio */}
       {!canAudit && !loading && (
         <div className="flex flex-col items-center justify-center py-12 text-center bg-[#111114] border border-[#2A2A30] rounded-2xl">
@@ -989,6 +1038,21 @@ export function TabAuditoria({ clientData }: Props) {
                 </div>
               )}
 
+              {/* Razão da confiança (determinística) */}
+              {audit._dataQuality?.reason && (
+                <p className="text-[11px] text-slate-500 leading-relaxed mt-2 italic">{audit._dataQuality.reason}</p>
+              )}
+
+              {/* Fonte da auditoria usada */}
+              {audit._auditSource && audit._auditSource !== 'auto' && (
+                <div className="mt-2 flex items-center gap-1.5 text-[10px]">
+                  <span className="text-slate-600">Fonte desta auditoria:</span>
+                  <span className="font-semibold" style={{ color: audit._auditSource === 'api' ? '#38BDF8' : audit._auditSource === 'upload' ? '#22C55E' : '#F0B429' }}>
+                    {audit._auditSource === 'api' ? 'Somente API' : audit._auditSource === 'upload' ? 'Somente arquivo importado' : 'Consolidado (API + arquivo)'}
+                  </span>
+                </div>
+              )}
+
               {/* qualidade_dados da IA, quando disponível */}
               {audit.qualidade_dados && (
                 <p className="text-xs text-slate-500 leading-relaxed mt-3 pt-3 border-t border-[#1E1E24]">{audit.qualidade_dados}</p>
@@ -1085,13 +1149,17 @@ export function TabAuditoria({ clientData }: Props) {
                       {(audit._campanhasClassificadas.vencedoras as any[]).map((c, i) => {
                         const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
                         return (
-                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2">
-                            <div className="text-[11px] font-semibold text-slate-200 truncate">{c.name}</div>
-                            <div className="flex gap-3 mt-0.5 text-[10px] text-slate-500">
-                              <span>{fmt(c.spend)}</span>
-                              {cpl !== null && <span className="text-[#22C55E]">CPL R${cpl}</span>}
-                              {c.platform && <span>{c.platform}</span>}
+                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2.5">
+                            <div className="text-[11px] font-semibold text-slate-200 truncate mb-1">{c.name}</div>
+                            <div className="flex flex-wrap gap-2 text-[10px]">
+                              <span className="text-slate-500">{fmt(c.spend)}</span>
+                              {cpl !== null && <span className="text-[#22C55E] font-semibold">CPL R${cpl}</span>}
+                              {c.ctr > 0 && <span className="text-slate-500">CTR {c.ctr.toFixed(1)}%</span>}
+                              {c.frequency > 0 && <span className="text-slate-500">Freq {c.frequency.toFixed(1)}×</span>}
+                              {c.platform && <span className="text-slate-600">{c.platform}</span>}
                             </div>
+                            {c.evidence && <p className="text-[9px] text-[#22C55E]/70 mt-1 leading-tight">{c.evidence}</p>}
+                            {c.recommended_action && <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">→ {c.recommended_action}</p>}
                           </div>
                         )
                       })}
@@ -1112,12 +1180,16 @@ export function TabAuditoria({ clientData }: Props) {
                       {(audit._campanhasClassificadas.atencao as any[]).map((c, i) => {
                         const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
                         return (
-                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2">
-                            <div className="text-[11px] font-semibold text-slate-200 truncate">{c.name}</div>
-                            <div className="flex gap-3 mt-0.5 text-[10px] text-slate-500">
-                              <span>{fmt(c.spend)}</span>
-                              {cpl !== null && <span className="text-[#F0B429]">CPL R${cpl}</span>}
+                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2.5">
+                            <div className="text-[11px] font-semibold text-slate-200 truncate mb-1">{c.name}</div>
+                            <div className="flex flex-wrap gap-2 text-[10px]">
+                              <span className="text-slate-500">{fmt(c.spend)}</span>
+                              {cpl !== null && <span className="text-[#F0B429] font-semibold">CPL R${cpl}</span>}
+                              {c.ctr > 0 && <span className="text-slate-500">CTR {c.ctr.toFixed(1)}%</span>}
+                              {c.frequency > 0 && <span className="text-slate-500">Freq {c.frequency.toFixed(1)}×</span>}
                             </div>
+                            {c.evidence && <p className="text-[9px] text-[#F0B429]/70 mt-1 leading-tight">{c.evidence}</p>}
+                            {c.recommended_action && <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">→ {c.recommended_action}</p>}
                           </div>
                         )
                       })}
@@ -1138,12 +1210,15 @@ export function TabAuditoria({ clientData }: Props) {
                       {(audit._campanhasClassificadas.criticas as any[]).map((c, i) => {
                         const cpl = c.leads > 0 ? Math.round(c.spend / c.leads) : null
                         return (
-                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2">
-                            <div className="text-[11px] font-semibold text-slate-200 truncate">{c.name}</div>
-                            <div className="flex gap-3 mt-0.5 text-[10px] text-slate-500">
-                              <span>{fmt(c.spend)}</span>
-                              {cpl !== null ? <span className="text-[#FF4D4D]">CPL R${cpl}</span> : <span className="text-[#FF4D4D]">0 conv.</span>}
+                          <div key={i} className="bg-[#0E0E11] rounded-lg px-3 py-2.5">
+                            <div className="text-[11px] font-semibold text-slate-200 truncate mb-1">{c.name}</div>
+                            <div className="flex flex-wrap gap-2 text-[10px]">
+                              <span className="text-slate-500">{fmt(c.spend)}</span>
+                              {cpl !== null ? <span className="text-[#FF4D4D] font-semibold">CPL R${cpl}</span> : <span className="text-[#FF4D4D] font-semibold">0 conv.</span>}
+                              {c.ctr > 0 && <span className="text-slate-500">CTR {c.ctr.toFixed(1)}%</span>}
                             </div>
+                            {c.evidence && <p className="text-[9px] text-[#FF4D4D]/70 mt-1 leading-tight">{c.evidence}</p>}
+                            {c.recommended_action && <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">→ {c.recommended_action}</p>}
                           </div>
                         )
                       })}
@@ -1304,6 +1379,47 @@ export function TabAuditoria({ clientData }: Props) {
                   </PlatformBlock>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ── CHECKLIST DE TRACKING ── */}
+          {(audit._trackingChecklist as any[] | undefined)?.length! > 0 && (
+            <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                  style={{ background: 'rgba(255,77,77,0.1)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)' }}>3B</span>
+                <span className="text-lg">✅</span>
+                <h3 className="font-display font-bold text-white text-base">Checklist de Tracking</h3>
+                <span className="ml-auto text-[10px] text-slate-600">Preencha manualmente conforme seu acesso</span>
+              </div>
+              {audit._hasGoogleConversions && (
+                <div className="mb-3 flex items-start gap-2 text-[10px] text-[#38BDF8] bg-[#38BDF8]/06 border border-[#38BDF8]/20 rounded-xl px-3 py-2">
+                  <span className="flex-shrink-0 mt-0.5">ℹ</span>
+                  <span>Conversões do Google Ads podem incluir múltiplas ações configuradas na conta (formulários, ligações, compras, etc.). Verifique se o evento otimizado corresponde ao objetivo real da campanha.</span>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                {(audit._trackingChecklist as any[]).map((item: any) => {
+                  const statusConfig = {
+                    verificado:       { color: '#22C55E', bg: 'rgba(34,197,94,0.08)',  label: '✓ Verificado' },
+                    nao_verificado:   { color: '#F0B429', bg: 'rgba(240,180,41,0.06)', label: '? Não verificado' },
+                    problema:         { color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)',  label: '✗ Problema' },
+                    indisponivel:     { color: '#64748B', bg: 'rgba(100,116,139,0.06)', label: '— Indisponível' },
+                    precisa_acesso:   { color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', label: '🔑 Precisa de acesso' },
+                  } as Record<string, { color: string; bg: string; label: string }>
+                  const cfg = statusConfig[item.status] || statusConfig['nao_verificado']
+                  return (
+                    <div key={item.id} className="flex items-center justify-between rounded-lg px-3 py-2"
+                      style={{ background: cfg.bg, border: `1px solid ${cfg.color}20` }}>
+                      <span className="text-[11px] text-slate-300">{item.label}</span>
+                      <span className="text-[10px] font-bold flex-shrink-0 ml-2" style={{ color: cfg.color }}>{cfg.label}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] text-slate-600 mt-3">
+                Itens marcados como "Não verificado" requerem acesso ao Events Manager (Meta) ou Google Ads para confirmação manual.
+              </p>
             </div>
           )}
 
@@ -1574,7 +1690,7 @@ export function TabAuditoria({ clientData }: Props) {
           )}
 
           {/* ── O QUE EU FARIA AGORA ─────────────────────────────────────────── */}
-          {(audit.o_que_eu_faria_agora as string[] | undefined)?.length! > 0 && (
+          {(audit.o_que_eu_faria_agora as any[] | undefined)?.length! > 0 && (
             <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111114 0%, #0E0E11 100%)', border: '1px solid rgba(240,180,41,0.35)' }}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-lg">⚡</span>
@@ -1582,14 +1698,73 @@ export function TabAuditoria({ clientData }: Props) {
                 <span className="ml-auto text-[10px] text-slate-600">Perspectiva do consultor sênior</span>
               </div>
               <div className="space-y-2.5">
-                {(audit.o_que_eu_faria_agora as string[]).map((action: string, i: number) => (
-                  <div key={i} className="flex items-start gap-3 rounded-xl px-4 py-3"
-                    style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 text-black"
-                      style={{ background: '#F0B429' }}>{i + 1}</span>
-                    <p className="text-sm text-slate-200 leading-relaxed">{action}</p>
-                  </div>
-                ))}
+                {(audit.o_que_eu_faria_agora as any[]).map((action: any, i: number) => {
+                  // Suporte a formato legado (string) e novo (objeto)
+                  const isObj = typeof action === 'object' && action !== null
+                  const titulo    = isObj ? action.titulo    : action
+                  const prioridade = isObj ? action.prioridade : null
+                  const motivo    = isObj ? action.motivo    : null
+                  const evidencia = isObj ? action.evidencia : null
+                  const impacto   = isObj ? action.impacto   : null
+                  const prazo     = isObj ? action.prazo     : null
+                  const esforco   = isObj ? action.esforco   : null
+                  const prioColor = prioridade === 'P1' ? '#FF4D4D' : prioridade === 'P2' ? '#F0B429' : '#64748B'
+
+                  return (
+                    <div key={i} className="rounded-xl px-4 py-3"
+                      style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
+                      <div className="flex items-start gap-3">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 text-black"
+                          style={{ background: '#F0B429' }}>{i + 1}</span>
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between gap-2 flex-wrap">
+                            <p className="text-sm font-semibold text-slate-200 leading-snug">{titulo}</p>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              {prioridade && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                                  style={{ color: prioColor, background: `${prioColor}15`, border: `1px solid ${prioColor}30` }}>
+                                  {prioridade}
+                                </span>
+                              )}
+                              {prazo && <span className="text-[9px] text-slate-500">{prazo}</span>}
+                              {esforco && <span className="text-[9px] text-slate-500">esforço {esforco}</span>}
+                            </div>
+                          </div>
+                          {motivo && <p className="text-xs text-slate-400 mt-1 leading-relaxed">{motivo}</p>}
+                          {evidencia && <p className="text-[10px] text-[#F0B429]/70 mt-1 leading-relaxed">📊 {evidencia}</p>}
+                          {impacto && <p className="text-[10px] text-[#22C55E]/80 mt-1 leading-relaxed">→ {impacto}</p>}
+                        </div>
+                        {clientData && (
+                          <button
+                            title="Enviar para Ações Prioritárias"
+                            onClick={() => {
+                              const newAction = {
+                                id: `oqef_${Date.now()}_${i}`,
+                                clientId: '',
+                                title: titulo,
+                                description: [motivo, evidencia].filter(Boolean).join(' — '),
+                                platform: 'ambos' as const,
+                                urgency: (prioridade === 'P1' ? 'critica' : prioridade === 'P2' ? 'alta' : 'media') as 'critica' | 'alta' | 'media',
+                                priority: i + 1,
+                                impact: impacto || '',
+                                metric: undefined,
+                                evidence: evidencia,
+                                status: 'pendente' as const,
+                                source: 'auditoria' as const,
+                                origin: 'auditoria',
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString(),
+                              }
+                              addPendingActions(clientData.clientName, [newAction])
+                            }}
+                            className="flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-lg transition-opacity hover:opacity-80"
+                            style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.25)' }}
+                          >+ Ações</button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
