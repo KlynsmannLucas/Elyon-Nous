@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const act     = `act_${accountId}`
-    const baseUrl = 'https://graph.facebook.com/v19.0'
+    const baseUrl = 'https://graph.facebook.com/v21.0'
     const token   = encodeURIComponent(accessToken)
 
     const today       = new Date()

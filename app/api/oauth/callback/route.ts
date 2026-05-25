@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 
       // 1. Troca código pelo short-lived token
       const tokenRes = await fetch(
-        `https://graph.facebook.com/v19.0/oauth/access_token?` +
+        `https://graph.facebook.com/v21.0/oauth/access_token?` +
         `client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}` +
         `&client_secret=${clientSecret}&code=${code}`
       )
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
       // 2. Troca pelo long-lived token (~60 dias)
       const llRes = await fetch(
-        `https://graph.facebook.com/v19.0/oauth/access_token?` +
+        `https://graph.facebook.com/v21.0/oauth/access_token?` +
         `grant_type=fb_exchange_token` +
         `&client_id=${clientId}` +
         `&client_secret=${clientSecret}` +
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
 
       // 3. Busca ad accounts associados
       const accountsRes  = await fetch(
-        `https://graph.facebook.com/v19.0/me/adaccounts?fields=id,name&limit=50&access_token=${accessToken}`
+        `https://graph.facebook.com/v21.0/me/adaccounts?fields=id,name&limit=50&access_token=${accessToken}`
       )
       const accountsData = await accountsRes.json()
       allAccounts = (accountsData.data || []).map((a: any) => ({

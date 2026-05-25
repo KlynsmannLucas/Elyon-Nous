@@ -19,7 +19,7 @@ async function fetchCompetitorAds(
       access_token:         accessToken,
     })
     const res = await fetch(
-      `https://graph.facebook.com/v19.0/ads_archive?${params}`,
+      `https://graph.facebook.com/v21.0/ads_archive?${params}`,
       { signal: AbortSignal.timeout(8000) }
     )
     const ct = res.headers.get('content-type') || ''

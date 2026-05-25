@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     }
 
     const res = await fetch(
-      `https://graph.facebook.com/v19.0/act_${accountId}/insights?${params}`,
+      `https://graph.facebook.com/v21.0/act_${accountId}/insights?${params}`,
       { signal: AbortSignal.timeout(30_000) }
     )
 

@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
     }
 
     const freqLimit = freqThreshold(niche)
-    const baseUrl   = `https://graph.facebook.com/v19.0`
+    const baseUrl   = `https://graph.facebook.com/v21.0`
     const act       = `act_${accountId}`
     const token     = encodeURIComponent(accessToken)
 

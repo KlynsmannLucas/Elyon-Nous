@@ -97,10 +97,46 @@ export function DashboardTopbar({
   const currentTab = allItems.find(t => t.key === activeTab)
   const subtitle   = TAB_SUBTITLES[activeTab] || ''
 
-  const today        = new Date()
-  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const today = new Date()
   const fmt = (d: Date) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const dateRange    = `${fmt(firstOfMonth)} — ${fmt(today)}`
+
+  // Calcula o range real com base no último preset de auditoria salvo no store
+  const { auditCache } = useAppStore()
+  const lastAuditPreset = (() => {
+    if (!clientData?.clientName) return null
+    const entries = auditCache[clientData.clientName]
+    if (!entries?.length) return null
+    return (entries[0]?.audit as any)?._datePreset as string | undefined
+  })()
+
+  const dateRange = (() => {
+    const preset = lastAuditPreset
+    const d = new Date(today)
+    if (preset === 'last_7d') {
+      const s = new Date(d); s.setDate(d.getDate() - 7)
+      return `${fmt(s)} — ${fmt(d)}`
+    }
+    if (preset === 'last_30d' || !preset) {
+      const s = new Date(d); s.setDate(d.getDate() - 30)
+      return `${fmt(s)} — ${fmt(d)}`
+    }
+    if (preset === 'last_90d') {
+      const s = new Date(d); s.setDate(d.getDate() - 90)
+      return `${fmt(s)} — ${fmt(d)}`
+    }
+    if (preset === 'this_month') {
+      const s = new Date(d.getFullYear(), d.getMonth(), 1)
+      return `${fmt(s)} — ${fmt(d)}`
+    }
+    if (preset === 'last_month') {
+      const s = new Date(d.getFullYear(), d.getMonth() - 1, 1)
+      const e = new Date(d.getFullYear(), d.getMonth(), 0)
+      return `${fmt(s)} — ${fmt(e)}`
+    }
+    // fallback
+    const s = new Date(d.getFullYear(), d.getMonth(), 1)
+    return `${fmt(s)} — ${fmt(d)}`
+  })()
 
   return (
     <div style={{

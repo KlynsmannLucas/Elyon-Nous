@@ -6,7 +6,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { getValidMetaToken } from '@/services/meta/token-manager'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-const META_BASE = 'https://graph.facebook.com/v19.0'
+const META_BASE = 'https://graph.facebook.com/v21.0'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 async function metaPost(path: string, params: Record<string, string>, token: string) {

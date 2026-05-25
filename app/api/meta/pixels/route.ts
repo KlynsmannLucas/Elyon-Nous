@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const res = await fetch(
-      `https://graph.facebook.com/v19.0/act_${accountId}/adspixels?` +
+      `https://graph.facebook.com/v21.0/act_${accountId}/adspixels?` +
       `fields=id,name,last_fired_time,is_unavailable` +
       `&limit=25` +
       `&access_token=${accessToken}`,

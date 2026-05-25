@@ -1156,6 +1156,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
         audit._dataQuality             = dataQuality
         audit._dataWarnings            = dataWarnings
         audit._period                  = periodLabel
+        audit._datePreset              = datePreset
         audit._platforms               = [srcHasMeta && 'Meta Ads', srcHasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean)
         audit._auditSource             = auditSource
         audit._trackingChecklist       = trackingChecklist
@@ -1199,6 +1200,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     audit._dataQuality             = dataQuality
     audit._dataWarnings            = dataWarnings
     audit._period                  = periodLabel
+    audit._datePreset              = datePreset
     audit._platforms               = [srcHasMeta && 'Meta Ads', srcHasGoogle && 'Google Ads', hasUpload && 'Arquivo importado'].filter(Boolean)
     audit._auditSource             = auditSource
     audit._trackingChecklist       = trackingChecklist

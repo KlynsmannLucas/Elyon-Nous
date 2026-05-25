@@ -41,7 +41,7 @@ async function fetchAllInsights(accountId: string, accessToken: string, timePara
   ].join(',')
 
   let url: string | null =
-    `https://graph.facebook.com/v19.0/act_${accountId}/insights?` +
+    `https://graph.facebook.com/v21.0/act_${accountId}/insights?` +
     `fields=${insightFields}` +
     `&${timeParam}` +
     `&level=campaign` +
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
       )
       for (const chunk of chunks) {
         const statusRes = await fetch(
-          `https://graph.facebook.com/v19.0/?ids=${chunk.join(',')}&fields=id,status&access_token=${accessToken}`,
+          `https://graph.facebook.com/v21.0/?ids=${chunk.join(',')}&fields=id,status&access_token=${accessToken}`,
           { signal: AbortSignal.timeout(10000) }
         )
         const statusData = await statusRes.json()

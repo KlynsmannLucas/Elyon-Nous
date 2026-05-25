@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     })
 
     const res = await fetch(
-      `https://graph.facebook.com/v19.0/ads_archive?${params}`,
+      `https://graph.facebook.com/v21.0/ads_archive?${params}`,
       { signal: AbortSignal.timeout(8000) }
     )
 

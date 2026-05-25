@@ -33,7 +33,7 @@ export async function GET() {
 
   try {
     const res = await fetch(
-      `https://graph.facebook.com/v19.0/me/adaccounts?` +
+      `https://graph.facebook.com/v21.0/me/adaccounts?` +
       `fields=id,name,currency,timezone_name,account_status,business,amount_spent,balance` +
       `&limit=50` +
       `&access_token=${accessToken}`,

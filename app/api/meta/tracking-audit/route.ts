@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
   // ── 1. Verificação de Pixel ───────────────────────────────────────────────
   try {
     const pixelRes = await fetch(
-      `https://graph.facebook.com/v19.0/act_${accountId}/adspixels?` +
+      `https://graph.facebook.com/v21.0/act_${accountId}/adspixels?` +
       `fields=id,name,last_fired_time,is_unavailable&limit=10` +
       `&access_token=${accessToken}`,
       { signal: AbortSignal.timeout(15_000) }
