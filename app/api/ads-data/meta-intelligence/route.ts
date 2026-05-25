@@ -231,16 +231,21 @@ export async function POST(req: NextRequest) {
       const reach   = parseInt(row.reach || '0')
       const frequency = +parseFloat(row.frequency || '0').toFixed(2)
 
-      const formLeads30 = extractConversions(row.actions, LEAD_TYPES)
+      // Objetivo determina qual métrica é o resultado real da campanha
+      const objective   = (meta.objective || 'UNKNOWN').toUpperCase()
+      const isLeadObj   = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(objective)
       const purchases30 = extractConversions(row.actions, PURCHASE_TYPES)
       const revenue30   = extractRevenue(row.actions, PURCHASE_TYPES)
       const messages30  = extractConversions(row.actions, MSG_TYPES)
-      const leads30     = formLeads30 + messages30
+      // Formulários só válidos para LEAD_GENERATION/OUTCOME_LEADS, e apenas quando sem WhatsApp
+      const formLeads30 = (messages30 === 0 && isLeadObj) ? extractConversions(row.actions, LEAD_TYPES) : 0
+      const leads30     = messages30 + formLeads30
       const videoViews30 = extractConversions(row.actions, ['video_view', 'video_thruplay_watched_actions'])
 
       const row7        = ins7Map[row.campaign_id] || {}
       const spend7      = parseFloat(row7.spend || '0')
-      const leads7      = extractConversions(row7.actions, LEAD_TYPES) + extractConversions(row7.actions, MSG_TYPES)
+      const msgs7       = extractConversions(row7.actions, MSG_TYPES)
+      const leads7      = msgs7 > 0 ? msgs7 : (isLeadObj ? extractConversions(row7.actions, LEAD_TYPES) : 0)
       const purchases7  = extractConversions(row7.actions, PURCHASE_TYPES)
       const conversions7 = leads7 + purchases7
 
@@ -249,8 +254,6 @@ export async function POST(req: NextRequest) {
       const cpc30  = clicks   > 0 ? +(spend30 / clicks).toFixed(2) : 0
       const ctr30  = impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0
       const cpm30  = impressions > 0 ? +((spend30 / impressions) * 1000).toFixed(2) : 0
-
-      const objective = meta.objective || 'UNKNOWN'
       const isConversionObj = ['OUTCOME_LEADS','OUTCOME_SALES','LEAD_GENERATION','CONVERSIONS'].includes(objective)
       const status  = meta.effective_status || 'ACTIVE'
       const age     = campaignAge(meta.created_time)
@@ -307,11 +310,13 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(ins.impressions || '0')
       const clicks      = parseInt(ins.clicks || '0')
       const frequency   = +parseFloat(ins.frequency || '0').toFixed(2)
-      const formLeads   = extractConversions(ins.actions, LEAD_TYPES)
-      const messages    = extractConversions(ins.actions, MSG_TYPES)
-      const leads       = formLeads + messages
-      const cpl         = leads > 0 ? +(spend / leads).toFixed(2) : 0
-      const ctr         = impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0
+      const messages      = extractConversions(ins.actions, MSG_TYPES)
+      const asObjKey      = (campaignMeta[as.campaign_id]?.objective || '').toUpperCase()
+      const isLeadObjAS   = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(asObjKey)
+      const formLeads     = (messages === 0 && isLeadObjAS) ? extractConversions(ins.actions, LEAD_TYPES) : 0
+      const leads         = messages + formLeads
+      const cpl           = leads > 0 ? +(spend / leads).toFixed(2) : 0
+      const ctr           = impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0
 
       // Detectar remarketing: verificar se targeting tem custom_audiences ou retargeting
       const targeting    = as.targeting || {}
@@ -355,11 +360,13 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(ins.impressions || '0')
       const clicks      = parseInt(ins.clicks || '0')
       const frequency   = +parseFloat(ins.frequency || '0').toFixed(2)
-      const formLeads   = extractConversions(ins.actions, LEAD_TYPES)
-      const messages    = extractConversions(ins.actions, MSG_TYPES)
-      const leads       = formLeads + messages
-      const cpl         = leads > 0 ? +(spend / leads).toFixed(2) : 0
-      const ctr         = impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0
+      const messages      = extractConversions(ins.actions, MSG_TYPES)
+      const adObjKey      = (campaignMeta[ad.campaign_id]?.objective || '').toUpperCase()
+      const isLeadObjAd   = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(adObjKey)
+      const formLeads     = (messages === 0 && isLeadObjAd) ? extractConversions(ins.actions, LEAD_TYPES) : 0
+      const leads         = messages + formLeads
+      const cpl           = leads > 0 ? +(spend / leads).toFixed(2) : 0
+      const ctr           = impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0
 
       let tag: AdCreative['tag'] = 'ok'
       if (leads >= 3 && cpl > 0 && cpl < 200)    tag = 'winner'
@@ -400,8 +407,10 @@ export async function POST(req: NextRequest) {
     const geoRawData = geoRes.status === 'fulfilled' ? geoRes.value : { data: [] }
     const geoBreakdown: GeoBreakdown[] = (geoRawData.data || [])
       .map((r: any) => {
-        const spend = parseFloat(r.spend || '0')
-        const leads = extractConversions(r.actions, [...LEAD_TYPES, ...MSG_TYPES])
+        const spend   = parseFloat(r.spend || '0')
+        // Breakdowns não têm objetivo — prioriza WhatsApp, fallback para formulários
+        const msgL    = extractConversions(r.actions, MSG_TYPES)
+        const leads   = msgL > 0 ? msgL : extractConversions(r.actions, LEAD_TYPES)
         return {
           region: r.region || 'Desconhecido',
           spend,
@@ -418,10 +427,11 @@ export async function POST(req: NextRequest) {
     const platformRawData = platformRes.status === 'fulfilled' ? platformRes.value : { data: [] }
     const platformBreakdown: PlatformBreakdown[] = (platformRawData.data || [])
       .map((r: any) => {
-        const spend = parseFloat(r.spend || '0')
-        const leads = extractConversions(r.actions, [...LEAD_TYPES, ...MSG_TYPES])
+        const spend       = parseFloat(r.spend || '0')
         const impressions = parseInt(r.impressions || '0')
-        const clicks = parseInt(r.clicks || '0')
+        const clicks      = parseInt(r.clicks || '0')
+        const msgL        = extractConversions(r.actions, MSG_TYPES)
+        const leads       = msgL > 0 ? msgL : extractConversions(r.actions, LEAD_TYPES)
         return {
           platform: r.publisher_platform || 'unknown',
           position: r.platform_position  || 'unknown',
@@ -438,8 +448,9 @@ export async function POST(req: NextRequest) {
     const demoRawData = demoRes.status === 'fulfilled' ? demoRes.value : { data: [] }
     const demoBreakdown: DemoBreakdown[] = (demoRawData.data || [])
       .map((r: any) => {
-        const spend = parseFloat(r.spend || '0')
-        const leads = extractConversions(r.actions, [...LEAD_TYPES, ...MSG_TYPES])
+        const spend  = parseFloat(r.spend || '0')
+        const msgL   = extractConversions(r.actions, MSG_TYPES)
+        const leads  = msgL > 0 ? msgL : extractConversions(r.actions, LEAD_TYPES)
         return {
           age:    r.age    || 'unknown',
           gender: r.gender || 'unknown',
@@ -542,7 +553,8 @@ export async function POST(req: NextRequest) {
     // ── Previous period ────────────────────────────────────────────────────────
     const prevSpend = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseFloat(c.spend || '0'), 0)
     const prevLeads = Object.values(insPrevMap).reduce((s: number, c: any) => {
-      return s + extractConversions(c.actions, LEAD_TYPES) + extractConversions(c.actions, MSG_TYPES)
+      const prevMsgL = extractConversions(c.actions, MSG_TYPES)
+      return s + (prevMsgL > 0 ? prevMsgL : extractConversions(c.actions, LEAD_TYPES))
     }, 0)
     const prevImpressions = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseInt(c.impressions || '0'), 0)
     const prevClicks      = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseInt(c.clicks || '0'), 0)
