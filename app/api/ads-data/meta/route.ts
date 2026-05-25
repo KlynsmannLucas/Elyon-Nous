@@ -143,11 +143,15 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(c.impressions || '0')
       const frequency   = +parseFloat(c.frequency || '0').toFixed(2)
 
-      // Leads via formulário — sem dupla-contagem entre "lead" e "lead_grouped"
-      const leadFormLeads = extractFormLeads(c.actions)
-      // Conversas WhatsApp (apenas first_reply, não conexões genéricas)
+      // Conversas WhatsApp têm prioridade: quando presentes, a campanha é do tipo
+      // "Mensagens" e o Meta Manager exibe "Conversas por mensagem" como resultado.
+      // Somar leadFormLeads + whatsappLeads infla o CPL porque o action_type "lead"
+      // retorna uma janela de atribuição muito maior (cliques amplos) enquanto
+      // messaging_conversation_started_7d reflete o resultado real do Manager.
       const whatsappLeads = extractActions(c.actions, WHATSAPP_ACTION_TYPES)
-      const leads = leadFormLeads + whatsappLeads
+      // Formulários só são contados se não há conversas WhatsApp — evita dupla-contagem
+      const leadFormLeads = whatsappLeads === 0 ? extractFormLeads(c.actions) : 0
+      const leads = whatsappLeads + leadFormLeads
 
       const cpl = leads > 0 ? +(spend / leads).toFixed(2) : 0
 
@@ -189,7 +193,8 @@ export async function POST(req: NextRequest) {
     // Previous period totals for MoM comparison
     const prevTotals = prevRows.reduce((acc, c) => {
       const spend  = parseFloat(c.spend || '0')
-      const leads  = extractFormLeads(c.actions) + extractActions(c.actions, WHATSAPP_ACTION_TYPES)
+      const prevWa = extractActions(c.actions, WHATSAPP_ACTION_TYPES)
+      const leads  = prevWa > 0 ? prevWa : extractFormLeads(c.actions)
       const clicks = parseInt(c.clicks || '0')
       return { spend: acc.spend + spend, leads: acc.leads + leads, clicks: acc.clicks + clicks }
     }, { spend: 0, leads: 0, clicks: 0 })
