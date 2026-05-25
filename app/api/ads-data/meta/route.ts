@@ -36,7 +36,7 @@ function dateStr(d: Date): string {
 
 async function fetchAllInsights(accountId: string, accessToken: string, timeParam: string): Promise<any[]> {
   const insightFields = [
-    'campaign_id', 'campaign_name', 'spend', 'impressions', 'clicks',
+    'campaign_id', 'campaign_name', 'objective', 'spend', 'impressions', 'clicks',
     'actions', 'reach', 'frequency',
   ].join(',')
 
@@ -143,14 +143,15 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(c.impressions || '0')
       const frequency   = +parseFloat(c.frequency || '0').toFixed(2)
 
-      // Conversas WhatsApp têm prioridade: quando presentes, a campanha é do tipo
-      // "Mensagens" e o Meta Manager exibe "Conversas por mensagem" como resultado.
-      // Somar leadFormLeads + whatsappLeads infla o CPL porque o action_type "lead"
-      // retorna uma janela de atribuição muito maior (cliques amplos) enquanto
-      // messaging_conversation_started_7d reflete o resultado real do Manager.
+      // O objetivo da campanha determina qual métrica é o resultado real no Gerenciador.
+      // Campanhas de Tráfego/Engajamento/Alcance não têm "lead" como resultado primário —
+      // o action_type "lead" retorna cliques amplos e infla o CPL. Apenas campanhas de
+      // Mensagens (WhatsApp) e Geração de Cadastros têm CPL real no Gerenciador.
+      const objective = (c.objective || '').toUpperCase()
       const whatsappLeads = extractActions(c.actions, WHATSAPP_ACTION_TYPES)
-      // Formulários só são contados se não há conversas WhatsApp — evita dupla-contagem
-      const leadFormLeads = whatsappLeads === 0 ? extractFormLeads(c.actions) : 0
+      // Formulários: só válidos para objetivos de geração de leads, e apenas quando não há WhatsApp
+      const isLeadObjective = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(objective)
+      const leadFormLeads = (whatsappLeads === 0 && isLeadObjective) ? extractFormLeads(c.actions) : 0
       const leads = whatsappLeads + leadFormLeads
 
       const cpl = leads > 0 ? +(spend / leads).toFixed(2) : 0
@@ -164,6 +165,7 @@ export async function POST(req: NextRequest) {
       return {
         id: c.campaign_id || Math.random().toString(),
         name: c.campaign_name,
+        objective: c.objective || null,
         status: statusMap[c.campaign_id] || 'ACTIVE',
         spend, impressions, clicks, frequency,
         ctr: impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0,
