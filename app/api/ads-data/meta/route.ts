@@ -8,9 +8,10 @@ import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/tok
 const LEAD_FORM_PRIMARY   = 'lead'
 const LEAD_FORM_FALLBACK  = 'onsite_conversion.lead_grouped'
 
-// WhatsApp: "messaging_first_reply" = 1 reply por conversa (mais preciso).
-// "total_messaging_connection" é muito amplo (qualquer interação) — excluído.
-const WHATSAPP_ACTION_TYPES = [
+// Fallback prioritizado: nunca somar tipos que representam a mesma conversa.
+// Meta retorna os 3 tipos para o mesmo evento, somá-los infla 3× o CPL.
+// Usar somente o primeiro disponível (conversation_started é o padrão do Gerenciador).
+const WHATSAPP_PRIORITY = [
   'onsite_conversion.messaging_conversation_started_7d',
   'messaging_first_reply',
   'onsite_conversion.messaging_first_reply',
@@ -148,7 +149,10 @@ export async function POST(req: NextRequest) {
       // o action_type "lead" retorna cliques amplos e infla o CPL. Apenas campanhas de
       // Mensagens (WhatsApp) e Geração de Cadastros têm CPL real no Gerenciador.
       const objective = (c.objective || '').toUpperCase()
-      const whatsappLeads = extractActions(c.actions, WHATSAPP_ACTION_TYPES)
+      // Fallback: usa o primeiro tipo disponível — nunca soma tipos que se sobrepõem
+      const whatsappLeads = extractActions(c.actions, [WHATSAPP_PRIORITY[0]])
+        || extractActions(c.actions, [WHATSAPP_PRIORITY[1]])
+        || extractActions(c.actions, [WHATSAPP_PRIORITY[2]])
       // Formulários: só válidos para objetivos de geração de leads, e apenas quando não há WhatsApp
       const isLeadObjective = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(objective)
       const leadFormLeads = (whatsappLeads === 0 && isLeadObjective) ? extractFormLeads(c.actions) : 0
@@ -195,7 +199,9 @@ export async function POST(req: NextRequest) {
     // Previous period totals for MoM comparison
     const prevTotals = prevRows.reduce((acc, c) => {
       const spend  = parseFloat(c.spend || '0')
-      const prevWa = extractActions(c.actions, WHATSAPP_ACTION_TYPES)
+      const prevWa = extractActions(c.actions, [WHATSAPP_PRIORITY[0]])
+        || extractActions(c.actions, [WHATSAPP_PRIORITY[1]])
+        || extractActions(c.actions, [WHATSAPP_PRIORITY[2]])
       const leads  = prevWa > 0 ? prevWa : extractFormLeads(c.actions)
       const clicks = parseInt(c.clicks || '0')
       return { spend: acc.spend + spend, leads: acc.leads + leads, clicks: acc.clicks + clicks }

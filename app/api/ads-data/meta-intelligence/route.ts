@@ -130,7 +130,9 @@ function campaignAge(createdTime: string | undefined): CampaignAge {
 
 const LEAD_TYPES    = ['lead', 'onsite_conversion.lead_grouped']
 const PURCHASE_TYPES = ['purchase', 'omni_purchase']
-const MSG_TYPES     = ['onsite_conversion.messaging_conversation_started_7d','messaging_first_reply','onsite_conversion.messaging_first_reply','onsite_conversion.total_messaging_connection']
+// Fallback prioritizado: nunca somar tipos que representam a mesma conversa.
+// Meta pode retornar os 3 tipos para o mesmo evento; somá-los infla 3× o count.
+const MSG_PRIORITY  = ['onsite_conversion.messaging_conversation_started_7d','messaging_first_reply','onsite_conversion.messaging_first_reply']
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -236,7 +238,7 @@ export async function POST(req: NextRequest) {
       const isLeadObj   = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(objective)
       const purchases30 = extractConversions(row.actions, PURCHASE_TYPES)
       const revenue30   = extractRevenue(row.actions, PURCHASE_TYPES)
-      const messages30  = extractConversions(row.actions, MSG_TYPES)
+      const messages30  = extractConversions(row.actions, [MSG_PRIORITY[0]]) || extractConversions(row.actions, [MSG_PRIORITY[1]]) || extractConversions(row.actions, [MSG_PRIORITY[2]])
       // Formulários só válidos para LEAD_GENERATION/OUTCOME_LEADS, e apenas quando sem WhatsApp
       const formLeads30 = (messages30 === 0 && isLeadObj) ? extractConversions(row.actions, LEAD_TYPES) : 0
       const leads30     = messages30 + formLeads30
@@ -244,7 +246,7 @@ export async function POST(req: NextRequest) {
 
       const row7        = ins7Map[row.campaign_id] || {}
       const spend7      = parseFloat(row7.spend || '0')
-      const msgs7       = extractConversions(row7.actions, MSG_TYPES)
+      const msgs7       = extractConversions(row7.actions, [MSG_PRIORITY[0]]) || extractConversions(row7.actions, [MSG_PRIORITY[1]]) || extractConversions(row7.actions, [MSG_PRIORITY[2]])
       const leads7      = msgs7 > 0 ? msgs7 : (isLeadObj ? extractConversions(row7.actions, LEAD_TYPES) : 0)
       const purchases7  = extractConversions(row7.actions, PURCHASE_TYPES)
       const conversions7 = leads7 + purchases7
@@ -310,7 +312,7 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(ins.impressions || '0')
       const clicks      = parseInt(ins.clicks || '0')
       const frequency   = +parseFloat(ins.frequency || '0').toFixed(2)
-      const messages      = extractConversions(ins.actions, MSG_TYPES)
+      const messages      = extractConversions(ins.actions, [MSG_PRIORITY[0]]) || extractConversions(ins.actions, [MSG_PRIORITY[1]]) || extractConversions(ins.actions, [MSG_PRIORITY[2]])
       const asObjKey      = (campaignMeta[as.campaign_id]?.objective || '').toUpperCase()
       const isLeadObjAS   = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(asObjKey)
       const formLeads     = (messages === 0 && isLeadObjAS) ? extractConversions(ins.actions, LEAD_TYPES) : 0
@@ -360,7 +362,7 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(ins.impressions || '0')
       const clicks      = parseInt(ins.clicks || '0')
       const frequency   = +parseFloat(ins.frequency || '0').toFixed(2)
-      const messages      = extractConversions(ins.actions, MSG_TYPES)
+      const messages      = extractConversions(ins.actions, [MSG_PRIORITY[0]]) || extractConversions(ins.actions, [MSG_PRIORITY[1]]) || extractConversions(ins.actions, [MSG_PRIORITY[2]])
       const adObjKey      = (campaignMeta[ad.campaign_id]?.objective || '').toUpperCase()
       const isLeadObjAd   = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(adObjKey)
       const formLeads     = (messages === 0 && isLeadObjAd) ? extractConversions(ins.actions, LEAD_TYPES) : 0
@@ -409,7 +411,7 @@ export async function POST(req: NextRequest) {
       .map((r: any) => {
         const spend   = parseFloat(r.spend || '0')
         // Breakdowns não têm objetivo — prioriza WhatsApp, fallback para formulários
-        const msgL    = extractConversions(r.actions, MSG_TYPES)
+        const msgL    = extractConversions(r.actions, [MSG_PRIORITY[0]]) || extractConversions(r.actions, [MSG_PRIORITY[1]]) || extractConversions(r.actions, [MSG_PRIORITY[2]])
         const leads   = msgL > 0 ? msgL : extractConversions(r.actions, LEAD_TYPES)
         return {
           region: r.region || 'Desconhecido',
@@ -430,7 +432,7 @@ export async function POST(req: NextRequest) {
         const spend       = parseFloat(r.spend || '0')
         const impressions = parseInt(r.impressions || '0')
         const clicks      = parseInt(r.clicks || '0')
-        const msgL        = extractConversions(r.actions, MSG_TYPES)
+        const msgL        = extractConversions(r.actions, [MSG_PRIORITY[0]]) || extractConversions(r.actions, [MSG_PRIORITY[1]]) || extractConversions(r.actions, [MSG_PRIORITY[2]])
         const leads       = msgL > 0 ? msgL : extractConversions(r.actions, LEAD_TYPES)
         return {
           platform: r.publisher_platform || 'unknown',
@@ -449,7 +451,7 @@ export async function POST(req: NextRequest) {
     const demoBreakdown: DemoBreakdown[] = (demoRawData.data || [])
       .map((r: any) => {
         const spend  = parseFloat(r.spend || '0')
-        const msgL   = extractConversions(r.actions, MSG_TYPES)
+        const msgL   = extractConversions(r.actions, [MSG_PRIORITY[0]]) || extractConversions(r.actions, [MSG_PRIORITY[1]]) || extractConversions(r.actions, [MSG_PRIORITY[2]])
         const leads  = msgL > 0 ? msgL : extractConversions(r.actions, LEAD_TYPES)
         return {
           age:    r.age    || 'unknown',
@@ -553,7 +555,7 @@ export async function POST(req: NextRequest) {
     // ── Previous period ────────────────────────────────────────────────────────
     const prevSpend = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseFloat(c.spend || '0'), 0)
     const prevLeads = Object.values(insPrevMap).reduce((s: number, c: any) => {
-      const prevMsgL = extractConversions(c.actions, MSG_TYPES)
+      const prevMsgL = extractConversions(c.actions, [MSG_PRIORITY[0]]) || extractConversions(c.actions, [MSG_PRIORITY[1]]) || extractConversions(c.actions, [MSG_PRIORITY[2]])
       return s + (prevMsgL > 0 ? prevMsgL : extractConversions(c.actions, LEAD_TYPES))
     }, 0)
     const prevImpressions = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseInt(c.impressions || '0'), 0)
