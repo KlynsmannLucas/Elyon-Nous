@@ -26,10 +26,26 @@ export async function POST(req: NextRequest) {
 
   const isGestor = role === 'gestor'
 
+  // Avalia quais campos opcionais foram preenchidos no wizard
+  const hasTargetAge      = Boolean(clientData.targetAge)
+  const hasTargetGender   = Boolean(clientData.targetGender)
+  const hasTargetIncome   = Boolean(clientData.targetIncome)
+  const hasMainPains      = Boolean(clientData.mainPains)
+  const hasMainObjection  = Boolean(clientData.mainObjection)
+  const hasOnlineChannels = Boolean((clientData.onlineChannels || []).length)
+
+  // Regras de precisão: quanto menos dados reais, menos específica deve ser a persona
+  const ageInstruction     = hasTargetAge    ? `Use a faixa etária informada: ${clientData.targetAge}.`        : 'Use uma FAIXA ETÁRIA (ex: "entre 30 e 45 anos"), nunca uma idade exata.'
+  const genderInstruction  = hasTargetGender ? `Gênero confirmado: ${clientData.targetGender}.`                : 'Use o perfil de gênero mais comum para o nicho, sem especificar.'
+  const incomeInstruction  = hasTargetIncome ? `Use a renda informada: ${clientData.targetIncome}.`            : 'Use uma FAIXA DE RENDA (ex: "R$5.000–R$10.000/mês"), nunca um valor exato.'
+  const painsInstruction   = hasMainPains    ? `Dores confirmadas pelo cliente: ${clientData.mainPains}.`      : 'Use dores TÍPICAS do nicho, sem inventar especificidades pessoais.'
+  const objInstruction     = hasMainObjection? `Objeção confirmada: ${clientData.mainObjection}.`              : 'Use objeções comuns de quem compra nesse nicho.'
+  const channelInstruction = hasOnlineChannels ? `Canais confirmados: ${(clientData.onlineChannels||[]).join(', ')}.` : 'Use os canais digitais mais comuns para o nicho.'
+
   const prompt = `Você é um estrategista sênior de marketing digital brasileiro.
 O usuário é um ${roleLabel} que trabalha com ${clientData.niche}.
 
-DADOS DO NEGÓCIO:
+DADOS CONFIRMADOS DO NEGÓCIO (fonte: cadastro):
 - Nicho: ${clientData.niche}
 - Produto/Serviço: ${(clientData.products || []).join(', ')}
 - Ticket médio: R$${clientData.ticketPrice || clientData.monthlyRevenue || 'não informado'}
@@ -37,7 +53,7 @@ DADOS DO NEGÓCIO:
 - Budget de marketing: R$${clientData.budget}/mês
 - Objetivo: ${clientData.objective}
 
-DADOS DO CLIENTE IDEAL (preenchidos no cadastro):
+DADOS DO PÚBLICO-ALVO (preenchidos no cadastro):
 - Faixa etária: ${clientData.targetAge || 'não informado'}
 - Gênero: ${clientData.targetGender || 'não informado'}
 - Renda mensal: ${clientData.targetIncome || 'não informado'}
@@ -45,7 +61,17 @@ DADOS DO CLIENTE IDEAL (preenchidos no cadastro):
 - Maior dor/problema: ${clientData.mainPains || 'não informado'}
 - Principal objeção de compra: ${clientData.mainObjection || 'não informado'}
 
-Crie uma persona detalhada e realista baseada nesses dados. A persona deve ser específica para o mercado brasileiro e útil para um ${roleLabel}.
+REGRAS DE PRECISÃO — SIGA OBRIGATORIAMENTE:
+- ${ageInstruction}
+- ${genderInstruction}
+- ${incomeInstruction}
+- ${painsInstruction}
+- ${objInstruction}
+- ${channelInstruction}
+- Quanto menos dados reais disponíveis, use perfis MAIS AMPLOS e representativos. Nunca invente especificidades pessoais (estado civil, filhos, hobbies pessoais) que não tenham fonte.
+- Profissão: use cargo genérico do segmento (ex: "Profissional liberal", "Empresária de médio porte"), não profissões ultra-específicas sem evidência.
+
+Crie uma persona estratégica e representativa baseada nesses dados. Útil para um ${roleLabel}.
 
 ${isGestor ? `IMPORTANTE: Como o usuário é Gestor de Tráfego, inclua OBRIGATORIAMENTE:
 - facebookInterests: lista de 8-10 interesses específicos do Facebook/Instagram Ads (ex: marcas, páginas, comportamentos — não categorias genéricas)
@@ -54,10 +80,10 @@ ${isGestor ? `IMPORTANTE: Como o usuário é Gestor de Tráfego, inclua OBRIGATO
 
 Retorne APENAS um JSON válido, sem texto antes ou depois, com exatamente esta estrutura:
 {
-  "name": "nome fictício brasileiro",
-  "age": "faixa etária específica, ex: 28 anos",
-  "profession": "profissão específica",
-  "income": "renda mensal específica em R$",
+  "name": "nome fictício brasileiro (primeiro nome + sobrenome)",
+  "age": "${hasTargetAge ? 'faixa baseada nos dados confirmados' : 'FAIXA etária, ex: entre 30 e 45 anos'}",
+  "profession": "${hasTargetAge || hasTargetIncome ? 'profissão plausível' : 'perfil profissional genérico do segmento'}",
+  "income": "${hasTargetIncome ? 'renda baseada nos dados confirmados' : 'FAIXA de renda, ex: R$5.000–R$10.000/mês'}",
   "pains": ["dor 1 específica e emocional", "dor 2", "dor 3", "dor 4"],
   "desires": ["desejo 1 específico e aspiracional", "desejo 2", "desejo 3", "desejo 4"],
   "fears": ["medo 1 específico", "medo 2", "medo 3"],
