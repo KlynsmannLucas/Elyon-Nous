@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     module:      'market_intelligence',
     action:      'generate',
     detail:      `Inteligência de mercado gerada para ${clientName}`,
-  }).catch(() => {})
+  })
 
   return NextResponse.json({ ok: true })
 }

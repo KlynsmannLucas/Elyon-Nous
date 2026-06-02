@@ -996,6 +996,39 @@ export function TabAuditoria({ clientData }: Props) {
                   <span className="font-display text-3xl font-bold mb-0.5" style={{ color: sc }}>{audit.grade}</span>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1">Score de saúde</div>
+                {/* Situação atual — tradução humana do score */}
+                {(() => {
+                  const s = audit.health_score as number
+                  const cfg = s >= 80
+                    ? { icon: '🟢', color: '#22C55E', text: 'Conta saudável, acima da média do mercado.' }
+                    : s >= 60
+                    ? { icon: '🟡', color: '#F59E0B', text: 'Oportunidades de melhoria identificadas.' }
+                    : { icon: '🔴', text: 'Gargalos estão limitando seus resultados.', color: '#EF4444' }
+                  return (
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: cfg.color, fontWeight: 500, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span>{cfg.icon}</span><span>{cfg.text}</span>
+                    </div>
+                  )
+                })()}
+                {/* Valor Identificado pela IA */}
+                {audit._campanhasClassificadas && (() => {
+                  const waste = (audit._wasteCampaigns as any[] | undefined)?.reduce((s: number, c: any) => s + (c.spend || 0), 0) || 0
+                  const nWinners = (audit._campanhasClassificadas.vencedoras as any[]).length
+                  const bestCamp = (audit._campanhasClassificadas.vencedoras as any[])[0]
+                  const scaleGain = bestCamp ? Math.round((bestCamp.spend || 0) * 0.2) : 0
+                  const value = waste > 0 ? waste : scaleGain
+                  if (value < 500) return null
+                  const isWaste = waste > 0
+                  return (
+                    <div style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '7px', background: isWaste ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${isWaste ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)'}` }}>
+                      <span style={{ fontSize: '10px' }}>{isWaste ? '💸' : '📈'}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: isWaste ? '#EF4444' : '#22C55E' }}>
+                        {isWaste ? `R$${Math.round(waste).toLocaleString('pt-BR')} a recuperar` : `+R$${Math.round(scaleGain).toLocaleString('pt-BR')} potencial`}
+                      </span>
+                      <span style={{ fontSize: '9px', color: '#64748B' }}>identificado pela IA</span>
+                    </div>
+                  )
+                })()}
               </div>
               <div className="flex-1 min-w-[160px]">
                 <div className="w-full h-2 bg-[#1E1E24] rounded-full overflow-hidden mb-2">
@@ -1060,10 +1093,63 @@ export function TabAuditoria({ clientData }: Props) {
               </div>
             )}
 
-            {/* Executive summary */}
-            {audit.executive_summary && (
-              <p className="text-slate-300 text-sm leading-relaxed border-t border-[#2A2A30] pt-4">{audit.executive_summary}</p>
-            )}
+            {/* ── Resumo executivo da IA — bloco estruturado ── */}
+            {(audit.executive_summary || audit._campanhasClassificadas) && (() => {
+              const nV = (audit._campanhasClassificadas?.vencedoras as any[] | undefined)?.length ?? 0
+              const nA = (audit._campanhasClassificadas?.atencao     as any[] | undefined)?.length ?? 0
+              const nC = (audit._campanhasClassificadas?.criticas     as any[] | undefined)?.length ?? 0
+              const rm = audit._realMetrics as any
+              const waste = (audit._wasteCampaigns as any[] | undefined)?.reduce((s: number, c: any) => s + (c.spend || 0), 0) ?? 0
+              const bestCamp = (audit._campanhasClassificadas?.vencedoras as any[] | undefined)?.[0]
+              const scaleLeads = bestCamp?.leads ? Math.round(bestCamp.leads * 0.2) : null
+              const cplBetter = rm?.avgCPL && audit._benchmarkCPL
+                ? Math.round((1 - rm.avgCPL / ((audit._benchmarkCPL.min + audit._benchmarkCPL.max) / 2)) * 100)
+                : null
+              const impactLine = waste > 500
+                ? `Economia potencial de R$${Math.round(waste).toLocaleString('pt-BR')}/mês ao pausar campanhas sem retorno.`
+                : scaleLeads
+                ? `Escalar a melhor campanha em 20% pode gerar +${scaleLeads} leads mantendo CPL atual.`
+                : cplBetter && cplBetter > 0
+                ? `Seu CPL está ${cplBetter}% abaixo da média do mercado — há espaço para escalar.`
+                : null
+              return (
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px', marginTop: '4px' }}>
+                  {/* Cabeçalho */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '13px' }}>🤖</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Resumo da IA</span>
+                    {rm?.campaignCount > 0 && (
+                      <span style={{ fontSize: '10px', color: '#64748B', marginLeft: 'auto' }}>
+                        {rm.campaignCount} campanhas · R${rm.totalSpend > 0 ? Math.round(rm.totalSpend).toLocaleString('pt-BR') : '—'} investidos
+                      </span>
+                    )}
+                  </div>
+                  {/* Contagem de descobertas */}
+                  {(nV > 0 || nA > 0 || nC > 0) && (
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                      {nV > 0 && <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '6px', background: 'rgba(34,197,94,0.08)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)', fontWeight: 600 }}>🟢 {nV} {nV === 1 ? 'oportunidade' : 'oportunidades'} de escala</span>}
+                      {nA > 0 && <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '6px', background: 'rgba(245,158,11,0.08)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)', fontWeight: 600 }}>🟡 {nA} {nA === 1 ? 'ponto' : 'pontos'} de atenção</span>}
+                      {nC > 0 && <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '6px', background: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)', fontWeight: 600 }}>🔴 {nC} {nC === 1 ? 'risco crítico' : 'riscos críticos'}</span>}
+                    </div>
+                  )}
+                  {/* Resumo textual da IA */}
+                  {audit.executive_summary && (
+                    <p style={{ fontSize: '12px', color: '#94A3B8', lineHeight: 1.65, margin: 0, marginBottom: impactLine ? '10px' : '0' }}>
+                      {audit.executive_summary}
+                    </p>
+                  )}
+                  {/* Linha de impacto financeiro */}
+                  {impactLine && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)' }}>
+                      <span style={{ fontSize: '12px' }}>⚡</span>
+                      <span style={{ fontSize: '11px', color: '#CBD5E1', lineHeight: 1.5 }}>
+                        <strong style={{ color: '#A78BFA' }}>Impacto potencial:</strong> {impactLine}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Data warnings */}
             {(audit._dataWarnings as string[] | undefined)?.length! > 0 && (
@@ -1158,7 +1244,7 @@ export function TabAuditoria({ clientData }: Props) {
               <div className="flex gap-1.5 flex-wrap">
                 {navItems.map(({ label, status }) => {
                   const nc = status === 'critico' ? '#FF4D4D' : status === 'atencao' ? '#F0B429' : '#22C55E'
-                  const nl = status === 'critico' ? 'Crítico' : status === 'atencao' ? 'Atenção' : 'OK'
+                  const nl = status === 'critico' ? 'Requer ação' : status === 'atencao' ? 'Monitorar' : 'Saudável'
                   return (
                     <div key={label}
                       className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg"
@@ -1170,6 +1256,96 @@ export function TabAuditoria({ clientData }: Props) {
                     </div>
                   )
                 })}
+              </div>
+            )
+          })()}
+
+          {/* ── PRINCIPAIS DESCOBERTAS ── */}
+          {audit._campanhasClassificadas && (() => {
+            const nV = (audit._campanhasClassificadas.vencedoras as any[]).length
+            const nA = (audit._campanhasClassificadas.atencao     as any[]).length
+            const nC = (audit._campanhasClassificadas.criticas     as any[]).length
+            const hasTracking = audit.tracking?.prioridade_maxima || ((audit._trackingChecklist as any[] | undefined) || []).filter((t: any) => t.status === 'nao_verificado').length >= 3
+            const waste = (audit._wasteCampaigns as any[] | undefined)?.reduce((s: number, c: any) => s + (c.spend || 0), 0) ?? 0
+            if (nV + nA + nC === 0) return null
+            const discoveries = [
+              nV > 0 && {
+                icon: '🎯',
+                color: '#22C55E',
+                bg: 'rgba(34,197,94,0.06)',
+                border: 'rgba(34,197,94,0.18)',
+                label: 'Oportunidade',
+                title: `${nV} ${nV === 1 ? 'campanha com' : 'campanhas com'} potencial de escala`,
+                desc: 'Estas campanhas geram leads abaixo do benchmark — há espaço para aumentar o investimento sem elevar o CPL.',
+                impact: 'Impacto: +15% a +30% no volume de leads mantendo o custo atual.',
+              },
+              hasTracking && {
+                icon: '⚠️',
+                color: '#F59E0B',
+                bg: 'rgba(245,158,11,0.06)',
+                border: 'rgba(245,158,11,0.18)',
+                label: 'Atenção',
+                title: 'Inconsistências detectadas na medição',
+                desc: 'O sistema identificou possíveis falhas no rastreamento de eventos. O algoritmo pode estar otimizando com dados incompletos.',
+                impact: 'Impacto: campanhas podem estar subperformando sem que você perceba.',
+              },
+              nC > 0 && {
+                icon: '🔥',
+                color: '#EF4444',
+                bg: 'rgba(239,68,68,0.06)',
+                border: 'rgba(239,68,68,0.18)',
+                label: 'Risco',
+                title: `${nC} ${nC === 1 ? 'campanha consome' : 'campanhas consomem'} verba acima do esperado`,
+                desc: waste > 0
+                  ? `R$${Math.round(waste).toLocaleString('pt-BR')} investidos sem conversões registradas — possível desperdício de orçamento.`
+                  : 'Campanhas com CPL acima do benchmark. Cada lead está custando mais do que o mercado pratica.',
+                impact: 'Impacto: revisar ou pausar pode liberar orçamento para campanhas vencedoras.',
+              },
+            ].filter(Boolean) as Array<{ icon: string; color: string; bg: string; border: string; label: string; title: string; desc: string; impact: string }>
+            if (discoveries.length === 0) return null
+            return (
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  Principais Descobertas
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${discoveries.length}, 1fr)`, gap: '10px', marginBottom: '4px' }}>
+                  {discoveries.map((d, i) => (
+                    <div key={i} style={{ padding: '14px', borderRadius: '12px', background: d.bg, border: `1px solid ${d.border}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '13px' }}>{d.icon}</span>
+                        <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: d.color }}>{d.label}</span>
+                      </div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#F1F5F9', marginBottom: '4px', lineHeight: 1.4 }}>{d.title}</div>
+                      <div style={{ fontSize: '11px', color: '#94A3B8', lineHeight: 1.55, marginBottom: '8px' }}>{d.desc}</div>
+                      <div style={{ fontSize: '10px', color: d.color, fontWeight: 500 }}>{d.impact}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* ── AÇÃO PRIORITÁRIA DA SEMANA ── */}
+          {audit._campanhasClassificadas && (() => {
+            const best = (audit._campanhasClassificadas.vencedoras as any[])[0]
+            if (!best) return null
+            const cpl = best.leads > 0 ? Math.round(best.spend / best.leads) : null
+            const leadsGain = best.leads ? Math.round(best.leads * 0.2) : null
+            return (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', borderRadius: '10px', background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.18)' }}>
+                <span style={{ fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>🔥</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '3px' }}>Ação mais importante desta semana</div>
+                  <div style={{ fontSize: '12px', color: '#F1F5F9', fontWeight: 500 }}>
+                    Escalar a campanha <strong style={{ color: '#fff' }}>"{best.name}"</strong> em 20%.
+                  </div>
+                  {leadsGain && (
+                    <div style={{ fontSize: '11px', color: '#A78BFA', marginTop: '2px' }}>
+                      Potencial estimado: +{leadsGain} leads mantendo{cpl ? ` CPL de R$${cpl}` : ' o CPL atual'}.
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })()}
@@ -1190,7 +1366,7 @@ export function TabAuditoria({ clientData }: Props) {
                   {audit._campanhasClassificadas.vencedoras.length + audit._campanhasClassificadas.atencao.length + audit._campanhasClassificadas.criticas.length} campanhas
                 </span>
               </div>
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-1">
                 {([
                   { id: 'vencedoras', label: `🏆 Vencedoras (${audit._campanhasClassificadas.vencedoras.length})`, color: '#22C55E' },
                   { id: 'atencao',   label: `⚠ Atenção (${audit._campanhasClassificadas.atencao.length})`,       color: '#F0B429' },
@@ -1205,6 +1381,12 @@ export function TabAuditoria({ clientData }: Props) {
                     }}
                   >{label}</button>
                 ))}
+              </div>
+              {/* Subtítulo contextual da aba ativa */}
+              <div style={{ fontSize: '10px', color: '#64748B', marginBottom: '14px', paddingLeft: '2px', lineHeight: 1.5 }}>
+                {campTab === 'vencedoras' && 'Geram resultado acima da média · Recomendação: escalar gradualmente'}
+                {campTab === 'atencao'   && 'Necessitam de otimizações · Recomendação: monitorar e ajustar'}
+                {campTab === 'criticas'  && 'Consomem verba sem retorno esperado · Recomendação: revisar ou pausar'}
               </div>
               {(() => {
                 const camps: any[] = audit._campanhasClassificadas[campTab] || []

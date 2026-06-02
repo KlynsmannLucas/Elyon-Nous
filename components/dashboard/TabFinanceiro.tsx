@@ -85,7 +85,7 @@ export function TabFinanceiro() {
   }
 
   const activeClients = savedClients.filter(c => feesConfig[c.id]?.active)
-  const mrr           = useMemo(() => savedClients.reduce((acc, c) => acc + calcFee(c), 0), [savedClients, fees])
+  const mrr           = useMemo(() => savedClients.reduce((acc, c) => acc + calcFee(c), 0), [savedClients, feesConfig])
   const totalBudget   = useMemo(() => savedClients.reduce((acc, c) => acc + (c.clientData.budget || 0), 0), [savedClients])
   const avgTicket     = activeClients.length > 0 ? mrr / activeClients.length : 0
 
