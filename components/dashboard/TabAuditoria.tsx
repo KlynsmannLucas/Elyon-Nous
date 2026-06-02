@@ -1011,6 +1011,42 @@ export function TabAuditoria({ clientData }: Props) {
                     </div>
                   )
                 })()}
+                {/* M4 — Por que sua nota é X? */}
+                {(() => {
+                  const s      = audit.health_score as number
+                  const rm     = audit._realMetrics as any
+                  const bench2 = getBenchmark(clientData?.niche || '')
+                  const cplOk  = rm?.avgCPL && bench2 ? rm.avgCPL <= bench2.kpi_thresholds.cpl_bad : null
+                  const cplGood = rm?.avgCPL && bench2 ? rm.avgCPL <= bench2.kpi_thresholds.cpl_good : null
+                  const hasWaste = (audit._wasteCampaigns as any[] | undefined)?.length! > 0
+                  const hasCrit  = (audit._campanhasClassificadas?.criticas as any[] | undefined)?.length! > 0
+                  const criatOk  = !audit.criativos_meta?.problemas?.length
+                  const pubOk    = !!(audit.publicos?.meta || audit.publicos?.google)
+                  const factors: { icon: string; text: string; positive: boolean }[] = []
+                  if (cplGood === true)  factors.push({ icon: '✓', text: 'CPL abaixo do benchmark do setor', positive: true })
+                  else if (cplOk === false) factors.push({ icon: '⚠', text: 'CPL acima do ideal para este setor', positive: false })
+                  if (criatOk)           factors.push({ icon: '✓', text: 'Criativos com bom desempenho', positive: true })
+                  else if (audit.criativos_meta?.problemas?.length > 0) factors.push({ icon: '⚠', text: 'Criativos com pontos a melhorar', positive: false })
+                  if (pubOk)             factors.push({ icon: '✓', text: 'Públicos segmentados corretamente', positive: true })
+                  if (hasWaste)          factors.push({ icon: '⚠', text: 'Campanhas consumindo verba sem conversões', positive: false })
+                  if (hasCrit)           factors.push({ icon: '⚠', text: 'Campanhas críticas presentes na conta', positive: false })
+                  if (factors.length === 0) return null
+                  return (
+                    <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: '8px' }}>
+                        Por que sua nota é {s}?
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '4px' }}>
+                        {factors.map((f, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: f.positive ? 'rgba(34,197,94,0.85)' : 'rgba(245,158,11,0.85)' }}>
+                            <span style={{ flexShrink: 0, fontWeight: 700 }}>{f.icon}</span>
+                            <span>{f.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
                 {/* Valor Identificado pela IA */}
                 {audit._campanhasClassificadas && (() => {
                   const waste = (audit._wasteCampaigns as any[] | undefined)?.reduce((s: number, c: any) => s + (c.spend || 0), 0) || 0
@@ -1180,27 +1216,46 @@ export function TabAuditoria({ clientData }: Props) {
                 : null
               return (
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px', marginTop: '4px' }}>
-                  {/* Cabeçalho */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
+                  {/* Cabeçalho + frase de abertura impactante */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
                     <span style={{ fontSize: '13px' }}>🤖</span>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Resumo da IA</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.06em' }}>O que a IA encontrou</span>
                     {rm?.campaignCount > 0 && (
                       <span style={{ fontSize: '10px', color: '#64748B', marginLeft: 'auto' }}>
-                        {rm.campaignCount} campanhas · R${rm.totalSpend > 0 ? Math.round(rm.totalSpend).toLocaleString('pt-BR') : '—'} investidos
+                        {rm.campaignCount} campanhas analisadas
                       </span>
                     )}
                   </div>
+                  {/* Frase de situação dinâmica */}
+                  {(() => {
+                    const s = audit.health_score as number
+                    const situacao = s >= 80
+                      ? `Sua conta apresenta desempenho acima da média do setor.`
+                      : s >= 60
+                      ? `Sua conta está estável, mas há oportunidades de melhoria relevantes.`
+                      : `Sua conta apresenta gargalos que estão limitando seus resultados.`
+                    return <p style={{ fontSize: '13px', fontWeight: 600, color: '#E2E8F0', lineHeight: 1.55, margin: '0 0 10px' }}>{situacao}</p>
+                  })()}
                   {/* Contagem de descobertas */}
                   {(nV > 0 || nA > 0 || nC > 0) && (
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                      {nV > 0 && <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '6px', background: 'rgba(34,197,94,0.08)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)', fontWeight: 600 }}>🟢 {nV} {nV === 1 ? 'oportunidade' : 'oportunidades'} de escala</span>}
-                      {nA > 0 && <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '6px', background: 'rgba(245,158,11,0.08)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)', fontWeight: 600 }}>🟡 {nA} {nA === 1 ? 'ponto' : 'pontos'} de atenção</span>}
-                      {nC > 0 && <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '6px', background: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)', fontWeight: 600 }}>🔴 {nC} {nC === 1 ? 'risco crítico' : 'riscos críticos'}</span>}
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '5px', marginBottom: '10px' }}>
+                      {nV > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#22C55E' }}>
+                        <span>✓</span><span>{nV} {nV === 1 ? 'oportunidade' : 'oportunidades'} de crescimento {nV === 1 ? 'identificada' : 'identificadas'}</span>
+                      </div>}
+                      {nA > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#F59E0B' }}>
+                        <span>⚠</span><span>{nA} {nA === 1 ? 'ponto' : 'pontos'} de atenção {nA === 1 ? 'que necessita' : 'que necessitam'} de ajuste</span>
+                      </div>}
+                      {nC > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#EF4444' }}>
+                        <span>🔴</span><span>{nC} {nC === 1 ? 'risco crítico identificado' : 'riscos críticos identificados'}</span>
+                      </div>}
+                      {nC === 0 && nA === 0 && nV >= 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#22C55E' }}>
+                        <span>✓</span><span>Nenhum risco crítico imediato</span>
+                      </div>}
                     </div>
                   )}
-                  {/* Resumo textual da IA */}
+                  {/* Resumo textual da IA (discreto) */}
                   {audit.executive_summary && (
-                    <p style={{ fontSize: '12px', color: '#94A3B8', lineHeight: 1.65, margin: 0, marginBottom: impactLine ? '10px' : '0' }}>
+                    <p style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.65, margin: 0, marginBottom: impactLine ? '10px' : '0' }}>
                       {audit.executive_summary}
                     </p>
                   )}
@@ -1269,59 +1324,116 @@ export function TabAuditoria({ clientData }: Props) {
             })()}
           </div>
 
-          {/* ── SECTION STATUS NAV ── */}
+          {/* ── SECTION STATUS NAV — M3: linguagem humana ── */}
           {(() => {
             const trackingChecklist = (audit._trackingChecklist as any[]) || []
+            // Mapeia cada área para texto humano baseado no status
+            const humanLabel: Record<string, Record<string, string>> = {
+              Campanhas: {
+                critico: 'Campanhas consumindo verba sem retorno esperado',
+                atencao: 'Algumas campanhas precisam de ajustes',
+                ok:      'Campanhas com bom desempenho',
+              },
+              Tracking: {
+                critico: 'Falhas críticas na medição dos resultados',
+                atencao: 'Possíveis falhas no rastreamento detectadas',
+                ok:      'Medição dos resultados funcionando',
+              },
+              Criativos: {
+                critico: 'Criativos com problemas a corrigir',
+                atencao: 'Oportunidades de melhoria nos criativos',
+                ok:      'Criativos com bom desempenho',
+              },
+              'Públicos': {
+                critico: 'Segmentação com problemas',
+                atencao: 'Segmentação a revisar',
+                ok:      'Públicos segmentados corretamente',
+              },
+              Funil: {
+                critico: 'Funil de vendas com perdas significativas',
+                atencao: 'Oportunidades de melhoria na conversão',
+                ok:      'Funil de conversão saudável',
+              },
+              Gargalos: {
+                critico: 'Gargalos críticos limitando seus resultados',
+                atencao: 'Pontos de otimização identificados',
+                ok:      'Sem gargalos relevantes',
+              },
+              'Ações agora': {
+                critico: 'Ações urgentes identificadas pela IA',
+                atencao: 'Há ações recomendadas a executar',
+                ok:      'Sem ações urgentes no momento',
+              },
+            }
             const navItems = [
               audit._campanhasClassificadas && {
-                label: 'Campanhas',
+                key: 'Campanhas',
                 status: (audit._campanhasClassificadas.criticas?.length || 0) > 0 ? 'critico' : (audit._campanhasClassificadas.atencao?.length || 0) > 0 ? 'atencao' : 'ok',
               },
               (audit.tracking || trackingChecklist.length > 0) && {
-                label: 'Tracking',
+                key: 'Tracking',
                 status: audit.tracking?.prioridade_maxima ? 'critico' : trackingChecklist.filter((t: any) => t.status === 'nao_verificado').length >= 4 ? 'atencao' : 'ok',
               },
-              audit.criativos_meta && { label: 'Criativos', status: (audit.criativos_meta.problemas?.length || 0) > 0 ? 'atencao' : 'ok' },
-              (audit.publicos?.meta || audit.publicos?.google) && { label: 'Públicos', status: 'ok' as const },
-              audit.funil && { label: 'Funil', status: audit.funil.gargalo_principal ? 'atencao' : 'ok' as const },
+              audit.criativos_meta && { key: 'Criativos', status: (audit.criativos_meta.problemas?.length || 0) > 0 ? 'atencao' : 'ok' },
+              (audit.publicos?.meta || audit.publicos?.google) && { key: 'Públicos', status: 'ok' as const },
+              audit.funil && { key: 'Funil', status: audit.funil.gargalo_principal ? 'atencao' : 'ok' as const },
               (audit.gargalos?.length || 0) > 0 && {
-                label: 'Gargalos',
+                key: 'Gargalos',
                 status: (() => {
                   const gs = audit.gargalos as any[]
-                  const hasCritical = gs.some((g: any) => {
+                  return gs.some((g: any) => {
                     const imp = (g.impacto || g.severidade || '').toLowerCase()
                     return imp.includes('crít') || imp.includes('alto') || imp.includes('alta') || imp.includes('crítico')
-                  })
-                  return hasCritical ? 'critico' : 'atencao'
+                  }) ? 'critico' : 'atencao'
                 })(),
               },
               (audit.o_que_eu_faria_agora as any[] | undefined)?.length! > 0 && {
-                label: 'Ações agora',
+                key: 'Ações agora',
                 status: (() => {
                   const acoes = audit.o_que_eu_faria_agora as any[]
                   if (acoes.some((a: any) => (typeof a === 'object' ? a?.prioridade : null) === 'P1')) return 'critico'
-                  if (acoes.some((a: any) => (typeof a === 'object' ? a?.prioridade : null) === 'P2')) return 'atencao'
                   return 'atencao'
                 })(),
               },
-            ].filter(Boolean) as { label: string; status: string }[]
+            ].filter(Boolean) as { key: string; status: string }[]
             if (!navItems.length) return null
+
+            // Separa críticos/atenção de saudáveis para mostrar apenas os problemas com destaque
+            const problems = navItems.filter(i => i.status !== 'ok')
+            const healthy  = navItems.filter(i => i.status === 'ok')
+
             return (
-              <div className="flex gap-1.5 flex-wrap">
-                {navItems.map(({ label, status }) => {
-                  const nc = status === 'critico' ? '#FF4D4D' : status === 'atencao' ? '#F0B429' : '#22C55E'
-                  const nl = status === 'critico' ? 'Requer ação' : status === 'atencao' ? 'Monitorar' : 'Saudável'
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {problems.map(({ key, status }) => {
+                  const nc   = status === 'critico' ? '#FF4D4D' : '#F0B429'
+                  const text = humanLabel[key]?.[status] ?? key
+                  const icon = status === 'critico' ? '🔴' : '⚠️'
                   return (
-                    <div key={label}
-                      className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg"
-                      style={{ background: `${nc}08`, border: `1px solid ${nc}25`, color: '#94A3B8' }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: nc }} />
-                      {label}
-                      <span style={{ color: nc }}>{nl}</span>
+                    <div key={key} style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      padding: '8px 12px', borderRadius: '8px',
+                      background: `${nc}08`, border: `1px solid ${nc}20`,
+                    }}>
+                      <span style={{ fontSize: '12px', flexShrink: 0 }}>{icon}</span>
+                      <span style={{ fontSize: '12px', color: '#E2E8F0', fontWeight: 500 }}>{text}</span>
                     </div>
                   )
                 })}
+                {healthy.length > 0 && (
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const, marginTop: problems.length > 0 ? '2px' : '0' }}>
+                    {healthy.map(({ key }) => (
+                      <div key={key} style={{
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        padding: '4px 10px', borderRadius: '6px',
+                        background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.18)',
+                        fontSize: '11px', color: 'rgba(34,197,94,0.8)',
+                      }}>
+                        <span>✓</span>
+                        <span>{humanLabel[key]?.['ok'] ?? key}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })()}
@@ -1392,25 +1504,32 @@ export function TabAuditoria({ clientData }: Props) {
             )
           })()}
 
-          {/* ── AÇÃO PRIORITÁRIA DA SEMANA ── */}
+          {/* ── M2: PRINCIPAL DESCOBERTA DA IA ── */}
           {audit._campanhasClassificadas && (() => {
             const best = (audit._campanhasClassificadas.vencedoras as any[])[0]
             if (!best) return null
             const cpl = best.leads > 0 ? Math.round(best.spend / best.leads) : null
             const leadsGain = best.leads ? Math.round(best.leads * 0.2) : null
             return (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', borderRadius: '10px', background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.18)' }}>
-                <span style={{ fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>🔥</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '3px' }}>Ação mais importante desta semana</div>
-                  <div style={{ fontSize: '12px', color: '#F1F5F9', fontWeight: 500 }}>
-                    Escalar a campanha <strong style={{ color: '#fff' }}>"{best.name}"</strong> em 20%.
+              <div style={{ padding: '16px 18px', borderRadius: '12px', background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.25)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '14px' }}>🏆</span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase' as const, letterSpacing: '0.07em' }}>
+                    Principal descoberta da IA
+                  </span>
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', marginBottom: '4px', lineHeight: 1.4 }}>
+                  A campanha <span style={{ color: '#C4B5FD' }}>"{best.name}"</span> tem potencial para absorver mais verba mantendo CPL saudável.
+                </div>
+                {leadsGain && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                    <span style={{ fontSize: '11px', color: '#A78BFA' }}>Impacto estimado:</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#22C55E' }}>+{leadsGain} leads por mês</span>
+                    {cpl && <span style={{ fontSize: '11px', color: '#64748B' }}>mantendo CPL de R${cpl}</span>}
                   </div>
-                  {leadsGain && (
-                    <div style={{ fontSize: '11px', color: '#A78BFA', marginTop: '2px' }}>
-                      Potencial estimado: +{leadsGain} leads mantendo{cpl ? ` CPL de R$${cpl}` : ' o CPL atual'}.
-                    </div>
-                  )}
+                )}
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(124,58,237,0.15)', fontSize: '11px', color: '#94A3B8' }}>
+                  🔥 <strong style={{ color: '#F1F5F9' }}>Ação desta semana:</strong> Aumentar o orçamento desta campanha em 20% e monitorar CPL por 3 dias.
                 </div>
               </div>
             )
