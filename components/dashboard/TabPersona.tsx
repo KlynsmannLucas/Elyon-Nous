@@ -243,6 +243,10 @@ export function TabPersona({ clientData }: Props) {
       const data = await res.json()
       if (!data.success) throw new Error(data.error || 'Erro ao gerar persona')
       setGeneratedPersona({ ...data.persona, role, generatedAt: new Date().toISOString() })
+      // Log da geração — fire-and-forget
+      fetch('/api/logs', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ module: 'persona', action: 'generate', clientName: clientData.clientName,
+          detail: `Persona gerada para ${clientData.clientName} (${clientData.niche})` }) }).catch(() => {})
     } catch (e: any) {
       setError(e.message)
     } finally {

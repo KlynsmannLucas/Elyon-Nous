@@ -1,16 +1,9 @@
 'use client'
 // components/dashboard/TabFinanceiro.tsx — Painel financeiro da agência
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useAppStore } from '@/lib/store'
-import type { SavedClient } from '@/lib/store'
-
-interface FeeConfig {
-  clientId: string
-  type: 'percent' | 'fixed'
-  value: number
-  active: boolean
-}
+import type { SavedClient, FeeConfig } from '@/lib/store'
 
 const C = {
   surface:  '#0F1629',
@@ -59,30 +52,23 @@ const MONTH_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out
 export function TabFinanceiro() {
   const savedClients    = useAppStore(s => s.savedClients)
   const campaignHistory = useAppStore(s => s.campaignHistory)
+  const feesConfig      = useAppStore(s => s.feesConfig)
+  const setFeeConfig    = useAppStore(s => s.setFeeConfig)
 
-  const [fees, setFees]         = useState<Record<string, FeeConfig>>({})
-  const [editId, setEditId]     = useState<string | null>(null)
-  const [editType, setEditType] = useState<'percent' | 'fixed'>('percent')
-  const [editValue, setEditValue] = useState('')
+  const [editId, setEditId]         = useState<string | null>(null)
+  const [editType, setEditType]     = useState<'percent' | 'fixed'>('percent')
+  const [editValue, setEditValue]   = useState('')
   const [editActive, setEditActive] = useState(true)
   const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
-  // Persiste fees no localStorage
-  useEffect(() => {
-    try { const s = localStorage.getItem('elyon_fees'); if (s) setFees(JSON.parse(s)) } catch {}
-  }, [])
-  useEffect(() => {
-    try { localStorage.setItem('elyon_fees', JSON.stringify(fees)) } catch {}
-  }, [fees])
-
   function saveFee(clientId: string) {
     const v = parseFloat(editValue) || 0
-    setFees(prev => ({ ...prev, [clientId]: { clientId, type: editType, value: v, active: editActive } }))
+    setFeeConfig(clientId, { clientId, type: editType, value: v, active: editActive })
     setEditId(null)
   }
 
   function startEdit(c: SavedClient) {
-    const existing = fees[c.id]
+    const existing = feesConfig[c.id]
     setEditType(existing?.type || 'percent')
     setEditValue(String(existing?.value || 10))
     setEditActive(existing?.active ?? true)
@@ -91,14 +77,14 @@ export function TabFinanceiro() {
 
   // Calcula fee mensal por cliente
   function calcFee(c: SavedClient): number {
-    const fee = fees[c.id]
+    const fee = feesConfig[c.id]
     if (!fee || !fee.active) return 0
     const budget = c.clientData.budget || 0
     if (fee.type === 'percent') return budget * (fee.value / 100)
     return fee.value
   }
 
-  const activeClients = savedClients.filter(c => fees[c.id]?.active)
+  const activeClients = savedClients.filter(c => feesConfig[c.id]?.active)
   const mrr           = useMemo(() => savedClients.reduce((acc, c) => acc + calcFee(c), 0), [savedClients, fees])
   const totalBudget   = useMemo(() => savedClients.reduce((acc, c) => acc + (c.clientData.budget || 0), 0), [savedClients])
   const avgTicket     = activeClients.length > 0 ? mrr / activeClients.length : 0
@@ -234,7 +220,7 @@ export function TabFinanceiro() {
             </thead>
             <tbody>
               {sorted.map((c) => {
-                const fee    = fees[c.id]
+                const fee    = feesConfig[c.id]
                 const feeR$  = calcFee(c)
                 const budget = c.clientData.budget || 0
                 const pct    = totalBudget > 0 ? (budget / totalBudget) * 100 : 0

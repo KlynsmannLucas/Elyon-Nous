@@ -498,17 +498,24 @@ export default function DashboardBody() {
   const buildExtraData = useCallback((clientName: string) => {
     const s = useAppStore.getState()
     return {
-      competitors:      s.competitors[clientName]      ?? [],
-      actionPlanCache:  s.actionPlanCache[clientName]  ?? [],
-      clientPersona:    s.clientPersonas[clientName]   ?? null,
-      nousConversation: s.nousConversations[clientName] ?? [],
-      funnelEntries:    s.funnelEntries.filter((e) => e.clientName === clientName),
-      campaignHistory:  s.campaignHistory,
-      creativeTests:    s.creativeTests,
+      competitors:        s.competitors[clientName]        ?? [],
+      actionPlanCache:    s.actionPlanCache[clientName]    ?? [],
+      clientPersona:      s.clientPersonas[clientName]     ?? null,
+      nousConversation:   s.nousConversations[clientName]  ?? [],
+      funnelEntries:      s.funnelEntries.filter((e) => e.clientName === clientName),
+      campaignHistory:    s.campaignHistory,
+      creativeTests:      s.creativeTests,
+      // Fase 1: fees e workflow sincronizados ao DB
+      feesConfig:         s.feesConfig,
+      workflowRuleStates: s.workflowRuleStates,
+      // Fase 2: market research por cliente
+      marketResearch:     s.marketResearch[clientName]     ?? null,
     }
   }, [])
 
-  const [dbSaveError, setDbSaveError] = useState<string | null>(null)
+  const [dbSaveError,  setDbSaveError]  = useState<string | null>(null)
+  const [saveStatus,   setSaveStatus]   = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const saveTimerRef2 = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const saveToDb = useCallback((clientName?: string) => {
     const state = useAppStore.getState()
@@ -517,6 +524,9 @@ export default function DashboardBody() {
     if (!name) return
     const entry = sc.find((s) => s.clientData.clientName === name)
     if (!entry) return
+
+    setSaveStatus('saving')
+
     fetch('/api/clients', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -531,12 +541,18 @@ export default function DashboardBody() {
         const msg = json.error || `Erro ${res.status} ao salvar no banco`
         console.error('[saveToDb]', msg)
         setDbSaveError(msg)
+        setSaveStatus('error')
       } else {
         setDbSaveError(null)
+        setSaveStatus('saved')
+        // Volta para idle após 3s
+        if (saveTimerRef2.current) clearTimeout(saveTimerRef2.current)
+        saveTimerRef2.current = setTimeout(() => setSaveStatus('idle'), 3500)
       }
     }).catch((e) => {
       console.error('[saveToDb] Network error:', e)
       setDbSaveError('Sem conexão — dados salvos localmente')
+      setSaveStatus('error')
     })
   }, [buildExtraData])
 
@@ -673,8 +689,9 @@ export default function DashboardBody() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const persistSave = useCallback(async () => {
     saveCurrentClient()
+    // Debounce de 1s antes de persistir no banco
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(() => saveToDb(), 3000)
+    saveTimerRef.current = setTimeout(() => saveToDb(), 1000)
   }, [saveCurrentClient, saveToDb])
 
   const persistDelete = useCallback((id: string) => {
@@ -1302,17 +1319,11 @@ export default function DashboardBody() {
           pdfLoading={pdfLoading}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(v => !v)}
+          saveStatus={saveStatus}
+          saveErrorMsg={dbSaveError}
         />
         <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px', background: '#080D1A' }}>
-          {dbSaveError && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px', background: 'rgba(239,68,68,0.08)', borderBottom: '1px solid rgba(239,68,68,0.2)', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#FCA5A5' }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <strong style={{ color: '#EF4444' }}>Banco não sincronizado:</strong> {dbSaveError}
-              </div>
-              <button onClick={() => setDbSaveError(null)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '0 4px' }}>×</button>
-            </div>
-          )}
+          {/* Erros críticos de banco (ex: tabela não existe) são tratados pelo SaveIndicator no topbar */}
           <OnboardingFlow onNavigate={setActiveTab} />
           {TAB_DESCRIPTIONS[activeTab] && (() => {
             const d = TAB_DESCRIPTIONS[activeTab]!

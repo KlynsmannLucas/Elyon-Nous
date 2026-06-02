@@ -1,7 +1,8 @@
 // components/dashboard/TabWorkflow.tsx — Workflow Builder (automações pré-construídas)
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useAppStore } from '@/lib/store'
 
 interface WorkflowRule {
   id: string
@@ -113,43 +114,24 @@ const DEFAULT_RULES: WorkflowRule[] = [
   },
 ]
 
-const STORAGE_KEY = 'elyon_workflow_rules'
-
-function loadRules(): WorkflowRule[] {
-  if (typeof window === 'undefined') return DEFAULT_RULES
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULT_RULES
-    const saved: Record<string, boolean> = JSON.parse(raw)
-    return DEFAULT_RULES.map(r => ({ ...r, enabled: saved[r.id] ?? r.enabled }))
-  } catch {
-    return DEFAULT_RULES
-  }
-}
-
-function saveRules(rules: WorkflowRule[]) {
-  try {
-    const map: Record<string, boolean> = {}
-    rules.forEach(r => { map[r.id] = r.enabled })
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
-  } catch { /* silent */ }
-}
-
 export function TabWorkflow() {
-  const [rules, setRules] = useState<WorkflowRule[]>(DEFAULT_RULES)
+  const workflowRuleStates  = useAppStore(s => s.workflowRuleStates)
+  const setWorkflowRuleState = useAppStore(s => s.setWorkflowRuleState)
+
+  // Mescla os estados persistidos com os defaults
+  const rules: WorkflowRule[] = DEFAULT_RULES.map(r => ({
+    ...r,
+    enabled: r.id in workflowRuleStates ? workflowRuleStates[r.id] : r.enabled,
+  }))
+
   const [filterCat, setFilterCat] = useState<string>('')
   const [saved, setSaved] = useState(false)
 
-  useEffect(() => {
-    setRules(loadRules())
-  }, [])
-
   function toggle(id: string) {
-    setRules(prev => {
-      const next = prev.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r)
-      saveRules(next)
-      return next
-    })
+    const current = id in workflowRuleStates
+      ? workflowRuleStates[id]
+      : (DEFAULT_RULES.find(r => r.id === id)?.enabled ?? false)
+    setWorkflowRuleState(id, !current)
     setSaved(true)
     setTimeout(() => setSaved(false), 1500)
   }

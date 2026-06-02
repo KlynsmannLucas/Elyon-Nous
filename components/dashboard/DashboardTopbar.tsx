@@ -6,6 +6,7 @@ import type { TabKey } from './DashboardSidebar'
 import { SIDEBAR_SECTIONS } from './DashboardSidebar'
 import { AlertsPanel } from './AlertsPanel'
 import { CreditsDisplay } from './CreditsDisplay'
+import { SaveIndicator, type SaveStatus } from './SaveIndicator'
 import { useAppStore } from '@/lib/store'
 
 interface Props {
@@ -17,6 +18,8 @@ interface Props {
   pdfLoading: boolean
   sidebarCollapsed: boolean
   onToggleSidebar: () => void
+  saveStatus?: SaveStatus
+  saveErrorMsg?: string | null
 }
 
 const TAB_SUBTITLES: Partial<Record<TabKey, string>> = {
@@ -50,6 +53,7 @@ const TAB_SUBTITLES: Partial<Record<TabKey, string>> = {
 
 export function DashboardTopbar({
   activeTab, clientData, onExport, onReset, onSave, pdfLoading, sidebarCollapsed, onToggleSidebar,
+  saveStatus = 'idle', saveErrorMsg,
 }: Props) {
   const [clientMenuOpen,    setClientMenuOpen]    = useState(false)
   const [pdfMenuOpen,       setPdfMenuOpen]       = useState(false)
@@ -192,6 +196,9 @@ export function DashboardTopbar({
           </div>
         )}
       </div>
+
+      {/* AutoSave indicator */}
+      <SaveIndicator status={saveStatus} errorMsg={saveErrorMsg} />
 
       {/* Date range pill */}
       <div style={{

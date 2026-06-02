@@ -155,6 +155,10 @@ export function TabAssets({ clientData }: Props) {
         if (!res.ok) throw new Error(json.error || 'Erro no upload')
 
         setAssets(prev => [json.asset, ...prev])
+        // Log do upload
+        fetch('/api/logs', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ module: 'assets', action: 'upload', clientName: clientData.clientName,
+            detail: `Upload: ${file.name} (${selectedType})`, metadata: { name: file.name, type: selectedType, sizeKb: Math.round(file.size / 1024) } }) }).catch(() => {})
       } catch (e: any) {
         errors.push(`${file.name}: ${e.message}`)
       }
@@ -176,6 +180,10 @@ export function TabAssets({ clientData }: Props) {
       }
       setAssets(prev => prev.filter(a => a.id !== id))
       if (activeAssetId === id) { setActiveAssetId(null); setVariants([]) }
+      // Log da exclusão
+      fetch('/api/logs', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ module: 'assets', action: 'delete', clientName: clientData?.clientName,
+          detail: `Asset excluído`, metadata: { id } }) }).catch(() => {})
     } catch (e: any) {
       alert(`Erro ao excluir: ${e.message}`)
     } finally {

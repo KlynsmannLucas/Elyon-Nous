@@ -264,6 +264,13 @@ export interface ClientPortal {
   revenue?: number
 }
 
+export interface FeeConfig {
+  clientId: string
+  type: 'percent' | 'fixed'
+  value: number
+  active: boolean
+}
+
 interface AppStore {
   clientData: ClientData | null
   setClientData: (data: ClientData) => void
@@ -388,6 +395,14 @@ interface AppStore {
   // Morning briefing opt-in
   briefingEnabled: boolean
   setBriefingEnabled: (v: boolean) => void
+
+  // Honorários da agência por cliente — keyed by SavedClient.id
+  feesConfig: Record<string, FeeConfig>
+  setFeeConfig: (clientId: string, config: FeeConfig) => void
+
+  // Estados de regras de workflow (toggle on/off) — keyed by rule id
+  workflowRuleStates: Record<string, boolean>
+  setWorkflowRuleState: (ruleId: string, enabled: boolean) => void
 
   clearAll: () => void
 }
@@ -770,6 +785,14 @@ export const useAppStore = create<AppStore>()(
       briefingEnabled: false,
       setBriefingEnabled: (v) => set({ briefingEnabled: v }),
 
+      feesConfig: {},
+      setFeeConfig: (clientId, config) =>
+        set((s) => ({ feesConfig: { ...s.feesConfig, [clientId]: config } })),
+
+      workflowRuleStates: {},
+      setWorkflowRuleState: (ruleId, enabled) =>
+        set((s) => ({ workflowRuleStates: { ...s.workflowRuleStates, [ruleId]: enabled } })),
+
       clearAll: () => set({
         clientData:               null,
         strategyData:             null,
@@ -798,6 +821,8 @@ export const useAppStore = create<AppStore>()(
         clientPortalsSaved:       [],
         strategyTimestamps:       [],
         briefingEnabled:          false,
+        feesConfig:               {},
+        workflowRuleStates:       {},
         selectedMetaAccountByClient:   {},
         selectedGoogleAccountByClient: {},
       }),
@@ -833,6 +858,8 @@ export const useAppStore = create<AppStore>()(
         checklistDate:            state.checklistDate,
         clientPortalsSaved:       state.clientPortalsSaved,
         briefingEnabled:          state.briefingEnabled,
+        feesConfig:               state.feesConfig,
+        workflowRuleStates:       state.workflowRuleStates,
       }),
     }
   )

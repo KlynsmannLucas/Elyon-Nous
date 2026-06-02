@@ -269,13 +269,27 @@ function MarketIntelCard({ clientName, niche, city }: { clientName: string; nich
         if (d.done && (d.parsed || d.output)) {
           clearInterval(pollRef.current!)
           setPolling(false)
-          setMarketResearch(clientName, {
+          const researchData = {
             competitors: d.parsed?.competitors ?? (Array.isArray(d.parsed) ? d.parsed : []),
             opportunities: d.parsed?.opportunities ?? '',
             mistakes: d.parsed?.competitor_mistakes ?? '',
             raw: d.output,
             fetchedAt: new Date().toISOString(),
-          })
+          }
+          setMarketResearch(clientName, researchData)
+          // Persiste no banco — fire-and-forget
+          fetch('/api/market-intelligence', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientName, niche,
+              competitors:   researchData.competitors,
+              opportunities: researchData.opportunities,
+              mistakes:      researchData.mistakes,
+              rawData:       { output: d.output, parsed: d.parsed },
+              source: 'manus',
+            }),
+          }).catch(() => {})
         }
       } catch {}
     }, 20000)

@@ -1,7 +1,7 @@
 // components/dashboard/NousChat.tsx — IA NOUS: assistente estratégico por nicho
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAppStore, type ClientData, type CampaignRecord, type NousMessage } from '@/lib/store'
 import { getBenchmark, getBenchmarkSummary, getCreativeAngles, getSeasonalityContext, BENCHMARKS } from '@/lib/niche_benchmarks'
 
@@ -41,8 +41,27 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
   const [open, setOpen]   = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef  = useRef<HTMLInputElement>(null)
+  const bottomRef  = useRef<HTMLDivElement>(null)
+  const inputRef   = useRef<HTMLInputElement>(null)
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Sync conversas ao banco com debounce de 2s após cada nova mensagem
+  const syncConversationToDB = useCallback(() => {
+    const msgs = useAppStore.getState().nousConversations[clientName] || []
+    if (msgs.length === 0) return
+    fetch('/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientName, messages: msgs }),
+    }).catch(() => {})
+  }, [clientName])
+
+  useEffect(() => {
+    if (messages.length === 0) return
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+    syncTimerRef.current = setTimeout(syncConversationToDB, 2000)
+    return () => { if (syncTimerRef.current) clearTimeout(syncTimerRef.current) }
+  }, [messages.length, syncConversationToDB])
 
   useEffect(() => {
     if (open && messages.length === 0) {
