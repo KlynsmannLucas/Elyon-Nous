@@ -1011,39 +1011,51 @@ export function TabAuditoria({ clientData }: Props) {
                     </div>
                   )
                 })()}
-                {/* M4 — Por que sua nota é X? */}
+                {/* M3 — Narrativa do score (não checklist) */}
                 {(() => {
                   const s      = audit.health_score as number
                   const rm     = audit._realMetrics as any
                   const bench2 = getBenchmark(clientData?.niche || '')
-                  const cplOk  = rm?.avgCPL && bench2 ? rm.avgCPL <= bench2.kpi_thresholds.cpl_bad : null
                   const cplGood = rm?.avgCPL && bench2 ? rm.avgCPL <= bench2.kpi_thresholds.cpl_good : null
+                  const cplOk   = rm?.avgCPL && bench2 ? rm.avgCPL <= bench2.kpi_thresholds.cpl_bad  : null
                   const hasWaste = (audit._wasteCampaigns as any[] | undefined)?.length! > 0
                   const hasCrit  = (audit._campanhasClassificadas?.criticas as any[] | undefined)?.length! > 0
                   const criatOk  = !audit.criativos_meta?.problemas?.length
-                  const pubOk    = !!(audit.publicos?.meta || audit.publicos?.google)
-                  const factors: { icon: string; text: string; positive: boolean }[] = []
-                  if (cplGood === true)  factors.push({ icon: '✓', text: 'CPL abaixo do benchmark do setor', positive: true })
-                  else if (cplOk === false) factors.push({ icon: '⚠', text: 'CPL acima do ideal para este setor', positive: false })
-                  if (criatOk)           factors.push({ icon: '✓', text: 'Criativos com bom desempenho', positive: true })
-                  else if (audit.criativos_meta?.problemas?.length > 0) factors.push({ icon: '⚠', text: 'Criativos com pontos a melhorar', positive: false })
-                  if (pubOk)             factors.push({ icon: '✓', text: 'Públicos segmentados corretamente', positive: true })
-                  if (hasWaste)          factors.push({ icon: '⚠', text: 'Campanhas consumindo verba sem conversões', positive: false })
-                  if (hasCrit)           factors.push({ icon: '⚠', text: 'Campanhas críticas presentes na conta', positive: false })
-                  if (factors.length === 0) return null
+
+                  // Constrói narrativa dinâmica
+                  const positives: string[] = []
+                  const negatives: string[] = []
+                  if (cplGood === true)  positives.push('custo por lead abaixo da média do setor')
+                  if (criatOk)           positives.push('criativos com bom desempenho')
+                  if (!hasWaste)         positives.push('sem desperdício significativo de verba detectado')
+                  if (!hasCrit)          positives.push('nenhuma campanha em estado crítico')
+                  if (hasWaste)          negatives.push('campanhas consumindo verba sem conversões proporcionais')
+                  if (hasCrit)           negatives.push('campanhas em estado crítico que precisam de revisão')
+                  if (cplOk === false)   negatives.push('CPL acima do benchmark ideal para este setor')
+                  if (!criatOk)          negatives.push('criativos com pontos de melhoria identificados')
+
+                  if (positives.length === 0 && negatives.length === 0) return null
+
+                  const posPhrase = positives.length > 0
+                    ? positives.length === 1
+                      ? positives[0]
+                      : `${positives.slice(0, -1).join(', ')} e ${positives[positives.length - 1]}`
+                    : null
+                  const negPhrase = negatives.length > 0 ? negatives[0] : null
+
                   return (
-                    <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                       <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: '8px' }}>
                         Por que sua nota é {s}?
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '4px' }}>
-                        {factors.map((f, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: f.positive ? 'rgba(34,197,94,0.85)' : 'rgba(245,158,11,0.85)' }}>
-                            <span style={{ flexShrink: 0, fontWeight: 700 }}>{f.icon}</span>
-                            <span>{f.text}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <p style={{ fontSize: '12px', color: '#CBD5E1', lineHeight: 1.7, margin: 0 }}>
+                        {posPhrase
+                          ? <>Sua conta atingiu essa nota por apresentar <strong style={{ color: '#F1F5F9' }}>{posPhrase}</strong>.</>
+                          : 'Sua conta apresenta oportunidades de melhoria em várias dimensões.'}
+                        {negPhrase && (
+                          <> O principal fator que impede uma nota maior é a <strong style={{ color: '#FCD34D' }}>{negPhrase}</strong>.</>
+                        )}
+                      </p>
                     </div>
                   )
                 })()}
@@ -1504,32 +1516,72 @@ export function TabAuditoria({ clientData }: Props) {
             )
           })()}
 
-          {/* ── M2: PRINCIPAL DESCOBERTA DA IA ── */}
+          {/* ── M2: PRINCIPAL DESCOBERTA DA IA — com Por que importa + custo de inação ── */}
           {audit._campanhasClassificadas && (() => {
             const best = (audit._campanhasClassificadas.vencedoras as any[])[0]
             if (!best) return null
-            const cpl = best.leads > 0 ? Math.round(best.spend / best.leads) : null
+            const cpl       = best.leads > 0 ? Math.round(best.spend / best.leads) : null
             const leadsGain = best.leads ? Math.round(best.leads * 0.2) : null
+            const bench3    = getBenchmark(clientData?.niche || '')
+            const benchAvg  = bench3 ? Math.round((bench3.cpl_min + bench3.cpl_max) / 2) : null
+            const isBelow   = cpl && benchAvg ? cpl < benchAvg : false
+            const freqOk    = best.frequency ? best.frequency < 3.5 : true  // frequência saudável
+            // M2: Custo de inação estimado
+            const inactionLeads = leadsGain ? Math.round(leadsGain * 1.5) : null  // 30 dias sem agir
+
             return (
-              <div style={{ padding: '16px 18px', borderRadius: '12px', background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.25)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '14px' }}>🏆</span>
+              <div style={{ padding: '18px 20px', borderRadius: '12px', background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.25)' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '15px' }}>🏆</span>
                   <span style={{ fontSize: '10px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase' as const, letterSpacing: '0.07em' }}>
                     Principal descoberta da IA
                   </span>
                 </div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', marginBottom: '4px', lineHeight: 1.4 }}>
-                  A campanha <span style={{ color: '#C4B5FD' }}>"{best.name}"</span> tem potencial para absorver mais verba mantendo CPL saudável.
+
+                {/* Descoberta */}
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', lineHeight: 1.4, marginBottom: '6px' }}>
+                  A campanha <span style={{ color: '#C4B5FD' }}>"{best.name}"</span> tem potencial para absorver mais investimento mantendo CPL saudável.
                 </div>
+
+                {/* Impacto */}
                 {leadsGain && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' as const }}>
                     <span style={{ fontSize: '11px', color: '#A78BFA' }}>Impacto estimado:</span>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#22C55E' }}>+{leadsGain} leads por mês</span>
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#22C55E', letterSpacing: '-0.02em' }}>+{leadsGain} leads / mês</span>
                     {cpl && <span style={{ fontSize: '11px', color: '#64748B' }}>mantendo CPL de R${cpl}</span>}
                   </div>
                 )}
-                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(124,58,237,0.15)', fontSize: '11px', color: '#94A3B8' }}>
-                  🔥 <strong style={{ color: '#F1F5F9' }}>Ação desta semana:</strong> Aumentar o orçamento desta campanha em 20% e monitorar CPL por 3 dias.
+
+                {/* M1: Por que isso importa? */}
+                <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', marginBottom: '10px' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: '6px' }}>
+                    Por que isso importa?
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#CBD5E1', lineHeight: 1.65, margin: 0 }}>
+                    {isBelow && freqOk
+                      ? `Esta campanha gera leads${cpl ? ` a R$${cpl}` : ''} enquanto o benchmark do setor é R$${bench3?.cpl_min}–${bench3?.cpl_max}${benchAvg ? ` (média R$${benchAvg})` : ''}. Isso indica audiência qualificada disponível — o algoritmo pode escalar sem perder eficiência imediatamente.`
+                      : freqOk
+                      ? `A frequência desta campanha ainda está saudável, indicando que o público não está saturado. Há espaço para aumentar o alcance sem comprometer a qualidade dos leads.`
+                      : `A performance histórica desta campanha é consistente, o que reduz o risco de oscilação de CPL ao escalar gradualmente.`}
+                  </p>
+                </div>
+
+                {/* M2: Se nenhuma ação for tomada */}
+                {inactionLeads && (
+                  <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: '4px' }}>
+                      Se nenhuma ação for tomada
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#FCA5A5', lineHeight: 1.55, margin: 0 }}>
+                      Mantendo a configuração atual sem escalar esta campanha, a estimativa é de uma perda de oportunidade de <strong>{inactionLeads} a {Math.round(inactionLeads * 1.3)} leads</strong> nos próximos 30 dias — contatos que concorrentes podem estar captando.
+                    </p>
+                  </div>
+                )}
+
+                {/* Ação */}
+                <div style={{ paddingTop: '10px', borderTop: '1px solid rgba(124,58,237,0.15)', fontSize: '11px', color: '#94A3B8' }}>
+                  🔥 <strong style={{ color: '#F1F5F9' }}>Ação desta semana:</strong> Aumentar o orçamento desta campanha em 20% e monitorar CPL por 3 dias consecutivos.
                 </div>
               </div>
             )
@@ -1650,17 +1702,29 @@ export function TabAuditoria({ clientData }: Props) {
             </div>
           )}
 
-          {/* ── O QUE EU FARIA AGORA (before plano) ── */}
+          {/* ── M4: O QUE A IA FARIA SE ESTA CONTA FOSSE DELA? ── */}
           {(audit.o_que_eu_faria_agora as any[] | undefined)?.length! > 0 && (
             <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111114 0%, #0E0E11 100%)', border: '1px solid rgba(240,180,41,0.35)' }}>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
-                  style={{ background: 'rgba(240,180,41,0.15)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.35)' }}>⚡ Ações Agora</span>
-                <h3 className="font-display font-bold text-white text-base">O que eu faria agora</h3>
-                <span className="ml-auto text-[10px] text-slate-600">Perspectiva do consultor sênior</span>
+              <div style={{ marginBottom: '16px' }}>
+                <div className="flex items-center gap-3 mb-2">
+                  <span style={{ fontSize: '16px' }}>🤖</span>
+                  <h3 className="font-display font-bold text-white text-base">O que a IA faria se esta conta fosse dela?</h3>
+                </div>
+                <p style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.55 }}>
+                  As 4 ações abaixo foram priorizadas por impacto. Elas representam o caminho mais direto para melhorar o resultado desta conta nos próximos 30 dias.
+                </p>
               </div>
               <div className="space-y-2.5">
-                {(audit.o_que_eu_faria_agora as any[]).map((action: any, i: number) => {
+                {(audit.o_que_eu_faria_agora as any[])
+                  .slice()
+                  .sort((a: any, b: any) => {
+                    const order: Record<string, number> = { P1: 0, P2: 1, P3: 2 }
+                    const ap = typeof a === 'object' ? (a?.prioridade ?? 'P3') : 'P3'
+                    const bp = typeof b === 'object' ? (b?.prioridade ?? 'P3') : 'P3'
+                    return (order[ap] ?? 2) - (order[bp] ?? 2)
+                  })
+                  .slice(0, 4)
+                  .map((action: any, i: number) => {
                   const isObj = typeof action === 'object' && action !== null
                   const titulo    = isObj ? action.titulo    : action
                   const prioridade = isObj ? action.prioridade : null

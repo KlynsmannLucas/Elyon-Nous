@@ -291,12 +291,14 @@ export function TabMarketIntel({ clientData }: Props) {
     }
   }
 
+  // ── Variáveis de contexto reutilizadas em múltiplos blocos ──────────────────
+  const goodMonth = proj.seasonalityIndex <= 0.95
+  const badMonth  = proj.seasonalityIndex >= 1.1
+  const goodCity  = proj.citySizeModifier <= 0.75
+  const fatigued  = maturity.stage === 'fadiga'
+
   // ── Resumo executivo — calcula situação geral do mercado ─────────────────────
   const execSummary = (() => {
-    const goodMonth    = proj.seasonalityIndex <= 0.95
-    const badMonth     = proj.seasonalityIndex >= 1.1
-    const goodCity     = proj.citySizeModifier <= 0.75   // cidade menor = CPL menor
-    const fatigued     = maturity.stage === 'fadiga'
     const cplInRange   = proj.adjustedCPLAvg <= bench.cpl_max
     const cplBelow     = proj.adjustedCPLAvg <= bench.cpl_min
     const goodSignals  = [goodMonth, goodCity, cplInRange, !fatigued].filter(Boolean).length
@@ -410,6 +412,75 @@ export function TabMarketIntel({ clientData }: Props) {
           <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
             Análise gerada pela IA com base em sazonalidade, benchmark do setor e dados do seu negócio.
           </span>
+        </div>
+      </div>
+
+      {/* ── M1: O QUE IDENTIFICAMOS — descoberta específica ──────────────── */}
+      {(() => {
+        const monthlyLeads  = clientData.budget > 0 ? Math.round(clientData.budget / proj.adjustedCPLAvg) : 0
+        const benchCPLAvg   = (bench.cpl_min + bench.cpl_max) / 2
+        const citySaving    = goodCity ? Math.round((1 - proj.citySizeModifier) * 100) : 0
+        const seasonSaving  = seasonCtx.cheaper ? Math.round((1 - proj.seasonalityIndex) * 100) : 0
+        const peakMonthText = seasonCtx.peakMonths?.slice(0, 2).join(' e ') || ''
+        const valleyMonthText = seasonCtx.valleyMonths?.slice(0, 2).join(' e ') || ''
+        const currentMonth  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()]
+
+        let finding = ''
+        let explanation = ''
+        let discoveryImpact = ''
+
+        if (seasonCtx.cheaper && valleyMonthText) {
+          finding = `A maioria dos anunciantes de ${clientData.niche} concentra investimento no início do mês e em ${peakMonthText || 'períodos de alta'}. Você está anunciando em ${currentMonth}, que historicamente tem menor concorrência.`
+          explanation = `Em períodos de menor disputa pelo mesmo público, o algoritmo distribui o orçamento com mais eficiência — cada real investido gera mais resultado.`
+          discoveryImpact = seasonSaving > 0
+            ? `Esta janela pode representar ${seasonSaving}% de eficiência extra${monthlyLeads > 0 ? ` — ou seja, até ${Math.round(monthlyLeads * (seasonSaving / 100))} leads adicionais com o mesmo orçamento.` : '.'}`
+            : `Capitalize este momento antes que a concorrência aumente novamente.`
+        } else if (goodCity && clientData.city && citySaving > 15) {
+          finding = `${clientData.city} apresenta menor densidade de anunciantes no setor de ${clientData.niche} em comparação com as capitais. Isso reduz o leilão de anúncios e o custo por resultado.`
+          explanation = `Em mercados menos saturados, o algoritmo consegue encontrar público qualificado com menor custo por impressão (CPM), o que se traduz em CPL menor.`
+          discoveryImpact = `Esta vantagem geográfica equivale a uma economia de ~${citySaving}% no custo por lead em relação às capitais — algo que a maioria dos anunciantes do setor não percebe.`
+        } else if (maturity.stage === 'fadiga') {
+          finding = `Sua conta apresenta sinais de fadiga criativa — o público viu os mesmos anúncios repetidamente e a taxa de engajamento caiu.`
+          explanation = `Quando a frequência fica alta sem renovação de criativos, o algoritmo começa a pagar mais caro por cada impressão para encontrar público novo. O resultado: o CPL sobe sem aumentar o orçamento.`
+          discoveryImpact = `Renovar os criativos principais agora pode recuperar a eficiência sem precisar aumentar o investimento.`
+        } else {
+          finding = `O setor de ${clientData.niche} tem períodos de alta concorrência em ${peakMonthText || 'alguns meses do ano'}, quando o CPL pode subir ${Math.round((bench.cpl_max / bench.cpl_min - 1) * 100)}% acima do mínimo do benchmark.`
+          explanation = `Monitorar o índice sazonal e ajustar o orçamento antecipadamente é uma vantagem competitiva que a maioria dos anunciantes não explora sistematicamente.`
+          discoveryImpact = valleyMonthText ? `Os meses de ${valleyMonthText} historicamente oferecem o melhor custo-benefício para este nicho.` : `Manter campanhas ativas nos períodos de vale reduz o CPL médio anual.`
+        }
+
+        return (
+          <div style={{ padding: '16px 18px', borderRadius: '12px', marginBottom: '14px', background: '#0C1426', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <span style={{ fontSize: '10px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>O que identificamos</span>
+            </div>
+            <p style={{ fontSize: '13px', color: '#E2E8F0', fontWeight: 600, lineHeight: 1.6, margin: '0 0 6px' }}>{finding}</p>
+            <p style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.6, margin: '0 0 10px' }}>{explanation}</p>
+            <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.18)', fontSize: '12px', color: '#C4B5FD', fontWeight: 500 }}>
+              {discoveryImpact}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── M2: POR QUE A IA CHEGOU NESSA CONCLUSÃO? ───────────────────── */}
+      <div style={{ padding: '12px 16px', borderRadius: '10px', marginBottom: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' as const }}>
+        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>Esta análise considerou:</div>
+        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' as const }}>
+          {[
+            { label: 'Sazonalidade do setor', ok: true },
+            { label: 'Benchmark do nicho',    ok: true },
+            { label: 'Maturidade da conta',   ok: !!oldestCampaign },
+            { label: 'Histórico de campanhas',ok: campaignHistory.length > 0 },
+            { label: 'Localização',            ok: !!clientData.city },
+          ].map(({ label, ok }) => (
+            <span key={label} style={{ fontSize: '10px', color: ok ? 'rgba(34,197,94,0.7)' : 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>{ok ? '✓' : '○'}</span> {label}
+            </span>
+          ))}
         </div>
       </div>
 
