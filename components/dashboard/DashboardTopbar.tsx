@@ -15,6 +15,7 @@ interface Props {
   onExport: (mode?: 'executive' | 'full') => void
   onReset: () => void
   onSave: () => void
+  onEdit?: () => void
   pdfLoading: boolean
   sidebarCollapsed: boolean
   onToggleSidebar: () => void
@@ -52,7 +53,7 @@ const TAB_SUBTITLES: Partial<Record<TabKey, string>> = {
 }
 
 export function DashboardTopbar({
-  activeTab, clientData, onExport, onReset, onSave, pdfLoading, sidebarCollapsed, onToggleSidebar,
+  activeTab, clientData, onExport, onReset, onSave, onEdit, pdfLoading, sidebarCollapsed, onToggleSidebar,
   saveStatus = 'idle', saveErrorMsg,
 }: Props) {
   const [clientMenuOpen,    setClientMenuOpen]    = useState(false)
@@ -251,6 +252,25 @@ export function DashboardTopbar({
               borderRadius: '10px', padding: '6px', minWidth: '160px',
               boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
             }}>
+              {onEdit && (
+                <button
+                  onClick={() => { onEdit(); setClientMenuOpen(false) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    width: '100%', padding: '8px 10px', borderRadius: '7px',
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    color: '#CBD5E1', fontSize: '12px', textAlign: 'left',
+                    transition: 'background 0.12s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.1)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Editar dados do cliente
+                </button>
+              )}
               <button
                 onClick={() => { onReset(); setClientMenuOpen(false) }}
                 style={{
@@ -312,6 +332,31 @@ export function DashboardTopbar({
           </div>
         )}
       </div>
+
+      {/* Modo PRO / Simplificado toggle */}
+      {(() => {
+        const dashboardMode    = useAppStore(s => s.dashboardMode)
+        const setDashboardMode = useAppStore(s => s.setDashboardMode)
+        const isSimple = dashboardMode === 'simple'
+        return (
+          <button
+            onClick={() => setDashboardMode(isSimple ? 'pro' : 'simple')}
+            title={isSimple ? 'Modo Simplificado ativo — clique para Modo PRO' : 'Modo PRO ativo — clique para Modo Simplificado'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '4px 9px', borderRadius: '7px', flexShrink: 0,
+              border: isSimple ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+              background: isSimple ? 'rgba(34,197,94,0.08)' : 'transparent',
+              color: isSimple ? '#22C55E' : 'rgba(255,255,255,0.3)',
+              cursor: 'pointer', transition: 'all 0.15s', fontSize: '10px', fontWeight: 700,
+            }}
+            onMouseEnter={e => { if (!isSimple) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' } }}
+            onMouseLeave={e => { if (!isSimple) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' } }}
+          >
+            {isSimple ? '🟢 Simplificado' : '⚙ PRO'}
+          </button>
+        )
+      })()}
 
       {/* Credits display */}
       <CreditsDisplay />

@@ -6,7 +6,8 @@ import { useServerUserData } from './UserDataProvider'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
 import { SetupWizard, type WizardImportData } from '@/components/dashboard/SetupWizard'
-import { TabOverview }     from '@/components/dashboard/TabOverview'
+import { TabOverview }        from '@/components/dashboard/TabOverview'
+import { TabSimpleOverview }  from '@/components/dashboard/TabSimpleOverview'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
 import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
@@ -724,6 +725,7 @@ export default function DashboardBody() {
   }, [])
 
   const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
+  const [editingClient, setEditingClient] = useState(false)
   const [genError, setGenError] = useState('')
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
@@ -1058,7 +1060,11 @@ export default function DashboardBody() {
     }
 
     switch (activeTab) {
-      case 'overview':      return wrap('Overview',          <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
+      case 'overview': {
+        const mode = useAppStore.getState().dashboardMode
+        if (mode === 'simple') return wrap('Visão Geral', <TabSimpleOverview clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
+        return wrap('Overview', <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
+      }
       case 'strategy':      return wrap('Estratégia',        <TabStrategy strategy={strategy} analysis={analysis} />)
       case 'diagnostic':    return wrap('Diagnóstico',       <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />)
       case 'analise':       return wrap('Análise Profunda',  <TabAnalise clientData={clientData} planHasAudit={planLimits.hasAudit} onUpgrade={goUpgrade} />)
@@ -1258,7 +1264,10 @@ export default function DashboardBody() {
               </button>
             </div>
           )}
-          <SetupWizard onComplete={handleWizardComplete} />
+          <SetupWizard
+            onComplete={(importData) => { setEditingClient(false); handleWizardComplete(importData) }}
+            initialData={editingClient ? clientData ?? undefined : undefined}
+          />
         </div>
       </div>
     )
@@ -1316,6 +1325,7 @@ export default function DashboardBody() {
           onExport={handleExportPDF}
           onReset={handleReset}
           onSave={handleSaveClient}
+          onEdit={clientData ? () => { setView('wizard'); setEditingClient(true) } : undefined}
           pdfLoading={pdfLoading}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(v => !v)}

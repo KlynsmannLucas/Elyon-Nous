@@ -404,6 +404,10 @@ interface AppStore {
   workflowRuleStates: Record<string, boolean>
   setWorkflowRuleState: (ruleId: string, enabled: boolean) => void
 
+  // Modo de visualização: 'pro' (padrão) ou 'simple' (linguagem de negócio)
+  dashboardMode: 'pro' | 'simple'
+  setDashboardMode: (mode: 'pro' | 'simple') => void
+
   clearAll: () => void
 }
 
@@ -793,6 +797,9 @@ export const useAppStore = create<AppStore>()(
       setWorkflowRuleState: (ruleId, enabled) =>
         set((s) => ({ workflowRuleStates: { ...s.workflowRuleStates, [ruleId]: enabled } })),
 
+      dashboardMode: 'pro',
+      setDashboardMode: (mode) => set({ dashboardMode: mode }),
+
       clearAll: () => set({
         clientData:               null,
         strategyData:             null,
@@ -860,6 +867,7 @@ export const useAppStore = create<AppStore>()(
         briefingEnabled:          state.briefingEnabled,
         feesConfig:               state.feesConfig,
         workflowRuleStates:       state.workflowRuleStates,
+        dashboardMode:            state.dashboardMode,
       }),
     }
   )

@@ -121,6 +121,7 @@ export interface WizardImportData {
 
 interface Props {
   onComplete: (importData?: WizardImportData[]) => void
+  initialData?: Partial<import('@/lib/store').ClientData>
 }
 
 function inputClass(focused = false) {
@@ -150,35 +151,40 @@ function Tip({ text }: { text: string }) {
   )
 }
 
-export function SetupWizard({ onComplete }: Props) {
+export function SetupWizard({ onComplete, initialData }: Props) {
   const { setClientData, setWizardStep, wizardStep, setMarketResearchTaskId, setMarketResearch } = useAppStore()
 
+  // Pergunta pré-wizard: o usuário já anuncia?
+  const [advertisingExp, setAdvertisingExp] = useState<'yes' | 'no' | null>(
+    initialData ? 'yes' : null   // modo edição pula a pergunta
+  )
+
   const [form, setForm] = useState({
-    clientName:         '',
-    niche:              '',
+    clientName:         initialData?.clientName    ?? '',
+    niche:              initialData?.niche         ?? '',
     customNiche:        '',
-    city:               '',
-    products:           '',
-    budget:             '',
-    objective:          'leads',
-    monthlyRevenue:     '',
-    nicheDetails:       {} as Record<string, string>,
-    currentCPL:         '',
-    mainChallenge:      '',
-    currentLeadSource:  '',
+    city:               initialData?.city          ?? '',
+    products:           (initialData?.products     ?? []).join(', '),
+    budget:             String(initialData?.budget  ?? ''),
+    objective:          initialData?.objective     ?? 'leads',
+    monthlyRevenue:     String(initialData?.monthlyRevenue ?? ''),
+    nicheDetails:       (initialData?.nicheDetails ?? {}) as Record<string, string>,
+    currentCPL:         String(initialData?.currentCPL    ?? ''),
+    mainChallenge:      initialData?.mainChallenge ?? '',
+    currentLeadSource:  initialData?.currentLeadSource ?? '',
     // Unit economics
-    ticketPrice:        '',
-    grossMargin:        '',
-    isRecurring:        false,
-    conversionRate:     '',
+    ticketPrice:        String(initialData?.ticketPrice   ?? ''),
+    grossMargin:        String(initialData?.grossMargin   ?? ''),
+    isRecurring:        initialData?.isRecurring   ?? false,
+    conversionRate:     String(initialData?.conversionRate ?? ''),
     // Persona do cliente ideal
-    targetAge:          '',
-    targetGender:       '',
-    mainPains:          '',
-    mainObjection:      '',
-    onlineChannels:     [] as string[],
-    targetIncome:       '',
-    awarenessStage:     '',
+    targetAge:          initialData?.targetAge     ?? '',
+    targetGender:       initialData?.targetGender  ?? '',
+    mainPains:          initialData?.mainPains     ?? '',
+    mainObjection:      initialData?.mainObjection ?? '',
+    onlineChannels:     (initialData?.onlineChannels ?? []) as string[],
+    targetIncome:       initialData?.targetIncome  ?? '',
+    awarenessStage:     initialData?.awarenessStage ?? '',
   })
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
@@ -317,9 +323,84 @@ export function SetupWizard({ onComplete }: Props) {
     return OBJECTIVES.find((o) => o.value === value)?.label || value
   }
 
+  // ── Tela pré-wizard: "Você já anuncia hoje?" ─────────────────────────────
+  if (advertisingExp === null) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="w-full max-w-lg animate-fade-up">
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '16px' }}>📊</div>
+            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#F1F5F9', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+              Você já anuncia hoje?
+            </h2>
+            <p style={{ fontSize: '14px', color: '#64748B', margin: 0, lineHeight: 1.6 }}>
+              Isso nos ajuda a personalizar sua experiência na plataforma.
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button
+              onClick={() => setAdvertisingExp('yes')}
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: '16px',
+                padding: '20px 22px', borderRadius: '14px', cursor: 'pointer',
+                background: '#111114', border: '1px solid #2A2A30',
+                textAlign: 'left', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(240,180,41,0.4)'; e.currentTarget.style.background = 'rgba(240,180,41,0.06)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2A30'; e.currentTarget.style.background = '#111114' }}
+            >
+              <span style={{ fontSize: '28px', flexShrink: 0 }}>✅</span>
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: '#F1F5F9', marginBottom: '4px' }}>
+                  Sim, já anuncio no Meta Ads ou Google
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.5 }}>
+                  Tenho campanhas ativas ou dados históricos. Quero analisar, otimizar e escalar.
+                </div>
+              </div>
+            </button>
+            <button
+              onClick={() => setAdvertisingExp('no')}
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: '16px',
+                padding: '20px 22px', borderRadius: '14px', cursor: 'pointer',
+                background: '#111114', border: '1px solid #2A2A30',
+                textAlign: 'left', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'; e.currentTarget.style.background = 'rgba(124,58,237,0.06)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2A30'; e.currentTarget.style.background = '#111114' }}
+            >
+              <span style={{ fontSize: '28px', flexShrink: 0 }}>🚀</span>
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: '#F1F5F9', marginBottom: '4px' }}>
+                  Não, ainda não anuncio
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.5 }}>
+                  Quero começar do zero. A IA vai me ajudar a montar minha primeira campanha.
+                </div>
+              </div>
+            </button>
+          </div>
+          <p style={{ textAlign: 'center', fontSize: '11px', color: '#475569', marginTop: '20px' }}>
+            Você poderá mudar isso depois a qualquer momento.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-lg">
+
+        {/* Badge de perfil no topo */}
+        {advertisingExp === 'no' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', padding: '8px 14px', borderRadius: '10px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
+            <span style={{ fontSize: '14px' }}>🚀</span>
+            <span style={{ fontSize: '11px', color: '#A78BFA', fontWeight: 600 }}>Modo Iniciante</span>
+            <span style={{ fontSize: '11px', color: '#64748B' }}>— a IA vai guiar você em cada passo</span>
+          </div>
+        )}
 
         {/* Progress bar */}
         <div className="flex items-center gap-1.5 mb-8">
