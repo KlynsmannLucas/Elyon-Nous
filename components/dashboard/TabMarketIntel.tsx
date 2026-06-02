@@ -308,36 +308,49 @@ export function TabMarketIntel({ clientData }: Props) {
         </div>
       </div>
 
-      {/* Cards de resumo */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold" style={{ color: proj.seasonalityIndex >= 1.1 ? '#FF4D4D' : proj.seasonalityIndex <= 0.9 ? '#22C55E' : '#F0B429' }}>
-            {proj.seasonalityIndex.toFixed(2)}×
+      {/* Strip de métricas — compacto (Fase 3) */}
+      <div style={{
+        display: 'flex', alignItems: 'stretch', gap: '0',
+        background: '#0C1426', border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '12px', marginBottom: '20px', overflow: 'hidden',
+      }}>
+        {[
+          {
+            value: `${proj.seasonalityIndex.toFixed(2)}×`,
+            label: 'Índice sazonal',
+            sub: proj.seasonalityIndex >= 1.1 ? 'Pico' : proj.seasonalityIndex <= 0.9 ? 'Valle' : 'Normal',
+            color: proj.seasonalityIndex >= 1.1 ? '#EF4444' : proj.seasonalityIndex <= 0.9 ? '#22C55E' : '#F59E0B',
+          },
+          {
+            value: `R$${proj.adjustedCPLAvg}`,
+            label: 'CPL ajustado',
+            sub: benchMeta?.dataSource === 'real_market_data' ? '✓ real' : '~ estimado',
+            color: '#F59E0B',
+          },
+          {
+            value: `${maturity.cplMultiplier.toFixed(2)}×`,
+            label: 'Maturidade',
+            sub: maturity.label,
+            color: maturity.color,
+          },
+          {
+            value: `${Math.round(proj.citySizeModifier * 100)}%`,
+            label: 'CPL vs capital',
+            sub: proj.citySizeLabel,
+            color: '#A78BFA',
+          },
+        ].map((stat, i) => (
+          <div key={i} style={{
+            flex: 1, padding: '14px 18px',
+            borderRight: i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          }}>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: stat.color, letterSpacing: '-0.02em', lineHeight: 1 }}>
+              {stat.value}
+            </div>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.32)', marginTop: '4px' }}>{stat.label}</div>
+            <div style={{ fontSize: '10px', fontWeight: 600, color: stat.color, marginTop: '2px' }}>{stat.sub}</div>
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Índice sazonal atual</div>
-          <div className="text-[10px] font-semibold mt-1" style={{ color: proj.seasonalityIndex >= 1.1 ? '#FF4D4D' : '#22C55E' }}>
-            {proj.seasonalityIndex >= 1.1 ? '🔴 Pico' : proj.seasonalityIndex <= 0.9 ? '🟢 Valle' : '⚪ Normal'}
-          </div>
-        </div>
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-[#F0B429]">R${proj.adjustedCPLAvg}</div>
-          <div className="text-[10px] text-slate-500 mt-1">CPL ajustado (mês atual)</div>
-          <div className="text-[10px] mt-1 flex items-center justify-center gap-1"
-            style={{ color: benchMeta?.dataSource === 'real_market_data' ? '#22C55E' : '#64748B' }}>
-            {benchMeta?.dataSource === 'real_market_data' ? '✓ real' : '~ estimado'}
-            <span className="text-slate-600">base: R${Math.round((bench.cpl_min + bench.cpl_max) / 2)}</span>
-          </div>
-        </div>
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold" style={{ color: maturity.color }}>{maturity.cplMultiplier.toFixed(2)}×</div>
-          <div className="text-[10px] text-slate-500 mt-1">Mult. de maturidade</div>
-          <div className="text-[10px] font-semibold mt-1" style={{ color: maturity.color }}>{maturity.label}</div>
-        </div>
-        <div className="bg-[#111114] border border-[#2A2A30] rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-[#A78BFA]">{Math.round(proj.citySizeModifier * 100)}%</div>
-          <div className="text-[10px] text-slate-500 mt-1">CPL vs capital</div>
-          <div className="text-[10px] text-[#A78BFA] mt-1">{proj.citySizeLabel.split(' ')[0]} {proj.citySizeLabel.split(' ')[1]}</div>
-        </div>
+        ))}
       </div>
 
       {/* Alerta de sazonalidade */}
@@ -350,17 +363,29 @@ export function TabMarketIntel({ clientData }: Props) {
         </div>
       )}
 
-      {/* Tabs de seção */}
-      <div className="flex gap-1 mb-5 p-1 rounded-xl" style={{ background: '#111114', border: '1px solid #2A2A30' }}>
+      {/* Tabs de seção — estilo Linear */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0' }}>
         {tabs.map((t) => (
-          <button key={t.key} onClick={() => { setActiveSection(t.key as typeof activeSection); if (t.key === 'auditoria') loadAudit() }}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-semibold transition-all"
-            style={activeSection === t.key
-              ? { background: 'rgba(240,180,41,0.12)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.35)' }
-              : { background: 'transparent', color: '#64748B', border: '1px solid transparent' }
-            }>
+          <button key={t.key}
+            onClick={() => { setActiveSection(t.key as typeof activeSection); if (t.key === 'auditoria') loadAudit() }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '8px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+              background: 'transparent', border: 'none', borderRadius: '0',
+              borderBottom: activeSection === t.key ? '2px solid #F59E0B' : '2px solid transparent',
+              color: activeSection === t.key ? '#F59E0B' : '#64748B',
+              transition: 'color 0.12s, border-color 0.12s',
+              marginBottom: '-1px',
+            }}
+            onMouseEnter={e => { if (activeSection !== t.key) e.currentTarget.style.color = '#94A3B8' }}
+            onMouseLeave={e => { if (activeSection !== t.key) e.currentTarget.style.color = '#64748B' }}
+          >
             {t.label}
-            {t.badge && <span className="text-[9px] px-1 rounded" style={{ background: 'rgba(240,180,41,0.15)', color: '#F0B429' }}>{t.badge}</span>}
+            {t.badge && (
+              <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(240,180,41,0.12)', color: '#F59E0B' }}>
+                {t.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>

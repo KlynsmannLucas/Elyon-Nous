@@ -79,68 +79,63 @@ function genSparkline(base: number, seed: string, len = 14): number[] {
   return data
 }
 
-// ── KPI metric card ───────────────────────────────────────────────────────────
+// ── KPI metric card — compacto (Fase 3) ──────────────────────────────────────
 function KpiCard({ label, value, sub, color, trend, sparkSeed, sparkBase, icon }: {
   label: string; value: string; sub: string; color: string
   trend?: number; sparkSeed: string; sparkBase: number; icon: React.ReactNode
 }) {
   const sparkData = useMemo(() => sparkBase > 0 ? genSparkline(sparkBase, sparkSeed) : [], [sparkBase, sparkSeed])
   const isPos = trend == null ? null : trend >= 0
-  // Extract the metric keyword from the label for tooltip (e.g. "CPL Real" → "CPL")
   const metricKey = Object.keys(METRIC_TIPS).find(k => label.toUpperCase().includes(k))
   return (
     <div style={{
       background: C.surface, border: `1px solid ${C.border}`,
-      borderRadius: '14px', padding: '22px 22px 18px',
-      display: 'flex', flexDirection: 'column', gap: '10px',
-      minHeight: '140px',
-      transition: 'border-color 0.15s, box-shadow 0.15s',
+      borderRadius: '12px', padding: '16px 18px',
+      display: 'flex', flexDirection: 'column', gap: '8px',
+      transition: 'border-color 0.15s',
       cursor: 'default',
     }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.purpleB; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(124,58,237,0.1)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.purpleB }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border }}
     >
-      {/* Top row: icon + trend */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* Label + icon + trend */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
         <div style={{
-          width: '32px', height: '32px', borderRadius: '9px',
-          background: `${color}18`, border: `1px solid ${color}30`,
+          width: '26px', height: '26px', borderRadius: '7px', flexShrink: 0,
+          background: `${color}15`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color, flexShrink: 0,
+          color,
         }}>
           {icon}
         </div>
+        <span style={{
+          fontSize: '9px', color: C.text3, fontWeight: 600,
+          letterSpacing: '0.07em', textTransform: 'uppercase', flex: 1,
+          display: 'flex', alignItems: 'center',
+        }}>
+          {label}
+          {metricKey && <MetricTooltip metric={metricKey} />}
+        </span>
         {trend != null && (
           <span style={{
-            fontSize: '11px', fontWeight: 700,
-            color: isPos ? C.green : C.red,
-            background: isPos ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-            border: `1px solid ${isPos ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
-            borderRadius: '6px', padding: '2px 7px',
+            fontSize: '10px', fontWeight: 700,
+            color: isPos ? C.green : C.red, flexShrink: 0,
           }}>
-            {isPos ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
+            {isPos ? '↑' : '↓'}{Math.abs(trend).toFixed(0)}%
           </span>
         )}
       </div>
 
-      {/* Value */}
-      <div>
-        <div style={{ fontSize: '24px', fontWeight: 800, color: C.text1, letterSpacing: '-0.03em', lineHeight: 1 }}>
+      {/* Value + sparkline */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px' }}>
+        <div style={{ fontSize: '22px', fontWeight: 800, color: C.text1, letterSpacing: '-0.03em', lineHeight: 1 }}>
           {value}
         </div>
-        <div style={{ fontSize: '9px', color: C.text3, marginTop: '4px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', display: 'flex', alignItems: 'center' }}>
-          {label}
-          {metricKey && <MetricTooltip metric={metricKey} />}
-        </div>
+        <Sparkline data={sparkData} color={color} width={60} height={24} />
       </div>
 
-      {/* Sparkline + sub */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px' }}>
-        <div style={{ fontSize: '10px', color: C.text3, flex: 1, minWidth: 0, lineHeight: 1.4 }}>
-          {sub}
-        </div>
-        <Sparkline data={sparkData} color={color} width={72} height={28} />
-      </div>
+      {/* Sub */}
+      <div style={{ fontSize: '10px', color: C.text3, lineHeight: 1.4 }}>{sub}</div>
     </div>
   )
 }
@@ -291,40 +286,34 @@ const INSIGHT_ACTION_TAB: Record<string, string> = {
   'Ver projeção':        'overview',
 }
 
-// ── Insight card ──────────────────────────────────────────────────────────────
+// ── Insight row — lista compacta (Fase 3, padrão Linear) ──────────────────────
 function InsightCard({ icon, title, desc, color, action, onNavigate }: {
   icon: string; title: string; desc: string; color: string; action?: string; onNavigate?: (tab: string) => void
 }) {
   const destTab = action ? INSIGHT_ACTION_TAB[action] : undefined
   return (
     <div style={{
-      background: C.surface, border: `1px solid ${C.border}`,
-      borderRadius: '12px', padding: '14px',
-      display: 'flex', flexDirection: 'column', gap: '8px',
-      transition: 'all 0.15s', cursor: 'default', minWidth: '0',
-    }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${color}40`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${color}15` }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
-    >
-      <div style={{
-        width: '34px', height: '34px', borderRadius: '9px',
-        background: `${color}15`, border: `1px solid ${color}30`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0,
-      }}>{getInsightIcon(icon, color)}</div>
-      <div>
-        <div style={{ fontSize: '12px', fontWeight: 700, color, marginBottom: '4px' }}>{title}</div>
-        <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5 }}>{desc}</div>
+      display: 'flex', alignItems: 'center', gap: '12px',
+      padding: '10px 0', borderBottom: `1px solid ${C.border}`,
+    }}>
+      {/* dot */}
+      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+      {/* icon + text */}
+      <div style={{ flexShrink: 0, color, display: 'flex' }}>{getInsightIcon(icon, color)}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '12px', fontWeight: 600, color: C.text1, marginBottom: '1px' }}>{title}</div>
+        <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.45, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{desc}</div>
       </div>
       {action && (
-        <button style={{
-          marginTop: 'auto', padding: '5px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
-          background: `${color}10`, border: `1px solid ${color}25`, color,
-          cursor: destTab && onNavigate ? 'pointer' : 'default',
-          transition: 'all 0.15s', textAlign: 'left',
-        }}
+        <button
           onClick={() => { if (destTab && onNavigate) onNavigate(destTab) }}
-          onMouseEnter={e => { e.currentTarget.style.background = `${color}20` }}
+          style={{
+            flexShrink: 0, padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
+            background: `${color}10`, border: `1px solid ${color}22`, color,
+            cursor: destTab && onNavigate ? 'pointer' : 'default', transition: 'background 0.12s',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = `${color}1e` }}
           onMouseLeave={e => { e.currentTarget.style.background = `${color}10` }}
         >{action} →</button>
       )}
@@ -945,24 +934,19 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
         </div>
       </div>
 
-      {/* ── Insights da IA ────────────────────────────────────────────────── */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: '28px', height: '28px', borderRadius: '8px',
-              background: C.purpleD, border: `1px solid ${C.purpleB}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px',
-            }}>✨</div>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: C.text1, margin: 0 }}>Insights da IA</h3>
-          </div>
-          <span style={{ fontSize: '11px', color: C.purpleL, cursor: 'pointer', fontWeight: 500 }}>Ver todos os insights</span>
+      {/* ── Insights da IA — lista compacta ──────────────────────────────── */}
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '18px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <h3 style={{ fontSize: '13px', fontWeight: 700, color: C.text1, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.purpleL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Insights da IA
+          </h3>
+          <span
+            onClick={() => onNavigate?.('inteligencia')}
+            style={{ fontSize: '11px', color: C.purpleL, cursor: 'pointer', fontWeight: 500 }}
+          >Ver inteligência completa →</span>
         </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '12px',
-        }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {insights.map((ins, i) => (
             <InsightCard key={i} {...ins} onNavigate={onNavigate} />
           ))}
