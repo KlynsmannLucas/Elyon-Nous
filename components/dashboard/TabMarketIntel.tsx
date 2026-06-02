@@ -291,21 +291,114 @@ export function TabMarketIntel({ clientData }: Props) {
     }
   }
 
+  // ── Resumo executivo — calcula situação geral do mercado ─────────────────────
+  const execSummary = (() => {
+    const goodMonth    = proj.seasonalityIndex <= 0.95
+    const badMonth     = proj.seasonalityIndex >= 1.1
+    const goodCity     = proj.citySizeModifier <= 0.75   // cidade menor = CPL menor
+    const fatigued     = maturity.stage === 'fadiga'
+    const cplInRange   = proj.adjustedCPLAvg <= bench.cpl_max
+    const cplBelow     = proj.adjustedCPLAvg <= bench.cpl_min
+    const goodSignals  = [goodMonth, goodCity, cplInRange, !fatigued].filter(Boolean).length
+
+    // Situação geral
+    const status: 'green' | 'amber' | 'red' =
+      goodSignals >= 3 && !badMonth && !fatigued ? 'green' :
+      goodSignals >= 2 || (badMonth && !fatigued)  ? 'amber' : 'red'
+
+    const cfg = {
+      green: { icon: '🟢', label: 'Mercado Favorável', color: '#22C55E', bg: 'rgba(34,197,94,0.07)', border: 'rgba(34,197,94,0.2)' },
+      amber: { icon: '🟡', label: 'Situação Estável',  color: '#F59E0B', bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)' },
+      red:   { icon: '🔴', label: 'Atenção Necessária', color: '#EF4444', bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.2)' },
+    }[status]
+
+    // Diagnóstico em 1 linha
+    const diagnosis = badMonth && fatigued
+      ? `Mês de alta concorrência e campanha em fase de fadiga — priorize revisar criativos antes de escalar.`
+      : badMonth
+      ? `${goodCity ? 'Vantagem de CPL pela localização, mas o' : 'O'} período atual tem concorrência elevada — CPL tende a subir. Considere reduzir orçamento ou testar novos criativos.`
+      : fatigued
+      ? `Suas campanhas estão em fase de fadiga. Renovar criativos pode recuperar performance sem aumentar verba.`
+      : cplBelow && goodMonth
+      ? `${goodCity ? `${clientData.city || 'Sua região'} apresenta CPL abaixo da média` : 'CPL abaixo da média do mercado'} e mês favorável para anunciar. Condições ideais para escalar.`
+      : cplInRange && goodMonth
+      ? `Mês favorável${goodCity ? ` e vantagem de custo em ${clientData.city || 'sua região'}` : ''}. Boa janela para testar criativos e aumentar volume.`
+      : `CPL estimado de R$${proj.adjustedCPLAvg} está dentro do benchmark R$${bench.cpl_min}–${bench.cpl_max}. Situação controlada.`
+
+    // Impacto estimado
+    const impactPct = goodMonth ? Math.round((1 - proj.seasonalityIndex) * 100 * -1) : null
+    const impact = badMonth
+      ? `CPL pode estar ${Math.round((proj.seasonalityIndex - 1) * 100)}% mais caro que a média anual neste período.`
+      : goodMonth
+      ? `CPL tende a ser até ${Math.round((1 - proj.seasonalityIndex) * 100)}% mais barato que a média anual agora.`
+      : goodCity
+      ? `CPL em ${clientData.city || 'sua região'} é ~${Math.round((1 - proj.citySizeModifier) * 100)}% menor que nas capitais.`
+      : null
+
+    // Ação recomendada
+    const action = fatigued
+      ? 'Trocar os criativos principais antes de aumentar o orçamento.'
+      : badMonth
+      ? 'Manter orçamento estável e focar em público quente (remarketing).'
+      : goodMonth && cplBelow
+      ? `Aumentar orçamento das campanhas vencedoras em 20–30%.`
+      : goodMonth
+      ? 'Testar novos ângulos criativos aproveitando o CPL mais baixo do período.'
+      : 'Monitorar CPL diário e ajustar se ultrapassar R$' + bench.cpl_max + '.'
+
+    return { cfg, diagnosis, impact, action }
+  })()
+
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="font-display text-xl font-bold text-white">Inteligência de Mercado</h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Sazonalidade, mercado local, maturidade e ângulos criativos para <strong className="text-slate-300">{clientData.niche}</strong>
-            </p>
-          </div>
-          {benchMeta && (
-            <DataSourceBadge meta={benchMeta} className="flex-shrink-0 mt-0.5" />
-          )}
+      {/* ── RESUMO EXECUTIVO ── Diagnóstico → Impacto → Ação ─────────────── */}
+      <div style={{
+        padding: '18px 20px', borderRadius: '14px', marginBottom: '20px',
+        background: execSummary.cfg.bg, border: `1px solid ${execSummary.cfg.border}`,
+      }}>
+        {/* Status + título */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <span style={{ fontSize: '14px' }}>{execSummary.cfg.icon}</span>
+          <span style={{ fontSize: '14px', fontWeight: 800, color: execSummary.cfg.color, letterSpacing: '-0.01em' }}>
+            {execSummary.cfg.label}
+          </span>
+          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginLeft: 'auto' }}>
+            {clientData.niche}{clientData.city ? ` · ${clientData.city}` : ''}
+          </span>
         </div>
+
+        {/* Diagnóstico */}
+        <p style={{ fontSize: '13px', color: '#E2E8F0', lineHeight: 1.65, margin: '0 0 12px' }}>
+          {execSummary.diagnosis}
+        </p>
+
+        {/* Impacto + Ação em grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          {execSummary.impact && (
+            <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'rgba(0,0,0,0.15)' }}>
+              <div style={{ fontSize: '9px', fontWeight: 700, color: execSummary.cfg.color, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '4px' }}>
+                Impacto estimado
+              </div>
+              <div style={{ fontSize: '12px', color: '#CBD5E1', lineHeight: 1.5 }}>{execSummary.impact}</div>
+            </div>
+          )}
+          <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
+            <div style={{ fontSize: '9px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '4px' }}>
+              🔥 Ação recomendada
+            </div>
+            <div style={{ fontSize: '12px', color: '#E2E8F0', lineHeight: 1.5, fontWeight: 500 }}>{execSummary.action}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Header técnico (discreto, após o resumo) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', margin: 0 }}>
+          Indicadores técnicos · <strong style={{ color: 'rgba(255,255,255,0.5)' }}>{clientData.niche}</strong>
+        </p>
+        {benchMeta && (
+          <DataSourceBadge meta={benchMeta} className="flex-shrink-0" />
+        )}
       </div>
 
       {/* Strip de métricas — compacto (Fase 3) */}

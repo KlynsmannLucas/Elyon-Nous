@@ -5,6 +5,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 import { useClientActions } from '@/hooks/useClientActions'
+import { getBenchmark } from '@/lib/niche_benchmarks'
 
 interface Props { clientData: ClientData | null }
 
@@ -1074,24 +1075,89 @@ export function TabAuditoria({ clientData }: Props) {
               </button>
             </div>
 
-            {/* KPIs grid */}
-            {audit._realMetrics && (
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
-                {[
-                  { label: 'Investimento', value: audit._realMetrics.totalSpend > 0   ? fmt(audit._realMetrics.totalSpend)                   : null, color: '#F0B429' },
-                  { label: 'Leads/Conv.',  value: audit._realMetrics.totalLeads >= 0  ? audit._realMetrics.totalLeads.toLocaleString('pt-BR') : null, color: '#22C55E' },
-                  { label: 'CPL médio',    value: audit._realMetrics.avgCPL           ? fmt(audit._realMetrics.avgCPL)                       : null, color: '#38BDF8' },
-                  { label: 'CTR médio',    value: audit._realMetrics.avgCTR           ? `${audit._realMetrics.avgCTR}%`                      : null, color: '#A78BFA' },
-                  { label: 'ROAS',         value: audit._realMetrics.avgROAS          ? `${audit._realMetrics.avgROAS}×`                     : null, color: '#22C55E' },
-                  { label: 'Campanhas',    value: audit._realMetrics.campaignCount > 0 ? String(audit._realMetrics.campaignCount)             : null, color: '#64748B' },
-                ].filter(k => k.value !== null).map(k => (
-                  <div key={k.label} className="bg-[#0E0E11] border border-[#1E1E24] rounded-xl p-3 text-center">
-                    <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-1">{k.label}</div>
-                    <div className="text-base font-bold" style={{ color: k.color }}>{k.value}</div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* KPIs grid — com contexto humano */}
+            {audit._realMetrics && (() => {
+              const rm    = audit._realMetrics as any
+              const bench = getBenchmark(clientData?.niche || '')
+              const cplPct = rm.avgCPL && bench
+                ? Math.round((1 - rm.avgCPL / ((bench.kpi_thresholds.cpl_good + bench.kpi_thresholds.cpl_bad) / 2)) * 100)
+                : null
+              const roasBench = bench?.kpi_thresholds.roas_good
+              const ctrBench  = 1.2 // CTR médio de referência para paid social
+
+              const kpis: { label: string; value: string | null; color: string; context: string | null }[] = [
+                {
+                  label: 'Investimento',
+                  value: rm.totalSpend > 0 ? fmt(rm.totalSpend) : null,
+                  color: '#F0B429',
+                  context: rm.campaignCount > 0 ? `${rm.campaignCount} campanhas analisadas` : null,
+                },
+                {
+                  label: 'Leads / Conv.',
+                  value: rm.totalLeads >= 0 ? rm.totalLeads.toLocaleString('pt-BR') : null,
+                  color: '#22C55E',
+                  context: rm.avgCPL && rm.totalLeads > 0 ? `R$${rm.avgCPL} por lead` : null,
+                },
+                {
+                  label: 'CPL Médio',
+                  value: rm.avgCPL ? fmt(rm.avgCPL) : null,
+                  color: cplPct != null && cplPct > 0 ? '#22C55E' : cplPct != null && cplPct < -20 ? '#EF4444' : '#38BDF8',
+                  context: cplPct != null
+                    ? cplPct > 0
+                      ? `${cplPct}% abaixo da média do mercado`
+                      : cplPct < 0
+                        ? `${Math.abs(cplPct)}% acima da média do mercado`
+                        : 'Dentro do benchmark'
+                    : bench
+                    ? `Benchmark: R$${bench.cpl_min}–${bench.cpl_max}`
+                    : null,
+                },
+                {
+                  label: 'CTR Médio',
+                  value: rm.avgCTR ? `${rm.avgCTR}%` : null,
+                  color: rm.avgCTR >= ctrBench ? '#22C55E' : rm.avgCTR >= 0.8 ? '#F0B429' : '#EF4444',
+                  context: rm.avgCTR
+                    ? rm.avgCTR >= ctrBench
+                      ? 'Anúncios gerando cliques acima da média'
+                      : 'Anúncios com baixo engajamento — testar criativos'
+                    : null,
+                },
+                {
+                  label: 'ROAS',
+                  value: rm.avgROAS ? `${rm.avgROAS}×` : null,
+                  color: roasBench && rm.avgROAS >= roasBench ? '#22C55E' : rm.avgROAS >= 1 ? '#F0B429' : '#EF4444',
+                  context: roasBench && rm.avgROAS
+                    ? rm.avgROAS >= roasBench
+                      ? `Acima da meta de ${roasBench}× do nicho`
+                      : `Abaixo da meta de ${roasBench}× do nicho`
+                    : rm.avgROAS >= 1 ? 'Campanha lucrativa' : null,
+                },
+                {
+                  label: 'Campanhas',
+                  value: rm.campaignCount > 0 ? String(rm.campaignCount) : null,
+                  color: '#64748B',
+                  context: audit._campanhasClassificadas
+                    ? `${(audit._campanhasClassificadas as any).vencedoras?.length ?? 0} vencedoras`
+                    : null,
+                },
+              ]
+
+              return (
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
+                  {kpis.filter(k => k.value !== null).map(k => (
+                    <div key={k.label} className="bg-[#0E0E11] border border-[#1E1E24] rounded-xl p-3">
+                      <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-1">{k.label}</div>
+                      <div className="text-base font-bold mb-1" style={{ color: k.color }}>{k.value}</div>
+                      {k.context && (
+                        <div style={{ fontSize: '9px', color: k.color === '#22C55E' ? 'rgba(34,197,94,0.75)' : k.color === '#EF4444' ? 'rgba(239,68,68,0.75)' : 'rgba(255,255,255,0.3)', lineHeight: 1.35 }}>
+                          {k.context}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
 
             {/* ── Resumo executivo da IA — bloco estruturado ── */}
             {(audit.executive_summary || audit._campanhasClassificadas) && (() => {
