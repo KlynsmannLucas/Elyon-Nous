@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { useAppStore } from '@/lib/store'
+import { useViewMode, TAB_HEADINGS_SIMPLE } from '@/lib/viewMode'
 import type { ClientData } from '@/lib/store'
 
 const C = {
@@ -117,6 +118,8 @@ function ScoreRing({ score, grade, color }: { score: number; grade: string; colo
 }
 
 export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
+  const { mode: viewMode } = useViewMode()
+  const dHeading = viewMode === 'simple' ? TAB_HEADINGS_SIMPLE.diagnostic : null
   const { campaignHistory, auditCache } = useAppStore()
   const [diagnostic,         setDiagnostic]         = useState<Record<string, any> | null>(null)
   const [loading,            setLoading]             = useState(false)
@@ -185,11 +188,13 @@ export function TabDiagnostic({ clientData, strategy, analysis }: Props) {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0, marginBottom: 6 }}>
-            Diagnóstico Estratégico do Negócio
+            {dHeading?.title ?? 'Diagnóstico Estratégico do Negócio'}
           </h2>
           <p style={{ fontSize: 13, color: C.text2, margin: 0 }}>
-            Saúde financeira, viabilidade de escala, riscos críticos e recomendação prioritária.
-            <span style={{ color: C.text3 }}> · Distinto da Auditoria (que analisa campanhas).</span>
+            {dHeading?.subtitle ?? (
+              <>Saúde financeira, viabilidade de escala, riscos críticos e recomendação prioritária.
+              <span style={{ color: C.text3 }}> · Distinto da Auditoria (que analisa campanhas).</span></>
+            )}
           </p>
         </div>
         <button

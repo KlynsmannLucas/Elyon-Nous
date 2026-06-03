@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useViewMode, getFieldLabel, TAB_HEADINGS_SIMPLE } from '@/lib/viewMode'
 import { getBenchmark, getFunnelBenchmarks, BENCHMARKS } from '@/lib/niche_benchmarks'
 import type { ClientData, FunnelEntry } from '@/lib/store'
 
@@ -274,10 +275,11 @@ function StageCard({ stage, isBottleneck }: { stage: StageResult; isBottleneck: 
 }
 
 function Field({ label, hint, required, children }: { label: string; hint: string; required?: boolean; children: React.ReactNode }) {
+  const { mode } = useViewMode()
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: C.text1 }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: C.text1 }}>{getFieldLabel(label, mode)}</span>
         {required
           ? <span style={{ fontSize: 10, color: C.gold, fontWeight: 700 }}>obrigatório</span>
           : <span style={{ fontSize: 10, color: C.text3 }}>opcional</span>}
@@ -459,6 +461,8 @@ function VisualFunnel({ entry }: { entry: Omit<FunnelEntry, 'id' | 'createdAt'> 
 }
 
 export function TabFunil({ clientData }: Props) {
+  const { mode: viewMode } = useViewMode()
+  const heading = viewMode === 'simple' ? TAB_HEADINGS_SIMPLE.funil : null
   const funnelEntries     = useAppStore((s) => s.funnelEntries)
   const addFunnelEntry    = useAppStore((s) => s.addFunnelEntry)
   const deleteFunnelEntry = useAppStore((s) => s.deleteFunnelEntry)
@@ -508,9 +512,9 @@ export function TabFunil({ clientData }: Props) {
     <div style={{ maxWidth: 900 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0 }}>Diagnóstico de Gargalo do Funil</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text1, margin: 0 }}>{heading?.title ?? 'Diagnóstico de Gargalo do Funil'}</h2>
           <p style={{ fontSize: 12, color: C.text2, marginTop: 4, margin: '4px 0 0' }}>
-            Identifica com precisão onde o funil está perdendo dinheiro — anúncio, LP, qualificação, vendas ou velocidade
+            {heading?.subtitle ?? 'Identifica com precisão onde o funil está perdendo dinheiro — anúncio, LP, qualificação, vendas ou velocidade'}
           </p>
         </div>
         {result && (

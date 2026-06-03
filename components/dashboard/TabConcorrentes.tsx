@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useViewMode, TAB_HEADINGS_SIMPLE } from '@/lib/viewMode'
 import type { ClientData, Competitor } from '@/lib/store'
 
 const C = {
@@ -553,9 +554,9 @@ export function TabConcorrentes({ clientData }: Props) {
   return (
     <div style={{ maxWidth: 720 }}>
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text1, margin: 0 }}>Radar de Concorrentes</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text1, margin: 0 }}>{useViewMode().mode === 'simple' ? TAB_HEADINGS_SIMPLE.concorrentes.title : 'Radar de Concorrentes'}</h2>
         <p style={{ fontSize: 12, color: C.text3, marginTop: 4, marginBottom: 0 }}>
-          IA analisa posicionamento, criativos e CTAs dos concorrentes — e aponta como se diferenciar
+          {useViewMode().mode === 'simple' ? TAB_HEADINGS_SIMPLE.concorrentes.subtitle : 'IA analisa posicionamento, criativos e CTAs dos concorrentes — e aponta como se diferenciar'}
         </p>
       </div>
 

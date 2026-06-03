@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useViewMode, TAB_HEADINGS_SIMPLE } from '@/lib/viewMode'
 import type { ChannelMixResult, ChannelRecommendation } from '@/app/api/channel-mix/route'
 import { SimpleSourceBadge } from './DataSourceBadge'
 
@@ -129,7 +130,7 @@ export function TabChannelMix() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '20px' }}>🌐</span>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Channel Mix Agent</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>{useViewMode().mode === 'simple' ? TAB_HEADINGS_SIMPLE.channelmix.title : 'Channel Mix Agent'}</h2>
             <span style={{
               fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#F0B429',
               background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.2)',

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useViewMode, TAB_HEADINGS_SIMPLE } from '@/lib/viewMode'
 
 interface CRORecommendation {
   priority: 'urgent' | 'high' | 'medium' | 'low'
@@ -109,7 +110,7 @@ export function TabCRO() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '20px' }}>⚙️</span>
             <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>
-              Otimização de Conversão
+              {useViewMode().mode === 'simple' ? TAB_HEADINGS_SIMPLE.cro.title : 'Otimização de Conversão'}
             </h2>
             <span style={{
               fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#F0B429',

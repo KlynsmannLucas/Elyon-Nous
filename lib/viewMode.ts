@@ -166,6 +166,39 @@ export const TAB_SIMPLE_INTRO: Record<string, string> = {
   inteligencia: 'Descobertas e oportunidades que a IA encontrou para você.',
 }
 
+// ── Títulos/subtítulos das tabs por modo (heading interno de cada tela) ───────
+// Cada entrada: [tituloSimples, subtituloSimples]. No modo 'pro' usa-se o original do componente.
+export const TAB_HEADINGS_SIMPLE: Record<string, { title: string; subtitle: string }> = {
+  funil:       { title: 'Onde você perde clientes',       subtitle: 'Veja em qual etapa da jornada as pessoas desistem de comprar.' },
+  diagnostic:  { title: 'Saúde do seu negócio',           subtitle: 'Um raio-x simples de como sua empresa está e o que melhorar.' },
+  performance: { title: 'Seus resultados',                subtitle: 'Quanto você investiu e o que recebeu de volta.' },
+  cenarios:    { title: 'Quanto você pode crescer',       subtitle: 'Projeções de crescimento para os próximos meses.' },
+  cro:         { title: 'Converter mais visitantes',      subtitle: 'Como transformar mais visitas em clientes de verdade.' },
+  budget:      { title: 'Onde investir mais',             subtitle: 'Em quais campanhas vale a pena colocar mais dinheiro.' },
+  channelmix:  { title: 'Seus melhores canais',           subtitle: 'Quais canais trazem mais clientes pelo menor custo.' },
+  concorrentes:{ title: 'Seus concorrentes',              subtitle: 'O que outras empresas do seu ramo estão anunciando.' },
+}
+
+// ── Rótulos de campos/seções técnicos → linguagem de negócio ──────────────────
+export const FIELD_LABELS_SIMPLE: Record<string, string> = {
+  'Impressões':            'Quantas pessoas viram o anúncio',
+  'Cliques no anúncio':    'Quantas pessoas clicaram',
+  'Cliques':               'Cliques no anúncio',
+  'Leads gerados':         'Contatos recebidos',
+  'Leads qualificados':    'Contatos com perfil de compra',
+  'Canal principal':       'Onde você anunciou',
+  'Investimento (R$)':     'Quanto você investiu (R$)',
+  'CPL':                   'Custo por contato',
+  'ROAS':                  'Retorno do investimento',
+  'CTR':                   'Taxa de cliques',
+}
+
+/** Traduz um rótulo de campo para o modo atual (sem mudar nada no modo pro) */
+export function getFieldLabel(label: string, mode: 'simple' | 'pro'): string {
+  if (mode === 'pro') return label
+  return FIELD_LABELS_SIMPLE[label] ?? label
+}
+
 /** Traduz análise técnica para linguagem humana */
 export function translateAnalysis(mode: 'simple' | 'pro', analysis: string): string {
   if (mode === 'pro') return analysis
