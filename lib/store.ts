@@ -408,6 +408,14 @@ interface AppStore {
   dashboardMode: 'pro' | 'simple'
   setDashboardMode: (mode: 'pro' | 'simple') => void
 
+  // Perfil de experiência do usuário (definido no onboarding "Você já anuncia?")
+  userExperience: 'beginner' | 'experienced' | null
+  setUserExperience: (exp: 'beginner' | 'experienced' | null) => void
+
+  // Tour de boas-vindas já visto
+  welcomeTourSeen: boolean
+  setWelcomeTourSeen: (seen: boolean) => void
+
   clearAll: () => void
 }
 
@@ -800,6 +808,12 @@ export const useAppStore = create<AppStore>()(
       dashboardMode: 'pro',
       setDashboardMode: (mode) => set({ dashboardMode: mode }),
 
+      userExperience: null,
+      setUserExperience: (exp) => set({ userExperience: exp }),
+
+      welcomeTourSeen: false,
+      setWelcomeTourSeen: (seen) => set({ welcomeTourSeen: seen }),
+
       clearAll: () => set({
         clientData:               null,
         strategyData:             null,
@@ -868,6 +882,8 @@ export const useAppStore = create<AppStore>()(
         feesConfig:               state.feesConfig,
         workflowRuleStates:       state.workflowRuleStates,
         dashboardMode:            state.dashboardMode,
+        userExperience:           state.userExperience,
+        welcomeTourSeen:          state.welcomeTourSeen,
       }),
     }
   )

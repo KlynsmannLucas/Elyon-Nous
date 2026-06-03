@@ -39,6 +39,8 @@ import { NousChat }        from '@/components/dashboard/NousChat'
 import { DashboardSidebar, type TabKey } from '@/components/dashboard/DashboardSidebar'
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar'
 import { OnboardingFlow }  from '@/components/dashboard/OnboardingFlow'
+import { WelcomeTour }     from '@/components/dashboard/WelcomeTour'
+import { BeginnerJourney } from '@/components/dashboard/BeginnerJourney'
 import { TermsModal } from '@/components/dashboard/TermsModal'
 import { getPlanLimits, hasActivePlan, TRIAL_DAYS, GROUP_REQUIRED_PLAN } from '@/lib/planUtils'
 
@@ -495,6 +497,10 @@ export default function DashboardBody() {
     setAuditCache, auditCache, actionPlanCache,
     generatedPersona, connectedAccounts,
   } = useAppStore()
+
+  // Assinaturas reativas — garantem re-render ao trocar de modo / perfil
+  const dashboardMode  = useAppStore(s => s.dashboardMode)
+  const userExperience = useAppStore(s => s.userExperience)
 
   const buildExtraData = useCallback((clientName: string) => {
     const s = useAppStore.getState()
@@ -1061,8 +1067,7 @@ export default function DashboardBody() {
 
     switch (activeTab) {
       case 'overview': {
-        const mode = useAppStore.getState().dashboardMode
-        if (mode === 'simple') return wrap('Visão Geral', <TabSimpleOverview clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
+        if (dashboardMode === 'simple') return wrap('Visão Geral', <TabSimpleOverview clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
         return wrap('Overview', <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
       }
       case 'strategy':      return wrap('Estratégia',        <TabStrategy strategy={strategy} analysis={analysis} />)
@@ -1332,9 +1337,20 @@ export default function DashboardBody() {
           saveStatus={saveStatus}
           saveErrorMsg={dbSaveError}
         />
+        {/* Tour de boas-vindas (overlay na primeira visita) */}
+        <WelcomeTour />
         <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px', background: '#080D1A' }}>
           {/* Erros críticos de banco (ex: tabela não existe) são tratados pelo SaveIndicator no topbar */}
-          <OnboardingFlow onNavigate={setActiveTab} />
+          {/* Jornada guiada para iniciantes — aparece na visão geral */}
+          {activeTab === 'overview' && (
+            <div style={{ padding: '24px 28px 0' }}>
+              <BeginnerJourney onNavigate={setActiveTab} />
+            </div>
+          )}
+          {/* OnboardingFlow genérico — oculto para iniciantes (BeginnerJourney cobre esse perfil) */}
+          {userExperience !== 'beginner' && (
+            <OnboardingFlow onNavigate={setActiveTab} />
+          )}
           {TAB_DESCRIPTIONS[activeTab] && (() => {
             const d = TAB_DESCRIPTIONS[activeTab]!
             return (

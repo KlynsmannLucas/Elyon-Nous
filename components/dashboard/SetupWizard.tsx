@@ -152,7 +152,7 @@ function Tip({ text }: { text: string }) {
 }
 
 export function SetupWizard({ onComplete, initialData }: Props) {
-  const { setClientData, setWizardStep, wizardStep, setMarketResearchTaskId, setMarketResearch } = useAppStore()
+  const { setClientData, setWizardStep, wizardStep, setMarketResearchTaskId, setMarketResearch, setUserExperience } = useAppStore()
 
   // Pergunta pré-wizard: o usuário já anuncia?
   const [advertisingExp, setAdvertisingExp] = useState<'yes' | 'no' | null>(
@@ -339,7 +339,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <button
-              onClick={() => setAdvertisingExp('yes')}
+              onClick={() => { setAdvertisingExp('yes'); setUserExperience('experienced') }}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: '16px',
                 padding: '20px 22px', borderRadius: '14px', cursor: 'pointer',
@@ -360,7 +360,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               </div>
             </button>
             <button
-              onClick={() => setAdvertisingExp('no')}
+              onClick={() => { setAdvertisingExp('no'); setUserExperience('beginner') }}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: '16px',
                 padding: '20px 22px', borderRadius: '14px', cursor: 'pointer',
