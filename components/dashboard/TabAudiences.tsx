@@ -3,6 +3,7 @@
 
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { getNicheContent } from '@/lib/niche_content'
+import { useViewMode, TAB_HEADINGS_SIMPLE } from '@/lib/viewMode'
 
 interface Props {
   niche?: string
@@ -50,7 +51,7 @@ export function TabAudiences({ niche }: Props) {
       <div className="flex items-center gap-4">
         <div className="w-1 h-10 rounded-full" style={{ background: 'linear-gradient(to bottom, #F0B429, #FFD166)' }} />
         <div>
-          <h2 className="font-display font-bold text-white text-xl">Perfil de Audiência Validado</h2>
+          <h2 className="font-display font-bold text-white text-xl">{useViewMode().mode === 'simple' ? TAB_HEADINGS_SIMPLE.audiencias.title : 'Perfil de Audiência Validado'}</h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Dados reais de campanhas no nicho · {niche || 'Configure o cliente para ver dados do nicho'}
           </p>

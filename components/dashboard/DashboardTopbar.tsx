@@ -8,6 +8,7 @@ import { AlertsPanel } from './AlertsPanel'
 import { CreditsDisplay } from './CreditsDisplay'
 import { SaveIndicator, type SaveStatus } from './SaveIndicator'
 import { ViewModeToggle } from './ViewModeToggle'
+import { useViewMode, TAB_LABELS_SIMPLE } from '@/lib/viewMode'
 import { useAppStore } from '@/lib/store'
 
 interface Props {
@@ -99,8 +100,11 @@ export function DashboardTopbar({
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const { mode: viewMode } = useViewMode()
   const allItems   = SIDEBAR_SECTIONS.flatMap(s => s.items)
   const currentTab = allItems.find(t => t.key === activeTab)
+  // No modo simples, usa o rótulo simplificado da aba (consistente com o menu lateral)
+  const tabTitle   = viewMode === 'simple' ? (TAB_LABELS_SIMPLE[activeTab] ?? currentTab?.label) : currentTab?.label
   const subtitle   = TAB_SUBTITLES[activeTab] || ''
 
   const today = new Date()
@@ -181,7 +185,7 @@ export function DashboardTopbar({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
           <span style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
-            {currentTab?.label || 'Dashboard'}
+            {tabTitle || 'Dashboard'}
           </span>
           {clientData?.niche && (
             <>

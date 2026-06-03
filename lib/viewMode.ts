@@ -177,6 +177,7 @@ export const TAB_HEADINGS_SIMPLE: Record<string, { title: string; subtitle: stri
   budget:      { title: 'Onde investir mais',             subtitle: 'Em quais campanhas vale a pena colocar mais dinheiro.' },
   channelmix:  { title: 'Seus melhores canais',           subtitle: 'Quais canais trazem mais clientes pelo menor custo.' },
   concorrentes:{ title: 'Seus concorrentes',              subtitle: 'O que outras empresas do seu ramo estão anunciando.' },
+  audiencias:  { title: 'Quem é o seu público',           subtitle: 'O perfil das pessoas que seus anúncios devem alcançar.' },
 }
 
 // ── Rótulos de campos/seções técnicos → linguagem de negócio ──────────────────
