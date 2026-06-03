@@ -232,7 +232,12 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
             </div>
           </div>
         </div>
-        <p style={{ fontSize: '13px', color: '#CBD5E1', lineHeight: 1.7, margin: 0 }}>{meaning}</p>
+        <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: `1px solid ${statusCfg.border}` }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: statusCfg.color, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '5px' }}>
+            O que isso significa
+          </div>
+          <p style={{ fontSize: '13px', color: '#CBD5E1', lineHeight: 1.7, margin: 0 }}>{meaning}</p>
+        </div>
       </div>
 
       {/* O que está acontecendo */}

@@ -3,6 +3,7 @@
 
 import { useState, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useViewMode, getUrgencyLabel } from '@/lib/viewMode'
 import type { ClientData, StrategyData } from '@/lib/store'
 import { syncActionStatus, useClientActions, retrySyncActions } from '@/hooks/useClientActions'
 
@@ -71,6 +72,7 @@ function prazoToDate(prazo: string, generatedAt?: string): string {
 
 export function TabAcoes({ clientData, strategyData }: Props) {
   const { auditCache, actionPlanCache, setActionPlanCache, updateActionStatus, pendingActionsCache, updatePendingActionStatus, updatePendingActionSyncState } = useAppStore()
+  const { mode: viewMode } = useViewMode()
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
   const [filtro, setFiltro]           = useState<Filtro>('todas')
@@ -338,7 +340,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, marginTop: 4 }}>
                       <span style={{ fontSize: 12 }}>{cfg.icon}</span>
                       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: cfg.color }}>
-                        {cfg.label}
+                        {getUrgencyLabel(urgency, viewMode)}
                       </span>
                     </div>
                     {items.map(item => {
@@ -567,7 +569,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                     <span style={{ fontSize: 14 }}>{cfg.icon}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: cfg.color }}>
-                      Prioridade {cfg.label}
+                      {viewMode === 'simple' ? getUrgencyLabel(prioridade, viewMode) : `Prioridade ${cfg.label}`}
                     </span>
                     <span style={{
                       fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,

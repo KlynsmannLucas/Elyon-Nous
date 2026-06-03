@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { getPlanLimits } from '@/lib/planUtils'
 import { useAppStore } from '@/lib/store'
+import { TAB_LABELS_SIMPLE } from '@/lib/viewMode'
 
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
@@ -140,6 +141,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
   const [isMobile, setIsMobile] = useState(false)
 
   const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
+  const simpleMode = useAppStore(s => s.dashboardMode) === 'simple'
   const clientKey = clientData?.clientName || ''
   const pendingCritical = (pendingActionsCache[clientKey] || [])
     .filter(a => (a.urgency === 'critica' || a.urgency === 'alta') && a.status === 'pendente').length
@@ -375,7 +377,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                             flex: 1, fontSize: '13px', fontWeight: isActive ? 600 : 400,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           }}>
-                            {item.label}
+                            {simpleMode ? (TAB_LABELS_SIMPLE[item.key] ?? item.label) : item.label}
                           </span>
                           {isLocked ? (
                             <span style={{ color: 'rgba(255,255,255,0.15)', flexShrink: 0 }}>{I.lock}</span>

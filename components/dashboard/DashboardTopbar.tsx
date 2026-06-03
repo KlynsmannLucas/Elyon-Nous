@@ -7,6 +7,7 @@ import { SIDEBAR_SECTIONS } from './DashboardSidebar'
 import { AlertsPanel } from './AlertsPanel'
 import { CreditsDisplay } from './CreditsDisplay'
 import { SaveIndicator, type SaveStatus } from './SaveIndicator'
+import { ViewModeToggle } from './ViewModeToggle'
 import { useAppStore } from '@/lib/store'
 
 interface Props {
@@ -333,30 +334,8 @@ export function DashboardTopbar({
         )}
       </div>
 
-      {/* Modo PRO / Simplificado toggle */}
-      {(() => {
-        const dashboardMode    = useAppStore(s => s.dashboardMode)
-        const setDashboardMode = useAppStore(s => s.setDashboardMode)
-        const isSimple = dashboardMode === 'simple'
-        return (
-          <button
-            onClick={() => setDashboardMode(isSimple ? 'pro' : 'simple')}
-            title={isSimple ? 'Modo Simplificado ativo — clique para Modo PRO' : 'Modo PRO ativo — clique para Modo Simplificado'}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              padding: '4px 9px', borderRadius: '7px', flexShrink: 0,
-              border: isSimple ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
-              background: isSimple ? 'rgba(34,197,94,0.08)' : 'transparent',
-              color: isSimple ? '#22C55E' : 'rgba(255,255,255,0.3)',
-              cursor: 'pointer', transition: 'all 0.15s', fontSize: '10px', fontWeight: 700,
-            }}
-            onMouseEnter={e => { if (!isSimple) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' } }}
-            onMouseLeave={e => { if (!isSimple) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' } }}
-          >
-            {isSimple ? '🟢 Simplificado' : '⚙ PRO'}
-          </button>
-        )
-      })()}
+      {/* Modo Simplificado / Avançado toggle */}
+      <ViewModeToggle variant="topbar" />
 
       {/* Credits display */}
       <CreditsDisplay />

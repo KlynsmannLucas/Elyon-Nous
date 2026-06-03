@@ -1,8 +1,9 @@
-// components/dashboard/TabChecklist.tsx — Checklist de otimização diário
+// components/dashboard/TabChecklist.tsx — Central de Implementação Guiada (AJUSTE 03)
 'use client'
 
 import { useMemo, useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useViewMode } from '@/lib/viewMode'
 import type { ChecklistItem } from '@/lib/store'
 
 const C = {
@@ -172,10 +173,38 @@ export function TabChecklist({ clientData }: Props) {
   const scoreColor = scorePercent >= 80 ? C.green : scorePercent >= 50 ? C.amber : C.red
   const scoreLabel = scorePercent >= 80 ? 'Excelente' : scorePercent >= 50 ? 'Em progresso' : 'Atenção necessária'
 
-  const categories = ['critico', 'otimizacao', 'estrategia', 'monitoramento'] as const
-  const byCategory = Object.fromEntries(
-    categories.map(cat => [cat, items.filter(i => i.category === cat)])
-  ) as Record<ChecklistItem['category'], ChecklistItem[]>
+  const { isSimple } = useViewMode()
+
+  // Grupos de urgência (AJUSTE 03)
+  const urgencyGroups: { key: string; label: string; simpleLabel: string; icon: string; color: string; bg: string; items: ChecklistItem[] }[] = [
+    {
+      key: 'agora',
+      label: 'Fazer Agora',
+      simpleLabel: '🔥 Fazer Agora',
+      icon: '🔴',
+      color: C.red,
+      bg: C.redD,
+      items: items.filter(i => i.category === 'critico' || i.priority === 'alta'),
+    },
+    {
+      key: 'semana',
+      label: 'Esta Semana',
+      simpleLabel: '⚡ Esta Semana',
+      icon: '🟡',
+      color: C.amber,
+      bg: C.amberD,
+      items: items.filter(i => i.category === 'otimizacao' && i.priority !== 'alta'),
+    },
+    {
+      key: 'monitorar',
+      label: 'Monitorar',
+      simpleLabel: '👁 Monitorar',
+      icon: '🔵',
+      color: '#38BDF8',
+      bg: 'rgba(56,189,248,0.08)',
+      items: items.filter(i => i.category === 'monitoramento' || (i.category === 'estrategia')),
+    },
+  ].filter(g => g.items.length > 0)
 
   if (!clientData) {
     return (
@@ -191,10 +220,13 @@ export function TabChecklist({ clientData }: Props) {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', gap: '16px', flexWrap: 'wrap' as const }}>
         <div>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: C.purpleL, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: '4px', fontFamily: 'var(--font-mono)' }}>
+            Central de Implementação
+          </div>
           <h2 style={{ fontSize: '18px', fontWeight: 700, color: C.text1, margin: '0 0 4px' }}>
-            Checklist Diário
+            {isSimple ? 'O Que Fazer Hoje' : 'Próximos Passos'}
           </h2>
           <p style={{ fontSize: '12px', color: C.text3, margin: 0 }}>
             {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })} · reinicia à meia-noite
@@ -259,106 +291,110 @@ export function TabChecklist({ clientData }: Props) {
         }} />
       </div>
 
-      {/* Checklist by category */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {categories.map((cat) => {
-          const catItems = byCategory[cat]
-          if (!catItems || catItems.length === 0) return null
-          const meta = CATEGORY_META[cat]
-          const catDone = catItems.filter(i => completed[i.id]).length
-
+      {/* Grupos de urgência (AJUSTE 03 — Central de Implementação) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {urgencyGroups.map((group) => {
+          const groupDone = group.items.filter(i => completed[i.id]).length
+          const groupPct  = group.items.length > 0 ? Math.round((groupDone / group.items.length) * 100) : 0
           return (
-            <div key={cat}>
-              {/* Category header */}
+            <div key={group.key}>
+              {/* Group header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <span style={{ fontSize: '13px' }}>{meta.icon}</span>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: meta.color, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
-                  {meta.label}
+                <span style={{ fontSize: '12px' }}>{group.icon}</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: group.color, letterSpacing: '0.07em', textTransform: 'uppercase' as const }}>
+                  {isSimple ? group.simpleLabel.replace(/^[^\s]+\s/, '') : group.label}
                 </span>
-                <span style={{
-                  fontSize: '10px', padding: '1px 6px', borderRadius: '4px',
-                  color: meta.color, background: meta.bg,
-                  fontFamily: 'var(--font-mono)',
+                {/* Progress pill */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '2px 8px', borderRadius: '99px', marginLeft: '2px',
+                  background: group.bg, border: `1px solid ${group.color}25`,
                 }}>
-                  {catDone}/{catItems.length}
-                </span>
+                  <span style={{ fontSize: '9px', fontWeight: 700, color: group.color, fontFamily: 'var(--font-mono)' }}>
+                    {groupDone}/{group.items.length}
+                  </span>
+                </div>
+                {/* Mini progress bar */}
+                <div style={{ flex: 1, height: '3px', borderRadius: '99px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', maxWidth: '80px' }}>
+                  <div style={{ height: '100%', width: `${groupPct}%`, background: group.color, borderRadius: '99px', transition: 'width 0.5s ease' }} />
+                </div>
+                {groupDone === group.items.length && group.items.length > 0 && (
+                  <span style={{ fontSize: '12px' }}>✅</span>
+                )}
               </div>
 
               {/* Items */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {catItems.map(item => {
-                  const isDone = !!completed[item.id]
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => toggleChecklistItem(clientKey, item.id)}
-                      style={{
-                        display: 'flex', alignItems: 'flex-start', gap: '12px',
-                        padding: '12px 14px', borderRadius: '10px', border: 'none',
-                        background: isDone ? 'rgba(34,197,94,0.04)' : C.surface,
-                        outline: isDone ? '1px solid rgba(34,197,94,0.12)' : `1px solid ${C.border}`,
-                        cursor: 'pointer', textAlign: 'left', width: '100%',
-                        transition: 'all 0.15s',
-                        opacity: isDone ? 0.65 : 1,
-                      }}
-                      onMouseEnter={e => {
-                        if (!isDone) (e.currentTarget as HTMLElement).style.outline = '1px solid rgba(124,58,237,0.3)'
-                      }}
-                      onMouseLeave={e => {
-                        if (!isDone) (e.currentTarget as HTMLElement).style.outline = `1px solid ${C.border}`
-                      }}
-                    >
-                      {/* Checkbox */}
-                      <div style={{
-                        width: '18px', height: '18px', borderRadius: '5px', flexShrink: 0, marginTop: '1px',
-                        border: isDone ? 'none' : `2px solid rgba(255,255,255,0.2)`,
-                        background: isDone ? C.green : 'transparent',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.15s',
-                      }}>
-                        {isDone && (
-                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                            <polyline points="2 6 5 9 10 3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                {group.items
+                  .sort((a, b) => {
+                    const order = { alta: 0, media: 1, baixa: 2 }
+                    return (order[a.priority] ?? 1) - (order[b.priority] ?? 1)
+                  })
+                  .map(item => {
+                    const isDone = !!completed[item.id]
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => toggleChecklistItem(clientKey, item.id)}
+                        style={{
+                          display: 'flex', alignItems: 'flex-start', gap: '12px',
+                          padding: '12px 14px', borderRadius: '10px', border: 'none',
+                          background: isDone ? 'rgba(34,197,94,0.04)' : C.surface,
+                          outline: isDone ? '1px solid rgba(34,197,94,0.12)' : `1px solid ${C.border}`,
+                          cursor: 'pointer', textAlign: 'left' as const, width: '100%',
+                          transition: 'all 0.15s', opacity: isDone ? 0.6 : 1,
+                        }}
+                        onMouseEnter={e => { if (!isDone) (e.currentTarget as HTMLElement).style.outline = `1px solid ${group.color}35` }}
+                        onMouseLeave={e => { if (!isDone) (e.currentTarget as HTMLElement).style.outline = `1px solid ${C.border}` }}
+                      >
+                        {/* Checkbox */}
                         <div style={{
-                          fontSize: '13px', fontWeight: 600,
-                          color: isDone ? C.text3 : C.text1,
-                          textDecoration: isDone ? 'line-through' : 'none',
-                          marginBottom: '3px', lineHeight: 1.4,
+                          width: '18px', height: '18px', borderRadius: '5px', flexShrink: 0, marginTop: '1px',
+                          border: isDone ? 'none' : `2px solid rgba(255,255,255,0.2)`,
+                          background: isDone ? C.green : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.15s',
                         }}>
-                          {item.title}
+                          {isDone && (
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                              <polyline points="2 6 5 9 10 3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
                         </div>
-                        {!isDone && (
-                          <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5 }}>
-                            {item.description}
-                          </div>
-                        )}
-                      </div>
 
-                      {/* Priority badge */}
-                      {!isDone && item.priority === 'alta' && (
-                        <span style={{
-                          fontSize: '9px', fontWeight: 700, padding: '2px 6px',
-                          borderRadius: '4px', flexShrink: 0,
-                          color: C.red, background: C.redD,
-                          fontFamily: 'var(--font-mono)',
-                        }}>
-                          URGENTE
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: '13px', fontWeight: 600,
+                            color: isDone ? C.text3 : C.text1,
+                            textDecoration: isDone ? 'line-through' : 'none',
+                            marginBottom: isDone ? 0 : '3px', lineHeight: 1.4,
+                          }}>
+                            {item.title}
+                          </div>
+                          {!isDone && item.description && (
+                            <div style={{ fontSize: '11px', color: C.text3, lineHeight: 1.5 }}>
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Urgency badge — modo simples usa linguagem humana */}
+                        {!isDone && item.priority === 'alta' && (
+                          <span style={{
+                            fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '5px', flexShrink: 0,
+                            color: C.red, background: C.redD,
+                          }}>
+                            {isSimple ? 'AGORA' : 'URGENTE'}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
               </div>
             </div>
           )
-        })}
-      </div>
+        })}</div>
 
       {/* All done celebration */}
       {doneCount === totalCount && totalCount > 0 && (
