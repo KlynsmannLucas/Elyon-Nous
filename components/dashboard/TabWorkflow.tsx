@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useViewMode } from '@/lib/viewMode'
 
 interface WorkflowRule {
   id: string
@@ -146,7 +147,7 @@ export function TabWorkflow() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '20px' }}>🔔</span>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Regras de Alerta</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>{useViewMode().mode === 'simple' ? 'Alertas Automáticos' : 'Regras de Alerta'}</h2>
             <span style={{
               fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#94A3B8',
               background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)',

@@ -1,6 +1,7 @@
 // components/dashboard/TabMetaIntelligence.tsx — Ads Manager Professional UI
 'use client'
 
+import { useViewMode } from '@/lib/viewMode'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -1824,7 +1825,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="font-display text-2xl font-bold text-white mb-1">Meta Ad Intelligence</h2>
+          <h2 className="font-display text-2xl font-bold text-white mb-1">{useViewMode().mode === 'simple' ? 'Seus Anúncios no Instagram e Facebook' : 'Meta Ad Intelligence'}</h2>
           <p className="text-slate-500 text-sm">Análise profunda das suas campanhas Meta Ads em tempo real.</p>
         </div>
         <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-10 text-center">
@@ -1847,7 +1848,7 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-display text-2xl font-bold text-white mb-1">Meta Ad Intelligence</h2>
+          <h2 className="font-display text-2xl font-bold text-white mb-1">{useViewMode().mode === 'simple' ? 'Seus Anúncios no Instagram e Facebook' : 'Meta Ad Intelligence'}</h2>
           <div className="flex items-center gap-3 flex-wrap">
             {allAccounts.length > 1 ? (
               <select value={selectedAccountId}

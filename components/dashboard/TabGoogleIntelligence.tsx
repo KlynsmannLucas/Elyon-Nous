@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useViewMode } from '@/lib/viewMode'
 
 type RecType = 'critical' | 'warning' | 'opportunity'
 
@@ -493,7 +494,7 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="font-display text-2xl font-bold text-white mb-1">Google Ads IA</h2>
+          <h2 className="font-display text-2xl font-bold text-white mb-1">{useViewMode().mode === 'simple' ? 'Seus Anúncios no Google' : 'Google Ads IA'}</h2>
           <p className="text-slate-500 text-sm">Análise profunda das suas campanhas Google Ads em tempo real.</p>
         </div>
         <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-10 text-center">
@@ -520,7 +521,7 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-display text-2xl font-bold text-white mb-1">Google Ads IA</h2>
+          <h2 className="font-display text-2xl font-bold text-white mb-1">{useViewMode().mode === 'simple' ? 'Seus Anúncios no Google' : 'Google Ads IA'}</h2>
           <div className="flex items-center gap-3 flex-wrap">
             {accounts.length > 1 ? (
               <select value={selectedAccId}

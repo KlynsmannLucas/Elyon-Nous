@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useViewMode } from '@/lib/viewMode'
 
 type MemoryType = 'winning_creative' | 'losing_pattern' | 'benchmark' | 'audience_insight' | 'copy_angle' | 'funnel_insight' | 'general'
 type Confidence = 'alta' | 'media' | 'baixa'
@@ -140,7 +141,7 @@ export function TabMemory() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '20px' }}>🧠</span>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Memória da Campanha</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>{useViewMode().mode === 'simple' ? 'O Que Já Aprendemos' : 'Memória da Campanha'}</h2>
             <span style={{
               fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#A78BFA',
               background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)',
