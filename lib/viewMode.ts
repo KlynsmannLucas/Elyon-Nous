@@ -140,6 +140,32 @@ export function modeText(mode: 'simple' | 'pro', simpleText: string, proText: st
   return mode === 'simple' ? simpleText : proText
 }
 
+// ── Métricas essenciais por modo (esconde colunas técnicas no simples) ────────
+// No modo simples, exibimos apenas as métricas que orientam decisão imediata.
+export const ESSENTIAL_METRICS_SIMPLE = ['Investimento', 'Leads', 'CPL', 'ROAS']
+
+/** Decide se uma coluna/métrica deve aparecer no modo atual */
+export function shouldShowMetric(metricKey: string, mode: 'simple' | 'pro'): boolean {
+  if (mode === 'pro') return true
+  return ESSENTIAL_METRICS_SIMPLE.some(m => metricKey.toLowerCase().includes(m.toLowerCase()))
+}
+
+// ── Frase de contexto simplificado por tab (banner educativo) ─────────────────
+export const TAB_SIMPLE_INTRO: Record<string, string> = {
+  performance:  'Veja se o dinheiro investido está trazendo resultado.',
+  anuncios:     'Acompanhe quais anúncios estão funcionando e quais estão gastando à toa.',
+  audiencias:   'Entenda para quem seus anúncios estão sendo mostrados.',
+  budget:       'Descubra onde vale a pena investir mais o seu dinheiro.',
+  channelmix:   'Veja quais canais trazem mais clientes pelo menor custo.',
+  financeiro:   'Acompanhe quanto você investe e quanto recebe de volta.',
+  funil:        'Veja em qual etapa você está perdendo possíveis clientes.',
+  diagnostic:   'Um raio-x da saúde do seu negócio em poucos segundos.',
+  cenarios:     'Veja o quanto seu negócio pode crescer nos próximos meses.',
+  cro:          'Descubra como transformar mais visitantes em clientes.',
+  concorrentes: 'Veja o que seus concorrentes estão fazendo nos anúncios.',
+  inteligencia: 'Descobertas e oportunidades que a IA encontrou para você.',
+}
+
 /** Traduz análise técnica para linguagem humana */
 export function translateAnalysis(mode: 'simple' | 'pro', analysis: string): string {
   if (mode === 'pro') return analysis

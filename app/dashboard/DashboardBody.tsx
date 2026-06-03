@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs'
 import { useServerUserData } from './UserDataProvider'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
+import { TAB_SIMPLE_INTRO } from '@/lib/viewMode'
 import { SetupWizard, type WizardImportData } from '@/components/dashboard/SetupWizard'
 import { TabOverview }        from '@/components/dashboard/TabOverview'
 import { TabSimpleOverview }  from '@/components/dashboard/TabSimpleOverview'
@@ -1044,8 +1045,22 @@ export default function DashboardBody() {
     const strategy = strategyData?.strategy || {}
     const analysis = strategyData?.analysis || {}
 
+    // No modo simples, injeta uma frase de contexto no topo da tab (quando mapeada)
+    const simpleIntro = dashboardMode === 'simple' ? TAB_SIMPLE_INTRO[activeTab] : undefined
     const wrap = (name: string, node: React.ReactNode) => (
-      <TabErrorBoundary tabName={name}>{node}</TabErrorBoundary>
+      <TabErrorBoundary tabName={name}>
+        {simpleIntro && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '12px 16px', marginBottom: '20px', borderRadius: '12px',
+            background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.18)',
+          }}>
+            <span style={{ fontSize: '16px', flexShrink: 0 }}>💡</span>
+            <span style={{ fontSize: '13px', color: '#CBD5E1', lineHeight: 1.5 }}>{simpleIntro}</span>
+          </div>
+        )}
+        {node}
+      </TabErrorBoundary>
     )
 
     const goUpgrade = () => window.location.href = '/landing#pricing'

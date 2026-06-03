@@ -1,6 +1,8 @@
 // components/dashboard/StatCard.tsx
 'use client'
 
+import { useViewMode, getMetricLabel } from '@/lib/viewMode'
+
 interface StatCardProps {
   label: string
   value: string
@@ -39,6 +41,8 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
 }
 
 export function StatCard({ label, value, trend, sub, color = '#7C3AED', delay = 0, sparkline, icon }: StatCardProps) {
+  const { mode } = useViewMode()
+  const displayLabel = getMetricLabel(label, mode)
   const isPos   = trend !== undefined && trend >= 0
   const tColor  = isPos ? '#22C55E' : '#EF4444'
   const tBg     = isPos ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'
@@ -63,7 +67,7 @@ export function StatCard({ label, value, trend, sub, color = '#7C3AED', delay = 
           fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)',
           textTransform: 'uppercase', letterSpacing: '0.08em',
         }}>
-          {icon && <span style={{ marginRight: '5px' }}>{icon}</span>}{label}
+          {icon && <span style={{ marginRight: '5px' }}>{icon}</span>}{displayLabel}
         </div>
         {trend !== undefined && (
           <span style={{

@@ -238,6 +238,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
           niche: clientData?.niche,
           city: clientData?.city,
           hasRealData: hasRealCampaignData,
+          viewMode: useAppStore.getState().dashboardMode,
           history: messages.slice(-6).map((m) => ({
             role: m.role === 'nous' ? 'assistant' : 'user',
             content: m.content,

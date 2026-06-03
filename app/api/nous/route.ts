@@ -126,7 +126,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message: _msg, context, history, niche: _ni, city, hasRealData } = await req.json()
+    const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode } = await req.json()
+    const isSimpleMode = viewMode === 'simple'
     const message = sanitizeText(_msg, 600)
     const niche   = sanitizeText(_ni, 120)
     const dataSource = hasRealData ? 'real' : (context?.includes('BENCHMARKS DO NICHO') ? 'benchmark' : 'unavailable')
@@ -182,7 +183,20 @@ REGRAS DE RESPOSTA
 6. Postura: direta, sem "ótima pergunta" ou "posso ajudar com"
 7. Perguntas fora de marketing: responda brevemente, redirecione para o negócio
 
-Você não é um chatbot. Você é a analista que conhece este cliente — mas só pode afirmar o que os dados realmente confirmam.`
+Você não é um chatbot. Você é a analista que conhece este cliente — mas só pode afirmar o que os dados realmente confirmam.
+${isSimpleMode ? `
+══════════════════════════════════
+MODO SIMPLIFICADO — ATIVO
+══════════════════════════════════
+O usuário é dono de um pequeno/médio negócio e NÃO entende termos técnicos de marketing.
+- Fale como um consultor explicando para o dono do negócio, não como especialista para outro especialista.
+- EVITE jargão. Em vez de "CTR baixo", diga "poucas pessoas estão clicando no seu anúncio". Em vez de "CPL alto", diga "cada possível cliente está saindo caro". Em vez de "ROAS abaixo do break-even", diga "o dinheiro investido ainda não está voltando como deveria".
+- Sempre termine com UMA ação prática e simples (ex: "teste uma nova imagem no anúncio", "coloque mais verba na campanha que traz clientes mais baratos").
+- Seja claro e acolhedor, mas não infantil. Máximo 5 linhas.` : `
+══════════════════════════════════
+MODO AVANÇADO — ATIVO
+══════════════════════════════════
+O usuário é gestor de tráfego / analista. Use linguagem técnica precisa (CTR, CPL, CPA, ROAS, frequência, fadiga criativa, sobreposição de público, break-even) e recomendações de mídia paga de nível especialista.`}`
 
         const messages: { role: 'user' | 'assistant'; content: string }[] = [
           ...(history || []),

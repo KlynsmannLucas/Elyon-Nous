@@ -6,6 +6,7 @@ import { StatCard } from './StatCard'
 import { getNicheContent } from '@/lib/niche_content'
 import { getBenchmark, computeNicheProjection } from '@/lib/niche_benchmarks'
 import { useAppStore } from '@/lib/store'
+import { useViewMode, getMetricLabel } from '@/lib/viewMode'
 import type { ClientData, CampaignRecord } from '@/lib/store'
 
 interface Props {
@@ -58,12 +59,14 @@ function TrendChart({ points, color, label, format }: {
   const prev = points[points.length - 2]
   const delta = last.y - prev.y
   const deltaColor = label.includes('CPL') ? (delta <= 0 ? C.green : C.red) : (delta >= 0 ? C.green : C.red)
+  const { mode } = useViewMode()
+  const displayLabel = getMetricLabel(label, mode)
 
   return (
     <div style={card}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
+          <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{displayLabel}</div>
           <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4, color }}>{format(last.y)}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
