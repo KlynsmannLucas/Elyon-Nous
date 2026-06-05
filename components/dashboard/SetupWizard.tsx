@@ -34,6 +34,7 @@ const NICHE_GROUPS: { label: string; niches: string[] }[] = [
   {
     label: '🏥 Saúde e Serviços Médicos',
     niches: [
+      'Plano de Saúde', 'Corretor de Plano de Saúde',
       'Odontologia Estética', 'Odontologia Geral', 'Clínica Médica', 'Fisioterapia',
       'Psicologia / Terapia', 'Nutricionista', 'Farmácia', 'Laboratório',
       'Clínica Veterinária', 'Home Care', 'Terapias Alternativas',
