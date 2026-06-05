@@ -53,7 +53,7 @@ function isHealthNiche() {
 }
 
 // ── Shapes prontos para as telas simples (variam conforme o nicho do onboarding) ──
-export function getDemoFunnelEntry(clientName: string): Omit<FunnelEntry, 'id' | 'createdAt'> & { id: string; createdAt: string } {
+export function getDemoFunnelEntry(clientName: string): Omit<FunnelEntry, 'id' | 'createdAt'> & { id: string; createdAt: string; quotes?: number; proposals?: number } {
   const h = isHealthNiche()
   return {
     id: 'simple_demo_entry',
@@ -69,6 +69,8 @@ export function getDemoFunnelEntry(clientName: string): Omit<FunnelEntry, 'id' |
     avgTicket:        h ? HEALTH_DEMO.comissaoMedia : SIMPLE_DEMO_DATA.ticketMedio,
     avgResponseHours: h ? 0.3 : 2,
     createdAt:        new Date().toISOString(),
+    // Campos extras do corretor (cotações/propostas) — só no cenário de saúde
+    ...(h ? { quotes: HEALTH_DEMO.cotacoes, proposals: HEALTH_DEMO.propostas } : {}),
   }
 }
 

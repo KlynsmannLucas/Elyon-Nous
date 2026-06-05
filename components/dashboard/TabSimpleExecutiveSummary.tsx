@@ -9,6 +9,7 @@ import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { diagnose, type Bottleneck } from './TabFunil'
 import { askAIWithContext } from '@/lib/askAI'
 import { isUsingSimpleDemoData, getDemoFunnelEntry, getDemoClientFields, getDemoRealMetrics } from '@/lib/simpleDemoData'
+import { getCurrentNicheFromOnboarding } from '@/lib/nicheConfigs'
 import { DemoDataButton } from './DemoDataButton'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
@@ -116,22 +117,61 @@ export function TabSimpleExecutiveSummary({ clientData, onNavigate }: Props) {
     critico: { icon: '🔴', label: 'Crítico',  color: C.red },
   }[overall]
 
-  // ── Conteúdo das seções (interno vs versão cliente) ──────────────────────────
-  const negocioAgora = forClient
-    ? `O negócio${clientData.city ? ` em ${clientData.city}` : ''} está em operação no setor de ${clientData.niche}, com investimento ativo em anúncios e geração de contatos.`
-    : overall === 'bom'
-    ? `Seu negócio está saudável: as campanhas trazem resultado e os números estão dentro do esperado para ${clientData.niche}.`
-    : overall === 'atencao'
-    ? `Seu negócio está vendendo, mas há pontos que limitam o crescimento e merecem atenção.`
-    : `Seu negócio precisa de ajustes antes de crescer — alguns indicadores estão fora do ideal.`
+  // ── Nicho ─────────────────────────────────────────────────────────────────────
+  const niche    = getCurrentNicheFromOnboarding()
+  const isHealth  = niche.key === 'health_insurance_broker'
+  const compliance = niche.complianceNote
 
-  const gargalo = dx && dx.bottleneck !== 'saudavel'
-    ? (forClient
-        ? `A maior oportunidade está ${LOSS_LABEL[dx.bottleneck]} — é onde podemos recuperar mais resultado.`
-        : `Seu principal gargalo está ${LOSS_LABEL[dx.bottleneck]}. É aí que você mais perde possíveis clientes hoje.`)
-    : 'Não há um gargalo crítico no funil no momento — a jornada está convertendo bem.'
+  // Números do funil do corretor (cotações/propostas vêm como campos extras quando existem)
+  const qualified = entry?.qualifiedLeads ?? 0
+  const leadsN    = entry?.leads ?? 0
+  const quotes    = (entry as any)?.quotes ?? null
+  const proposals = (entry as any)?.proposals ?? null
+  const contratos = entry?.sales ?? 0
+  const comissaoMedia = entry?.avgTicket || ticket || 0
+  const comissaoEstimada = contratos > 0 && comissaoMedia > 0 ? contratos * comissaoMedia : (rm?.totalRevenue || 0)
 
-  const risco = cacHigh
+  // Títulos das seções (adaptados ao nicho)
+  const titles = isHealth
+    ? { negocio: 'Saúde da captação de planos', gargalo: 'Onde os leads estão travando', risco: 'Maior risco atual', fazer: 'O que fazer primeiro', evitar: 'O que evitar agora' }
+    : { negocio: 'Como está o negócio agora', gargalo: 'Onde está o principal gargalo', risco: 'Maior risco atual', fazer: 'O que fazer primeiro', evitar: 'O que evitar agora' }
+
+  // ── Conteúdo das seções (interno vs versão cliente, por nicho) ───────────────
+  const negocioAgora = isHealth
+    ? (overall === 'bom'
+        ? 'Sua captação de planos mostra bons sinais: os contatos chegam, avançam para cotação e parte deles vira contrato.'
+        : overall === 'atencao'
+        ? 'Sua captação gera contatos, mas ainda existe perda entre WhatsApp, cotação, proposta e fechamento.'
+        : forClient
+        ? 'Há oportunidade clara de melhorar a qualificação dos contatos e o acompanhamento após a cotação antes de aumentar o investimento.'
+        : 'Você pode estar pagando por contatos que não avançam para cotação ou contrato. Antes de aumentar investimento, é melhor corrigir qualificação e follow-up.')
+    : (forClient
+        ? `O negócio${clientData.city ? ` em ${clientData.city}` : ''} está em operação no setor de ${clientData.niche}, com investimento ativo em anúncios e geração de contatos.`
+        : overall === 'bom'
+        ? `Seu negócio está saudável: as campanhas trazem resultado e os números estão dentro do esperado para ${clientData.niche}.`
+        : overall === 'atencao'
+        ? 'Seu negócio está vendendo, mas há pontos que limitam o crescimento e merecem atenção.'
+        : 'Seu negócio precisa de ajustes antes de crescer — alguns indicadores estão fora do ideal.')
+
+  // Gargalo específico do corretor (por proporção entre etapas)
+  const healthGargalo = (() => {
+    if (leadsN > 0 && qualified / leadsN < 0.4)            return 'Você recebe contatos no WhatsApp, mas poucos têm perfil para contratar.'
+    if (qualified > 0 && quotes != null && quotes / qualified < 0.6) return 'Há pessoas com perfil, mas poucas estão recebendo cotação.'
+    if (quotes != null && quotes > 0 && contratos / quotes < 0.3)    return 'O problema parece estar depois da cotação: as pessoas recebem preço, mas não avançam.'
+    if (contratos > 0 && contratos < 3)                   return 'Os contratos fechados ainda não justificam aumentar investimento sem melhorar o processo comercial.'
+    return 'A jornada de captação está fluindo bem entre WhatsApp, cotação e fechamento.'
+  })()
+
+  const gargalo = isHealth
+    ? (forClient ? healthGargalo.replace('Você recebe', 'A operação recebe').replace('poucos têm', 'parte ainda não tem') : healthGargalo)
+    : (dx && dx.bottleneck !== 'saudavel'
+        ? (forClient ? `A maior oportunidade está ${LOSS_LABEL[dx.bottleneck]} — é onde podemos recuperar mais resultado.` : `Seu principal gargalo está ${LOSS_LABEL[dx.bottleneck]}. É aí que você mais perde possíveis clientes hoje.`)
+        : 'Não há um gargalo crítico no funil no momento — a jornada está convertendo bem.')
+
+  const risco = isHealth
+    ? (cacHigh ? 'Maior risco: cada contrato pode estar custando caro demais para a comissão gerada. Vale ajustar antes de investir mais.'
+        : 'Maior risco: depender só da primeira resposta no WhatsApp. Plano de saúde exige follow-up após a cotação para fechar.')
+    : cacHigh
     ? (forClient ? 'O custo de aquisição está próximo do limite saudável — recomendamos otimizar antes de aumentar o investimento.' : 'Maior risco: cada cliente está custando mais do que o lucro por venda. Corrigir isso é prioridade antes de escalar.')
     : marginLow
     ? (forClient ? 'A margem atual pede atenção antes de uma escala mais agressiva.' : 'Maior risco: margem apertada — sobra pouco lucro depois dos custos.')
@@ -139,12 +179,19 @@ export function TabSimpleExecutiveSummary({ clientData, onNavigate }: Props) {
     ? (forClient ? 'Há uma etapa da jornada com espaço claro de melhoria.' : `Maior risco: perda relevante de clientes ${LOSS_LABEL[dx.bottleneck]}.`)
     : 'Sem riscos críticos no momento — manter o acompanhamento.'
 
-  const fazerPrimeiro = cacHigh ? 'Reduzir o custo por cliente antes de investir mais.'
+  const fazerPrimeiro = isHealth
+    ? 'Melhorar a qualificação no WhatsApp e o follow-up após a cotação.'
+    : cacHigh ? 'Reduzir o custo por cliente antes de investir mais.'
     : dx && dx.bottleneck !== 'saudavel' ? `Corrigir a etapa ${LOSS_LABEL[dx.bottleneck]}.`
     : marginLow ? 'Proteger a margem (preço, ticket, custos) antes de escalar.'
     : 'Escalar com segurança o que já funciona.'
 
   const proximas = (() => {
+    if (isHealth) return [
+      'Criar roteiro de qualificação no WhatsApp',
+      'Criar follow-up pós-cotação em 2h, 24h e 48h',
+      'Registrar motivo de perda (preço, carência, rede, sem CNPJ, região)',
+    ]
     if (cacHigh) return ['Pausar os anúncios mais caros', 'Melhorar os criativos com pouca resposta', 'Revisar a oferta antes de aumentar a verba']
     if (dx && dx.bottleneck === 'landing_page') return ['Revisar página/WhatsApp de destino', 'Deixar o botão de contato mais claro', 'Criar mensagem inicial pronta']
     if (dx && dx.bottleneck === 'anuncio') return ['Melhorar a imagem/vídeo do anúncio', 'Testar uma promessa mais clara', 'Revisar o público']
@@ -154,26 +201,37 @@ export function TabSimpleExecutiveSummary({ clientData, onNavigate }: Props) {
     return ['Aumentar o orçamento aos poucos', 'Duplicar os anúncios que funcionam', 'Acompanhar o custo por venda']
   })()
 
-  const evitar = cacHigh ? 'Evite aumentar o orçamento agora — escalar com custo alto aumenta o prejuízo.'
+  const evitar = isHealth
+    ? 'Evite aumentar investimento antes de saber quais campanhas trazem contatos com perfil. Evite prometer preço final, aprovação ou ausência de carência sem validação da operadora. E não dependa só da primeira resposta — plano de saúde exige follow-up.'
+    : cacHigh ? 'Evite aumentar o orçamento agora — escalar com custo alto aumenta o prejuízo.'
     : marginLow ? 'Evite escalar campanhas enquanto a margem estiver apertada.'
     : dx && dx.bottleneck !== 'saudavel' ? 'Evite investir mais em tráfego antes de corrigir o gargalo — você só perderia mais gente no mesmo ponto.'
     : 'Evite mudanças bruscas no que já está funcionando — escale com calma.'
 
-  // ── Texto para copiar ─────────────────────────────────────────────────────────
+  // Seções específicas do corretor
+  const qualidadeContatos = 'Para plano de saúde, não basta medir volume de leads. É importante saber se o contato tem cidade atendida, tipo de plano compatível, número de vidas, CNPJ quando necessário, orçamento e urgência real.'
+  const cotacoesTexto = (quotes != null && proposals != null)
+    ? `De ${qualified} contatos com perfil, ${quotes} receberam cotação, ${proposals} receberam proposta e ${contratos} fecharam contrato.`
+    : 'Você ainda não está registrando cotações e propostas. Sem isso, fica mais difícil saber se o problema está no preço, na rede, na carência, na proposta ou no follow-up.'
+  const comissaoTexto = (comissaoMedia > 0 && contratos > 0)
+    ? `Com ${contratos} contratos fechados e comissão média de R$${comissaoMedia.toLocaleString('pt-BR')}, sua comissão estimada é de R$${comissaoEstimada.toLocaleString('pt-BR')}.`
+    : 'Informe a comissão média por contrato para estimar sua comissão total.'
+
+  // ── Texto para copiar (respeita nicho + toggle) ──────────────────────────────
   const plainText =
 `RESUMO EXECUTIVO — ${clientData.clientName}
 Status geral: ${overallCfg.icon} ${overallCfg.label}
 
-COMO ESTÁ O NEGÓCIO
+${titles.negocio.toUpperCase()}
 ${negocioAgora}
 
-PRINCIPAL GARGALO
+${titles.gargalo.toUpperCase()}
 ${gargalo}
-
+${isHealth ? `\nQUALIDADE DOS CONTATOS\n${qualidadeContatos}\n\nCOTAÇÕES E PROPOSTAS\n${cotacoesTexto}\n\nCOMISSÃO ESTIMADA\n${comissaoTexto}\n` : ''}
 MAIOR RISCO
 ${risco}
 
-O QUE FAZER PRIMEIRO
+${titles.fazer.toUpperCase()}
 ${fazerPrimeiro}
 
 PRÓXIMAS 3 AÇÕES
@@ -183,7 +241,7 @@ PRÓXIMAS 3 AÇÕES
 
 O QUE EVITAR AGORA
 ${evitar}
-
+${isHealth && compliance ? `\nOBSERVAÇÃO\n${compliance}\n` : ''}
 — Gerado pela ELYON`
 
   function copy() {
@@ -213,7 +271,15 @@ ${evitar}
           <button onClick={copy} style={{ fontSize: '12px', fontWeight: 700, padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', border: 'none', color: copied ? C.green : '#fff', background: copied ? 'rgba(34,197,94,0.12)' : 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}>
             {copied ? '✓ Copiado' : '📋 Copiar resumo'}
           </button>
-          <button onClick={() => askAIWithContext({ source: 'resumo', title: 'Resumo Executivo', problem: risco, suggestedPrompt: 'Explique esse resumo em linguagem simples e me diga quais decisões eu devo evitar agora.' })} style={{ fontSize: '12px', fontWeight: 600, padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', color: C.purpleHi }}>
+          <button onClick={() => askAIWithContext({
+            source: 'simple_executive_summary',
+            title: 'Resumo Executivo',
+            problem: risco,
+            metrics: { niche: niche.key },
+            suggestedPrompt: isHealth
+              ? 'Me ajude a transformar este resumo em um plano prático para vender mais planos de saúde, melhorando qualificação, cotação, proposta e follow-up.'
+              : 'Explique esse resumo em linguagem simples e me diga quais decisões eu devo evitar agora.',
+          })} style={{ fontSize: '12px', fontWeight: 600, padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', color: C.purpleHi }}>
             💬 Perguntar para a IA
           </button>
         </div>
@@ -230,10 +296,20 @@ ${evitar}
       </div>
 
       {/* Seções do resumo */}
-      <Section icon="📊" title="Como está o negócio agora">{negocioAgora}</Section>
-      <Section icon="🔻" title="Onde está o principal gargalo">{gargalo}</Section>
-      <Section icon="⚠️" title="Maior risco atual">{risco}</Section>
-      <Section icon="🎯" title="O que fazer primeiro">{fazerPrimeiro}</Section>
+      <Section icon="📊" title={titles.negocio}>{negocioAgora}</Section>
+      <Section icon="🔻" title={titles.gargalo}>{gargalo}</Section>
+
+      {/* Seções específicas do corretor de plano de saúde */}
+      {isHealth && (
+        <>
+          <Section icon="🎯" title="Qualidade dos contatos">{qualidadeContatos}</Section>
+          <Section icon="📄" title="Cotações e propostas">{cotacoesTexto}</Section>
+          <Section icon="💰" title="Comissão estimada">{comissaoTexto}</Section>
+        </>
+      )}
+
+      <Section icon="⚠️" title={titles.risco}>{risco}</Section>
+      <Section icon="🎯" title={titles.fazer}>{fazerPrimeiro}</Section>
 
       <div style={{ padding: '14px 16px', borderRadius: '12px', background: C.purpleBg, border: '1px solid rgba(124,58,237,0.18)' }}>
         <div style={{ fontSize: '10px', fontWeight: 700, color: C.purpleHi, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '10px' }}>🚀 Próximas 3 ações</div>
@@ -250,7 +326,15 @@ ${evitar}
         </button>
       </div>
 
-      <Section icon="🚫" title="O que evitar agora">{evitar}</Section>
+      <Section icon="🚫" title={titles.evitar}>{evitar}</Section>
+
+      {/* Nota de compliance (discreta) — apenas no nicho de saúde */}
+      {isHealth && compliance && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.18)' }}>
+          <span style={{ fontSize: '12px', flexShrink: 0, marginTop: '1px' }}>⚖️</span>
+          <span style={{ fontSize: '10px', color: 'rgba(245,158,11,0.85)', lineHeight: 1.5 }}>{compliance}</span>
+        </div>
+      )}
 
       {/* Rodapé */}
       <div style={{ padding: '12px 16px', borderRadius: '10px', background: C.purpleBg, border: '1px solid rgba(124,58,237,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
