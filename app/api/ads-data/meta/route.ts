@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
+import { errMsg } from '@/lib/errMsg'
 
 // "lead" é o evento primário. "lead_grouped" agrega múltiplas janelas de atribuição
 // e se sobrepõe com "lead" — usar os dois juntos infla o número. Usar apenas um.
@@ -224,6 +225,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, campaigns, totals: extTotals, previousTotals, platform: 'meta' })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: errMsg(error, 'Falha ao buscar dados do Meta Ads.') }, { status: 500 })
   }
 }

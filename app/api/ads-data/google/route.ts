@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidGoogleToken, tokenErrorToResponse } from '@/services/google/token-manager'
 import { gaqlSearch, normalizeCustomerId } from '@/lib/google-ads'
+import { errMsg } from '@/lib/errMsg'
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -105,6 +106,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, campaigns, totals, platform: 'google' })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: errMsg(error, 'Falha ao buscar dados do Google Ads.') }, { status: 500 })
   }
 }

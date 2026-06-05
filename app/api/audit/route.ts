@@ -5,6 +5,7 @@ import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { sanitizeText } from '@/lib/sanitize'
 import { supabaseAdmin } from '@/lib/supabase'
 import { saveAuditReport, upsertPriorityActions, upsertHealthScore } from '@/lib/persistence'
+import { errMsg } from '@/lib/errMsg'
 
 // ── Salva padrões da auditoria diretamente no Supabase (fire-and-forget) ─────
 async function saveAuditMemory(
@@ -1225,6 +1226,6 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
 
   } catch (error: any) {
     console.error('Audit route error:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: errMsg(error, 'Erro ao gerar auditoria.') }, { status: 500 })
   }
 }

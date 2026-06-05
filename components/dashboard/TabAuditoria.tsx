@@ -6,6 +6,7 @@ import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 import { useClientActions } from '@/hooks/useClientActions'
 import { getBenchmark } from '@/lib/niche_benchmarks'
+import { errMsg } from '@/lib/errMsg'
 
 interface Props { clientData: ClientData | null }
 
@@ -526,7 +527,7 @@ export function TabAuditoria({ clientData }: Props) {
 
       // Se ambas falharam e não há upload, reportar erro claro
       if (metaError && googleError && uploadedFiles.length === 0) {
-        throw new Error(`Meta Ads: ${metaError} | Google Ads: ${googleError}`)
+        throw new Error(`Meta Ads: ${errMsg(metaError)} | Google Ads: ${errMsg(googleError)}`)
       }
 
       setLoadingStep('Normalizando métricas…')
@@ -538,9 +539,9 @@ export function TabAuditoria({ clientData }: Props) {
 
       // Aviso parcial se uma plataforma falhou mas a outra funcionou
       const partialWarning = (metaError && !googleError && !uploadedFiles.length)
-        ? `Meta Ads indisponível (${metaError}) — auditando apenas Google Ads.`
+        ? `Meta Ads indisponível (${errMsg(metaError)}) — auditando apenas Google Ads.`
         : (googleError && !metaError && !uploadedFiles.length)
-          ? `Google Ads indisponível (${googleError}) — auditando apenas Meta Ads.`
+          ? `Google Ads indisponível (${errMsg(googleError)}) — auditando apenas Meta Ads.`
           : null
       if (partialWarning) setError(partialWarning)
 
@@ -569,8 +570,8 @@ export function TabAuditoria({ clientData }: Props) {
       })
 
       setLoadingStep('Salvando auditoria…')
-      const json = await res.json()
-      if (!json.success) throw new Error(json.error)
+      const json = await res.json().catch(() => ({ success: false, error: `Resposta inválida do servidor (HTTP ${res.status}).` }))
+      if (!json.success) throw new Error(errMsg(json.error || json, `Falha na auditoria (HTTP ${res.status}).`))
       setAudit(json.audit)
       setSource(json.source)
       setPersistenceStatus(json.persistence ?? null)
@@ -590,7 +591,7 @@ export function TabAuditoria({ clientData }: Props) {
       }
 
     } catch (e: any) {
-      const msg = e.message || 'Erro ao gerar auditoria.'
+      const msg = errMsg(e, 'Erro ao gerar auditoria.')
       // Mensagens de erro mais amigáveis
       const friendly = msg.includes('TOKEN_EXPIRED') ? 'Token da plataforma expirado. Reconecte a conta em Conexões.'
         : msg.includes('NO_CONNECTION') ? 'Conta não conectada. Vá em Conexões e vincule sua conta.'
