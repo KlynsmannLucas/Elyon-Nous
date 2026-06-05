@@ -43,7 +43,7 @@ const LP_CVR_BY_CHANNEL: Record<string, number> = {
   'TikTok': 6.0, 'YouTube': 5.0, 'LinkedIn': 5.0, 'WhatsApp Ads': 22.0, 'Múltiplos canais': 8.0,
 }
 
-type Bottleneck = 'anuncio' | 'landing_page' | 'qualificacao' | 'fechamento' | 'velocidade' | 'saudavel'
+export type Bottleneck = 'anuncio' | 'landing_page' | 'qualificacao' | 'fechamento' | 'velocidade' | 'saudavel'
 
 interface StageResult {
   key: string
@@ -59,7 +59,7 @@ interface StageResult {
   benchLabel: string
 }
 
-interface DiagnosisResult {
+export interface DiagnosisResult {
   stages: StageResult[]
   bottleneck: Bottleneck
   score: number
@@ -67,7 +67,7 @@ interface DiagnosisResult {
   cac: number | null
 }
 
-const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: string; bg: string; border: string; description: string; actions: string[] }> = {
+export const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: string; bg: string; border: string; description: string; actions: string[] }> = {
   anuncio: {
     title: 'Problema no Anúncio / Segmentação',
     icon: '📢',
@@ -160,7 +160,7 @@ const PRESCRIPTIONS: Record<Bottleneck, { title: string; icon: string; color: st
   },
 }
 
-function diagnose(entry: Omit<FunnelEntry, 'id' | 'createdAt'>, benchKey: string): DiagnosisResult {
+export function diagnose(entry: Omit<FunnelEntry, 'id' | 'createdAt'>, benchKey: string): DiagnosisResult {
   const fb = getFunnelBenchmarks(benchKey)
   const channel = entry.channel
 

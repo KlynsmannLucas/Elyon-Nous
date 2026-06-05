@@ -10,6 +10,7 @@ import { SetupWizard, type WizardImportData } from '@/components/dashboard/Setup
 import { TabOverview }        from '@/components/dashboard/TabOverview'
 import { TabSimpleOverview }  from '@/components/dashboard/TabSimpleOverview'
 import { TabSimpleDiagnostic } from '@/components/dashboard/TabSimpleDiagnostic'
+import { TabSimpleFunil }      from '@/components/dashboard/TabSimpleFunil'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
 import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
@@ -503,6 +504,7 @@ export default function DashboardBody() {
   // Assinaturas reativas — garantem re-render ao trocar de modo / perfil
   const dashboardMode  = useAppStore(s => s.dashboardMode)
   const userExperience = useAppStore(s => s.userExperience)
+  const funnelEntries  = useAppStore(s => s.funnelEntries)
 
   const buildExtraData = useCallback((clientName: string) => {
     const s = useAppStore.getState()
@@ -1104,7 +1106,14 @@ export default function DashboardBody() {
       case 'inteligencia':  return wrap('Inteligência',      <TabIntelligence clientData={clientData} />)
       case 'cenarios':      return wrap('Cenários',          <TabGrowth analysis={analysis} clientData={clientData} />)
       case 'mercado':       return wrap('Mercado & Nicho',   <TabMarketIntel clientData={clientData} />)
-      case 'funil':         return wrap('Gargalo do Funil',  <TabFunil clientData={clientData} />)
+      case 'funil': {
+        // Modo simples + já há dados de funil preenchidos → leitura consultiva. Senão, tela com formulário (rótulos já simplificados).
+        const hasFunnel = funnelEntries.some(e => e.clientName === (clientData?.clientName || ''))
+        if (dashboardMode === 'simple' && hasFunnel) {
+          return wrap('Onde Perco Clientes', <TabSimpleFunil clientData={clientData} onNavigate={(t) => setActiveTab(t as any)} />)
+        }
+        return wrap('Gargalo do Funil', <TabFunil clientData={clientData} />)
+      }
       case 'cro':           return wrap('Otimização de Conversão', <TabCRO />)
       case 'budget':        return wrap('Alocador de Verba',      <TabBudgetAllocator />)
       case 'channelmix':    return wrap('Mix de Canais',           <TabChannelMix />)
