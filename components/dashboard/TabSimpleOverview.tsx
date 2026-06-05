@@ -266,6 +266,41 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
         </div>
       </div>
 
+      {/* Pergunte ao NOUS — card consultivo */}
+      <div style={{ padding: '18px 20px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(124,58,237,0.03))', border: '1px solid rgba(124,58,237,0.22)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <span style={{ fontSize: '20px' }}>🤖</span>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: C.text1, letterSpacing: '-0.01em' }}>
+            Quer entender melhor esse resultado?
+          </div>
+        </div>
+        <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 14px', lineHeight: 1.6 }}>
+          Pergunte para a IA em linguagem simples — ela responde como um consultor de marketing.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '8px' }}>
+          {[
+            'Meus anúncios estão indo bem?',
+            'Quanto posso aumentar de orçamento?',
+            'Qual campanha eu devo pausar?',
+            'Onde estou perdendo clientes?',
+          ].map((q) => (
+            <button
+              key={q}
+              onClick={() => window.dispatchEvent(new CustomEvent('elyon:open-nous', { detail: { question: q } }))}
+              style={{
+                fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '99px',
+                cursor: 'pointer', transition: 'all 0.15s',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', color: C.purpleHi,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.14)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Rodapé: mudar para modo PRO */}
       <div style={{ padding: '12px 16px', borderRadius: '10px', background: C.purpleBg, border: '1px solid rgba(124,58,237,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
         <span style={{ fontSize: '11px', color: C.text3 }}>

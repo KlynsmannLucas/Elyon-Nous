@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react'
 import { getPlanLimits } from '@/lib/planUtils'
 import { useAppStore } from '@/lib/store'
-import { TAB_LABELS_SIMPLE } from '@/lib/viewMode'
 
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
@@ -116,6 +115,29 @@ export const SIDEBAR_SECTIONS: {
     { key: 'checklist',   label: 'Checklist Diário',        icon: '✅' },
     { key: 'portal',      label: 'Portal do Cliente',       icon: '🔗' },
     { key: 'campanha',    label: 'Histórico de Campanhas',  icon: '📋' },
+  ]},
+]
+
+// Menu reduzido e orientado à jornada para o Modo Simplificado.
+// As demais áreas continuam existindo (acessíveis pelos cards da home e no Modo Avançado).
+// A chave especial '__nous__' abre o chat da IA em vez de trocar de aba.
+export const SIMPLE_SIDEBAR_SECTIONS: {
+  label: string
+  planLabel?: string
+  items: { key: string; label: string; icon: string; badge?: string }[]
+}[] = [
+  { label: 'Meu Negócio', items: [
+    { key: 'overview',  label: 'Como Estou Indo',     icon: '🏠', badge: 'LIVE' },
+    { key: 'acoes',     label: 'O Que Fazer Agora',   icon: '✅' },
+    { key: 'checklist', label: 'Próximos Passos',     icon: '📋' },
+  ]},
+  { label: 'Entender', items: [
+    { key: 'funil',     label: 'Onde Perco Clientes', icon: '🔻' },
+    { key: 'anuncios',  label: 'Meus Anúncios',       icon: '📡' },
+    { key: 'analise',   label: 'Saúde da Conta',      icon: '🔍' },
+  ]},
+  { label: 'Ajuda', items: [
+    { key: '__nous__',  label: 'Perguntar para a IA', icon: '💬' },
   ]},
 ]
 
@@ -289,7 +311,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
 
         {/* ── Nav ──────────────────────────────────────────────────────── */}
         <nav style={{ flex: 1, padding: collapsed ? '10px 8px' : '10px 10px', overflowY: 'auto' }}>
-          {SIDEBAR_SECTIONS.map((section) => {
+          {(simpleMode ? SIMPLE_SIDEBAR_SECTIONS : SIDEBAR_SECTIONS).map((section) => {
             const isLocked = SECTION_LOCK[section.label] ?? false
             return (
               <div key={section.label} style={{ marginBottom: collapsed ? '6px' : '20px' }}>
@@ -333,7 +355,14 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                   return (
                     <button
                       key={item.key}
-                      onClick={() => { onChange(item.key); if (isMobile && !collapsed) onToggleCollapse() }}
+                      onClick={() => {
+                        if (item.key === '__nous__') {
+                          window.dispatchEvent(new CustomEvent('elyon:open-nous'))
+                        } else {
+                          onChange(item.key as TabKey)
+                        }
+                        if (isMobile && !collapsed) onToggleCollapse()
+                      }}
                       title={collapsed ? item.label : undefined}
                       style={{
                         width: '100%', display: 'flex', alignItems: 'center',
@@ -367,7 +396,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                         flexShrink: 0, lineHeight: 0,
                         color: isActive ? '#A78BFA' : 'inherit',
                       }}>
-                        {TAB_ICONS[item.key] ?? <span style={{ fontSize: '14px' }}>{item.icon}</span>}
+                        {TAB_ICONS[item.key as TabKey] ?? <span style={{ fontSize: '14px' }}>{item.icon}</span>}
                       </span>
 
                       {/* Label + badge */}
@@ -377,7 +406,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                             flex: 1, fontSize: '13px', fontWeight: isActive ? 600 : 400,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           }}>
-                            {simpleMode ? (TAB_LABELS_SIMPLE[item.key] ?? item.label) : item.label}
+                            {item.label}
                           </span>
                           {isLocked ? (
                             <span style={{ color: 'rgba(255,255,255,0.15)', flexShrink: 0 }}>{I.lock}</span>
