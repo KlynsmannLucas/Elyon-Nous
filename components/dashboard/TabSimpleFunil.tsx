@@ -7,6 +7,7 @@ import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { diagnose, PRESCRIPTIONS, type Bottleneck } from './TabFunil'
 import { askAIWithContext } from '@/lib/askAI'
 import { isUsingSimpleDemoData, getDemoFunnelEntry } from '@/lib/simpleDemoData'
+import { getCurrentNicheFromOnboarding } from '@/lib/nicheConfigs'
 import { DemoDataButton } from './DemoDataButton'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
@@ -159,13 +160,14 @@ export function TabSimpleFunil({ clientData, onNavigate }: Props) {
     ? { icon: '🟡', color: C.amber, headline: `Seu maior gargalo está ${narrative.stageLoss}` }
     : { icon: '🔴', color: C.red, headline: `Atenção: você perde muitos clientes ${narrative.stageLoss}` }
 
-  // ── Funil visual (contagens absolutas) ────────────────────────────────────────
+  // ── Funil visual (contagens absolutas) — labels conforme o nicho ──────────────
+  const fl = getCurrentNicheFromOnboarding().funnelLabels
   const rawStages = [
-    { label: 'Viram o anúncio',        value: entry.impressions > 0 ? entry.impressions : null,       lossKey: 'anuncio' },
-    { label: 'Clicaram',               value: entry.clicks > 0 ? entry.clicks : null,                 lossKey: 'landing_page' },
-    { label: 'Viraram contato',        value: entry.leads > 0 ? entry.leads : null,                   lossKey: 'qualificacao' },
-    { label: 'Com perfil de compra',   value: entry.qualifiedLeads > 0 ? entry.qualifiedLeads : null, lossKey: 'fechamento' },
-    { label: 'Vendas geradas',         value: entry.sales > 0 ? entry.sales : null,                   lossKey: null },
+    { label: fl.impressions,  value: entry.impressions > 0 ? entry.impressions : null,       lossKey: 'anuncio' },
+    { label: fl.clicks,       value: entry.clicks > 0 ? entry.clicks : null,                 lossKey: 'landing_page' },
+    { label: fl.leads,        value: entry.leads > 0 ? entry.leads : null,                   lossKey: 'qualificacao' },
+    { label: fl.qualified,    value: entry.qualifiedLeads > 0 ? entry.qualifiedLeads : null, lossKey: 'fechamento' },
+    { label: fl.sales,        value: entry.sales > 0 ? entry.sales : null,                   lossKey: null },
   ]
   const maxVal = Math.max(...rawStages.map(s => s.value ?? 0), 1)
 

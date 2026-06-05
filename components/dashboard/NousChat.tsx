@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAppStore, type ClientData, type CampaignRecord, type NousMessage } from '@/lib/store'
+import { getCurrentNicheFromOnboarding } from '@/lib/nicheConfigs'
 import { getBenchmark, getBenchmarkSummary, getCreativeAngles, getSeasonalityContext, BENCHMARKS } from '@/lib/niche_benchmarks'
 
 interface Props {
@@ -254,6 +255,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
           city: clientData?.city,
           hasRealData: hasRealCampaignData,
           viewMode: useAppStore.getState().dashboardMode,
+          nicheProfile: getCurrentNicheFromOnboarding().key,
           history: messages.slice(-6).map((m) => ({
             role: m.role === 'nous' ? 'assistant' : 'user',
             content: m.content,

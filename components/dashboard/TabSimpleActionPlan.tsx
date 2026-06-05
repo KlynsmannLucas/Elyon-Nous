@@ -9,6 +9,7 @@ import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { diagnose, type Bottleneck } from './TabFunil'
 import { askAIWithContext } from '@/lib/askAI'
 import { isUsingSimpleDemoData, getDemoFunnelEntry, getDemoClientFields, getDemoRealMetrics } from '@/lib/simpleDemoData'
+import { getCurrentNicheFromOnboarding } from '@/lib/nicheConfigs'
 import { DemoDataButton } from './DemoDataButton'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
@@ -176,6 +177,11 @@ export function TabSimpleActionPlan({ clientData, onNavigate }: Props) {
   const hasAnyData = !!entry || !!rm || (ticket > 0 && margin > 0)
 
   // ── Monta lista priorizada de ações ──────────────────────────────────────────
+  // Ações do funil conforme o nicho (corretor de plano de saúde tem templates próprios)
+  const niche = getCurrentNicheFromOnboarding()
+  const funnelActionsFor = (b: Bottleneck): Action[] =>
+    (niche.actionTemplates[b] as Action[] | undefined) ?? FUNNEL_ACTIONS[b]
+
   let actions: Action[] = []
   let focus: { icon: string; color: string; headline: string; rec: string }
 
@@ -183,7 +189,7 @@ export function TabSimpleActionPlan({ clientData, onNavigate }: Props) {
     actions = SETUP_ACTIONS
     focus = { icon: '🟡', color: C.amber, headline: 'Vamos organizar seu ponto de partida', rec: 'Preencha seus números principais para receber um plano mais certeiro. Por enquanto, comece pela organização básica.' }
   } else if (cacHigh) {
-    actions = [...CAC_ACTIONS, ...(dx && dx.bottleneck !== 'saudavel' ? FUNNEL_ACTIONS[dx.bottleneck].slice(0, 2) : [])]
+    actions = [...CAC_ACTIONS, ...(dx && dx.bottleneck !== 'saudavel' ? funnelActionsFor(dx.bottleneck).slice(0, 2) : [])]
     focus = { icon: '🔴', color: C.red, headline: 'Prioridade: baixar o custo por cliente', rec: 'Cada cliente está custando mais do que o lucro por venda. Corrija isso antes de aumentar o investimento.' }
   } else if (dx && dx.bottleneck !== 'saudavel') {
     const lossLabel: Record<Bottleneck, string> = {
@@ -191,7 +197,7 @@ export function TabSimpleActionPlan({ clientData, onNavigate }: Props) {
       qualificacao: 'entre o contato e o perfil de compra', fechamento: 'entre o contato qualificado e a venda',
       velocidade: 'na velocidade de resposta', saudavel: '',
     }
-    actions = [...FUNNEL_ACTIONS[dx.bottleneck], ...(marginLow ? MARGIN_ACTIONS.slice(0, 1) : [])]
+    actions = [...funnelActionsFor(dx.bottleneck), ...(marginLow ? MARGIN_ACTIONS.slice(0, 1) : [])]
     focus = { icon: dx.score < 55 ? '🔴' : '🟡', color: dx.score < 55 ? C.red : C.amber, headline: `Corrigir o ponto de maior perda: ${lossLabel[dx.bottleneck]}`, rec: 'É aqui que você mais perde possíveis clientes. Resolver essa etapa traz o maior ganho agora.' }
   } else if (marginLow) {
     actions = MARGIN_ACTIONS

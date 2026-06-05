@@ -6,9 +6,12 @@
 import { useAppStore } from '@/lib/store'
 import { askAIWithContext } from '@/lib/askAI'
 import { isUsingSimpleDemoData, getDemoClientFields, getDemoRealMetrics } from '@/lib/simpleDemoData'
+import { getCurrentNicheFromOnboarding } from '@/lib/nicheConfigs'
 import { DemoDataButton } from './DemoDataButton'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 interface Props {
   clientData: ClientData | null
@@ -109,10 +112,13 @@ export function TabSimpleBusinessHealth({ clientData, onNavigate }: Props) {
   const vendasSig: Sig = estSales == null && realSpend === 0 ? 'sem_dado'
     : (estSales && estSales > 0) || (rm?.totalRevenue > 0) ? 'bom'
     : 'atencao'
+  const niche = getCurrentNicheFromOnboarding()
+  const saleName = niche.language.saleName       // ex: "contrato fechado"
+  const salePlural = saleName.endsWith('o') ? saleName + 's' : saleName + 's'
   const vendasVal = estSales != null ? `~${estSales}/mês` : realSpend > 0 ? `${realLeads} contatos` : '—'
-  const vendasPhrase = vendasSig === 'bom' ? 'Seu marketing está gerando vendas.'
-    : vendasSig === 'atencao' ? 'Você gera contatos, mas faltam dados de vendas para confirmar o resultado.'
-    : 'Ainda não temos dados de vendas para avaliar.'
+  const vendasPhrase = vendasSig === 'bom' ? `Seu marketing está gerando ${salePlural}.`
+    : vendasSig === 'atencao' ? `Você gera contatos, mas faltam dados de ${salePlural} para confirmar o resultado.`
+    : `Ainda não temos dados de ${salePlural} para avaliar.`
 
   // Investimento
   const investSig: Sig = budget > 0 ? 'bom' : 'sem_dado'
@@ -150,7 +156,7 @@ export function TabSimpleBusinessHealth({ clientData, onNavigate }: Props) {
     : 'Dá pra escalar aos poucos, monitorando o custo por venda de perto.'
 
   const indicators = [
-    { icon: '🛒', label: 'Vendas',              value: vendasVal,                          sig: vendasSig, phrase: vendasPhrase },
+    { icon: '🛒', label: cap(salePlural),       value: vendasVal,                          sig: vendasSig, phrase: vendasPhrase },
     { icon: '💰', label: 'Investimento',        value: budget > 0 ? fmt(budget) + '/mês' : '—', sig: investSig, phrase: investPhrase },
     { icon: '🔄', label: 'Conversão',           value: cvr > 0 ? `${cvr}%` : '—',          sig: convSig,   phrase: convPhrase },
     { icon: '🏷️', label: 'Custo por cliente',   value: cac != null ? fmt(cac) : '—',       sig: cacSig,    phrase: cacPhrase },

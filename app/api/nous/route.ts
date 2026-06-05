@@ -126,8 +126,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode } = await req.json()
+    const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode, nicheProfile } = await req.json()
     const isSimpleMode = viewMode === 'simple'
+    const isHealthBroker = nicheProfile === 'health_insurance_broker'
     const message = sanitizeText(_msg, 600)
     const niche   = sanitizeText(_ni, 120)
     const dataSource = hasRealData ? 'real' : (context?.includes('BENCHMARKS DO NICHO') ? 'benchmark' : 'unavailable')
@@ -196,7 +197,14 @@ O usuário é dono de um pequeno/médio negócio e NÃO entende termos técnicos
 ══════════════════════════════════
 MODO AVANÇADO — ATIVO
 ══════════════════════════════════
-O usuário é gestor de tráfego / analista. Use linguagem técnica precisa (CTR, CPL, CPA, ROAS, frequência, fadiga criativa, sobreposição de público, break-even) e recomendações de mídia paga de nível especialista.`}`
+O usuário é gestor de tráfego / analista. Use linguagem técnica precisa (CTR, CPL, CPA, ROAS, frequência, fadiga criativa, sobreposição de público, break-even) e recomendações de mídia paga de nível especialista.`}
+${isHealthBroker ? `
+══════════════════════════════════
+NICHO — CORRETOR DE PLANO DE SAÚDE
+══════════════════════════════════
+O usuário é corretor de plano de saúde. Use o vocabulário do nicho: "contato no WhatsApp" (não "lead"), "perfil para contratar", "cotação", "proposta", "contrato fechado" (não "venda"), "comissão" (não "faturamento"), "vidas", "carência", "rede credenciada", "coparticipação", "MEI/PME/empresarial".
+Foque em: qualificação no WhatsApp, velocidade de resposta, follow-up pós-cotação (2h/24h/48h), separação de campanhas por tipo de plano, e registro de motivo de perda (preço, carência, rede, região, sem CNPJ).
+COMPLIANCE — OBRIGATÓRIO: nunca prometa aprovação, preço final ou ausência de carência sem validação da operadora. Não incentive coleta de dados sensíveis desnecessários. Oriente o corretor a deixar claro ao contato como os dados serão usados.` : ''}`
 
         const messages: { role: 'user' | 'assistant'; content: string }[] = [
           ...(history || []),

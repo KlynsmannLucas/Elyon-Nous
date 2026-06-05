@@ -35,6 +35,7 @@ const C = {
 
 const PROFILES = [
   { key: 'dono',         icon: '🏪', label: 'Dono de negócio',         desc: 'Tenho minha empresa e quero entender meus resultados.' },
+  { key: 'health_insurance_broker', icon: '🩺', label: 'Corretor de plano de saúde', desc: 'Vendo planos de saúde e atendo contatos pelo WhatsApp.' },
   { key: 'local',        icon: '📍', label: 'Prestador de serviço / local', desc: 'Atendo clientes na minha região (clínica, salão, loja...).' },
   { key: 'social',       icon: '✏️', label: 'Social media',            desc: 'Cuido das redes e conteúdo de marcas.' },
   { key: 'gestor',       icon: '📡', label: 'Gestor de tráfego',       desc: 'Gerencio campanhas de anúncios.' },
@@ -66,6 +67,15 @@ const TAB_LABEL: Record<string, string> = {
 
 // ── Lógica de recomendação ────────────────────────────────────────────────────
 function recommend(profile: string, goal: string): { mode: 'simple' | 'advanced'; tab: string } {
+  // Corretor de plano de saúde: sempre simplificado, começando pelo funil (onde os leads travam)
+  if (profile === 'health_insurance_broker') {
+    const goalTabHIS: Record<string, string> = {
+      entender: 'diagnostic', vender: 'funil', leads: 'funil', custo: 'analise',
+      campanhas: 'funil', relatorio: 'relatorios', escalar: 'diagnostic',
+    }
+    return { mode: 'simple', tab: goalTabHIS[goal] || 'funil' }
+  }
+
   // Modo pelo perfil
   let mode: 'simple' | 'advanced' =
     profile === 'dono' || profile === 'local' || profile === 'social' ? 'simple'

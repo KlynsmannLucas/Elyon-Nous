@@ -3,8 +3,16 @@
 // Só é oferecido em estados vazios (sem dados reais), então não há risco de substituição.
 
 import type { FunnelEntry } from '@/lib/store'
+import { getCurrentNicheFromOnboarding } from '@/lib/nicheConfigs'
 
 const FLAG_KEY = 'using_simple_demo_data'
+
+// Cenário específico do corretor de plano de saúde
+const HEALTH_DEMO = {
+  investimento: 2000, impressoes: 40000, cliques: 800,
+  leads: 80, qualificados: 30, cotacoes: 22, propostas: 14, contratos: 5,
+  comissaoMedia: 700, comissaoEstimada: 3500,
+}
 
 export const SIMPLE_DEMO_DATA = {
   investimento: 2000,
@@ -40,27 +48,41 @@ export function clearSimpleDemoData() {
   window.dispatchEvent(new Event('elyon:demo-changed'))
 }
 
-// ── Shapes prontos para as telas simples ─────────────────────────────────────────
+function isHealthNiche() {
+  return getCurrentNicheFromOnboarding().key === 'health_insurance_broker'
+}
+
+// ── Shapes prontos para as telas simples (variam conforme o nicho do onboarding) ──
 export function getDemoFunnelEntry(clientName: string): Omit<FunnelEntry, 'id' | 'createdAt'> & { id: string; createdAt: string } {
+  const h = isHealthNiche()
   return {
     id: 'simple_demo_entry',
     clientName,
     period: 'Últimos 30 dias',
     channel: 'Meta Ads',
-    investment:       SIMPLE_DEMO_DATA.investimento,
-    impressions:      SIMPLE_DEMO_DATA.impressoes,
-    clicks:           SIMPLE_DEMO_DATA.cliques,
-    leads:            SIMPLE_DEMO_DATA.leads,
-    qualifiedLeads:   SIMPLE_DEMO_DATA.qualificados,
-    sales:            SIMPLE_DEMO_DATA.vendas,
-    avgTicket:        SIMPLE_DEMO_DATA.ticketMedio,
-    avgResponseHours: 2,
+    investment:       h ? HEALTH_DEMO.investimento : SIMPLE_DEMO_DATA.investimento,
+    impressions:      h ? HEALTH_DEMO.impressoes   : SIMPLE_DEMO_DATA.impressoes,
+    clicks:           h ? HEALTH_DEMO.cliques       : SIMPLE_DEMO_DATA.cliques,
+    leads:            h ? HEALTH_DEMO.leads         : SIMPLE_DEMO_DATA.leads,
+    qualifiedLeads:   h ? HEALTH_DEMO.qualificados  : SIMPLE_DEMO_DATA.qualificados,
+    sales:            h ? HEALTH_DEMO.contratos     : SIMPLE_DEMO_DATA.vendas,
+    avgTicket:        h ? HEALTH_DEMO.comissaoMedia : SIMPLE_DEMO_DATA.ticketMedio,
+    avgResponseHours: h ? 0.3 : 2,
     createdAt:        new Date().toISOString(),
   }
 }
 
 /** Campos numéricos do cliente (ticket, margem, conversão, budget, faturamento) */
 export function getDemoClientFields() {
+  if (isHealthNiche()) {
+    return {
+      ticketPrice:    HEALTH_DEMO.comissaoMedia,                                        // comissão média
+      grossMargin:    80,                                                              // corretagem: margem alta
+      conversionRate: +((HEALTH_DEMO.contratos / HEALTH_DEMO.leads) * 100).toFixed(0), // ~6%
+      budget:         HEALTH_DEMO.investimento,
+      monthlyRevenue: HEALTH_DEMO.comissaoEstimada,
+    }
+  }
   return {
     ticketPrice:    SIMPLE_DEMO_DATA.ticketMedio,
     grossMargin:    SIMPLE_DEMO_DATA.margem,
@@ -72,6 +94,18 @@ export function getDemoClientFields() {
 
 /** Métricas no formato _realMetrics da auditoria (usado por home/saúde) */
 export function getDemoRealMetrics() {
+  if (isHealthNiche()) {
+    return {
+      totalSpend:    HEALTH_DEMO.investimento,
+      totalLeads:    HEALTH_DEMO.leads,
+      totalRevenue:  HEALTH_DEMO.comissaoEstimada,
+      avgCPL:        Math.round(HEALTH_DEMO.investimento / HEALTH_DEMO.leads),
+      avgCTR:        +((HEALTH_DEMO.cliques / HEALTH_DEMO.impressoes) * 100).toFixed(1),
+      avgROAS:       +(HEALTH_DEMO.comissaoEstimada / HEALTH_DEMO.investimento).toFixed(1),
+      campaignCount: 3,
+      dataSource:    'exemplo',
+    }
+  }
   return {
     totalSpend:    SIMPLE_DEMO_DATA.investimento,
     totalLeads:    SIMPLE_DEMO_DATA.leads,
