@@ -277,6 +277,23 @@ export function DashboardTopbar({
                 </button>
               )}
               <button
+                onClick={() => { window.dispatchEvent(new CustomEvent('elyon:open-profile-goal')); setClientMenuOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  width: '100%', padding: '8px 10px', borderRadius: '7px',
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  color: '#CBD5E1', fontSize: '12px', textAlign: 'left',
+                  transition: 'background 0.12s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.1)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>
+                </svg>
+                Editar perfil/objetivo
+              </button>
+              <button
                 onClick={() => { onReset(); setClientMenuOpen(false) }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px',

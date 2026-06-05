@@ -12,6 +12,7 @@ import { TabSimpleOverview }  from '@/components/dashboard/TabSimpleOverview'
 import { TabSimpleDiagnostic } from '@/components/dashboard/TabSimpleDiagnostic'
 import { TabSimpleFunil }      from '@/components/dashboard/TabSimpleFunil'
 import { TabSimpleBusinessHealth } from '@/components/dashboard/TabSimpleBusinessHealth'
+import { OnboardingProfileGoal, PROFILE_GOAL_KEY, type ProfileGoalData } from '@/components/dashboard/OnboardingProfileGoal'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
 import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
@@ -737,6 +738,15 @@ export default function DashboardBody() {
 
   const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
   const [editingClient, setEditingClient] = useState(false)
+
+  // Onboarding por perfil/objetivo — mostra se ainda não foi feito
+  const [showProfileGoal, setShowProfileGoal] = useState(false)
+  useEffect(() => {
+    try { if (!localStorage.getItem(PROFILE_GOAL_KEY)) setShowProfileGoal(true) } catch {}
+    const reopen = () => setShowProfileGoal(true)
+    window.addEventListener('elyon:open-profile-goal', reopen)
+    return () => window.removeEventListener('elyon:open-profile-goal', reopen)
+  }, [])
   const [genError, setGenError] = useState('')
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
@@ -1377,7 +1387,19 @@ export default function DashboardBody() {
           saveErrorMsg={dbSaveError}
         />
         {/* Tour de boas-vindas (overlay na primeira visita) */}
-        <WelcomeTour />
+        {/* Onboarding por perfil/objetivo — tem prioridade sobre o tour de boas-vindas */}
+        {showProfileGoal && clientData && (
+          <OnboardingProfileGoal
+            onComplete={(data: ProfileGoalData, navigate: boolean) => {
+              setShowProfileGoal(false)
+              if (navigate) {
+                useAppStore.getState().setDashboardMode(data.recommendedMode === 'advanced' ? 'pro' : 'simple')
+                setActiveTab(data.recommendedTab as TabKey)
+              }
+            }}
+          />
+        )}
+        {!showProfileGoal && <WelcomeTour />}
         <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px', background: '#080D1A' }}>
           {/* Erros críticos de banco (ex: tabela não existe) são tratados pelo SaveIndicator no topbar */}
           {/* Jornada guiada para iniciantes — aparece na visão geral */}
