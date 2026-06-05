@@ -9,6 +9,7 @@ import { TAB_SIMPLE_INTRO } from '@/lib/viewMode'
 import { SetupWizard, type WizardImportData } from '@/components/dashboard/SetupWizard'
 import { TabOverview }        from '@/components/dashboard/TabOverview'
 import { TabSimpleOverview }  from '@/components/dashboard/TabSimpleOverview'
+import { TabSimpleDiagnostic } from '@/components/dashboard/TabSimpleDiagnostic'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
 import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
@@ -1087,7 +1088,15 @@ export default function DashboardBody() {
       }
       case 'strategy':      return wrap('Estratégia',        <TabStrategy strategy={strategy} analysis={analysis} />)
       case 'diagnostic':    return wrap('Diagnóstico',       <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />)
-      case 'analise':       return wrap('Análise Profunda',  <TabAnalise clientData={clientData} planHasAudit={planLimits.hasAudit} onUpgrade={goUpgrade} />)
+      case 'analise': {
+        // Modo simples + já existe auditoria → versão consultiva. Senão, tela técnica (com fluxo de rodar a análise).
+        const aHist = auditCache[clientData?.clientName || '']
+        const hasAudit = Array.isArray(aHist) ? aHist.length > 0 : !!aHist
+        if (dashboardMode === 'simple' && hasAudit && planLimits.hasAudit) {
+          return wrap('Diagnóstico da Conta', <TabSimpleDiagnostic clientData={clientData} onNavigate={(t) => setActiveTab(t as any)} />)
+        }
+        return wrap('Análise Profunda', <TabAnalise clientData={clientData} planHasAudit={planLimits.hasAudit} onUpgrade={goUpgrade} />)
+      }
       case 'anuncios':      return wrap('Anúncios IA',       <TabAnuncios planHasConnections={planLimits.hasConnections} onUpgrade={goUpgrade} clientData={clientData} />)
       case 'audiencias':    return wrap('Audiências',        <TabAudiences niche={clientData?.niche} />)
       case 'performance':   return wrap('Performance',       <TabPerformance clientData={clientData} />)
