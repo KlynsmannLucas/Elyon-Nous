@@ -5,6 +5,7 @@
 import { useAppStore } from '@/lib/store'
 import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { diagnose, PRESCRIPTIONS, type Bottleneck } from './TabFunil'
+import { askAIWithContext } from '@/lib/askAI'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
 
@@ -57,7 +58,7 @@ const LOSS_NARRATIVE: Record<Bottleneck, { stageLoss: string; meaning: string }>
 }
 
 function askNous(question: string) {
-  window.dispatchEvent(new CustomEvent('elyon:open-nous', { detail: { question } }))
+  askAIWithContext({ source: 'funil', title: 'Onde Perco Clientes', suggestedPrompt: question })
 }
 
 // ── Etapa do funil visual ─────────────────────────────────────────────────────

@@ -4,6 +4,7 @@
 'use client'
 
 import { useAppStore } from '@/lib/store'
+import { askAIWithContext } from '@/lib/askAI'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
 
@@ -44,7 +45,7 @@ function fmt(n: number) {
 }
 
 function askNous(question: string) {
-  window.dispatchEvent(new CustomEvent('elyon:open-nous', { detail: { question } }))
+  askAIWithContext({ source: 'saude-negocio', title: 'Saúde do Negócio', suggestedPrompt: question })
 }
 
 // ── Linha de indicador ────────────────────────────────────────────────────────

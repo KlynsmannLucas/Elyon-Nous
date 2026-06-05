@@ -14,6 +14,7 @@ import { TabSimpleFunil }      from '@/components/dashboard/TabSimpleFunil'
 import { TabSimpleBusinessHealth } from '@/components/dashboard/TabSimpleBusinessHealth'
 import { OnboardingProfileGoal, PROFILE_GOAL_KEY, type ProfileGoalData } from '@/components/dashboard/OnboardingProfileGoal'
 import { TabSimpleActionPlan }  from '@/components/dashboard/TabSimpleActionPlan'
+import { TabSimpleExecutiveSummary } from '@/components/dashboard/TabSimpleExecutiveSummary'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
 import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
@@ -1144,7 +1145,12 @@ export default function DashboardBody() {
       case 'assets':        return wrap('Arquivos da Empresa',     <TabAssets       clientData={clientData} />)
       case 'concorrentes':  return wrap('Radar de Concorrentes',   <TabConcorrentes clientData={clientData} />)
       case 'campanha':      return wrap('Histórico de Campanhas',  <TabCampanha />)
-      case 'relatorios':    return wrap('Relatórios',              <TabRelatorios />)
+      case 'relatorios': {
+        if (dashboardMode === 'simple') {
+          return wrap('Resumo Executivo', <TabSimpleExecutiveSummary clientData={clientData} onNavigate={(t) => setActiveTab(t as any)} />)
+        }
+        return wrap('Relatórios', <TabRelatorios />)
+      }
       case 'financeiro':    return wrap('Painel Financeiro',       <TabFinanceiro />)
       case 'checklist':     return wrap('Checklist Diário',        <TabChecklist clientData={clientData} />)
       case 'portal':        return wrap('Portal do Cliente',       <TabPortal    clientData={clientData} />)

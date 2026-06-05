@@ -137,6 +137,9 @@ export const SIMPLE_SIDEBAR_SECTIONS: {
     { key: 'anuncios',   label: 'Meus Anúncios',        icon: '📡' },
     { key: 'analise',    label: 'Saúde da Conta',       icon: '🔍' },
   ]},
+  { label: 'Relatar', items: [
+    { key: 'relatorios', label: 'Resumo Executivo',   icon: '📋' },
+  ]},
   { label: 'Ajuda', items: [
     { key: '__nous__',  label: 'Perguntar para a IA', icon: '💬' },
   ]},

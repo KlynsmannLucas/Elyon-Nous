@@ -4,6 +4,7 @@
 import { useMemo } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getBenchmark } from '@/lib/niche_benchmarks'
+import { askAIWithContext } from '@/lib/askAI'
 import type { ClientData } from '@/lib/store'
 
 interface Props {
@@ -286,7 +287,7 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
           ].map((q) => (
             <button
               key={q}
-              onClick={() => window.dispatchEvent(new CustomEvent('elyon:open-nous', { detail: { question: q } }))}
+              onClick={() => askAIWithContext({ source: 'home', title: 'Como Estou Indo', suggestedPrompt: q })}
               style={{
                 fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '99px',
                 cursor: 'pointer', transition: 'all 0.15s',

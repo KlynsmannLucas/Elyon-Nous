@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { diagnose, type Bottleneck } from './TabFunil'
+import { askAIWithContext } from '@/lib/askAI'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
 
@@ -50,7 +51,7 @@ interface Action {
 }
 
 function askNous(question: string) {
-  window.dispatchEvent(new CustomEvent('elyon:open-nous', { detail: { question } }))
+  askAIWithContext({ source: 'plano-acao', title: 'Plano de Ação', suggestedPrompt: question })
 }
 
 // ── Templates de ações por problema ───────────────────────────────────────────

@@ -5,6 +5,7 @@
 
 import { useAppStore } from '@/lib/store'
 import { getBenchmark } from '@/lib/niche_benchmarks'
+import { askAIWithContext } from '@/lib/askAI'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
 
@@ -39,7 +40,7 @@ function fmt(n: number) {
 }
 
 function askNous(question: string) {
-  window.dispatchEvent(new CustomEvent('elyon:open-nous', { detail: { question } }))
+  askAIWithContext({ source: 'diagnostico-conta', title: 'Saúde da Conta', suggestedPrompt: question })
 }
 
 // ── Métrica traduzida ─────────────────────────────────────────────────────────

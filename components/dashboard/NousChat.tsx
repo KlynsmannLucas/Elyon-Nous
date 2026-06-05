@@ -41,17 +41,20 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
   const [open, setOpen]   = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [pendingQ, setPendingQ] = useState<string | null>(null)
   const bottomRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLInputElement>(null)
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Abre o chat ao receber o evento global (menu lateral / cards "Pergunte ao NOUS")
+  // Abre o chat ao receber o evento global (menu lateral / cards "Perguntar para a IA").
+  // Preenche a pergunta no input — credit-safe: NÃO envia sozinho, o usuário confirma.
   useEffect(() => {
     const handler = (e: Event) => {
       setOpen(true)
       const q = (e as CustomEvent).detail?.question
-      if (q) setPendingQ(q)
+      if (q) {
+        setInput(q)
+        setTimeout(() => inputRef.current?.focus(), 150)
+      }
     }
     window.addEventListener('elyon:open-nous', handler)
     return () => window.removeEventListener('elyon:open-nous', handler)
@@ -276,15 +279,6 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
     }
   }
 
-  // Dispara automaticamente a pergunta sugerida (vinda de um card/menu) quando o chat abre
-  useEffect(() => {
-    if (open && pendingQ && !loading) {
-      const q = pendingQ
-      setPendingQ(null)
-      sendMessage(q)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, pendingQ])
 
   const renderText = (text: string) => {
     const parts = text.split(/(\*\*[^*]+\*\*)/g)
