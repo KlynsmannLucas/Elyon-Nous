@@ -90,6 +90,14 @@ export async function POST(req: Request) {
   }
 
   if (supabaseAdmin) {
+    // Segurança: se o id já existe pertencendo a OUTRO usuário, bloqueia (evita
+    // takeover de ownership via upsert com id de terceiro).
+    const { data: owner } = await supabaseAdmin
+      .from('clients').select('user_id').eq('id', id).maybeSingle()
+    if (owner && owner.user_id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     // Check if this is a new client (not an update to an existing one)
     const { data: existing } = await supabaseAdmin
       .from('clients').select('id').eq('id', id).eq('user_id', userId).maybeSingle()

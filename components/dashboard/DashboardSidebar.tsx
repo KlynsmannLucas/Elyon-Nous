@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { getPlanLimits } from '@/lib/planUtils'
 import { useAppStore } from '@/lib/store'
 import { getModeTheme } from '@/lib/modeTheme'
+import { clearUserScopeOnLogout } from '@/lib/userScope'
 
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
@@ -565,7 +566,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                   }}>⚡</a>
                 )}
 
-                <button type="button" onClick={() => window.location.assign('/api/auth/signout')} title="Sair" style={{
+                <button type="button" onClick={() => { clearUserScopeOnLogout(); window.location.assign('/api/auth/signout') }} title="Sair" style={{
                   flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: '6px', borderRadius: '7px',
                   border: `1px solid ${BORDER}`, background: 'transparent',
@@ -588,7 +589,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '12px', fontWeight: 700, color: '#fff',
               }}>{avatarLetter}</div>
-              <button type="button" onClick={() => window.location.assign('/api/auth/signout')} title="Sair" style={{
+              <button type="button" onClick={() => { clearUserScopeOnLogout(); window.location.assign('/api/auth/signout') }} title="Sair" style={{
                 width: '32px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 borderRadius: '6px', border: `1px solid ${BORDER}`, background: 'transparent',
                 color: 'rgba(255,255,255,0.3)', cursor: 'pointer', transition: 'all 0.15s',

@@ -6,6 +6,7 @@ import { useServerUserData } from './UserDataProvider'
 import { useAppStore } from '@/lib/store'
 import type { SavedClient } from '@/lib/store'
 import { TAB_SIMPLE_INTRO } from '@/lib/viewMode'
+import { enforceUserScope, clearUserScopeOnLogout } from '@/lib/userScope'
 import { SetupWizard, type WizardImportData } from '@/components/dashboard/SetupWizard'
 import { TabOverview }        from '@/components/dashboard/TabOverview'
 import { TabSimpleOverview }  from '@/components/dashboard/TabSimpleOverview'
@@ -326,6 +327,7 @@ function ClientSelector({
             ELYON
           </span>
           <a
+            onClick={() => clearUserScopeOnLogout()}
             href="/api/auth/signout"
             title="Sair da conta"
             className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-red-400 transition-colors px-3 py-2 rounded-xl border border-[rgba(99,120,255,0.12)] hover:border-red-400/30"
@@ -621,57 +623,43 @@ export default function DashboardBody() {
       .catch(() => {})
   }, [])
 
-  // Sincroniza clientes do localStorage para o banco quando o DB retorna vazio
-  const syncLocalToDb = useCallback(() => {
-    const state = useAppStore.getState()
-    const localClients = state.savedClients
-    if (localClients.length === 0) return
-    console.info('[clients sync] Sincronizando', localClients.length, 'cliente(s) local → banco...')
-    for (const entry of localClients) {
-      const name = entry.clientData.clientName
-      fetch('/api/clients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...entry,
-          auditData: state.auditCache[name] ?? null,
-          extraData: buildExtraData(name),
-        }),
-      }).then(async (res) => {
-        if (res.ok) {
-          console.info('[clients sync] Cliente salvo no banco:', name)
-          setDbSaveError(null)
-        } else {
-          const json = await res.json().catch(() => ({}))
-          const msg = json.error || `Erro ${res.status}`
-          console.error('[clients sync] Falha ao salvar:', name, msg)
-          setDbSaveError(msg)
-        }
-      }).catch((e) => {
-        console.error('[clients sync] Rede:', e)
-        setDbSaveError('Banco inacessível — dados salvos localmente')
-      })
-    }
-  }, [buildExtraData])
-
+  // ── Carregamento de clientes COM ISOLAMENTO POR USUÁRIO ──────────────────────
+  // Roda quando o usuário autenticado (Clerk) é conhecido. Se a conta mudou no
+  // mesmo navegador, apaga todo o estado local do usuário anterior ANTES de carregar.
+  // O banco (filtrado por user_id no servidor) é a ÚNICA fonte de verdade — não há
+  // mais fallback que grave clientes locais na conta de outro usuário.
   useEffect(() => {
+    if (!isLoaded) return
+    const uid = user?.id
+    if (!uid) return
+
+    // 1) Isolamento: se trocou de conta, limpa tudo do usuário anterior
+    enforceUserScope(uid)
+    setDbLoaded(false)
+
+    // 2) Carrega SOMENTE do banco (servidor filtra por user_id autenticado)
     fetch('/api/clients')
       .then(r => r.ok ? r.json() : { clients: [] })
       .then(({ clients, _dbError }) => {
         if (_dbError) {
-          console.warn('[clients sync] DB error:', _dbError)
+          console.warn('[clients] DB error:', _dbError)
           setDbSaveError('Banco de dados indisponível. Verifique a tabela "clients" no Supabase.')
         }
-        if (!Array.isArray(clients) || clients.length === 0) {
-          // DB vazio: sincroniza dados do localStorage → banco (recuperação de dados existentes)
-          syncLocalToDb()
-          return
+
+        const list = Array.isArray(clients) ? clients : []
+        setSavedClients(list)  // banco vazio → lista vazia (estado vazio, sem fallback local)
+
+        // Validação de ownership: se o clientData ativo não pertence à conta atual, limpa
+        const activeName = useAppStore.getState().clientData?.clientName
+        const ownsActive = activeName ? list.some((c: any) => c.clientData?.clientName === activeName) : false
+        if (activeName && !ownsActive) {
+          useAppStore.setState({ clientData: null, strategyData: null })
         }
 
-        setSavedClients(clients)
+        if (list.length === 0) return
 
         const auditRestored: Record<string, any[]> = {}
-        for (const c of clients) {
+        for (const c of list) {
           const name: string = c.clientData?.clientName
           if (!name) continue
           if (c.auditData) auditRestored[name] = c.auditData
@@ -692,12 +680,13 @@ export default function DashboardBody() {
         }
 
         if (!useAppStore.getState().clientData) {
-          useAppStore.getState().loadSavedClient(clients[0].id)
+          useAppStore.getState().loadSavedClient(list[0].id)
         }
       })
       .catch(() => {})
       .finally(() => setDbLoaded(true))
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, user?.id])
 
   useEffect(() => {
     if (!dbLoaded) return
@@ -1272,6 +1261,7 @@ export default function DashboardBody() {
               <p className="text-xs mb-2" style={{ color: syncMsg.includes('ativado') ? '#22C55E' : '#F0B429' }}>{syncMsg}</p>
             )}
             <a
+              onClick={() => clearUserScopeOnLogout()}
               href="/api/auth/signout"
               className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 border border-[rgba(99,120,255,0.12)] transition-colors flex items-center justify-center"
               style={{ textDecoration: 'none' }}
