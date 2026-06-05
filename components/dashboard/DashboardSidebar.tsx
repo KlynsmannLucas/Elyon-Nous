@@ -132,9 +132,10 @@ export const SIMPLE_SIDEBAR_SECTIONS: {
     { key: 'checklist', label: 'Próximos Passos',     icon: '📋' },
   ]},
   { label: 'Entender', items: [
-    { key: 'funil',     label: 'Onde Perco Clientes', icon: '🔻' },
-    { key: 'anuncios',  label: 'Meus Anúncios',       icon: '📡' },
-    { key: 'analise',   label: 'Saúde da Conta',      icon: '🔍' },
+    { key: 'diagnostic', label: 'Saúde do Negócio',    icon: '🩺' },
+    { key: 'funil',      label: 'Onde Perco Clientes',  icon: '🔻' },
+    { key: 'anuncios',   label: 'Meus Anúncios',        icon: '📡' },
+    { key: 'analise',    label: 'Saúde da Conta',       icon: '🔍' },
   ]},
   { label: 'Ajuda', items: [
     { key: '__nous__',  label: 'Perguntar para a IA', icon: '💬' },

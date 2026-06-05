@@ -11,6 +11,7 @@ import { TabOverview }        from '@/components/dashboard/TabOverview'
 import { TabSimpleOverview }  from '@/components/dashboard/TabSimpleOverview'
 import { TabSimpleDiagnostic } from '@/components/dashboard/TabSimpleDiagnostic'
 import { TabSimpleFunil }      from '@/components/dashboard/TabSimpleFunil'
+import { TabSimpleBusinessHealth } from '@/components/dashboard/TabSimpleBusinessHealth'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
 import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
@@ -1089,7 +1090,12 @@ export default function DashboardBody() {
         return wrap('Overview', <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
       }
       case 'strategy':      return wrap('Estratégia',        <TabStrategy strategy={strategy} analysis={analysis} />)
-      case 'diagnostic':    return wrap('Diagnóstico',       <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />)
+      case 'diagnostic': {
+        if (dashboardMode === 'simple') {
+          return wrap('Saúde do Negócio', <TabSimpleBusinessHealth clientData={clientData} onNavigate={(t) => setActiveTab(t as any)} />)
+        }
+        return wrap('Diagnóstico', <TabDiagnostic clientData={clientData} strategy={strategy} analysis={analysis} />)
+      }
       case 'analise': {
         // Modo simples + já existe auditoria → versão consultiva. Senão, tela técnica (com fluxo de rodar a análise).
         const aHist = auditCache[clientData?.clientName || '']
