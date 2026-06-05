@@ -17,6 +17,8 @@ import { TabSimpleActionPlan }  from '@/components/dashboard/TabSimpleActionPlan
 import { TabSimpleExecutiveSummary } from '@/components/dashboard/TabSimpleExecutiveSummary'
 import { DemoBanner } from '@/components/dashboard/DemoDataButton'
 import { isUsingSimpleDemoData } from '@/lib/simpleDemoData'
+import { ModeToast } from '@/components/dashboard/ModeToast'
+import { getModeTheme } from '@/lib/modeTheme'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
 import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
@@ -1424,7 +1426,8 @@ export default function DashboardBody() {
           />
         )}
         {!showProfileGoal && <WelcomeTour />}
-        <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px', background: '#080D1A' }}>
+        <ModeToast />
+        <main style={{ flex: 1, overflowY: 'auto', paddingBottom: inTrial && !hasActivePlan(effectiveUserPlan) ? '72px' : '40px', background: getModeTheme(dashboardMode).pageBg, transition: 'background 0.4s ease' }}>
           {/* Erros críticos de banco (ex: tabela não existe) são tratados pelo SaveIndicator no topbar */}
           {/* Jornada guiada para iniciantes — aparece na visão geral */}
           {activeTab === 'overview' && (

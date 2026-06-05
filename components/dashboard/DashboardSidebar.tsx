@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { getPlanLimits } from '@/lib/planUtils'
 import { useAppStore } from '@/lib/store'
+import { getModeTheme } from '@/lib/modeTheme'
 
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
@@ -209,6 +210,12 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
   const PURPLE_D = 'rgba(124,58,237,0.15)'
   const PURPLE_B = 'rgba(124,58,237,0.25)'
 
+  // Acento do item ativo conforme o modo (emerald no simples, roxo no avançado)
+  const theme       = getModeTheme(simpleMode ? 'simple' : 'pro')
+  const ACTIVE_BG   = theme.activeBg
+  const ACTIVE_B    = theme.activeBorder
+  const ACTIVE_TEXT = theme.activeText
+
   return (
     <>
       {isMobile && !collapsed && (
@@ -375,10 +382,10 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                         padding: collapsed ? '8px 0' : '7px 8px',
                         borderRadius: '8px', border: 'none',
                         marginBottom: '1px',
-                        background: isActive ? PURPLE_D : 'transparent',
-                        boxShadow: isActive ? `inset 0 0 0 1px ${PURPLE_B}` : 'none',
+                        background: isActive ? ACTIVE_BG : 'transparent',
+                        boxShadow: isActive ? `inset 0 0 0 1px ${ACTIVE_B}` : 'none',
                         color: isLocked ? 'rgba(255,255,255,0.2)'
-                          : isActive ? '#A78BFA'
+                          : isActive ? ACTIVE_TEXT
                           : 'rgba(255,255,255,0.55)',
                         cursor: 'pointer', textAlign: 'left', outline: 'none',
                         transition: 'all 0.12s', position: 'relative',
@@ -398,7 +405,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                       {/* Icon */}
                       <span style={{
                         flexShrink: 0, lineHeight: 0,
-                        color: isActive ? '#A78BFA' : 'inherit',
+                        color: isActive ? ACTIVE_TEXT : 'inherit',
                       }}>
                         {TAB_ICONS[item.key as TabKey] ?? <span style={{ fontSize: '14px' }}>{item.icon}</span>}
                       </span>
@@ -450,7 +457,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                         <span style={{
                           position: 'absolute', left: 0, top: '25%', bottom: '25%',
                           width: '2px', borderRadius: '0 2px 2px 0',
-                          background: PURPLE,
+                          background: theme.accent,
                         }} />
                       )}
                     </button>
