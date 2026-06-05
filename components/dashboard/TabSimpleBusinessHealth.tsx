@@ -5,6 +5,8 @@
 
 import { useAppStore } from '@/lib/store'
 import { askAIWithContext } from '@/lib/askAI'
+import { isUsingSimpleDemoData, getDemoClientFields, getDemoRealMetrics } from '@/lib/simpleDemoData'
+import { DemoDataButton } from './DemoDataButton'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
 
@@ -79,16 +81,18 @@ export function TabSimpleBusinessHealth({ clientData, onNavigate }: Props) {
     )
   }
 
-  // ── Entradas ──────────────────────────────────────────────────────────────
+  // ── Entradas (com fallback para dados de exemplo) ───────────────────────────
   const key   = clientData.clientName
   const hist  = auditCache[key]
   const audit = Array.isArray(hist) ? hist[0]?.audit : (hist as any)?.audit ?? hist
-  const rm    = audit?._realMetrics as any
+  const demo  = isUsingSimpleDemoData()
+  const df    = demo ? getDemoClientFields() : null
+  const rm    = (audit?._realMetrics as any) || (demo ? getDemoRealMetrics() : null)
 
-  const budget   = clientData.budget || 0
-  const ticket   = clientData.ticketPrice || 0
-  const margin   = clientData.grossMargin || 0          // %
-  const cvr      = clientData.conversionRate || 0       // % lead→venda
+  const budget   = clientData.budget || df?.budget || 0
+  const ticket   = clientData.ticketPrice || df?.ticketPrice || 0
+  const margin   = clientData.grossMargin || df?.grossMargin || 0          // %
+  const cvr      = clientData.conversionRate || df?.conversionRate || 0    // % lead→venda
   const cpl      = rm?.avgCPL || clientData.currentCPL || 0
   const roasReal = rm?.avgROAS || null
   const realLeads = rm?.totalLeads || 0
@@ -227,6 +231,7 @@ export function TabSimpleBusinessHealth({ clientData, onNavigate }: Props) {
             <button onClick={() => askNous('Quais números preciso para avaliar a saúde do meu negócio?')} style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 600, color: C.purpleHi, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', cursor: 'pointer' }}>
               💬 Perguntar para a IA
             </button>
+            <DemoDataButton />
           </div>
         </div>
       </div>

@@ -6,6 +6,8 @@ import { useAppStore } from '@/lib/store'
 import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { diagnose, PRESCRIPTIONS, type Bottleneck } from './TabFunil'
 import { askAIWithContext } from '@/lib/askAI'
+import { isUsingSimpleDemoData, getDemoFunnelEntry } from '@/lib/simpleDemoData'
+import { DemoDataButton } from './DemoDataButton'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
 
@@ -102,7 +104,7 @@ export function TabSimpleFunil({ clientData, onNavigate }: Props) {
   }
 
   const entries = funnelEntries.filter(e => e.clientName === clientData.clientName)
-  const entry = entries[0]  // mais recente
+  const entry = entries[0] || (isUsingSimpleDemoData() ? getDemoFunnelEntry(clientData.clientName) : undefined)  // mais recente, ou exemplo
 
   // ── Estado vazio ────────────────────────────────────────────────────────────
   if (!entry) {
@@ -136,6 +138,7 @@ export function TabSimpleFunil({ clientData, onNavigate }: Props) {
             >
               💬 Perguntar para a IA
             </button>
+            <DemoDataButton />
           </div>
         </div>
       </div>

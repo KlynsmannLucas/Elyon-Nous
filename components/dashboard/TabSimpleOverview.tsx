@@ -5,6 +5,8 @@ import { useMemo } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { askAIWithContext } from '@/lib/askAI'
+import { isUsingSimpleDemoData, getDemoRealMetrics } from '@/lib/simpleDemoData'
+import { DemoDataButton } from './DemoDataButton'
 import type { ClientData } from '@/lib/store'
 
 interface Props {
@@ -90,7 +92,8 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
   const key          = clientData?.clientName || ''
   const auditHistory = auditCache[key]
   const latestAudit  = Array.isArray(auditHistory) ? auditHistory[0]?.audit : auditHistory
-  const rm           = latestAudit?._realMetrics as any
+  const demo         = isUsingSimpleDemoData()
+  const rm           = (latestAudit?._realMetrics as any) || (demo ? getDemoRealMetrics() : null)
   const bench        = clientData ? getBenchmark(clientData.niche) : null
 
   const hasData = !!(rm && rm.totalSpend > 0)
@@ -264,6 +267,9 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
           {actions.map((a, i) => (
             <ActionButton key={i} label={a.label} icon={a.icon} primary={a.primary} onClick={() => onNavigate?.(a.tab)} />
           ))}
+          {!hasData && !demo && (
+            <div style={{ marginTop: '2px' }}><DemoDataButton /></div>
+          )}
         </div>
       </div>
 

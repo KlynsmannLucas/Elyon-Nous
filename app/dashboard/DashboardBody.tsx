@@ -15,6 +15,8 @@ import { TabSimpleBusinessHealth } from '@/components/dashboard/TabSimpleBusines
 import { OnboardingProfileGoal, PROFILE_GOAL_KEY, type ProfileGoalData } from '@/components/dashboard/OnboardingProfileGoal'
 import { TabSimpleActionPlan }  from '@/components/dashboard/TabSimpleActionPlan'
 import { TabSimpleExecutiveSummary } from '@/components/dashboard/TabSimpleExecutiveSummary'
+import { DemoBanner } from '@/components/dashboard/DemoDataButton'
+import { isUsingSimpleDemoData } from '@/lib/simpleDemoData'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
 import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
@@ -749,6 +751,15 @@ export default function DashboardBody() {
     window.addEventListener('elyon:open-profile-goal', reopen)
     return () => window.removeEventListener('elyon:open-profile-goal', reopen)
   }, [])
+
+  // Dados de exemplo (modo simples) — flag reativa
+  const [demoActive, setDemoActive] = useState(false)
+  useEffect(() => {
+    setDemoActive(isUsingSimpleDemoData())
+    const onChange = () => setDemoActive(isUsingSimpleDemoData())
+    window.addEventListener('elyon:demo-changed', onChange)
+    return () => window.removeEventListener('elyon:demo-changed', onChange)
+  }, [])
   const [genError, setGenError] = useState('')
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
@@ -1065,6 +1076,7 @@ export default function DashboardBody() {
     const simpleIntro = dashboardMode === 'simple' ? TAB_SIMPLE_INTRO[activeTab] : undefined
     const wrap = (name: string, node: React.ReactNode) => (
       <TabErrorBoundary tabName={name}>
+        {dashboardMode === 'simple' && demoActive && <DemoBanner />}
         {simpleIntro && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '10px',

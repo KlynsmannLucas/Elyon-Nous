@@ -8,6 +8,8 @@ import { useAppStore } from '@/lib/store'
 import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { diagnose, type Bottleneck } from './TabFunil'
 import { askAIWithContext } from '@/lib/askAI'
+import { isUsingSimpleDemoData, getDemoFunnelEntry, getDemoClientFields, getDemoRealMetrics } from '@/lib/simpleDemoData'
+import { DemoDataButton } from './DemoDataButton'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
 
@@ -149,20 +151,22 @@ export function TabSimpleActionPlan({ clientData, onNavigate }: Props) {
     )
   }
 
-  // ── Detecta problemas ─────────────────────────────────────────────────────
+  // ── Detecta problemas (com fallback para dados de exemplo) ──────────────────
   const hist  = auditCache[clientKey]
   const audit = Array.isArray(hist) ? hist[0]?.audit : (hist as any)?.audit ?? hist
-  const rm    = audit?._realMetrics as any
+  const demo  = isUsingSimpleDemoData()
+  const df    = demo ? getDemoClientFields() : null
+  const rm    = (audit?._realMetrics as any) || (demo ? getDemoRealMetrics() : null)
 
   const entries = funnelEntries.filter(e => e.clientName === clientKey)
-  const entry   = entries[0]
+  const entry   = entries[0] || (demo ? getDemoFunnelEntry(clientKey) : undefined)
   const bench   = getBenchmark(clientData.niche)
   const benchKey = bench ? (Object.keys(BENCHMARKS).find(k => BENCHMARKS[k] === bench) || 'outro') : 'outro'
   const dx      = entry ? diagnose(entry, benchKey) : null
 
-  const ticket = clientData.ticketPrice || 0
-  const margin = clientData.grossMargin || 0
-  const cvr    = clientData.conversionRate || 0
+  const ticket = clientData.ticketPrice || df?.ticketPrice || 0
+  const margin = clientData.grossMargin || df?.grossMargin || 0
+  const cvr    = clientData.conversionRate || df?.conversionRate || 0
   const cpl    = rm?.avgCPL || clientData.currentCPL || 0
   const marginPerSale = ticket > 0 && margin > 0 ? ticket * (margin / 100) : null
   const cac           = cpl > 0 && cvr > 0 ? cpl / (cvr / 100) : null
@@ -233,6 +237,7 @@ export function TabSimpleActionPlan({ clientData, onNavigate }: Props) {
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
             <button onClick={() => onNavigate?.('overview')} style={{ fontSize: '12px', fontWeight: 700, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}>Preencher meus números →</button>
             <button onClick={() => askNous('Quais números preciso preencher para ter um plano de ação?')} style={{ fontSize: '12px', fontWeight: 600, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', color: C.purpleHi }}>💬 Perguntar para a IA</button>
+            <DemoDataButton />
           </div>
         </div>
       )}

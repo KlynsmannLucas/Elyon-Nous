@@ -8,6 +8,8 @@ import { useAppStore } from '@/lib/store'
 import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { diagnose, type Bottleneck } from './TabFunil'
 import { askAIWithContext } from '@/lib/askAI'
+import { isUsingSimpleDemoData, getDemoFunnelEntry, getDemoClientFields, getDemoRealMetrics } from '@/lib/simpleDemoData'
+import { DemoDataButton } from './DemoDataButton'
 import type { ClientData } from '@/lib/store'
 import type { TabKey } from './DashboardSidebar'
 
@@ -56,17 +58,19 @@ export function TabSimpleExecutiveSummary({ clientData, onNavigate }: Props) {
   const key   = clientData.clientName
   const hist  = auditCache[key]
   const audit = Array.isArray(hist) ? hist[0]?.audit : (hist as any)?.audit ?? hist
-  const rm    = audit?._realMetrics as any
+  const demo  = isUsingSimpleDemoData()
+  const df    = demo ? getDemoClientFields() : null
+  const rm    = (audit?._realMetrics as any) || (demo ? getDemoRealMetrics() : null)
   const score = (audit?.health_score as number) ?? null
 
-  const entry = funnelEntries.filter(e => e.clientName === key)[0]
+  const entry = funnelEntries.filter(e => e.clientName === key)[0] || (demo ? getDemoFunnelEntry(key) : undefined)
   const bench = getBenchmark(clientData.niche)
   const benchKey = bench ? (Object.keys(BENCHMARKS).find(k => BENCHMARKS[k] === bench) || 'outro') : 'outro'
   const dx    = entry ? diagnose(entry, benchKey) : null
 
-  const ticket = clientData.ticketPrice || 0
-  const margin = clientData.grossMargin || 0
-  const cvr    = clientData.conversionRate || 0
+  const ticket = clientData.ticketPrice || df?.ticketPrice || 0
+  const margin = clientData.grossMargin || df?.grossMargin || 0
+  const cvr    = clientData.conversionRate || df?.conversionRate || 0
   const cpl    = rm?.avgCPL || clientData.currentCPL || 0
   const marginPerSale = ticket > 0 && margin > 0 ? ticket * (margin / 100) : null
   const cac           = cpl > 0 && cvr > 0 ? cpl / (cvr / 100) : null
@@ -95,6 +99,7 @@ export function TabSimpleExecutiveSummary({ clientData, onNavigate }: Props) {
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' as const }}>
             <button onClick={() => onNavigate?.('overview')} style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}>Preencher meus números →</button>
             <button onClick={() => askAIWithContext({ source: 'resumo', title: 'Resumo Executivo', suggestedPrompt: 'Quais números preciso preencher para gerar um resumo do meu negócio?' })} style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 600, color: C.purpleHi, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', cursor: 'pointer' }}>💬 Perguntar para a IA</button>
+            <DemoDataButton />
           </div>
         </div>
       </div>
