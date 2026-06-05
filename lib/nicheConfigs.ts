@@ -2,6 +2,8 @@
 // Adapta linguagem, funil, métricas, recomendações, ações, resumo e IA por perfil.
 // Sem if/else espalhado nas telas: tudo consome getNicheConfig().
 
+import { useAppStore } from '@/lib/store'
+
 export type NicheKey = 'generic' | 'health_insurance_broker'
 
 export interface NicheAction {
@@ -185,13 +187,30 @@ export function getNicheConfig(profileOrNiche?: string): NicheConfig {
 
 const PROFILE_GOAL_KEY = 'dashboard_profile_goal_onboarding'
 
+// Detecta o nicho pelo texto do segmento de mercado (campo livre do wizard).
+// Ex: "plano de saúde", "corretor de planos", "saúde suplementar" → health_insurance_broker
+export function detectNicheFromText(text?: string): NicheKey {
+  if (!text) return 'generic'
+  const t = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  if ((t.includes('plano') && t.includes('saude')) || (t.includes('corretor') && t.includes('saude')) || t.includes('saude suplementar') || t.includes('convenio medico')) {
+    return 'health_insurance_broker'
+  }
+  return 'generic'
+}
+
 export function getCurrentNicheFromOnboarding(): NicheConfig {
+  // 1) Perfil escolhido no onboarding "Quem é você?"
   try {
     const raw = localStorage.getItem(PROFILE_GOAL_KEY)
     if (raw) {
-      const data = JSON.parse(raw)
-      return getNicheConfig(data?.profile)
+      const byProfile = getNicheConfig(JSON.parse(raw)?.profile)
+      if (byProfile.key !== 'generic') return byProfile
     }
+  } catch {}
+  // 2) Texto do segmento de mercado do cliente (campo livre do wizard)
+  try {
+    const detected = detectNicheFromText(useAppStore.getState().clientData?.niche)
+    if (detected !== 'generic') return nicheConfigs[detected]
   } catch {}
   return generic
 }
