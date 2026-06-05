@@ -13,6 +13,7 @@ import { TabSimpleDiagnostic } from '@/components/dashboard/TabSimpleDiagnostic'
 import { TabSimpleFunil }      from '@/components/dashboard/TabSimpleFunil'
 import { TabSimpleBusinessHealth } from '@/components/dashboard/TabSimpleBusinessHealth'
 import { OnboardingProfileGoal, PROFILE_GOAL_KEY, type ProfileGoalData } from '@/components/dashboard/OnboardingProfileGoal'
+import { TabSimpleActionPlan }  from '@/components/dashboard/TabSimpleActionPlan'
 import { TabAudiences }    from '@/components/dashboard/TabAudiences'
 import { TabStrategy }     from '@/components/dashboard/TabStrategy'
 import { TabIntelligence } from '@/components/dashboard/TabIntelligence'
@@ -1118,7 +1119,12 @@ export default function DashboardBody() {
       case 'anuncios':      return wrap('Anúncios IA',       <TabAnuncios planHasConnections={planLimits.hasConnections} onUpgrade={goUpgrade} clientData={clientData} />)
       case 'audiencias':    return wrap('Audiências',        <TabAudiences niche={clientData?.niche} />)
       case 'performance':   return wrap('Performance',       <TabPerformance clientData={clientData} />)
-      case 'acoes':         return wrap('Plano de Ações',    <TabAcoes clientData={clientData} strategyData={strategyData} />)
+      case 'acoes': {
+        if (dashboardMode === 'simple') {
+          return wrap('Plano de Ação', <TabSimpleActionPlan clientData={clientData} onNavigate={(t) => setActiveTab(t as any)} />)
+        }
+        return wrap('Plano de Ações', <TabAcoes clientData={clientData} strategyData={strategyData} />)
+      }
       case 'inteligencia':  return wrap('Inteligência',      <TabIntelligence clientData={clientData} />)
       case 'cenarios':      return wrap('Cenários',          <TabGrowth analysis={analysis} clientData={clientData} />)
       case 'mercado':       return wrap('Mercado & Nicho',   <TabMarketIntel clientData={clientData} />)
