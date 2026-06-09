@@ -679,7 +679,7 @@ export default function DashboardBody() {
           useAppStore.setState((s) => ({ auditCache: { ...s.auditCache, ...auditRestored } }))
         }
 
-        if (!useAppStore.getState().clientData) {
+        if (!useAppStore.getState().clientData && !creatingNewRef.current) {
           useAppStore.getState().loadSavedClient(list[0].id)
         }
       })
@@ -690,6 +690,7 @@ export default function DashboardBody() {
 
   useEffect(() => {
     if (!dbLoaded) return
+    if (creatingNewRef.current) return  // criando novo cliente: não pular para o dashboard do primeiro
     const { clientData: cd, strategyData: sd } = useAppStore.getState()
     if (cd && sd) setView('dashboard')
   }, [dbLoaded])
@@ -733,6 +734,13 @@ export default function DashboardBody() {
 
   const [view, setView] = useState<'selector' | 'wizard' | 'dashboard'>('selector')
   const [editingClient, setEditingClient] = useState(false)
+
+  // Intenção de "criar novo cliente" (?new=1). Capturada no render — sobrevive à
+  // resolução assíncrona do carregamento de clientes do banco, evitando que a
+  // seleção automática do primeiro cliente sobreponha o wizard de novo cliente.
+  const creatingNewRef = useRef(
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('new') === '1'
+  )
 
   // Onboarding por perfil/objetivo — mostra se ainda não foi feito
   const [showProfileGoal, setShowProfileGoal] = useState(false)
@@ -779,6 +787,8 @@ export default function DashboardBody() {
     // Lê do store diretamente — evita stale closure quando o wizard chama setClientData + onComplete no mesmo tick
     const clientData = useAppStore.getState().clientData
     if (!clientData) return
+
+    creatingNewRef.current = false  // intenção de novo cliente consumida
 
     if (planLimits.maxStrategiesPerHour > 0 && getStrategyCountLastHour() >= planLimits.maxStrategiesPerHour) {
       setGenError(`Limite de ${planLimits.maxStrategiesPerHour} estratégias por hora atingido. Tente novamente mais tarde.`)
@@ -907,6 +917,7 @@ export default function DashboardBody() {
   }, [strategyData, clientData, persistSave])
 
   const handleSelectSaved = (id: string) => {
+    creatingNewRef.current = false  // seleção explícita encerra a intenção de novo cliente
     const found = loadSavedClient(id)
     if (found) {
       setView('dashboard')
