@@ -7,6 +7,10 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { saveAuditReport, upsertPriorityActions, upsertHealthScore } from '@/lib/persistence'
 import { errMsg } from '@/lib/errMsg'
 
+// Auditoria pode chamar Claude + (fallback) Gemini + persistência — dá folga
+// ao tempo de execução para evitar timeout da função ("Internal Server Error").
+export const maxDuration = 60
+
 // ── Salva padrões da auditoria diretamente no Supabase (fire-and-forget) ─────
 async function saveAuditMemory(
   userId: string,
@@ -1190,17 +1194,24 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
       } catch (aiError: any) {
         console.warn('Anthropic API falhou na auditoria, usando fallback:', aiError.message)
 
-        // Tenta o Gemini antes de cair no benchmark estático.
+        // Tenta o Gemini antes de cair no benchmark estático. Timeout curto para
+        // não estourar o limite da função, e só usa se vier um audit COMPLETO
+        // (com health_score) — caso contrário, mantém o fallback de benchmark.
         try {
           const { callGeminiJson, geminiModel, isGeminiEnabled } = await import('@/lib/gemini')
           if (isGeminiEnabled()) {
-            geminiAudit = await callGeminiJson<Record<string, any>>({
+            const g = await callGeminiJson<Record<string, any>>({
               model: geminiModel('FALLBACK'),
               system: 'Você é um consultor sênior de tráfego pago com 10+ anos no mercado brasileiro. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois do JSON.',
               user: prompt,
               maxTokens: 8000,
-              timeoutMs: 24000,
+              timeoutMs: 14000,
             })
+            if (g && typeof g.health_score === 'number') {
+              geminiAudit = g
+            } else {
+              console.warn('Gemini fallback (auditoria) retornou estrutura incompleta — usando benchmark')
+            }
           }
         } catch (gemErr: any) {
           console.warn('Gemini fallback (auditoria) também falhou:', gemErr.message)
