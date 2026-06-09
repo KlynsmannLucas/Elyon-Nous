@@ -13,15 +13,15 @@ Adicione em `.env.local` (e nas envs da Vercel):
 # Obrigatória para ligar qualquer feature Gemini
 GEMINI_API_KEY=...
 
-# Modelo padrão (opcional — default no código: gemini-2.0-flash)
-GEMINI_MODEL_DEFAULT=gemini-2.0-flash
+# Modelo padrão (opcional — default no código: gemini-2.5-flash)
+GEMINI_MODEL_DEFAULT=gemini-2.5-flash
 
 # Overrides opcionais por rota/feature (decisão "por rota").
 # Cada um cai para GEMINI_MODEL_DEFAULT se não definido.
-GEMINI_MODEL_FALLBACK=gemini-2.0-flash   # resiliência (strategy/audit/nous)
-GEMINI_MODEL_SEARCH=gemini-2.0-flash     # grounding Google Search
-GEMINI_MODEL_VISION=gemini-2.0-flash     # análise visual de criativos/LP
-GEMINI_MODEL_CROSSCHECK=gemini-2.0-flash # segunda opinião
+GEMINI_MODEL_FALLBACK=gemini-2.5-flash   # resiliência (strategy/audit/nous)
+GEMINI_MODEL_SEARCH=gemini-2.5-flash     # grounding Google Search
+GEMINI_MODEL_VISION=gemini-2.5-flash     # análise visual de criativos/LP
+GEMINI_MODEL_CROSSCHECK=gemini-2.5-flash # segunda opinião
 ```
 
 > Chave: https://aistudio.google.com/apikey

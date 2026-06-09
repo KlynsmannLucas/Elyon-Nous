@@ -11,7 +11,7 @@ const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
 /** Resolve o modelo por rota: GEMINI_MODEL_<FEATURE> → GEMINI_MODEL_DEFAULT → flash. */
 export function geminiModel(feature?: 'VISION' | 'SEARCH' | 'CROSSCHECK' | 'FALLBACK'): string {
   const perFeature = feature ? process.env[`GEMINI_MODEL_${feature}`] : undefined
-  return perFeature || process.env.GEMINI_MODEL_DEFAULT || 'gemini-2.0-flash'
+  return perFeature || process.env.GEMINI_MODEL_DEFAULT || 'gemini-2.5-flash'
 }
 
 export function isGeminiEnabled(): boolean {
@@ -58,6 +58,9 @@ export async function callGemini(params: {
     generationConfig: {
       maxOutputTokens: params.maxTokens ?? 4000,
       ...(params.temperature != null ? { temperature: params.temperature } : {}),
+      // Desliga o "thinking" dos modelos 2.5+ — caso contrário ele consome o
+      // orçamento de tokens e a resposta volta vazia (finishReason MAX_TOKENS).
+      thinkingConfig: { thinkingBudget: 0 },
     },
   }
   if (params.system) body.system_instruction = { parts: [{ text: params.system }] }
