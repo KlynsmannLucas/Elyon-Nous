@@ -892,12 +892,63 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
         {/* Top campanhas */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px' }}>
           <SectionHeader title="Top Campanhas" />
-          <div style={{ textAlign: 'center', padding: '24px 0', color: C.text3, fontSize: '12px', lineHeight: 1.6 }}>
-            {hasRealData
-              ? <>Dados por campanha disponíveis em<br /><strong style={{ color: C.text2 }}>Diagnóstico → Análise Profunda</strong></>
-              : <>Conecte Meta Ads ou Google Ads<br />para ver o desempenho por campanha</>
+          {(() => {
+            const cc = latestAudit?._campanhasClassificadas as { vencedoras?: any[]; atencao?: any[]; criticas?: any[] } | undefined
+            const tagged = cc ? [
+              ...(cc.vencedoras || []).map((c: any) => ({ ...c, _status: 'vencedora' as const })),
+              ...(cc.atencao    || []).map((c: any) => ({ ...c, _status: 'atencao'    as const })),
+              ...(cc.criticas   || []).map((c: any) => ({ ...c, _status: 'critica'    as const })),
+            ] : []
+            const top = tagged.sort((a, b) => (b.leads || 0) - (a.leads || 0)).slice(0, 4)
+            if (top.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: C.text3, fontSize: '12px', lineHeight: 1.6 }}>
+                  {hasRealData
+                    ? <>Dados por campanha disponíveis em<br /><strong style={{ color: C.text2 }}>Diagnóstico → Análise Profunda</strong></>
+                    : <>Conecte Meta Ads ou Google Ads<br />para ver o desempenho por campanha</>
+                  }
+                </div>
+              )
             }
-          </div>
+            const statusMeta = {
+              vencedora: { color: C.green, label: 'Escalar' },
+              atencao:   { color: C.amber, label: 'Otimizar' },
+              critica:   { color: C.red,   label: 'Revisar' },
+            }
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {top.map((c: any, i: number) => {
+                  const cpl = (c.leads || 0) > 0 ? c.spend / c.leads : null
+                  const st = statusMeta[c._status as keyof typeof statusMeta]
+                  return (
+                    <div key={`${c.name ?? ''}-${i}`} style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '8px 10px', borderRadius: '9px',
+                      background: C.elevated, border: `1px solid ${C.border}`,
+                      transition: 'border-color 0.15s',
+                    }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = C.purpleB)}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: C.text1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name || 'Sem nome'}</div>
+                        <div style={{ fontSize: '10px', color: C.text3 }}>{(c.leads || 0).toLocaleString('pt-BR')} leads · R${Math.round(c.spend || 0).toLocaleString('pt-BR')}</div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: C.amber }}>{cpl !== null ? `R$${Math.round(cpl)}` : '—'}</div>
+                        <div style={{ fontSize: '9px', color: C.text3 }}>CPL</div>
+                      </div>
+                      <span style={{
+                        fontSize: '9px', fontWeight: 700, color: st.color,
+                        background: `${st.color}1a`, border: `1px solid ${st.color}33`,
+                        borderRadius: '5px', padding: '2px 6px', flexShrink: 0,
+                      }}>{st.label}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
         </div>
 
         {/* Canais recomendados */}
