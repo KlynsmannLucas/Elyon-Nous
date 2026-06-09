@@ -3,6 +3,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react'
 import type { ClientData } from '@/lib/store'
+import CreativeVisionPanel from './CreativeVisionPanel'
 
 interface Props { clientData: ClientData | null }
 
@@ -300,6 +301,9 @@ export function TabAssets({ clientData }: Props) {
             Logo, imagens e criativos de <strong style={{ color: S.text1 }}>{clientData.clientName}</strong> — usados para gerar anúncios automaticamente.
           </p>
         </div>
+
+        {/* ── Análise visual com IA (Gemini) — aditivo, some se indisponível ────── */}
+        <CreativeVisionPanel clientData={clientData} />
 
         {/* ── Banner de aviso ──────────────────────────────────────────────────── */}
         <div style={{

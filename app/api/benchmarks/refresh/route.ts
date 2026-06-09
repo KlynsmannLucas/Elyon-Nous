@@ -55,10 +55,17 @@ export async function POST(req: NextRequest) {
     `CPL TikTok LinkedIn ${niche} Brasil ${year} custo por lead anúncios benchmark`,
   ]
 
-  const results = await Promise.allSettled(queries.map(q => tavilySearch(q, tavilyKey)))
-  const rawText = results
-    .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
-    .map(r => r.value)
+  const { fetchGroundedBenchmarks } = await import('@/lib/gemini')
+  const [tavilyResults, geminiGrounded] = await Promise.all([
+    Promise.allSettled(queries.map(q => tavilySearch(q, tavilyKey))),
+    fetchGroundedBenchmarks(niche).catch(() => ''),  // aditivo: complementa o Tavily
+  ])
+  const rawText = [
+    ...tavilyResults
+      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
+      .map(r => r.value),
+    geminiGrounded,
+  ]
     .filter(Boolean)
     .join('\n\n')
 

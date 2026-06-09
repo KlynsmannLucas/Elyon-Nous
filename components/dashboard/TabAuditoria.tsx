@@ -7,6 +7,7 @@ import type { ClientData } from '@/lib/store'
 import { useClientActions } from '@/hooks/useClientActions'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { errMsg } from '@/lib/errMsg'
+import CrossCheckPanel from './CrossCheckPanel'
 
 interface Props { clientData: ClientData | null }
 
@@ -967,6 +968,9 @@ export function TabAuditoria({ clientData }: Props) {
       {/* ══════════════════════ RESULTADO DA AUDITORIA ══════════════════════ */}
       {audit && !loading && (
         <div className="space-y-5 animate-fade-up">
+
+          {/* Segunda opinião (Gemini) — aditivo, some se indisponível */}
+          <CrossCheckPanel kind="audit" payload={audit} niche={clientData?.niche} />
 
           {/* Benchmark warning */}
           {source === 'benchmark' && audit._realMetrics?.totalSpend === 0 && (

@@ -410,10 +410,19 @@ async function runStrategy(body: any) {
   const cacPaybackMonths = (maxProfitCPL && cvr && ticket && margin)
     ? +((maxProfitCPL / (ticket * margin)).toFixed(1)) : null
 
-  // Tavily roda em paralelo — não bloqueia a IA (apenas enriquece se chegar a tempo)
-  const realtimeDataPromise = fetchRealtimeBenchmarks(niche, city)
-    .catch(() => '')
-    .then((v) => v || '')
+  // Tavily + grounding do Gemini (Google Search) rodam em paralelo — não bloqueiam
+  // a IA (apenas enriquecem se chegarem a tempo). Cada fonte degrada para '' isolada.
+  const realtimeDataPromise = (async () => {
+    const { fetchGroundedBenchmarks } = await import('@/lib/gemini')
+    const [tav, gem] = await Promise.allSettled([
+      fetchRealtimeBenchmarks(niche, city),
+      fetchGroundedBenchmarks(niche, city),
+    ])
+    return [
+      tav.status === 'fulfilled' ? tav.value : '',
+      gem.status === 'fulfilled' ? gem.value : '',
+    ].filter(Boolean).join('\n')
+  })().catch(() => '')
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
@@ -421,6 +430,7 @@ async function runStrategy(body: any) {
   }
 
   if (apiKey && bench) {
+    let prompt = ''  // hoisted: usado também no fallback do Gemini (catch)
     try {
       const { default: Anthropic } = await import('@anthropic-ai/sdk')
       const anthropic        = new Anthropic({ apiKey })
@@ -445,7 +455,7 @@ ${cacPaybackMonths ? `- Payback do CAC: ${cacPaybackMonths} mês(es)` : ''}
 
 ATENÇÃO: Use esses dados para calibrar metas de ROAS e CPL. Não recomende estratégias que não cubram o break-even. Se o CPL recomendado ultrapassar R$${maxProfitCPL || 'X'}, a operação fica deficitária.` : ''
 
-      const prompt = `Você é um Head de Growth e gestor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro. Especialista em Meta Ads (Advantage+, CBO, campanhas de conversão e geração de leads), Google Ads (Search, PMAX, Display, YouTube, smart bidding), TikTok Ads e estratégia de growth para PMEs.
+      prompt = `Você é um Head de Growth e gestor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro. Especialista em Meta Ads (Advantage+, CBO, campanhas de conversão e geração de leads), Google Ads (Search, PMAX, Display, YouTube, smart bidding), TikTok Ads e estratégia de growth para PMEs.
 
 Você já gerenciou mais de R$50M em investimento publicitário. Sabe diagnosticar gargalos reais, não apenas recomendar "testar criativos". Você pensa em unit economics, CAC payback, LTV e margem — não apenas em CPL e ROAS brutos.
 
@@ -630,6 +640,22 @@ Entregue uma estratégia de crescimento baseada no diagnóstico. Responda APENAS
 
     } catch (aiError: any) {
       console.warn('Anthropic API falhou, usando fallback de benchmark:', aiError.message)
+
+      // Fallback aditivo: tenta o Gemini antes de cair no benchmark estático.
+      try {
+        const { callGeminiJson, geminiModel, isGeminiEnabled } = await import('@/lib/gemini')
+        if (isGeminiEnabled()) {
+          const strategy = await callGeminiJson<any>({
+            model: geminiModel('FALLBACK'),
+            user: prompt,
+            maxTokens: 4000,
+            timeoutMs: 22000,
+          })
+          return { success: true, strategy, source: 'gemini' }
+        }
+      } catch (gemErr: any) {
+        console.warn('Gemini fallback também falhou:', gemErr.message)
+      }
     }
   }
 

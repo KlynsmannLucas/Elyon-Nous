@@ -133,12 +133,22 @@ export async function POST(req: NextRequest) {
     const niche   = sanitizeText(_ni, 120)
     const dataSource = hasRealData ? 'real' : (context?.includes('BENCHMARKS DO NICHO') ? 'benchmark' : 'unavailable')
 
-    // 1 query Tavily focada no tópico da pergunta — rápida (<2s), não bloqueia o chat
+    // 1 query focada (Tavily + grounding do Gemini) no tópico — rápida, não bloqueia o chat
     const topicMatch = message.match(/cpl|roas|benchmark|tendência|custo por lead|canal|criativo|sazonalidade/i)
     const realtimeData = topicMatch && niche
       ? await Promise.race([
-          fetchFocusedBenchmark(niche, topicMatch[0], city).catch(() => ''),
-          new Promise<string>(res => setTimeout(() => res(''), 3000)),
+          (async () => {
+            const { fetchFocusedGrounded } = await import('@/lib/gemini')
+            const [tav, gem] = await Promise.allSettled([
+              fetchFocusedBenchmark(niche, topicMatch[0], city),
+              fetchFocusedGrounded(niche, topicMatch[0], city),
+            ])
+            return [
+              tav.status === 'fulfilled' ? tav.value : '',
+              gem.status === 'fulfilled' ? gem.value : '',
+            ].filter(Boolean).join('\n')
+          })().catch(() => ''),
+          new Promise<string>(res => setTimeout(() => res(''), 3500)),
         ])
       : ''
 
@@ -222,7 +232,24 @@ COMPLIANCE — OBRIGATÓRIO: nunca prometa aprovação, preço final ou ausênci
         return NextResponse.json({ success: true, reply, dataSource })
 
       } catch (aiError: any) {
-        console.warn('NOUS API falhou, usando fallback local:', aiError.message)
+        console.warn('NOUS API falhou, tentando Gemini / fallback local:', aiError.message)
+
+        // Fallback aditivo: tenta o Gemini antes do fallback local por regras.
+        try {
+          const { callGemini, geminiModel, isGeminiEnabled } = await import('@/lib/gemini')
+          if (isGeminiEnabled()) {
+            const reply = await callGemini({
+              model: geminiModel('FALLBACK'),
+              system: `Você é o Nous, consultor sênior de growth e tráfego pago no Brasil. Responda em português, direto ao ponto, usando o contexto abaixo.\n\n${context}`,
+              user: message,
+              maxTokens: 800,
+              timeoutMs: 18000,
+            })
+            return NextResponse.json({ success: true, reply, dataSource })
+          }
+        } catch (gemErr: any) {
+          console.warn('Gemini (NOUS) também falhou, usando fallback local:', gemErr.message)
+        }
       }
     }
 

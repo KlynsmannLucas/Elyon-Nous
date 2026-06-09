@@ -811,8 +811,13 @@ export async function POST(req: NextRequest) {
       : datePreset === 'last_month' ? 'Mês anterior'
       : 'Últimos 30 dias'
 
+    // Fallback aditivo: se o Claude falhar, o Gemini preenche este audit (mesmo
+    // enriquecimento/persistência do caminho de benchmark mais abaixo).
+    let geminiAudit: Record<string, any> | null = null
+
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (apiKey) {
+      let prompt = ''  // hoisted: usado também no fallback do Gemini (catch)
       try {
         const { default: Anthropic } = await import('@anthropic-ai/sdk')
         const anthropic = new Anthropic({ apiKey })
@@ -919,7 +924,7 @@ Pior campanha com gasto: ${rankedCamps.filter((c:any) => c.leads === 0).length >
   : rankedCamps[rankedCamps.length-1] ? `"${rankedCamps[rankedCamps.length-1].name}" (CPA R$${rankedCamps[rankedCamps.length-1].leads > 0 ? Math.round(rankedCamps[rankedCamps.length-1].spend / rankedCamps[rankedCamps.length-1].leads) : 'N/A'})` : 'N/A'}
 ` : ''
 
-        const prompt = `Você é um consultor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro, especialista em Meta Ads (Advantage+, CBO, ASC) e Google Ads (Search, PMAX, Smart Bidding, tCPA/tROAS). Já gerenciou mais de R$50M em investimento publicitário.
+        prompt = `Você é um consultor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro, especialista em Meta Ads (Advantage+, CBO, ASC) e Google Ads (Search, PMAX, Smart Bidding, tCPA/tROAS). Já gerenciou mais de R$50M em investimento publicitário.
 
 REGRAS DA ANÁLISE — siga obrigatoriamente:
 1. Use os NOMES EXATOS das campanhas do ranking abaixo em todos os problemas e recomendações
@@ -1184,16 +1189,34 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
 
       } catch (aiError: any) {
         console.warn('Anthropic API falhou na auditoria, usando fallback:', aiError.message)
+
+        // Tenta o Gemini antes de cair no benchmark estático.
+        try {
+          const { callGeminiJson, geminiModel, isGeminiEnabled } = await import('@/lib/gemini')
+          if (isGeminiEnabled()) {
+            geminiAudit = await callGeminiJson<Record<string, any>>({
+              model: geminiModel('FALLBACK'),
+              system: 'Você é um consultor sênior de tráfego pago com 10+ anos no mercado brasileiro. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois do JSON.',
+              user: prompt,
+              maxTokens: 8000,
+              timeoutMs: 24000,
+            })
+          }
+        } catch (gemErr: any) {
+          console.warn('Gemini fallback (auditoria) também falhou:', gemErr.message)
+        }
       }
     }
 
-    // ── Fallback por benchmark ──────────────────────────────────────────────
-    if (!bench) {
+    // ── Fallback: Gemini (se disponível) ou benchmark estático ───────────────
+    if (!geminiAudit && !bench) {
       // IA falhou E nicho desconhecido → usuário não recebe nenhum resultado: devolve créditos
       refundCredits(userId, effectivePlan, 'audit').catch(() => {})
       return NextResponse.json({ success: false, error: 'Nicho não reconhecido e API indisponível.' }, { status: 400 })
     }
-    const audit: Record<string, any> = buildFallbackAudit(clientName, niche, allCampaigns, srcMetaTotals, srcGoogleTotals, bench)
+    const auditSrcLabel = geminiAudit ? 'gemini' : 'benchmark'
+    const audit: Record<string, any> = geminiAudit
+      ?? buildFallbackAudit(clientName, niche, allCampaigns, srcMetaTotals, srcGoogleTotals, bench!)
     audit._realMetrics             = realMetrics
     audit._campanhasClassificadas  = classifiedCampaigns
     audit._wasteCampaigns          = wasteCampaigns
@@ -1214,7 +1237,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
 
     // ── Persiste fallback no Supabase ────────────────────────────────────────
     const fbDataSrcList = [hasMeta && 'meta', hasGoogle && 'google', hasUpload && 'upload'].filter(Boolean) as string[]
-    const fbPersistence = await runPersistence(userId, clientName, audit, realMetrics, fbDataSrcList, 'benchmark', priorityActions)
+    const fbPersistence = await runPersistence(userId, clientName, audit, realMetrics, fbDataSrcList, geminiAudit ? 'ai' : 'benchmark', priorityActions)
     const fbDbActions = fbPersistence.dbActions
 
     const fbMergedActions = priorityActions.map((a: any) => {
@@ -1222,7 +1245,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
       return saved ? { ...a, dbId: saved.id } : a
     })
 
-    return NextResponse.json({ success: true, audit, source: 'benchmark', priorityActions: fbMergedActions, auditReportId: fbPersistence.auditReportId, persistence: fbPersistence.status })
+    return NextResponse.json({ success: true, audit, source: auditSrcLabel, priorityActions: fbMergedActions, auditReportId: fbPersistence.auditReportId, persistence: fbPersistence.status })
 
   } catch (error: any) {
     console.error('Audit route error:', error)
