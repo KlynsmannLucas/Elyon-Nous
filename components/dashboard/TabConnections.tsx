@@ -432,7 +432,8 @@ function ConnectCard({
             {platformName === 'Meta Ads' ? (
               <>
                 <div style={{ fontSize: '10px', color: T.text3, marginBottom: '3px' }}>→ ads_read (ler campanhas e métricas)</div>
-                <div style={{ fontSize: '10px', color: T.text3 }}>→ ads_management (criar e editar campanhas)</div>
+                <div style={{ fontSize: '10px', color: T.text3, marginBottom: '3px' }}>→ ads_management (criar e editar campanhas)</div>
+                <div style={{ fontSize: '10px', color: T.text3 }}>→ business_management (listar contas do Gerenciador de Negócios)</div>
               </>
             ) : (
               <>
@@ -614,7 +615,7 @@ export function TabConnections() {
     const redirectUri = `${window.location.origin}/api/oauth/callback`
     window.location.href =
       `https://www.facebook.com/v19.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&scope=ads_read,ads_management&state=${encodeURIComponent(`meta:${csrf}`)}`
+      `&scope=ads_read,ads_management,business_management&state=${encodeURIComponent(`meta:${csrf}`)}`
   }
 
   const connectGoogle = () => {

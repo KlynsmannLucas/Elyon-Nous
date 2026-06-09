@@ -31,30 +31,73 @@ export async function GET() {
     return NextResponse.json({ success: false, error, code }, { status: 401 })
   }
 
+  const AD_FIELDS = 'id,name,currency,timezone_name,account_status,business,amount_spent,balance'
+
+  const mapAccount = (a: Record<string, unknown>): MetaAdAccount => ({
+    id:            (a.id as string).replace('act_', ''),
+    name:          a.name as string,
+    currency:      (a.currency as string) || 'BRL',
+    timezone:      (a.timezone_name as string) || 'America/Sao_Paulo',
+    accountStatus: ACCOUNT_STATUS_LABELS[a.account_status as number] || String(a.account_status),
+    businessId:    a.business ? ((a.business as Record<string, unknown>).id as string) : null,
+    amountSpent:   parseFloat((a.amount_spent as string) || '0') / 100,
+    balance:       parseFloat((a.balance as string) || '0') / 100,
+  })
+
+  // Busca um edge do Graph que retorna { data: [...] }. Falha → [] (não quebra).
+  const fetchAccountsEdge = async (url: string): Promise<Record<string, unknown>[]> => {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(15_000) })
+      const j = await r.json()
+      if (j.error || !Array.isArray(j.data)) return []
+      return j.data as Record<string, unknown>[]
+    } catch {
+      return []
+    }
+  }
+
   try {
-    const res = await fetch(
-      `https://graph.facebook.com/v21.0/me/adaccounts?` +
-      `fields=id,name,currency,timezone_name,account_status,business,amount_spent,balance` +
-      `&limit=50` +
-      `&access_token=${accessToken}`,
+    const base = 'https://graph.facebook.com/v21.0'
+
+    // 1) Contas diretamente atribuídas ao usuário
+    const meRes = await fetch(
+      `${base}/me/adaccounts?fields=${AD_FIELDS}&limit=100&access_token=${accessToken}`,
       { signal: AbortSignal.timeout(15_000) }
     )
+    const meData = await meRes.json()
+    if (meData.error) {
+      return NextResponse.json({ success: false, error: meData.error.message }, { status: 400 })
+    }
+    const raw: Record<string, unknown>[] = Array.isArray(meData.data) ? [...meData.data] : []
 
-    const data = await res.json()
-    if (data.error) {
-      return NextResponse.json({ success: false, error: data.error.message }, { status: 400 })
+    // 2) Contas de Business Manager (owned + client) — requer business_management.
+    //    Se o escopo não foi concedido, o edge retorna [] e seguimos só com (1).
+    const businesses = await fetchAccountsEdge(
+      `${base}/me/businesses?fields=id,name&limit=50&access_token=${accessToken}`
+    )
+    if (businesses.length > 0) {
+      const bizEdges = await Promise.all(
+        businesses.slice(0, 30).flatMap((b) => {
+          const bizId = b.id as string
+          return [
+            fetchAccountsEdge(`${base}/${bizId}/owned_ad_accounts?fields=${AD_FIELDS}&limit=100&access_token=${accessToken}`),
+            fetchAccountsEdge(`${base}/${bizId}/client_ad_accounts?fields=${AD_FIELDS}&limit=100&access_token=${accessToken}`),
+          ]
+        })
+      )
+      for (const edge of bizEdges) raw.push(...edge)
     }
 
-    const accounts: MetaAdAccount[] = (data.data || []).map((a: Record<string, unknown>) => ({
-      id:            (a.id as string).replace('act_', ''),
-      name:          a.name as string,
-      currency:      (a.currency as string) || 'BRL',
-      timezone:      (a.timezone_name as string) || 'America/Sao_Paulo',
-      accountStatus: ACCOUNT_STATUS_LABELS[a.account_status as number] || String(a.account_status),
-      businessId:    a.business ? ((a.business as Record<string, unknown>).id as string) : null,
-      amountSpent:   parseFloat((a.amount_spent as string) || '0') / 100,
-      balance:       parseFloat((a.balance as string) || '0') / 100,
-    }))
+    // 3) Mapeia + deduplica por id
+    const seen = new Set<string>()
+    const accounts: MetaAdAccount[] = []
+    for (const a of raw) {
+      const acc = mapAccount(a)
+      if (acc.id && !seen.has(acc.id)) {
+        seen.add(acc.id)
+        accounts.push(acc)
+      }
+    }
 
     return NextResponse.json({ success: true, accounts })
   } catch (err: unknown) {
