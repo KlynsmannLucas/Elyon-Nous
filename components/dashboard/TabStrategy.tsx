@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getBenchmark } from '@/lib/niche_benchmarks'
+import StrategyAudienceSection from './StrategyAudienceSection'
 
 const C = {
   bg:       '#080D1A',
@@ -623,6 +624,9 @@ export function TabStrategy({ strategy, analysis }: Props) {
           </div>
         </div>
       )}
+
+      {/* ── Público-Alvo & Persona (híbrido: real Meta → cadastro → IA) ── */}
+      <StrategyAudienceSection strategy={strategy} clientData={clientData} />
 
       {/* ── Alerta de tracking fraco ── */}
       {(trackingFraco || confidenceBaixa) && (

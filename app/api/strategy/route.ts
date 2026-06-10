@@ -61,7 +61,8 @@ function buildFallbackStrategy(data: {
   clientName: string; niche: string; products: string[]
   budget: number; objective: string; monthlyRevenue: number
   currentCPL?: number; currentLeadSource?: string; mainChallenge?: string
-}, bench: NonNullable<ReturnType<typeof getBenchmark>>, realMetrics?: any) {
+  city?: string
+}, bench: NonNullable<ReturnType<typeof getBenchmark>>, realMetrics?: any, persona?: any) {
   // Usa CPL real quando disponível, senão usa benchmark
   const realCPL    = realMetrics?.avgCPL  ? Number(realMetrics.avgCPL)  : 0
   const realLeads  = realMetrics?.totalLeads ? Number(realMetrics.totalLeads) : 0
@@ -330,6 +331,27 @@ function buildFallbackStrategy(data: {
       `Concentrar 70% do budget nas 3 campanhas com menor CPL`,
       `Criar 2 novos criativos com prova social para testar em paralelo`,
     ],
+    target_audience: {
+      persona_snapshot: {
+        name:     persona?.name || 'Cliente ideal',
+        age:      persona?.age || '30–45 anos',
+        profile:  persona?.profession || `Público típico de ${bench.name}`,
+        one_liner: persona?.strategySummary?.split('.')[0]
+          || persona?.buyingBehavior
+          || `Busca soluções de ${data.niche} com confiança e bom custo-benefício`,
+      },
+      demographics: {
+        age_range:    persona?.age || '30–45 anos',
+        gender:       persona?.gender || 'Ambos',
+        income_range: persona?.income || 'R$3.000–10.000/mês',
+      },
+      best_regions: data.city
+        ? [{ region: data.city, why: 'Região de atuação declarada — concentre o investimento aqui primeiro.' }]
+        : [{ region: 'Brasil', why: 'Sem região definida — comece amplo e refine pelas conversões reais.' }],
+      interests: persona?.facebookInterests?.slice(0, 4)
+        || (data.products?.length ? data.products.slice(0, 4) : [bench.name]),
+      channel_focus: persona?.favoriteChannels?.slice(0, 2) || bench.best_channels.slice(0, 2),
+    },
     priority_ranking,
     recommended_channels_names: channels,
     plan_90_days: [
@@ -618,8 +640,18 @@ Entregue uma estratégia de crescimento baseada no diagnóstico. Responda APENAS
     "ninety_days": [{"objective": "<objetivo>", "action": "<ação>", "metric": "<métrica>"}]
   },
   "strategic_risks": [{"risk": "<risco estratégico>", "prevention": "<como prevenir>"}],
-  "next_moves": ["<decisão clara e específica 1>", "<decisão 2>", "<decisão 3>", "<decisão 4>", "<decisão 5>"]
-}`
+  "next_moves": ["<decisão clara e específica 1>", "<decisão 2>", "<decisão 3>", "<decisão 4>", "<decisão 5>"],
+
+  "target_audience": {
+    "persona_snapshot": {"name": "<nome fictício do cliente ideal>", "age": "<FAIXA etária, ex: 30–45 anos>", "profile": "<profissão/perfil do segmento>", "one_liner": "<1 frase: quem é e o que mais quer>"},
+    "demographics": {"age_range": "<faixa etária recomendada p/ segmentar>", "gender": "<Feminino|Masculino|Ambos>", "income_range": "<faixa de renda, ex: R$5.000–10.000/mês>"},
+    "best_regions": [{"region": "<cidade/estado/região recomendada>", "why": "<por que priorizar aqui — 1 frase>"}],
+    "interests": ["<interesse/segmentação Meta 1>", "<interesse 2>", "<interesse 3>", "<interesse 4>"],
+    "channel_focus": ["<canal prioritário p/ esse público 1>", "<canal 2>"]
+  }
+}
+
+Para "target_audience": use a PERSONA fornecida, a cidade/região do negócio e o benchmark do nicho. Se houver dados reais de campanha, calibre por eles. Faixas (idade/renda), nunca valores exatos. "best_regions": 2–3 itens priorizando onde há melhor custo/demanda.`
 
       // IA com 23s — Tavily já rodou em paralelo (2s max), SSE keepalive mantém conexão
       const aiResult = await Promise.race([
@@ -664,9 +696,10 @@ Entregue uma estratégia de crescimento baseada no diagnóstico. Responda APENAS
   }
 
   const strategy = buildFallbackStrategy(
-    { clientName, niche, products, budget, objective, monthlyRevenue, currentCPL, currentLeadSource, mainChallenge },
+    { clientName, niche, products, budget, objective, monthlyRevenue, currentCPL, currentLeadSource, mainChallenge, city },
     bench,
-    recentAudit?._realMetrics ?? null
+    recentAudit?._realMetrics ?? null,
+    persona
   )
   return { success: true, strategy, source: 'benchmark' }
 }
