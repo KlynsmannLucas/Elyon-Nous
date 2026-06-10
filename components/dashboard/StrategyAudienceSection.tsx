@@ -42,12 +42,21 @@ export default function StrategyAudienceSection({ strategy, clientData }: { stra
   const geo:  any[] = Array.isArray(intel?.geoBreakdown)  ? intel.geoBreakdown  : []
   const demo: any[] = Array.isArray(intel?.demoBreakdown) ? intel.demoBreakdown : []
 
+  // Descarta coortes/regiões "lixo" (sem idade/gênero/região identificados) —
+  // elas não são acionáveis e poluiriam o ranking de melhor custo.
+  const isUnknown = (s?: string) => {
+    const x = (s || '').trim().toLowerCase()
+    return !x || x === 'unknown' || x === 'desconhecido' || x === '—' || x === 'undefined' || x === 'null'
+  }
   const topBy = (arr: any[]) => {
     const withLeads = arr.filter(x => (x.leads || 0) > 0).sort((a, b) => (a.cpl || 1e9) - (b.cpl || 1e9))
     return (withLeads.length ? withLeads : [...arr].sort((a, b) => (b.spend || 0) - (a.spend || 0))).slice(0, 3)
   }
-  const topGeo  = topBy(geo)
-  const topDemo = topBy(demo)
+  // Demografia: prioriza coortes com idade E gênero; se não houver, ao menos idade
+  const strictDemo = demo.filter(d => !isUnknown(d.age) && genderLabel(d.gender) !== '—')
+  const looseDemo  = demo.filter(d => !isUnknown(d.age))
+  const topGeo  = topBy(geo.filter(g => !isUnknown(g.region)))
+  const topDemo = topBy(strictDemo.length ? strictDemo : looseDemo)
 
   const generatePersona = async () => {
     if (!clientData) return
