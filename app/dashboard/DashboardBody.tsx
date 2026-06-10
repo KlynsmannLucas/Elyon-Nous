@@ -954,7 +954,10 @@ export default function DashboardBody() {
   }, [clientData, strategyData, auditCache, actionPlanCache])
 
   const handleReset = () => {
-    clearAll()
+    // "Trocar cliente": apenas desseleciona o cliente ativo. NÃO usar clearAll()
+    // aqui — ele apaga savedClients/auditCache/personas de TODOS os clientes,
+    // deixando o seletor vazio até um reload buscar de novo no banco.
+    useAppStore.setState({ clientData: null, strategyData: null, isGenerating: false })
     setView(savedClients.length > 0 ? 'selector' : 'wizard')
     setActiveTab('overview')
     setWizardStep(0)
