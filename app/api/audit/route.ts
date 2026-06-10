@@ -1133,12 +1133,19 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
   "qualidade_dados": "<1-2 frases: os dados disponíveis são suficientes para tomar decisões? Qual é o maior ponto cego desta auditoria — o que não conseguimos ver com estes dados?>"
 }`
 
-        const message = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 8000,
-          system: 'Você é um consultor sênior de tráfego pago com 10+ anos no mercado brasileiro. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois do JSON. Sem ```json. Comece direto com { e termine com }.',
-          messages: [{ role: 'user', content: prompt }],
-        })
+        // Limita o tempo do Claude para a função não estourar (504). Se exceder,
+        // cai no fallback (Gemini → benchmark) que ainda cabe na janela de 60s.
+        const message = await Promise.race([
+          anthropic.messages.create({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 8000,
+            system: 'Você é um consultor sênior de tráfego pago com 10+ anos no mercado brasileiro. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois do JSON. Sem ```json. Comece direto com { e termine com }.',
+            messages: [{ role: 'user', content: prompt }],
+          }),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 35000)),
+        ])
+
+        if (!message) throw new Error('AI timeout — usando fallback')
 
         let raw = (message.content[0] as any).text.trim()
         // Remove TODAS as markdown fences independente de posição
@@ -1205,7 +1212,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
               system: 'Você é um consultor sênior de tráfego pago com 10+ anos no mercado brasileiro. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois do JSON.',
               user: prompt,
               maxTokens: 8000,
-              timeoutMs: 14000,
+              timeoutMs: 12000,
             })
             if (g && typeof g.health_score === 'number') {
               geminiAudit = g
