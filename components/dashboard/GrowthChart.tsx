@@ -130,13 +130,13 @@ export function GrowthChart({ bench, currentBudget, scenarioBudgets }: Props) {
         </div>
         {bench && (
           <div className="flex gap-3 text-[10px]">
-            <span className="px-2 py-1 rounded-lg" style={{ background: 'rgba(148,163,184,0.1)', color: '#94A3B8', border: '1px solid rgba(148,163,184,0.2)' }}>
+            <span className="px-2 py-1 rounded-lg" style={{ background: 'rgba(148,163,184,0.1)', color: '#5A6473', border: '1px solid rgba(148,163,184,0.2)' }}>
               Conservador {conservBudget}/mês
             </span>
             <span className="px-2 py-1 rounded-lg" style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.25)' }}>
               Recomendado {recoBudget}/mês
             </span>
-            <span className="px-2 py-1 rounded-lg hidden md:inline" style={{ background: 'rgba(34,197,94,0.08)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <span className="px-2 py-1 rounded-lg hidden md:inline" style={{ background: 'rgba(34,197,94,0.08)', color: '#0E9E6E', border: '1px solid rgba(34,197,94,0.2)' }}>
               Agressivo {agressBudget}/mês
             </span>
           </div>
@@ -147,22 +147,22 @@ export function GrowthChart({ bench, currentBudget, scenarioBudgets }: Props) {
         <AreaChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="gradCons" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#94A3B8" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="#94A3B8" stopOpacity={0} />
+              <stop offset="5%"  stopColor="#5A6473" stopOpacity={0.15} />
+              <stop offset="95%" stopColor="#5A6473" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="gradReco" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%"  stopColor="#F0B429" stopOpacity={0.20} />
               <stop offset="95%" stopColor="#F0B429" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="gradAg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#22C55E" stopOpacity={0.12} />
-              <stop offset="95%" stopColor="#22C55E" stopOpacity={0} />
+              <stop offset="5%"  stopColor="#0E9E6E" stopOpacity={0.12} />
+              <stop offset="95%" stopColor="#0E9E6E" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#1E1E24" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <XAxis dataKey="month" tick={{ fill: '#8A93A3', fontSize: 11 }} axisLine={false} tickLine={false} />
           <YAxis
-            tick={{ fill: '#64748B', fontSize: 10 }}
+            tick={{ fill: '#8A93A3', fontSize: 10 }}
             axisLine={false} tickLine={false}
             tickFormatter={(v) => {
               if (v >= 1_000_000) return `R$${(v / 1_000_000).toFixed(1)}M`
@@ -174,14 +174,14 @@ export function GrowthChart({ bench, currentBudget, scenarioBudgets }: Props) {
           <Tooltip content={<CustomTooltip />} />
           <Legend content={<CustomLegend />} />
           <Area type="monotone" dataKey="conservador" name="Conservador"
-            stroke="#94A3B8" strokeWidth={1.5} strokeDasharray="4 2"
-            fill="url(#gradCons)" dot={{ r: 3, fill: '#94A3B8' }} />
+            stroke="#5A6473" strokeWidth={1.5} strokeDasharray="4 2"
+            fill="url(#gradCons)" dot={{ r: 3, fill: '#5A6473' }} />
           <Area type="monotone" dataKey="recomendado" name="Recomendado"
             stroke="#F0B429" strokeWidth={2.5}
             fill="url(#gradReco)" dot={{ r: 4, fill: '#F0B429' }} />
           <Area type="monotone" dataKey="agressivo" name="Agressivo"
-            stroke="#22C55E" strokeWidth={2}
-            fill="url(#gradAg)" dot={{ r: 3, fill: '#22C55E' }} />
+            stroke="#0E9E6E" strokeWidth={2}
+            fill="url(#gradAg)" dot={{ r: 3, fill: '#0E9E6E' }} />
         </AreaChart>
       </ResponsiveContainer>
 

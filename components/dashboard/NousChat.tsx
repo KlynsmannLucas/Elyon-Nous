@@ -315,7 +315,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all hover:scale-105"
         style={{
-          background: open ? '#0F1629' : 'linear-gradient(135deg, #F0B429, #FFD166)',
+          background: open ? '#FFFFFF' : 'linear-gradient(135deg, #F0B429, #FFD166)',
           border: open ? '1px solid rgba(240,180,41,0.4)' : 'none',
         }}
         title="Assistente IA — Analista Estratégica"
@@ -331,7 +331,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
         <div
           className="fixed bottom-24 right-6 z-50 w-[380px] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
           style={{
-            background: '#0F1629',
+            background: '#FFFFFF',
             border: '1px solid #2A2A30',
             height: '520px',
           }}
@@ -359,8 +359,8 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
                   limpar
                 </button>
               )}
-              <span className="flex items-center gap-1 text-[10px] text-[#22C55E]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
+              <span className="flex items-center gap-1 text-[10px] text-[#0E9E6E]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0E9E6E] animate-pulse" />
                 online
               </span>
             </div>
@@ -374,7 +374,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
                   className="max-w-[85%] rounded-2xl px-3 py-2.5 text-xs leading-relaxed"
                   style={msg.role === 'user'
                     ? { background: 'rgba(240,180,41,0.12)', border: '1px solid rgba(240,180,41,0.2)', color: '#F0B429' }
-                    : { background: '#131E35', border: '1px solid #2A2A30', color: '#CBD5E1' }
+                    : { background: '#FBFCFD', border: '1px solid #2A2A30', color: '#CBD5E1' }
                   }
                 >
                   {msg.role === 'nous' && (
@@ -391,7 +391,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-[#131E35] border border-[#2A2A30] rounded-2xl px-3 py-2.5">
+                <div className="bg-[#FBFCFD] border border-[#2A2A30] rounded-2xl px-3 py-2.5">
                   <div className="flex gap-1 items-center h-4">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#F0B429] animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-[#F0B429] animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -425,7 +425,7 @@ export function NousChat({ clientData, strategy, campaignHistory }: Props) {
               <input
                 ref={inputRef}
                 type="text"
-                className="flex-1 bg-[#080D1A] border border-[#2A2A30] rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-[#F0B429] transition-colors"
+                className="flex-1 bg-[#F4F5F7] border border-[#2A2A30] rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-[#F0B429] transition-colors"
                 placeholder="Pergunte ao Assistente IA..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}

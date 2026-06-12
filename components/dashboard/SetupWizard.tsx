@@ -140,7 +140,7 @@ function Tip({ text }: { text: string }) {
         onMouseEnter={() => setShow(true)}
         onMouseLeave={() => setShow(false)}
         className="w-4 h-4 rounded-full text-[9px] font-bold inline-flex items-center justify-center cursor-help"
-        style={{ background: 'rgba(255,255,255,0.06)', color: '#64748B', border: '1px solid #2A2A30' }}
+        style={{ background: 'rgba(255,255,255,0.06)', color: '#8A93A3', border: '1px solid #2A2A30' }}
       >?</button>
       {show && (
         <div className="absolute bottom-6 left-0 z-50 w-52 text-[11px] leading-relaxed pointer-events-none"
@@ -349,10 +349,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         <div className="w-full max-w-lg animate-fade-up">
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <div style={{ fontSize: '40px', marginBottom: '16px' }}>📊</div>
-            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#F1F5F9', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#161B26', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
               Você já anuncia hoje?
             </h2>
-            <p style={{ fontSize: '14px', color: '#64748B', margin: 0, lineHeight: 1.6 }}>
+            <p style={{ fontSize: '14px', color: '#8A93A3', margin: 0, lineHeight: 1.6 }}>
               Isso nos ajuda a personalizar sua experiência na plataforma.
             </p>
           </div>
@@ -370,10 +370,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             >
               <span style={{ fontSize: '28px', flexShrink: 0 }}>✅</span>
               <div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#F1F5F9', marginBottom: '4px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: '#161B26', marginBottom: '4px' }}>
                   Sim, já anuncio no Meta Ads ou Google
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.5 }}>
+                <div style={{ fontSize: '12px', color: '#8A93A3', lineHeight: 1.5 }}>
                   Tenho campanhas ativas ou dados históricos. Quero analisar, otimizar e escalar.
                 </div>
               </div>
@@ -391,10 +391,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             >
               <span style={{ fontSize: '28px', flexShrink: 0 }}>🚀</span>
               <div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#F1F5F9', marginBottom: '4px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: '#161B26', marginBottom: '4px' }}>
                   Não, ainda não anuncio
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.5 }}>
+                <div style={{ fontSize: '12px', color: '#8A93A3', lineHeight: 1.5 }}>
                   Quero começar do zero. A IA vai me ajudar a montar minha primeira campanha.
                 </div>
               </div>
@@ -416,10 +416,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         <div className="w-full max-w-lg animate-fade-up">
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div style={{ fontSize: '38px', marginBottom: '14px' }}>⚡</div>
-            <h2 style={{ fontSize: '23px', fontWeight: 800, color: '#F1F5F9', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: '23px', fontWeight: 800, color: '#161B26', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
               Conecte o Meta e receba sua análise
             </h2>
-            <p style={{ fontSize: '14px', color: '#64748B', margin: 0, lineHeight: 1.6 }}>
+            <p style={{ fontSize: '14px', color: '#8A93A3', margin: 0, lineHeight: 1.6 }}>
               Só o essencial — a auditoria roda sozinha assim que conectar.
             </p>
           </div>
@@ -444,7 +444,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             </datalist>
           </div>
 
-          {error && <div style={{ fontSize: '12px', color: '#EF4444', marginBottom: '12px' }}>{error}</div>}
+          {error && <div style={{ fontSize: '12px', color: '#E1483F', marginBottom: '12px' }}>{error}</div>}
 
           <button
             onClick={fastLaneConnect}
@@ -461,7 +461,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             onClick={() => { setFastLane(false); setError('') }}
             style={{
               width: '100%', marginTop: '12px', padding: '10px', borderRadius: '10px', cursor: 'pointer',
-              background: 'transparent', border: '1px solid #2A2A30', color: '#94A3B8', fontSize: '13px', fontWeight: 600,
+              background: 'transparent', border: '1px solid #2A2A30', color: '#5A6473', fontSize: '13px', fontWeight: 600,
             }}
           >
             Preencher manualmente (cadastro completo)
@@ -482,8 +482,8 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {advertisingExp === 'no' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', padding: '8px 14px', borderRadius: '10px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
             <span style={{ fontSize: '14px' }}>🚀</span>
-            <span style={{ fontSize: '11px', color: '#A78BFA', fontWeight: 600 }}>Modo Iniciante</span>
-            <span style={{ fontSize: '11px', color: '#64748B' }}>— a IA vai guiar você em cada passo</span>
+            <span style={{ fontSize: '11px', color: '#2C5FE0', fontWeight: 600 }}>Modo Iniciante</span>
+            <span style={{ fontSize: '11px', color: '#8A93A3' }}>— a IA vai guiar você em cada passo</span>
           </div>
         )}
 
@@ -583,7 +583,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                           style={{
                             background: form.niche === n ? 'rgba(240,180,41,0.12)' : '#111114',
                             border: form.niche === n ? '1px solid rgba(240,180,41,0.5)' : '1px solid #2A2A30',
-                            color: form.niche === n ? '#F0B429' : '#94A3B8',
+                            color: form.niche === n ? '#F0B429' : '#5A6473',
                           }}
                         >
                           {n}
@@ -615,11 +615,11 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                     <div className="text-[10px] text-slate-500">CPL médio</div>
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-[#22C55E]">{bench.kpi_thresholds.roas_good}×</div>
+                    <div className="text-sm font-bold text-[#0E9E6E]">{bench.kpi_thresholds.roas_good}×</div>
                     <div className="text-[10px] text-slate-500">ROAS bom</div>
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-[#A78BFA]">{(bench.cvr_lead_to_sale * 100).toFixed(0)}%</div>
+                    <div className="text-sm font-bold text-[#2C5FE0]">{(bench.cvr_lead_to_sale * 100).toFixed(0)}%</div>
                     <div className="text-[10px] text-slate-500">CVR lead→venda</div>
                   </div>
                 </div>
@@ -663,7 +663,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                               style={{
                                 background: form.nicheDetails[field.key] === opt ? 'rgba(240,180,41,0.1)' : '#111114',
                                 border: form.nicheDetails[field.key] === opt ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                                color: form.nicheDetails[field.key] === opt ? '#F0B429' : '#94A3B8',
+                                color: form.nicheDetails[field.key] === opt ? '#F0B429' : '#5A6473',
                               }}
                             >
                               {opt}
@@ -778,7 +778,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                     style={{
                       background: form.budget === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
                       border: form.budget === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                      color: form.budget === String(v) ? '#F0B429' : '#64748B',
+                      color: form.budget === String(v) ? '#F0B429' : '#8A93A3',
                     }}>
                     R${v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : v}
                   </button>
@@ -821,7 +821,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                     style={{
                       background: form.monthlyRevenue === p.value ? 'rgba(240,180,41,0.15)' : '#111114',
                       border: form.monthlyRevenue === p.value ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                      color: form.monthlyRevenue === p.value ? '#F0B429' : '#64748B',
+                      color: form.monthlyRevenue === p.value ? '#F0B429' : '#8A93A3',
                     }}
                   >
                     {p.label}
@@ -923,7 +923,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                       style={{
                         background: form.ticketPrice === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
                         border: form.ticketPrice === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                        color: form.ticketPrice === String(v) ? '#F0B429' : '#64748B',
+                        color: form.ticketPrice === String(v) ? '#F0B429' : '#8A93A3',
                       }}>
                       R${v >= 1000 ? `${v / 1000}k` : v}
                     </button>
@@ -956,7 +956,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                         style={{
                           background: form.grossMargin === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
                           border: form.grossMargin === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                          color: form.grossMargin === String(v) ? '#F0B429' : '#64748B',
+                          color: form.grossMargin === String(v) ? '#F0B429' : '#8A93A3',
                         }}>{v}%</button>
                     ))}
                   </div>
@@ -980,7 +980,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                         style={{
                           background: form.conversionRate === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
                           border: form.conversionRate === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                          color: form.conversionRate === String(v) ? '#F0B429' : '#64748B',
+                          color: form.conversionRate === String(v) ? '#F0B429' : '#8A93A3',
                         }}>{v}%</button>
                     ))}
                   </div>
@@ -1001,7 +1001,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                       className="py-3 px-3 rounded-xl text-left transition-all"
                       style={form.isRecurring === opt.val
                         ? { background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.45)', color: '#F0B429' }
-                        : { background: '#111114', border: '1px solid #2A2A30', color: '#64748B' }
+                        : { background: '#111114', border: '1px solid #2A2A30', color: '#8A93A3' }
                       }>
                       <div className="text-lg mb-1">{opt.icon}</div>
                       <div className="text-xs font-semibold">{opt.label}</div>
@@ -1030,12 +1030,12 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                       <div className="text-[9px] text-slate-700">retorno mínimo s/ prejuízo</div>
                     </div>
                     <div>
-                      <div className="text-lg font-bold text-[#22C55E]">R${maxCPL}</div>
+                      <div className="text-lg font-bold text-[#0E9E6E]">R${maxCPL}</div>
                       <div className="text-[10px] text-slate-500">CPL máximo</div>
                       <div className="text-[9px] text-slate-700">acima disso = prejuízo</div>
                     </div>
                     <div>
-                      <div className="text-lg font-bold text-[#A78BFA]">R${Number(ltv).toLocaleString('pt-BR')}</div>
+                      <div className="text-lg font-bold text-[#2C5FE0]">R${Number(ltv).toLocaleString('pt-BR')}</div>
                       <div className="text-[10px] text-slate-500">LTV estimado</div>
                       <div className="text-[9px] text-slate-700">{form.isRecurring ? 'valor vitalício (churn 5%)' : 'venda única'}</div>
                     </div>
@@ -1120,14 +1120,14 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             {/* Arquivos importados */}
             {importedFiles.length > 0 && (
               <div className="space-y-3">
-                <div className="text-xs text-[#22C55E] font-semibold mb-1">✓ {importedFiles.length} arquivo{importedFiles.length > 1 ? 's' : ''} importado{importedFiles.length > 1 ? 's' : ''}:</div>
+                <div className="text-xs text-[#0E9E6E] font-semibold mb-1">✓ {importedFiles.length} arquivo{importedFiles.length > 1 ? 's' : ''} importado{importedFiles.length > 1 ? 's' : ''}:</div>
                 {importedFiles.map((f, i) => (
-                  <div key={i} className="bg-[#111114] border border-[#22C55E30] rounded-xl p-3">
+                  <div key={i} className="bg-[#111114] border border-[#0E9E6E30] rounded-xl p-3">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-semibold text-white">{f.filename}</span>
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                          style={{ color: f.platform === 'meta' ? '#38BDF8' : f.platform === 'google' ? '#F0B429' : '#64748B',
+                          style={{ color: f.platform === 'meta' ? '#2C5FE0' : f.platform === 'google' ? '#F0B429' : '#8A93A3',
                             background: f.platform === 'meta' ? 'rgba(56,189,248,0.1)' : f.platform === 'google' ? 'rgba(240,180,41,0.1)' : 'rgba(100,116,139,0.1)' }}>
                           {f.platform === 'unknown' ? 'desconhecido' : f.platform}
                         </span>
@@ -1145,7 +1145,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                         <div className="text-[10px] text-slate-600">investimento</div>
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-[#22C55E]">{f.totalLeads}</div>
+                        <div className="text-xs font-bold text-[#0E9E6E]">{f.totalLeads}</div>
                         <div className="text-[10px] text-slate-600">leads/conv.</div>
                       </div>
                     </div>
@@ -1194,7 +1194,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                     style={{
                       background: form.targetAge === age ? 'rgba(240,180,41,0.12)' : '#111114',
                       border: form.targetAge === age ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                      color: form.targetAge === age ? '#F0B429' : '#94A3B8',
+                      color: form.targetAge === age ? '#F0B429' : '#5A6473',
                     }}>
                     {age}
                   </button>
@@ -1213,7 +1213,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                     style={{
                       background: form.targetGender === g ? 'rgba(240,180,41,0.12)' : '#111114',
                       border: form.targetGender === g ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                      color: form.targetGender === g ? '#F0B429' : '#94A3B8',
+                      color: form.targetGender === g ? '#F0B429' : '#5A6473',
                     }}>
                     {g}
                   </button>
@@ -1232,7 +1232,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                     style={{
                       background: form.targetIncome === inc ? 'rgba(240,180,41,0.12)' : '#111114',
                       border: form.targetIncome === inc ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                      color: form.targetIncome === inc ? '#F0B429' : '#94A3B8',
+                      color: form.targetIncome === inc ? '#F0B429' : '#5A6473',
                     }}>
                     {inc}
                   </button>
@@ -1256,7 +1256,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                       style={{
                         background: active ? 'rgba(240,180,41,0.12)' : '#111114',
                         border: active ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                        color: active ? '#F0B429' : '#94A3B8',
+                        color: active ? '#F0B429' : '#5A6473',
                       }}>
                       {ch}
                     </button>
@@ -1320,7 +1320,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                   style={{
                     background: form.objective === obj.value ? 'rgba(240,180,41,0.08)' : '#111114',
                     border: form.objective === obj.value ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                    color: form.objective === obj.value ? '#F0B429' : '#94A3B8',
+                    color: form.objective === obj.value ? '#F0B429' : '#5A6473',
                   }}
                 >
                   <span className="text-xl">{obj.icon}</span>
@@ -1333,11 +1333,11 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             <div className="p-4 rounded-xl mb-5" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
               <div className="text-xs text-[#F0B429] font-semibold mb-2">📋 O ELYON vai gerar para você:</div>
               <div className="space-y-1.5 text-xs text-slate-400">
-                <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> Estratégia completa de canais com investimento recomendado</div>
-                <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> CPL e ROAS esperados com benchmarks reais do nicho</div>
-                <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> Plano de ação de 90 dias pronto para executar</div>
-                <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> Perfil de audiência, dores, hooks e objeções</div>
-                <div className="flex items-center gap-2"><span className="text-[#22C55E]">✓</span> Calendário de marketing com sazonalidade do nicho</div>
+                <div className="flex items-center gap-2"><span className="text-[#0E9E6E]">✓</span> Estratégia completa de canais com investimento recomendado</div>
+                <div className="flex items-center gap-2"><span className="text-[#0E9E6E]">✓</span> CPL e ROAS esperados com benchmarks reais do nicho</div>
+                <div className="flex items-center gap-2"><span className="text-[#0E9E6E]">✓</span> Plano de ação de 90 dias pronto para executar</div>
+                <div className="flex items-center gap-2"><span className="text-[#0E9E6E]">✓</span> Perfil de audiência, dores, hooks e objeções</div>
+                <div className="flex items-center gap-2"><span className="text-[#0E9E6E]">✓</span> Calendário de marketing com sazonalidade do nicho</div>
               </div>
             </div>
 

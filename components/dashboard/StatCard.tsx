@@ -1,4 +1,5 @@
 // components/dashboard/StatCard.tsx
+// Redesign v2 — "terminal de dados premium" (light theme)
 'use client'
 
 import { useViewMode, getMetricLabel } from '@/lib/viewMode'
@@ -40,57 +41,35 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   )
 }
 
-export function StatCard({ label, value, trend, sub, color = '#7C3AED', delay = 0, sparkline, icon }: StatCardProps) {
+export function StatCard({ label, value, trend, sub, color = '#2C5FE0', delay = 0, sparkline, icon }: StatCardProps) {
   const { mode } = useViewMode()
   const displayLabel = getMetricLabel(label, mode)
   const isPos   = trend !== undefined && trend >= 0
-  const tColor  = isPos ? '#22C55E' : '#EF4444'
-  const tBg     = isPos ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'
-  const tBorder = isPos ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'
+  // Light theme colors
+  const tColor  = isPos ? '#0E9E6E' : '#E1483F'
+  const tBg     = isPos ? 'rgba(14,158,110,0.08)' : 'rgba(225,72,63,0.08)'
+  const tBorder = isPos ? 'rgba(14,158,110,0.2)' : 'rgba(225,72,63,0.2)'
+
+  const animDelay = delay ? { animationDelay: `${delay}s` } : {}
 
   return (
-    <div style={{
-      background: '#0F1629',
-      border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '14px', padding: '18px',
-      display: 'flex', flexDirection: 'column', gap: '10px',
-      animationDelay: `${delay}s`,
-      transition: 'border-color 0.15s, box-shadow 0.15s',
-    }}
-      className="animate-fade-up"
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(124,58,237,0.25)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(124,58,237,0.1)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
-    >
-      {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{
-          fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)',
-          textTransform: 'uppercase', letterSpacing: '0.08em',
-        }}>
-          {icon && <span style={{ marginRight: '5px' }}>{icon}</span>}{displayLabel}
-        </div>
+    <div className="animate-fade-up bg-paper rounded-md border border-line p-[18px] flex flex-col gap-[10px] hover-lift"
+      style={{ ...animDelay, boxShadow: 'var(--sh-1)' }}>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-mono uppercase tracking-wider text-ink-3">{displayLabel}</span>
+        {icon && <span className="text-ink-3">{icon}</span>}
+      </div>
+      <div className="flex items-end justify-between">
+        <span className="text-[24px] font-bold font-mono text-ink tabular-nums" style={{ letterSpacing: '-0.02em' }}>{value}</span>
         {trend !== undefined && (
-          <span style={{
-            fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px',
-            color: tColor, background: tBg, border: `1px solid ${tBorder}`,
-          }}>
-            {isPos ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full"
+            style={{ background: tBg, color: tColor, border: `1px solid ${tBorder}` }}>
+            {isPos ? '↑' : '↓'} {Math.abs(trend)}%
           </span>
         )}
       </div>
-
-      {/* Value */}
-      <div style={{ fontSize: '24px', fontWeight: 800, color, letterSpacing: '-0.03em', lineHeight: 1 }}>
-        {value}
-      </div>
-
-      {/* Sub + sparkline */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px' }}>
-        {sub && <div style={{ fontSize: '11px', color: '#64748B', flex: 1, minWidth: 0, lineHeight: 1.4 }}>{sub}</div>}
-        {sparkline && sparkline.length > 2 && (
-          <MiniSparkline data={sparkline} color={color} />
-        )}
-      </div>
+      {sub && <span className="text-xs text-ink-3">{sub}</span>}
+      {sparkline && <MiniSparkline data={sparkline} color={color} />}
     </div>
   )
 }

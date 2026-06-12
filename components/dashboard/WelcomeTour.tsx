@@ -8,11 +8,11 @@ const C = {
   surface:  '#0C1426',
   elevated: '#111D33',
   border:   'rgba(255,255,255,0.08)',
-  purple:   '#7C3AED',
-  purpleHi: '#A78BFA',
-  green:    '#22C55E',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  purple:   '#2C5FE0',
+  purpleHi: '#2C5FE0',
+  green:    '#0E9E6E',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.4)',
 }
 
@@ -157,7 +157,7 @@ export function WelcomeTour() {
               style={{
                 padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700,
                 cursor: 'pointer', border: 'none', color: '#fff',
-                background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+                background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
                 transition: 'opacity 0.15s',
               }}
               onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}

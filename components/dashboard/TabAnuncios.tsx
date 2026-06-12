@@ -10,21 +10,21 @@ import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 
 const C = {
-  bg:       '#080D1A',
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  bg:       '#F4F5F7',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(99,120,255,0.1)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
-  green:    '#22C55E',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.1)',
-  red:      '#EF4444',
+  red:      '#E1483F',
   redBg:    'rgba(239,68,68,0.1)',
-  blue:     '#38BDF8',
+  blue:     '#2C5FE0',
   blueBg:   'rgba(56,189,248,0.1)',
-  gold:     '#F59E0B',
+  gold:     '#E08B0B',
   goldBg:   'rgba(245,158,11,0.1)',
-  text1:    '#F1F5F9',
+  text1:    '#161B26',
   text2:    'rgba(255,255,255,0.5)',
   text3:    'rgba(255,255,255,0.25)',
 }
@@ -38,7 +38,7 @@ interface Props {
 type SubTab = 'meta' | 'google' | 'criar' | 'abtests' | 'conexoes'
 
 const META_SVG = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="#38BDF8">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="#2C5FE0">
     <path d="M12 2.04C6.5 2.04 2 6.53 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.85C10.44 7.34 11.93 5.96 14.22 5.96C15.31 5.96 16.45 6.15 16.45 6.15V8.62H15.19C13.95 8.62 13.56 9.39 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96A10 10 0 0 0 22 12.06C22 6.53 17.5 2.04 12 2.04Z"/>
   </svg>
 )

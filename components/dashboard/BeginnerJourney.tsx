@@ -9,13 +9,13 @@ const C = {
   surface:  '#0C1426',
   elevated: '#111D33',
   border:   'rgba(255,255,255,0.07)',
-  purple:   '#7C3AED',
-  purpleHi: '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleHi: '#2C5FE0',
   purpleBg: 'rgba(124,58,237,0.08)',
-  green:    '#22C55E',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.08)',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.35)',
 }
 
@@ -136,7 +136,7 @@ export function BeginnerJourney({ onNavigate }: Props) {
         {/* Progress */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '14px' }}>
           <div style={{ flex: 1, height: '6px', borderRadius: '99px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, #7C3AED, #A78BFA)`, borderRadius: '99px', transition: 'width 0.6s ease' }} />
+            <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, #2C5FE0, #2C5FE0)`, borderRadius: '99px', transition: 'width 0.6s ease' }} />
           </div>
           <span style={{ fontSize: '11px', fontWeight: 700, color: C.purpleHi, flexShrink: 0 }}>{doneCount}/{steps.length}</span>
         </div>
@@ -190,7 +190,7 @@ export function BeginnerJourney({ onNavigate }: Props) {
                     style={{
                       marginTop: '10px', padding: '7px 14px', borderRadius: '8px',
                       fontSize: '12px', fontWeight: 700, cursor: 'pointer', border: 'none',
-                      color: '#fff', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+                      color: '#fff', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
                       transition: 'opacity 0.15s',
                     }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}

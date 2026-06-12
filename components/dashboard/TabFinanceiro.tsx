@@ -6,17 +6,17 @@ import { useAppStore } from '@/lib/store'
 import type { SavedClient, FeeConfig } from '@/lib/store'
 
 const C = {
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(255,255,255,0.06)',
   purpleBorder: 'rgba(124,58,237,0.22)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
-  green:    '#22C55E',
-  red:      '#EF4444',
-  amber:    '#F59E0B',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
+  green:    '#0E9E6E',
+  red:      '#E1483F',
+  amber:    '#E08B0B',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.35)',
 }
 

@@ -28,9 +28,9 @@ const AGENTS = [
 ]
 
 const C = {
-  gold:    '#F0B429', green:   '#22C55E',
-  blue:    '#38BDF8', red:     '#FF4D4D',
-  purple:  '#A78BFA', slate:   '#64748B',
+  gold:    '#F0B429', green:   '#0E9E6E',
+  blue:    '#2C5FE0', red:     '#FF4D4D',
+  purple:  '#2C5FE0', slate:   '#8A93A3',
 }
 
 const PRIORIDADE_COLOR: Record<string, string> = {
@@ -776,7 +776,7 @@ export default function TabPipeline({ clientData }: { clientData: any }) {
             <div
               style={{
                 width: `${(totalDone / totalAgents) * 100}%`,
-                background: 'linear-gradient(90deg, #F0B429, #22C55E)',
+                background: 'linear-gradient(90deg, #F0B429, #0E9E6E)',
                 transition: 'width 0.6s ease',
               }}
               className="h-full rounded-full"

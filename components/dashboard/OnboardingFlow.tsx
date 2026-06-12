@@ -123,7 +123,7 @@ export function OnboardingFlow({ onNavigate }: Props) {
       }}>
         <span style={{ fontSize: '18px' }}>🎉</span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#22C55E' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#0E9E6E' }}>
             Configuração completa! O ELYON está pronto para uso.
           </div>
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
@@ -163,7 +163,7 @@ export function OnboardingFlow({ onNavigate }: Props) {
           <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
             <div style={{
               width: `${progressPct}%`, height: '100%',
-              background: 'linear-gradient(90deg, #F0B429, #22C55E)',
+              background: 'linear-gradient(90deg, #F0B429, #0E9E6E)',
               borderRadius: '2px', transition: 'width 0.4s ease',
             }} />
           </div>
@@ -207,8 +207,8 @@ export function OnboardingFlow({ onNavigate }: Props) {
                   width: '24px', height: '24px', borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: done ? '12px' : '11px', fontWeight: 700,
-                  background: done ? '#22C55E' : isNext ? 'rgba(240,180,41,0.15)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${done ? '#22C55E' : isNext ? 'rgba(240,180,41,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  background: done ? '#0E9E6E' : isNext ? 'rgba(240,180,41,0.15)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${done ? '#0E9E6E' : isNext ? 'rgba(240,180,41,0.4)' : 'rgba(255,255,255,0.08)'}`,
                   color: done ? '#000' : isNext ? '#F0B429' : 'rgba(255,255,255,0.3)',
                 }}>
                   {done ? '✓' : step.number}
@@ -247,7 +247,7 @@ export function OnboardingFlow({ onNavigate }: Props) {
                 )}
 
                 {done && (
-                  <span style={{ fontSize: '11px', color: '#22C55E', flexShrink: 0 }}>Feito</span>
+                  <span style={{ fontSize: '11px', color: '#0E9E6E', flexShrink: 0 }}>Feito</span>
                 )}
               </div>
             )

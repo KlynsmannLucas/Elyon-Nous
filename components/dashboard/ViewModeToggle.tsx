@@ -29,7 +29,7 @@ export function ViewModeToggle({ variant = 'topbar' }: Props) {
           cursor: 'pointer', transition: 'all 0.15s',
           border: isSimple ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.1)',
           background: isSimple ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)',
-          color: isSimple ? '#22C55E' : 'rgba(255,255,255,0.5)',
+          color: isSimple ? '#0E9E6E' : 'rgba(255,255,255,0.5)',
         }}
       >
         {isSimple ? '🟢 Simplificado' : '⚙ Avançado'}
@@ -52,7 +52,7 @@ export function ViewModeToggle({ variant = 'topbar' }: Props) {
               padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
               cursor: 'pointer', transition: 'all 0.15s', border: 'none',
               background: mode === m ? (m === 'simple' ? 'rgba(34,197,94,0.12)' : 'rgba(124,58,237,0.12)') : 'transparent',
-              color: mode === m ? (m === 'simple' ? '#22C55E' : '#A78BFA') : 'rgba(255,255,255,0.3)',
+              color: mode === m ? (m === 'simple' ? '#0E9E6E' : '#2C5FE0') : 'rgba(255,255,255,0.3)',
             }}
           >
             {m === 'simple' ? '🟢 Simplificado' : '⚙ Avançado'}
@@ -74,7 +74,7 @@ export function ViewModeToggle({ variant = 'topbar' }: Props) {
         padding: '4px 11px', borderRadius: '7px', flexShrink: 0,
         border: isSimple ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(124,58,237,0.3)',
         background: isSimple ? 'rgba(34,197,94,0.1)' : 'rgba(124,58,237,0.1)',
-        color: isSimple ? '#4ADE80' : '#A78BFA',
+        color: isSimple ? '#4ADE80' : '#2C5FE0',
         cursor: 'pointer', transition: 'all 0.25s',
         fontSize: '10px', fontWeight: 700, letterSpacing: '0.02em',
       }}

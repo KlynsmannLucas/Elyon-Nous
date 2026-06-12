@@ -7,23 +7,23 @@ import { getBenchmark } from '@/lib/niche_benchmarks'
 import StrategyAudienceSection from './StrategyAudienceSection'
 
 const C = {
-  bg:       '#080D1A',
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  bg:       '#F4F5F7',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
-  green:    '#22C55E',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.1)',
-  red:      '#EF4444',
+  red:      '#E1483F',
   redBg:    'rgba(239,68,68,0.1)',
-  blue:     '#38BDF8',
+  blue:     '#2C5FE0',
   blueBg:   'rgba(56,189,248,0.1)',
-  gold:     '#F59E0B',
+  gold:     '#E08B0B',
   goldBg:   'rgba(245,158,11,0.1)',
   orange:   '#F97316',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.25)',
 }
 
@@ -478,7 +478,7 @@ export function TabStrategy({ strategy, analysis, onRefresh }: Props) {
             onClick={onRefresh}
             style={{
               fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 8, cursor: 'pointer', flexShrink: 0,
-              background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', border: 'none', color: '#1a1300',
+              background: 'linear-gradient(135deg,#E08B0B,#FBBF24)', border: 'none', color: '#1a1300',
             }}
           >
             ⚡ Atualizar estratégia

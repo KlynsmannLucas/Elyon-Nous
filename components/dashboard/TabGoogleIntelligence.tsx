@@ -66,7 +66,7 @@ function fmt(n: number) {
   return `R$${n.toFixed(0)}`
 }
 function scoreColor(s: number) {
-  return s >= 80 ? '#22C55E' : s >= 65 ? '#F0B429' : s >= 50 ? '#FB923C' : '#FF4D4D'
+  return s >= 80 ? '#0E9E6E' : s >= 65 ? '#F0B429' : s >= 50 ? '#FB923C' : '#FF4D4D'
 }
 
 const CAMPAIGN_TYPE_ICONS: Record<string, string> = {
@@ -74,10 +74,10 @@ const CAMPAIGN_TYPE_ICONS: Record<string, string> = {
   PERFORMANCE_MAX: '⚡', SMART: '🤖', DISCOVERY: '🌐', LOCAL: '📍',
 }
 const BID_STRATEGY_COLORS: Record<string, string> = {
-  TARGET_CPA: '#22C55E', TARGET_ROAS: '#22C55E',
-  MAXIMIZE_CONVERSIONS: '#38BDF8', MAXIMIZE_CONVERSION_VALUE: '#38BDF8',
+  TARGET_CPA: '#0E9E6E', TARGET_ROAS: '#0E9E6E',
+  MAXIMIZE_CONVERSIONS: '#2C5FE0', MAXIMIZE_CONVERSION_VALUE: '#2C5FE0',
   MANUAL_CPC: '#FB923C', ENHANCED_CPC: '#F0B429',
-  TARGET_IMPRESSION_SHARE: '#A78BFA',
+  TARGET_IMPRESSION_SHARE: '#2C5FE0',
 }
 
 const QS_LABEL: Record<string, string> = {
@@ -91,7 +91,7 @@ function RecCard({ rec, index }: { rec: { type: RecType; title: string; descript
   const map = {
     critical:    { color: '#FF4D4D', bg: 'rgba(255,77,77,0.06)',   border: 'rgba(255,77,77,0.2)',   icon: '🚨' },
     warning:     { color: '#F0B429', bg: 'rgba(240,180,41,0.06)',  border: 'rgba(240,180,41,0.2)',  icon: '⚠️' },
-    opportunity: { color: '#22C55E', bg: 'rgba(34,197,94,0.06)',   border: 'rgba(34,197,94,0.2)',   icon: '💡' },
+    opportunity: { color: '#0E9E6E', bg: 'rgba(34,197,94,0.06)',   border: 'rgba(34,197,94,0.2)',   icon: '💡' },
   }
   const s = map[rec.type]
   return (
@@ -110,10 +110,10 @@ function RecCard({ rec, index }: { rec: { type: RecType; title: string; descript
 function CampaignRow({ campaign }: { campaign: GoogleCampaign }) {
   const [open, setOpen] = useState(false)
   const hasIssues = campaign.issues.length > 0
-  const bidColor  = BID_STRATEGY_COLORS[campaign.bidStrategyType] || '#94A3B8'
+  const bidColor  = BID_STRATEGY_COLORS[campaign.bidStrategyType] || '#5A6473'
   const typeIcon  = CAMPAIGN_TYPE_ICONS[campaign.campaignType] || '📋'
   const isColor   = campaign.impressionShare !== null
-    ? campaign.impressionShare >= 70 ? '#22C55E' : campaign.impressionShare >= 40 ? '#F0B429' : '#FF4D4D'
+    ? campaign.impressionShare >= 70 ? '#0E9E6E' : campaign.impressionShare >= 40 ? '#F0B429' : '#FF4D4D'
     : null
 
   return (
@@ -143,9 +143,9 @@ function CampaignRow({ campaign }: { campaign: GoogleCampaign }) {
             </div>
             <div className="flex gap-3 mt-1 text-xs text-slate-500 flex-wrap">
               <span>Investido: <strong className="text-[#F0B429]">{fmt(campaign.spend)}</strong></span>
-              {campaign.conversions > 0 && <span>Conv: <strong className="text-[#38BDF8]">{campaign.conversions.toFixed(1)}</strong></span>}
+              {campaign.conversions > 0 && <span>Conv: <strong className="text-[#2C5FE0]">{campaign.conversions.toFixed(1)}</strong></span>}
               {campaign.cpa > 0 && <span>CPA: <strong className="text-white">R${campaign.cpa}</strong></span>}
-              {campaign.roas > 0 && <span>ROAS: <strong className="text-[#22C55E]">{campaign.roas}×</strong></span>}
+              {campaign.roas > 0 && <span>ROAS: <strong className="text-[#0E9E6E]">{campaign.roas}×</strong></span>}
               <span>CTR: <strong className={campaign.campaignType === 'SEARCH' ? (campaign.ctr < 1 ? 'text-red-400' : 'text-slate-300') : (campaign.ctr < 0.1 ? 'text-red-400' : 'text-slate-300')}>{campaign.ctr}%</strong></span>
             </div>
           </div>
@@ -239,8 +239,8 @@ function SearchTermsPanel({ terms }: { terms: SearchTerm[] }) {
 
   const TAG_STYLE = {
     waste:       { color: '#FF4D4D', bg: 'rgba(255,77,77,0.1)',  label: '⛔ Negativar' },
-    opportunity: { color: '#22C55E', bg: 'rgba(34,197,94,0.1)',  label: '🏆 Oportunidade' },
-    ok:          { color: '#64748B', bg: 'rgba(100,116,139,0.1)', label: '✓ Ok' },
+    opportunity: { color: '#0E9E6E', bg: 'rgba(34,197,94,0.1)',  label: '🏆 Oportunidade' },
+    ok:          { color: '#8A93A3', bg: 'rgba(100,116,139,0.1)', label: '✓ Ok' },
   }
 
   return (
@@ -263,9 +263,9 @@ function SearchTermsPanel({ terms }: { terms: SearchTerm[] }) {
         </div>
         <div className="flex gap-2 flex-wrap">
           {([
-            { key: 'all',         label: `Todos (${terms.length})`,       color: '#64748B' },
+            { key: 'all',         label: `Todos (${terms.length})`,       color: '#8A93A3' },
             { key: 'waste',       label: `⛔ Negativar (${waste.length})`, color: '#FF4D4D' },
-            { key: 'opportunity', label: `🏆 Escalar (${opp.length})`,    color: '#22C55E' },
+            { key: 'opportunity', label: `🏆 Escalar (${opp.length})`,    color: '#0E9E6E' },
           ] as { key: typeof filter; label: string; color: string }[]).map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
               className="text-[11px] font-semibold px-3 py-1 rounded-full transition-all"
@@ -297,7 +297,7 @@ function SearchTermsPanel({ terms }: { terms: SearchTerm[] }) {
               <span className="flex-1 text-sm text-slate-200 font-medium truncate" title={t.term}>"{t.term}"</span>
               <div className="flex gap-3 text-[11px] text-slate-500 flex-shrink-0">
                 <span>R${t.spend.toFixed(0)}</span>
-                {t.conversions > 0 && <span className="text-[#38BDF8]">{t.conversions} conv.</span>}
+                {t.conversions > 0 && <span className="text-[#2C5FE0]">{t.conversions} conv.</span>}
                 {t.cpa > 0 && <span className="text-white">CPA R${t.cpa}</span>}
                 <span>{t.ctr}%</span>
               </div>
@@ -317,7 +317,7 @@ function KeywordsPanel({ keywords }: { keywords: Keyword[] }) {
 
   if (withQS.length === 0) return null
 
-  const qsColor = (qs: number | null) => qs === null ? '#64748B' : qs >= 7 ? '#22C55E' : qs >= 5 ? '#F0B429' : '#FF4D4D'
+  const qsColor = (qs: number | null) => qs === null ? '#8A93A3' : qs >= 7 ? '#0E9E6E' : qs >= 5 ? '#F0B429' : '#FF4D4D'
 
   return (
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
@@ -327,7 +327,7 @@ function KeywordsPanel({ keywords }: { keywords: Keyword[] }) {
         </h3>
         <div className="flex gap-3 text-xs text-slate-500">
           <span className="text-[#FF4D4D] font-semibold">{lowQS.length} baixo</span>
-          <span className="text-[#22C55E] font-semibold">{goodQS.length} bom</span>
+          <span className="text-[#0E9E6E] font-semibold">{goodQS.length} bom</span>
         </div>
       </div>
       <div className="divide-y divide-[#1E1E24] max-h-72 overflow-y-auto">
@@ -343,7 +343,7 @@ function KeywordsPanel({ keywords }: { keywords: Keyword[] }) {
             </div>
             <div className="flex gap-3 text-[11px] text-slate-500 flex-shrink-0">
               {kw.spend > 0 && <span>R${kw.spend.toFixed(0)}</span>}
-              {kw.conversions > 0 && <span className="text-[#38BDF8]">{kw.conversions} conv.</span>}
+              {kw.conversions > 0 && <span className="text-[#2C5FE0]">{kw.conversions} conv.</span>}
               {kw.predictedCtr && <span title="CTR previsto">{QS_LABEL[kw.predictedCtr] || kw.predictedCtr}</span>}
             </div>
           </div>
@@ -377,7 +377,7 @@ function AuctionPanel({ insights, myIS }: { insights: AuctionInsight[]; myIS: nu
           </thead>
           <tbody className="divide-y divide-[#1E1E24]">
             {insights.map((ins, i) => {
-              const isColor = ins.impressionShare >= 50 ? '#FF4D4D' : ins.impressionShare >= 25 ? '#F0B429' : '#22C55E'
+              const isColor = ins.impressionShare >= 50 ? '#FF4D4D' : ins.impressionShare >= 25 ? '#F0B429' : '#0E9E6E'
               return (
                 <tr key={i} className="hover:bg-[#16161A] transition-colors">
                   <td className="px-4 py-2.5 font-semibold text-slate-200 max-w-[180px] truncate">{ins.domain}</td>
@@ -598,7 +598,7 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
               <div className="px-4 pb-4 space-y-1.5" style={{ background: '#0D0D10' }}>
                 {diagResult.checks.map(c => {
                   const icons = { ok: '✅', error: '❌', warning: '⚠️', skip: '—' }
-                  const colors = { ok: '#22C55E', error: '#FF4D4D', warning: '#F0B429', skip: '#64748B' }
+                  const colors = { ok: '#0E9E6E', error: '#FF4D4D', warning: '#F0B429', skip: '#8A93A3' }
                   return (
                     <div key={c.id} className="flex items-start gap-2 text-xs">
                       <span className="flex-shrink-0 mt-0.5">{icons[c.status]}</span>
@@ -679,9 +679,9 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
             </div>
             {[
               { label: 'Investido 30d', value: fmt(data.totals.spend), color: '#F0B429', sub: `${data.totals.activeCampaigns} ativa${data.totals.activeCampaigns !== 1 ? 's' : ''}` },
-              { label: 'Conversões',    value: data.totals.conversions > 0 ? data.totals.conversions.toFixed(0) : '—', color: '#38BDF8', sub: data.totals.avgCPA > 0 ? `CPA: R$${data.totals.avgCPA}` : '' },
-              { label: data.totals.avgROAS > 0 ? 'ROAS' : 'CVR', value: data.totals.avgROAS > 0 ? `${data.totals.avgROAS}×` : `${data.totals.avgCVR}%`, color: '#22C55E', sub: data.totals.revenue > 0 ? `Receita: ${fmt(data.totals.revenue)}` : '' },
-              { label: data.totals.avgImpressionShare !== null ? 'IS Médio' : 'CTR Médio', value: data.totals.avgImpressionShare !== null ? `${data.totals.avgImpressionShare}%` : `${data.totals.avgCTR}%`, color: data.totals.avgCTR < 1.0 ? '#FF4D4D' : data.totals.avgCTR >= 3.0 ? '#22C55E' : '#F0B429', sub: `${data.totals.clicks.toLocaleString('pt-BR')} cliques` },
+              { label: 'Conversões',    value: data.totals.conversions > 0 ? data.totals.conversions.toFixed(0) : '—', color: '#2C5FE0', sub: data.totals.avgCPA > 0 ? `CPA: R$${data.totals.avgCPA}` : '' },
+              { label: data.totals.avgROAS > 0 ? 'ROAS' : 'CVR', value: data.totals.avgROAS > 0 ? `${data.totals.avgROAS}×` : `${data.totals.avgCVR}%`, color: '#0E9E6E', sub: data.totals.revenue > 0 ? `Receita: ${fmt(data.totals.revenue)}` : '' },
+              { label: data.totals.avgImpressionShare !== null ? 'IS Médio' : 'CTR Médio', value: data.totals.avgImpressionShare !== null ? `${data.totals.avgImpressionShare}%` : `${data.totals.avgCTR}%`, color: data.totals.avgCTR < 1.0 ? '#FF4D4D' : data.totals.avgCTR >= 3.0 ? '#0E9E6E' : '#F0B429', sub: `${data.totals.clicks.toLocaleString('pt-BR')} cliques` },
             ].map(kpi => (
               <div key={kpi.label} className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5 flex flex-col justify-between">
                 <div className="text-[10px] text-slate-600 uppercase tracking-wider">{kpi.label}</div>
@@ -717,7 +717,7 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
                         <span className="text-slate-300 font-semibold">{fmt(g.totalSpend)}</span>
                       </div>
                       <div className="h-1.5 bg-[#1E1E24] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #4285F4, #38BDF8)' }} />
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #4285F4, #2C5FE0)' }} />
                       </div>
                     </div>
                   )
@@ -730,7 +730,7 @@ export function TabGoogleIntelligence({ onNavigateToConnections }: Props) {
               {(() => {
                 const bidGroups: Record<string, { label: string; color: string; count: number; spend: number }> = {}
                 for (const c of data.campaigns) {
-                  if (!bidGroups[c.bidStrategyType]) bidGroups[c.bidStrategyType] = { label: c.bidStrategyLabel, color: BID_STRATEGY_COLORS[c.bidStrategyType] || '#94A3B8', count: 0, spend: 0 }
+                  if (!bidGroups[c.bidStrategyType]) bidGroups[c.bidStrategyType] = { label: c.bidStrategyLabel, color: BID_STRATEGY_COLORS[c.bidStrategyType] || '#5A6473', count: 0, spend: 0 }
                   bidGroups[c.bidStrategyType].count++
                   bidGroups[c.bidStrategyType].spend += c.spend
                 }

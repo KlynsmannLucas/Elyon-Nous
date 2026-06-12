@@ -9,21 +9,21 @@ import type { ClientData } from '@/lib/store'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(255,255,255,0.06)',
   borderMd: 'rgba(255,255,255,0.1)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
   purpleD:  'rgba(124,58,237,0.12)',
   purpleB:  'rgba(124,58,237,0.22)',
-  amber:    '#F59E0B',
-  green:    '#22C55E',
-  red:      '#EF4444',
-  blue:     '#38BDF8',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
-  text3:    '#64748B',
+  amber:    '#E08B0B',
+  green:    '#0E9E6E',
+  red:      '#E1483F',
+  blue:     '#2C5FE0',
+  text1:    '#161B26',
+  text2:    '#5A6473',
+  text3:    '#8A93A3',
 }
 
 interface Props {
@@ -142,17 +142,17 @@ function KpiCard({ label, value, sub, color, trend, sparkSeed, sparkBase, icon }
 
 // ── AI Score gauge ────────────────────────────────────────────────────────────
 const SCORE_RANGES = [
-  { min: 90, max: 100, label: 'Excelente',  color: '#22C55E', desc: 'Estrutura e performance acima da média do nicho.' },
-  { min: 70, max: 89,  label: 'Saudável',   color: '#22C55E', desc: 'A conta está bem. Ainda há espaço para otimizar.' },
-  { min: 45, max: 69,  label: 'Atenção',    color: '#F59E0B', desc: 'Existem problemas importantes para corrigir.' },
-  { min: 0,  max: 44,  label: 'Crítico',    color: '#EF4444', desc: 'A conta precisa de ação urgente.' },
+  { min: 90, max: 100, label: 'Excelente',  color: '#0E9E6E', desc: 'Estrutura e performance acima da média do nicho.' },
+  { min: 70, max: 89,  label: 'Saudável',   color: '#0E9E6E', desc: 'A conta está bem. Ainda há espaço para otimizar.' },
+  { min: 45, max: 69,  label: 'Atenção',    color: '#E08B0B', desc: 'Existem problemas importantes para corrigir.' },
+  { min: 0,  max: 44,  label: 'Crítico',    color: '#E1483F', desc: 'A conta precisa de ação urgente.' },
 ]
 
 function ScoreGauge({ score, label, description }: { score: number; label: string; description: string }) {
   const [showInfo, setShowInfo] = useState(false)
   const R = 52
   const CIRC = 2 * Math.PI * R
-  const color = score >= 90 ? '#22C55E' : score >= 70 ? '#22C55E' : score >= 45 ? '#F59E0B' : '#EF4444'
+  const color = score >= 90 ? '#0E9E6E' : score >= 70 ? '#0E9E6E' : score >= 45 ? '#E08B0B' : '#E1483F'
   const bgColor = score >= 70 ? 'rgba(34,197,94,0.08)' : score >= 45 ? 'rgba(245,165,0,0.08)' : 'rgba(239,68,68,0.08)'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%' }}>
@@ -198,7 +198,7 @@ function ScoreGauge({ score, label, description }: { score: number; label: strin
       {/* Faixas de referência — expande ao clicar no ? */}
       {showInfo && (
         <div style={{
-          width: '100%', background: '#0F1629',
+          width: '100%', background: '#FFFFFF',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '10px', padding: '10px 12px',
         }}>
@@ -356,7 +356,7 @@ function MetricTooltip({ metric }: { metric: string }) {
           width: '220px', zIndex: 100, pointerEvents: 'none',
           boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
         }}>
-          <strong style={{ color: '#A78BFA', display: 'block', marginBottom: '3px' }}>{metric}</strong>
+          <strong style={{ color: '#2C5FE0', display: 'block', marginBottom: '3px' }}>{metric}</strong>
           {tip}
         </span>
       )}
@@ -746,7 +746,7 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
               onClick={() => onNavigate?.(needAudit ? 'analise' : 'acoes')}
               style={{
                 fontSize: '12px', fontWeight: 700, padding: '8px 16px', borderRadius: '9px', cursor: 'pointer', flexShrink: 0,
-                background: needAudit ? 'linear-gradient(135deg,#F59E0B,#FBBF24)' : 'linear-gradient(135deg,#7C3AED,#A78BFA)',
+                background: needAudit ? 'linear-gradient(135deg,#E08B0B,#FBBF24)' : 'linear-gradient(135deg,#2C5FE0,#2C5FE0)',
                 border: 'none', color: needAudit ? '#1a1300' : '#fff', whiteSpace: 'nowrap',
               }}
             >
@@ -804,8 +804,8 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
             {[
-              { step: '1', title: 'Conecte seus dados', desc: 'Ligue Meta Ads ou Google Ads para importar campanhas reais.', tab: 'analise', cta: 'Conectar conta', color: '#38BDF8' },
-              { step: '2', title: 'Rode a Análise Profunda', desc: 'Gere o diagnóstico completo da conta — score, alertas e oportunidades.', tab: 'analise', cta: 'Ir para Análise', color: '#A78BFA' },
+              { step: '1', title: 'Conecte seus dados', desc: 'Ligue Meta Ads ou Google Ads para importar campanhas reais.', tab: 'analise', cta: 'Conectar conta', color: '#2C5FE0' },
+              { step: '2', title: 'Rode a Análise Profunda', desc: 'Gere o diagnóstico completo da conta — score, alertas e oportunidades.', tab: 'analise', cta: 'Ir para Análise', color: '#2C5FE0' },
               { step: '3', title: 'Gere sua Estratégia', desc: 'A IA cria um plano de 90 dias com canais, CPL-alvo e ações.', tab: 'strategy', cta: 'Ir para Estratégia', color: '#F0B429' },
             ].map(item => (
               <div key={item.step} style={{

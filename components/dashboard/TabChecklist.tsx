@@ -7,22 +7,22 @@ import { useViewMode } from '@/lib/viewMode'
 import type { ChecklistItem } from '@/lib/store'
 
 const C = {
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
   purpleD:  'rgba(124,58,237,0.10)',
   purpleB:  'rgba(124,58,237,0.20)',
-  green:    '#22C55E',
+  green:    '#0E9E6E',
   greenD:   'rgba(34,197,94,0.10)',
-  amber:    '#F59E0B',
+  amber:    '#E08B0B',
   amberD:   'rgba(245,158,11,0.10)',
-  red:      '#EF4444',
+  red:      '#E1483F',
   redD:     'rgba(239,68,68,0.10)',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
-  text3:    '#64748B',
+  text1:    '#161B26',
+  text2:    '#5A6473',
+  text3:    '#8A93A3',
 }
 
 const CATEGORY_META: Record<ChecklistItem['category'], { label: string; color: string; bg: string; icon: string }> = {
@@ -200,7 +200,7 @@ export function TabChecklist({ clientData }: Props) {
       label: 'Monitorar',
       simpleLabel: '👁 Monitorar',
       icon: '🔵',
-      color: '#38BDF8',
+      color: '#2C5FE0',
       bg: 'rgba(56,189,248,0.08)',
       items: items.filter(i => i.category === 'monitoramento' || (i.category === 'estrategia')),
     },

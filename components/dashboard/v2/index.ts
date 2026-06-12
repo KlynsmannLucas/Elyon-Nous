@@ -1,0 +1,11 @@
+// components/dashboard/v2/index.ts
+// Exports dos componentes do Redesign v2
+export { Card } from './Card'
+export { Badge } from './Badge'
+export { Button } from './Button'
+export { SectionHead } from './SectionHead'
+export { Delta } from './Delta'
+export { SourceBadge } from './SourceBadge'
+export { SidebarV2, type AreaKey } from './Sidebar'
+export { TopbarV2 } from './Topbar'
+export { NousRail } from './NousRail'

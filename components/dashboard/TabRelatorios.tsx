@@ -32,10 +32,10 @@ function IconDocument() {
   return (
     <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect width="40" height="40" rx="10" fill="rgba(124,58,237,0.10)" />
-      <path d="M13 10h9l6 6v14a1 1 0 0 1-1 1H13a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1z" stroke="#7C3AED" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
-      <path d="M22 10v7h6" stroke="#7C3AED" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
-      <line x1="15" y1="22" x2="25" y2="22" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="15" y1="25.5" x2="22" y2="25.5" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M13 10h9l6 6v14a1 1 0 0 1-1 1H13a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1z" stroke="#2C5FE0" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+      <path d="M22 10v7h6" stroke="#2C5FE0" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+      <line x1="15" y1="22" x2="25" y2="22" stroke="#2C5FE0" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="15" y1="25.5" x2="22" y2="25.5" stroke="#2C5FE0" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   )
 }
@@ -43,8 +43,8 @@ function IconDocument() {
 function IconLink({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M7.5 10.5a3.75 3.75 0 0 0 5.303 0l2.25-2.25a3.75 3.75 0 0 0-5.303-5.303L8.625 4.07" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M10.5 7.5a3.75 3.75 0 0 0-5.303 0l-2.25 2.25a3.75 3.75 0 0 0 5.303 5.303l1.121-1.122" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7.5 10.5a3.75 3.75 0 0 0 5.303 0l2.25-2.25a3.75 3.75 0 0 0-5.303-5.303L8.625 4.07" stroke="#2C5FE0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10.5 7.5a3.75 3.75 0 0 0-5.303 0l-2.25 2.25a3.75 3.75 0 0 0 5.303 5.303l1.121-1.122" stroke="#2C5FE0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -52,8 +52,8 @@ function IconLink({ size = 18 }: { size?: number }) {
 function IconMail({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="4" width="14" height="10" rx="2" stroke="#A78BFA" strokeWidth="1.5" />
-      <path d="M2 6.5l7 4.5 7-4.5" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="2" y="4" width="14" height="10" rx="2" stroke="#2C5FE0" strokeWidth="1.5" />
+      <path d="M2 6.5l7 4.5 7-4.5" stroke="#2C5FE0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -61,8 +61,8 @@ function IconMail({ size = 18 }: { size?: number }) {
 function IconEye({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M1.5 9s2.7-5.25 7.5-5.25S16.5 9 16.5 9s-2.7 5.25-7.5 5.25S1.5 9 1.5 9z" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="9" cy="9" r="2.25" stroke="#A78BFA" strokeWidth="1.5" />
+      <path d="M1.5 9s2.7-5.25 7.5-5.25S16.5 9 16.5 9s-2.7 5.25-7.5 5.25S1.5 9 1.5 9z" stroke="#2C5FE0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="9" r="2.25" stroke="#2C5FE0" strokeWidth="1.5" />
     </svg>
   )
 }
@@ -70,9 +70,9 @@ function IconEye({ size = 18 }: { size?: number }) {
 function IconWarning({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M8 1.5l6.5 12H1.5L8 1.5z" stroke="#F59E0B" strokeWidth="1.4" strokeLinejoin="round" />
-      <line x1="8" y1="6" x2="8" y2="9.5" stroke="#F59E0B" strokeWidth="1.4" strokeLinecap="round" />
-      <circle cx="8" cy="11.5" r="0.7" fill="#F59E0B" />
+      <path d="M8 1.5l6.5 12H1.5L8 1.5z" stroke="#E08B0B" strokeWidth="1.4" strokeLinejoin="round" />
+      <line x1="8" y1="6" x2="8" y2="9.5" stroke="#E08B0B" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="8" cy="11.5" r="0.7" fill="#E08B0B" />
     </svg>
   )
 }
@@ -80,10 +80,10 @@ function IconWarning({ size = 16 }: { size?: number }) {
 function IconReport({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="1.5" width="14" height="15" rx="2" stroke="#A78BFA" strokeWidth="1.5" />
-      <line x1="5" y1="6" x2="13" y2="6" stroke="#A78BFA" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="5" y1="9" x2="13" y2="9" stroke="#A78BFA" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="5" y1="12" x2="9" y2="12" stroke="#A78BFA" strokeWidth="1.2" strokeLinecap="round" />
+      <rect x="2" y="1.5" width="14" height="15" rx="2" stroke="#2C5FE0" strokeWidth="1.5" />
+      <line x1="5" y1="6" x2="13" y2="6" stroke="#2C5FE0" strokeWidth="1.2" strokeLinecap="round" />
+      <line x1="5" y1="9" x2="13" y2="9" stroke="#2C5FE0" strokeWidth="1.2" strokeLinecap="round" />
+      <line x1="5" y1="12" x2="9" y2="12" stroke="#2C5FE0" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   )
 }
@@ -94,13 +94,13 @@ function rlPrioColor(p: string): string {
   const s = (p || '').toLowerCase()
   if (s === 'p1' || s === 'alta' || s === 'crítica' || s === 'critica') return '#FF4D4D'
   if (s === 'p2' || s === 'média' || s === 'media') return '#F0B429'
-  return '#22C55E'
+  return '#0E9E6E'
 }
 
 function rlScoreColor(s: number): string {
-  if (s >= 75) return '#22C55E'
+  if (s >= 75) return '#0E9E6E'
   if (s >= 55) return '#F0B429'
-  return '#EF4444'
+  return '#E1483F'
 }
 
 function rlFmt(n: number | undefined | null, prefix = '', suffix = '', decimals = 0): string {
@@ -121,27 +121,27 @@ function rlStatusIcon(status: string): string {
 }
 
 function rlStatusColor(status: string): string {
-  if (status === 'verificado') return '#22C55E'
-  if (status === 'problema') return '#EF4444'
+  if (status === 'verificado') return '#0E9E6E'
+  if (status === 'problema') return '#E1483F'
   if (status === 'nao_verificado') return '#F0B429'
-  return '#64748B'
+  return '#8A93A3'
 }
 
 // ── Shared style constants ──────────────────────────────────────────────────
 
 const S = {
   card: {
-    background: '#0F1629',
+    background: '#FFFFFF',
     border: '1px solid rgba(255,255,255,0.06)',
     borderRadius: '16px',
     padding: '22px',
   } as React.CSSProperties,
 
   inputBase: {
-    background: '#131E35',
+    background: '#FBFCFD',
     border: '1px solid rgba(255,255,255,0.06)',
     borderRadius: '10px',
-    color: '#F1F5F9',
+    color: '#161B26',
     fontSize: '13px',
     padding: '8px 12px',
     outline: 'none',
@@ -151,13 +151,13 @@ const S = {
 
   label: {
     fontSize: '11px',
-    color: '#94A3B8',
+    color: '#5A6473',
     marginBottom: '6px',
     display: 'block',
   } as React.CSSProperties,
 
   ctaBtn: {
-    background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+    background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
     border: 'none',
     borderRadius: '10px',
     color: '#fff',
@@ -200,7 +200,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
 
   // ── Branding state ──
   const [agencyName,    setAgencyName]    = useState('')
-  const [primaryColor,  setPrimaryColor]  = useState('#7C3AED')
+  const [primaryColor,  setPrimaryColor]  = useState('#2C5FE0')
 
   // ── Relatório Inteligente state ──
   const [reportMode, setReportMode] = useState<'executivo' | 'tecnico' | 'agencia'>('executivo')
@@ -381,12 +381,12 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Relatórios</h2>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#161B26', margin: 0 }}>Relatórios</h2>
         </div>
         <div style={{ ...S.card, padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '12px' }}>
           <IconDocument />
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Nenhum cliente selecionado</h3>
-          <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>Selecione um cliente no menu para gerar relatórios.</p>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#161B26', margin: 0 }}>Nenhum cliente selecionado</h3>
+          <p style={{ fontSize: '13px', color: '#8A93A3', margin: 0 }}>Selecione um cliente no menu para gerar relatórios.</p>
         </div>
       </div>
     )
@@ -399,8 +399,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
 
       {/* Header */}
       <div>
-        <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#F1F5F9', margin: '0 0 4px' }}>Relatórios</h2>
-        <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
+        <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#161B26', margin: '0 0 4px' }}>Relatórios</h2>
+        <p style={{ fontSize: '13px', color: '#8A93A3', margin: 0 }}>
           Compartilhe relatórios com clientes e configure envios automáticos por email.
         </p>
       </div>
@@ -415,7 +415,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          color: '#F59E0B',
+          color: '#E08B0B',
           fontSize: '13px',
         }}>
           <IconWarning size={16} />
@@ -423,7 +423,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
           {onNavigateToConnections && (
             <button
               onClick={onNavigateToConnections}
-              style={{ marginLeft: 'auto', fontSize: '12px', fontWeight: 700, color: '#F59E0B', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', flexShrink: 0 }}
+              style={{ marginLeft: 'auto', fontSize: '12px', fontWeight: 700, color: '#E08B0B', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', flexShrink: 0 }}
             >
               Conectar →
             </button>
@@ -434,7 +434,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
       {/* ── 0. RELATÓRIO INTELIGENTE ────────────────────────────────────── */}
       {(() => {
         const sectionLabel: React.CSSProperties = {
-          fontSize: '9px', fontWeight: 700, color: '#7C3AED',
+          fontSize: '9px', fontWeight: 700, color: '#2C5FE0',
           letterSpacing: '0.08em', textTransform: 'uppercase',
           marginBottom: '8px', marginTop: '4px',
         }
@@ -461,8 +461,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <IconReport size={17} />
                 <div>
-                  <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Relatório Inteligente</h3>
-                  <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', margin: 0 }}>Relatório Inteligente</h3>
+                  <p style={{ fontSize: '11px', color: '#8A93A3', margin: 0 }}>
                     {reportMode === 'executivo'
                       ? 'Visão geral para o decisor — sem jargão técnico.'
                       : reportMode === 'tecnico'
@@ -472,13 +472,13 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ display: 'flex', gap: '3px', background: '#131E35', borderRadius: '10px', padding: '3px' }}>
+                <div style={{ display: 'flex', gap: '3px', background: '#FBFCFD', borderRadius: '10px', padding: '3px' }}>
                   {(['executivo', 'tecnico', 'agencia'] as const).map(m => (
                     <button key={m} onClick={() => setReportMode(m)} style={{
                       padding: '5px 11px', fontSize: '11px', fontWeight: 700, borderRadius: '7px',
                       cursor: 'pointer', border: 'none', transition: 'all 0.15s',
-                      background: reportMode === m ? 'linear-gradient(135deg, #7C3AED, #A78BFA)' : 'transparent',
-                      color: reportMode === m ? '#fff' : '#64748B',
+                      background: reportMode === m ? 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' : 'transparent',
+                      color: reportMode === m ? '#fff' : '#8A93A3',
                     }}>
                       {m === 'executivo' ? 'Executivo' : m === 'tecnico' ? 'Técnico' : 'Agência'}
                     </button>
@@ -491,8 +491,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
             {!hasAudit ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '40px 0', textAlign: 'center' }}>
                 <IconReport size={36} />
-                <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Dados insuficientes</h4>
-                <p style={{ fontSize: '13px', color: '#64748B', margin: 0, maxWidth: '300px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', margin: 0 }}>Dados insuficientes</h4>
+                <p style={{ fontSize: '13px', color: '#8A93A3', margin: 0, maxWidth: '300px' }}>
                   Execute a Análise Profunda para gerar o Relatório Inteligente com dados reais da conta.
                 </p>
               </div>
@@ -501,20 +501,20 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                 {/* ── Cover: client + score + KPIs ── */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '14px', marginBottom: '18px', background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '16px' }}>
                   <div>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#F1F5F9', marginBottom: '2px' }}>{clientData.clientName}</div>
-                    <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#161B26', marginBottom: '2px' }}>{clientData.clientName}</div>
+                    <div style={{ fontSize: '12px', color: '#8A93A3', marginBottom: '12px' }}>
                       {clientData.niche} · {audit._period || 'Últimos 30 dias'} · Fonte:{' '}
                       {audit._auditSource === 'api' ? 'Somente API' : audit._auditSource === 'upload' ? 'Somente arquivo' : 'Consolidado'}
                     </div>
                     <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
                       {[
                         { label: 'Investimento', value: rlFmt(rRm.totalSpend, 'R$', '', 0), color: '#F0B429' },
-                        { label: 'Leads', value: rlFmt(rRm.totalLeads, '', '', 0), color: '#38BDF8' },
-                        { label: 'CPL Médio', value: rlFmt(rRm.avgCPL, 'R$', '', 2), color: '#A78BFA' },
-                        ...(rRm.avgROAS > 0 ? [{ label: 'ROAS', value: rlFmt(rRm.avgROAS, '', '×', 2), color: '#22C55E' }] : []),
+                        { label: 'Leads', value: rlFmt(rRm.totalLeads, '', '', 0), color: '#2C5FE0' },
+                        { label: 'CPL Médio', value: rlFmt(rRm.avgCPL, 'R$', '', 2), color: '#2C5FE0' },
+                        ...(rRm.avgROAS > 0 ? [{ label: 'ROAS', value: rlFmt(rRm.avgROAS, '', '×', 2), color: '#0E9E6E' }] : []),
                       ].map(k => (
                         <div key={k.label}>
-                          <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>{k.label}</div>
+                          <div style={{ fontSize: '10px', color: '#8A93A3', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>{k.label}</div>
                           <div style={{ fontSize: '16px', fontWeight: 700, color: k.color }}>{k.value}</div>
                         </div>
                       ))}
@@ -523,7 +523,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', minWidth: '72px' }}>
                     <div style={{ fontSize: '36px', fontWeight: 700, color: rlScoreColor(rScore), lineHeight: 1 }}>{rScore}</div>
                     <div style={{ fontSize: '16px', fontWeight: 700, color: rlScoreColor(rScore) }}>{rGrade}</div>
-                    <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score IA</div>
+                    <div style={{ fontSize: '9px', color: '#8A93A3', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score IA</div>
                   </div>
                 </div>
 
@@ -543,9 +543,9 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                           {rWinners.slice(0, 4).map((c: any, i: number) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: '8px' }}>
-                              <span style={{ fontSize: '12px', color: '#22C55E', flexShrink: 0 }}>✓</span>
+                              <span style={{ fontSize: '12px', color: '#0E9E6E', flexShrink: 0 }}>✓</span>
                               <span style={{ fontSize: '12px', color: '#CBD5E1', flex: 1 }}>{rlTrunc(c.campaign_name || c.name, 52)}</span>
-                              {c.cpl > 0 && <span style={{ fontSize: '11px', color: '#22C55E', fontWeight: 700, flexShrink: 0 }}>R${c.cpl.toFixed(2)}</span>}
+                              {c.cpl > 0 && <span style={{ fontSize: '11px', color: '#0E9E6E', fontWeight: 700, flexShrink: 0 }}>R${c.cpl.toFixed(2)}</span>}
                             </div>
                           ))}
                         </div>
@@ -558,12 +558,12 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                           {rCritical.slice(0, 3).map((c: any, i: number) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 10px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '8px' }}>
-                              <span style={{ fontSize: '12px', color: '#EF4444', flexShrink: 0, marginTop: '1px' }}>!</span>
+                              <span style={{ fontSize: '12px', color: '#E1483F', flexShrink: 0, marginTop: '1px' }}>!</span>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '12px', color: '#CBD5E1' }}>{rlTrunc(c.campaign_name || c.name, 46)}</div>
-                                {c.evidence && <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>{rlTrunc(c.evidence, 80)}</div>}
+                                {c.evidence && <div style={{ fontSize: '11px', color: '#5A6473', marginTop: '2px' }}>{rlTrunc(c.evidence, 80)}</div>}
                               </div>
-                              {c.cpl > 0 && <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, flexShrink: 0 }}>R${c.cpl.toFixed(2)}</span>}
+                              {c.cpl > 0 && <span style={{ fontSize: '11px', color: '#E1483F', fontWeight: 700, flexShrink: 0 }}>R${c.cpl.toFixed(2)}</span>}
                             </div>
                           ))}
                         </div>
@@ -572,9 +572,9 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
 
                     {(audit._wastePercent || 0) > 0 && (
                       <div style={{ marginBottom: '14px', padding: '10px 14px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '8px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', color: '#EF4444', flexShrink: 0 }}>⚠</span>
+                        <span style={{ fontSize: '12px', color: '#E1483F', flexShrink: 0 }}>⚠</span>
                         <p style={{ fontSize: '12px', color: '#CBD5E1', margin: 0, lineHeight: '1.5' }}>
-                          <strong style={{ color: '#EF4444' }}>Desperdício estimado:</strong>{' '}
+                          <strong style={{ color: '#E1483F' }}>Desperdício estimado:</strong>{' '}
                           {audit._wastePercent}% do orçamento em campanhas sem resultado
                           {rRm.totalSpend > 0 ? ` — aproximadamente ${rlFmt(rRm.totalSpend * audit._wastePercent / 100, 'R$', '', 0)} no período` : ''}.
                         </p>
@@ -591,8 +591,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                                 {a.prioridade || 'P1'}
                               </span>
                               <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '12px', color: '#F1F5F9', fontWeight: 600 }}>{a.titulo || String(a)}</div>
-                                {a.prazo && <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Prazo: {a.prazo}</div>}
+                                <div style={{ fontSize: '12px', color: '#161B26', fontWeight: 600 }}>{a.titulo || String(a)}</div>
+                                {a.prazo && <div style={{ fontSize: '11px', color: '#8A93A3', marginTop: '2px' }}>Prazo: {a.prazo}</div>}
                               </div>
                             </div>
                           ))}
@@ -605,8 +605,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         <div style={sectionLabel}>PRÓXIMOS 30 DIAS</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {(rPlano.trinta_dias as string[]).slice(0, 4).map((item: string, i: number) => (
-                            <div key={i} style={{ fontSize: '12px', color: '#94A3B8', paddingLeft: '12px', position: 'relative', lineHeight: '1.5' }}>
-                              <span style={{ position: 'absolute', left: 0, color: '#7C3AED' }}>·</span>
+                            <div key={i} style={{ fontSize: '12px', color: '#5A6473', paddingLeft: '12px', position: 'relative', lineHeight: '1.5' }}>
+                              <span style={{ position: 'absolute', left: 0, color: '#2C5FE0' }}>·</span>
                               {item}
                             </div>
                           ))}
@@ -622,16 +622,16 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '14px' }}>
                       {[
                         { label: 'Investimento', value: rlFmt(rRm.totalSpend, 'R$', '', 0), color: '#F0B429' },
-                        { label: 'Leads', value: rlFmt(rRm.totalLeads, '', '', 0), color: '#38BDF8' },
-                        { label: 'CPL Médio', value: rlFmt(rRm.avgCPL, 'R$', '', 2), color: '#A78BFA' },
-                        { label: 'ROAS', value: rRm.avgROAS > 0 ? rlFmt(rRm.avgROAS, '', '×', 2) : '—', color: '#22C55E' },
+                        { label: 'Leads', value: rlFmt(rRm.totalLeads, '', '', 0), color: '#2C5FE0' },
+                        { label: 'CPL Médio', value: rlFmt(rRm.avgCPL, 'R$', '', 2), color: '#2C5FE0' },
+                        { label: 'ROAS', value: rRm.avgROAS > 0 ? rlFmt(rRm.avgROAS, '', '×', 2) : '—', color: '#0E9E6E' },
                         { label: 'CTR Médio', value: rRm.avgCTR > 0 ? rlFmt(rRm.avgCTR, '', '%', 2) : '—', color: '#CBD5E1' },
                         { label: 'Impressões', value: rRm.totalImpressions > 0 ? `${((rRm.totalImpressions as number) / 1000).toFixed(0)}k` : '—', color: '#CBD5E1' },
                         { label: 'Campanhas', value: String(rAllCamps.length) || '—', color: '#CBD5E1' },
-                        { label: 'Confiança', value: rDq.level === 'alto' ? 'Alta' : rDq.level === 'medio' ? 'Média' : 'Baixa', color: rDq.level === 'alto' ? '#22C55E' : rDq.level === 'medio' ? '#F0B429' : '#EF4444' },
+                        { label: 'Confiança', value: rDq.level === 'alto' ? 'Alta' : rDq.level === 'medio' ? 'Média' : 'Baixa', color: rDq.level === 'alto' ? '#0E9E6E' : rDq.level === 'medio' ? '#F0B429' : '#E1483F' },
                       ].map(k => (
                         <div key={k.label} style={{ background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '8px 10px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px' }}>{k.label}</div>
+                          <div style={{ fontSize: '9px', color: '#8A93A3', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px' }}>{k.label}</div>
                           <div style={{ fontSize: '14px', fontWeight: 700, color: k.color }}>{k.value}</div>
                         </div>
                       ))}
@@ -639,7 +639,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
 
                     {rDq.reason && (
                       <div style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '14px' }}>
-                        <span style={{ fontSize: '11px', color: '#64748B', fontStyle: 'italic' }}>{rDq.reason}</span>
+                        <span style={{ fontSize: '11px', color: '#8A93A3', fontStyle: 'italic' }}>{rDq.reason}</span>
                       </div>
                     )}
 
@@ -648,30 +648,30 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         <div style={sectionLabel}>BENCHMARK — {clientData.niche.toUpperCase()}</div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                           <div style={benchBox}>
-                            <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', marginBottom: '3px' }}>CPL de mercado</div>
+                            <div style={{ fontSize: '9px', color: '#8A93A3', textTransform: 'uppercase', marginBottom: '3px' }}>CPL de mercado</div>
                             <div style={{ fontSize: '13px', fontWeight: 700, color: '#CBD5E1' }}>R${rBench.cpl_min}–R${rBench.cpl_max}</div>
                             {rRm.avgCPL > 0 && (
-                              <div style={{ fontSize: '10px', marginTop: '3px', color: rRm.avgCPL <= rBench.kpi_thresholds.cpl_good ? '#22C55E' : rRm.avgCPL >= rBench.kpi_thresholds.cpl_bad ? '#EF4444' : '#F0B429' }}>
+                              <div style={{ fontSize: '10px', marginTop: '3px', color: rRm.avgCPL <= rBench.kpi_thresholds.cpl_good ? '#0E9E6E' : rRm.avgCPL >= rBench.kpi_thresholds.cpl_bad ? '#E1483F' : '#F0B429' }}>
                                 Seu CPL: {rlFmt(rRm.avgCPL, 'R$', '', 2)}{' '}
                                 {rRm.avgCPL <= rBench.kpi_thresholds.cpl_good ? '✓' : rRm.avgCPL >= rBench.kpi_thresholds.cpl_bad ? '✗' : '~'}
                               </div>
                             )}
                           </div>
                           <div style={benchBox}>
-                            <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', marginBottom: '3px' }}>ROAS referência</div>
+                            <div style={{ fontSize: '9px', color: '#8A93A3', textTransform: 'uppercase', marginBottom: '3px' }}>ROAS referência</div>
                             <div style={{ fontSize: '13px', fontWeight: 700, color: '#CBD5E1' }}>{rBench.kpi_thresholds.roas_good}×</div>
                             {rRm.avgROAS > 0 && (
-                              <div style={{ fontSize: '10px', marginTop: '3px', color: rRm.avgROAS >= rBench.kpi_thresholds.roas_good ? '#22C55E' : '#64748B' }}>
+                              <div style={{ fontSize: '10px', marginTop: '3px', color: rRm.avgROAS >= rBench.kpi_thresholds.roas_good ? '#0E9E6E' : '#8A93A3' }}>
                                 Seu ROAS: {rlFmt(rRm.avgROAS, '', '×', 2)}
                               </div>
                             )}
                           </div>
                           <div style={benchBox}>
-                            <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', marginBottom: '3px' }}>Melhores canais</div>
+                            <div style={{ fontSize: '9px', color: '#8A93A3', textTransform: 'uppercase', marginBottom: '3px' }}>Melhores canais</div>
                             <div style={{ fontSize: '12px', fontWeight: 700, color: '#CBD5E1' }}>{rBench.best_channels.slice(0, 2).join(', ')}</div>
                           </div>
                         </div>
-                        <p style={{ fontSize: '10px', color: '#64748B', margin: '6px 0 0', fontStyle: 'italic' }}>* Benchmark baseado em médias de mercado — não representa dados específicos desta conta.</p>
+                        <p style={{ fontSize: '10px', color: '#8A93A3', margin: '6px 0 0', fontStyle: 'italic' }}>* Benchmark baseado em médias de mercado — não representa dados específicos desta conta.</p>
                       </div>
                     )}
 
@@ -684,22 +684,22 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                             const isC = rCritical.some((x: any) => (x.campaign_name || x.name) === (c.campaign_name || c.name))
                             const borderCol  = isW ? 'rgba(34,197,94,0.15)' : isC ? 'rgba(239,68,68,0.15)' : 'rgba(240,180,41,0.12)'
                             const badgeBg    = isW ? 'rgba(34,197,94,0.10)' : isC ? 'rgba(239,68,68,0.10)' : 'rgba(240,180,41,0.10)'
-                            const badgeColor = isW ? '#22C55E' : isC ? '#EF4444' : '#F0B429'
+                            const badgeColor = isW ? '#0E9E6E' : isC ? '#E1483F' : '#F0B429'
                             const badgeLabel = isW ? 'Vencedora' : isC ? 'Crítica' : 'Atenção'
                             return (
                               <div key={i} style={{ padding: '8px 10px', background: '#0A0D18', border: `1px solid ${borderCol}`, borderRadius: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
                                   <span style={{ fontSize: '9px', fontWeight: 700, color: badgeColor, background: badgeBg, borderRadius: '4px', padding: '1px 5px', flexShrink: 0 }}>{badgeLabel}</span>
                                   <span style={{ fontSize: '11px', color: '#CBD5E1', fontWeight: 600, flex: 1 }}>{rlTrunc(c.campaign_name || c.name, 48)}</span>
-                                  <span style={{ fontSize: '11px', color: '#94A3B8', fontFamily: 'monospace', flexShrink: 0 }}>CPL: {rlFmt(c.cpl, 'R$', '', 2)}</span>
+                                  <span style={{ fontSize: '11px', color: '#5A6473', fontFamily: 'monospace', flexShrink: 0 }}>CPL: {rlFmt(c.cpl, 'R$', '', 2)}</span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '12px', marginBottom: (c.evidence || c.recommended_action) ? '4px' : 0 }}>
-                                  {c.spend > 0 && <span style={{ fontSize: '10px', color: '#64748B' }}>Gasto: {rlFmt(c.spend, 'R$')}</span>}
-                                  {c.leads > 0 && <span style={{ fontSize: '10px', color: '#64748B' }}>Leads: {c.leads}</span>}
-                                  {c.ctr  > 0 && <span style={{ fontSize: '10px', color: '#64748B' }}>CTR: {rlFmt(c.ctr, '', '%', 2)}</span>}
+                                  {c.spend > 0 && <span style={{ fontSize: '10px', color: '#8A93A3' }}>Gasto: {rlFmt(c.spend, 'R$')}</span>}
+                                  {c.leads > 0 && <span style={{ fontSize: '10px', color: '#8A93A3' }}>Leads: {c.leads}</span>}
+                                  {c.ctr  > 0 && <span style={{ fontSize: '10px', color: '#8A93A3' }}>CTR: {rlFmt(c.ctr, '', '%', 2)}</span>}
                                 </div>
-                                {c.evidence && <div style={{ fontSize: '10px', color: '#94A3B8', lineHeight: '1.45' }}>{c.evidence}</div>}
-                                {c.recommended_action && <div style={{ fontSize: '10px', color: '#A78BFA', marginTop: '3px', fontWeight: 600 }}>→ {c.recommended_action}</div>}
+                                {c.evidence && <div style={{ fontSize: '10px', color: '#5A6473', lineHeight: '1.45' }}>{c.evidence}</div>}
+                                {c.recommended_action && <div style={{ fontSize: '10px', color: '#2C5FE0', marginTop: '3px', fontWeight: 600 }}>→ {c.recommended_action}</div>}
                               </div>
                             )
                           })}
@@ -713,9 +713,9 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {rWaste.map((w: any, i: number) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.10)', borderRadius: '8px' }}>
-                              <span style={{ fontSize: '10px', color: '#EF4444', fontWeight: 700, flexShrink: 0 }}>−</span>
+                              <span style={{ fontSize: '10px', color: '#E1483F', fontWeight: 700, flexShrink: 0 }}>−</span>
                               <span style={{ fontSize: '11px', color: '#CBD5E1', flex: 1 }}>{rlTrunc(w.campaign_name || w.name, 46)}</span>
-                              <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, flexShrink: 0 }}>{rlFmt(w.wasted_spend || w.spend, 'R$')}</span>
+                              <span style={{ fontSize: '11px', color: '#E1483F', fontWeight: 700, flexShrink: 0 }}>{rlFmt(w.wasted_spend || w.spend, 'R$')}</span>
                             </div>
                           ))}
                         </div>
@@ -729,7 +729,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                           {rChecklist.map((t: any, i: number) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px', background: '#0A0D18', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
                               <span style={{ fontSize: '11px', color: rlStatusColor(t.status), flexShrink: 0 }}>{rlStatusIcon(t.status)}</span>
-                              <span style={{ fontSize: '10px', color: '#94A3B8' }}>{t.label || t.item || '—'}</span>
+                              <span style={{ fontSize: '10px', color: '#5A6473' }}>{t.label || t.item || '—'}</span>
                             </div>
                           ))}
                         </div>
@@ -746,14 +746,14 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                                 <span style={{ fontSize: '10px', fontWeight: 700, color: rlPrioColor(a.prioridade), background: `${rlPrioColor(a.prioridade)}18`, border: `1px solid ${rlPrioColor(a.prioridade)}35`, borderRadius: '4px', padding: '1px 5px', flexShrink: 0 }}>
                                   {a.prioridade || 'P1'}
                                 </span>
-                                <span style={{ fontSize: '12px', color: '#F1F5F9', fontWeight: 600 }}>{a.titulo || String(a)}</span>
+                                <span style={{ fontSize: '12px', color: '#161B26', fontWeight: 600 }}>{a.titulo || String(a)}</span>
                               </div>
-                              {a.motivo    && <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '2px' }}><strong>Motivo:</strong> {a.motivo}</div>}
-                              {a.evidencia && <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '2px' }}><strong>Evidência:</strong> {a.evidencia}</div>}
+                              {a.motivo    && <div style={{ fontSize: '10px', color: '#5A6473', marginBottom: '2px' }}><strong>Motivo:</strong> {a.motivo}</div>}
+                              {a.evidencia && <div style={{ fontSize: '10px', color: '#5A6473', marginBottom: '2px' }}><strong>Evidência:</strong> {a.evidencia}</div>}
                               <div style={{ display: 'flex', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
-                                {a.prazo   && <span style={{ fontSize: '10px', color: '#64748B' }}>Prazo: {a.prazo}</span>}
-                                {a.esforco && <span style={{ fontSize: '10px', color: '#64748B' }}>Esforço: {a.esforco}</span>}
-                                {a.impacto && <span style={{ fontSize: '10px', color: '#64748B' }}>Impacto: {a.impacto}</span>}
+                                {a.prazo   && <span style={{ fontSize: '10px', color: '#8A93A3' }}>Prazo: {a.prazo}</span>}
+                                {a.esforco && <span style={{ fontSize: '10px', color: '#8A93A3' }}>Esforço: {a.esforco}</span>}
+                                {a.impacto && <span style={{ fontSize: '10px', color: '#8A93A3' }}>Impacto: {a.impacto}</span>}
                               </div>
                             </div>
                           ))}
@@ -766,14 +766,14 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         <div style={sectionLabel}>PLANO DE AÇÃO</div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                           {[
-                            { title: '7 dias', items: (rPlano.sete_dias || []) as string[], color: '#EF4444' },
+                            { title: '7 dias', items: (rPlano.sete_dias || []) as string[], color: '#E1483F' },
                             { title: '15 dias', items: (rPlano.quinze_dias || []) as string[], color: '#F0B429' },
-                            { title: '30 dias', items: (rPlano.trinta_dias || []) as string[], color: '#22C55E' },
+                            { title: '30 dias', items: (rPlano.trinta_dias || []) as string[], color: '#0E9E6E' },
                           ].map(col => (
                             <div key={col.title} style={{ background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '10px' }}>
                               <div style={{ fontSize: '10px', fontWeight: 700, color: col.color, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{col.title}</div>
                               {col.items.map((item, i) => (
-                                <div key={i} style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '4px', paddingLeft: '10px', position: 'relative', lineHeight: '1.45' }}>
+                                <div key={i} style={{ fontSize: '10px', color: '#5A6473', marginBottom: '4px', paddingLeft: '10px', position: 'relative', lineHeight: '1.45' }}>
                                   <span style={{ position: 'absolute', left: 0, color: col.color }}>·</span>
                                   {item}
                                 </div>
@@ -790,8 +790,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                           <div>
                             <div style={sectionLabel}>GARGALOS</div>
                             {rGargalos.slice(0, 4).map((g: any, i: number) => (
-                              <div key={i} style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '5px', paddingLeft: '12px', position: 'relative', lineHeight: '1.45' }}>
-                                <span style={{ position: 'absolute', left: 0, color: '#EF4444' }}>✗</span>
+                              <div key={i} style={{ fontSize: '11px', color: '#5A6473', marginBottom: '5px', paddingLeft: '12px', position: 'relative', lineHeight: '1.45' }}>
+                                <span style={{ position: 'absolute', left: 0, color: '#E1483F' }}>✗</span>
                                 {typeof g === 'string' ? g : g.titulo || g.descricao || ''}
                               </div>
                             ))}
@@ -801,8 +801,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                           <div>
                             <div style={sectionLabel}>OPORTUNIDADES</div>
                             {rOport.slice(0, 4).map((o: any, i: number) => (
-                              <div key={i} style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '5px', paddingLeft: '12px', position: 'relative', lineHeight: '1.45' }}>
-                                <span style={{ position: 'absolute', left: 0, color: '#22C55E' }}>→</span>
+                              <div key={i} style={{ fontSize: '11px', color: '#5A6473', marginBottom: '5px', paddingLeft: '12px', position: 'relative', lineHeight: '1.45' }}>
+                                <span style={{ position: 'absolute', left: 0, color: '#0E9E6E' }}>→</span>
                                 {typeof o === 'string' ? o : o.titulo || o.descricao || ''}
                               </div>
                             ))}
@@ -817,8 +817,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         {rInsights.slice(0, 3).map((ins: any, i: number) => {
                           const txt = typeof ins === 'string' ? ins : `${ins.titulo ? ins.titulo + ': ' : ''}${ins.texto || ''}`
                           return (
-                            <div key={i} style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '5px', paddingLeft: '12px', position: 'relative', lineHeight: '1.55' }}>
-                              <span style={{ position: 'absolute', left: 0, color: '#A78BFA' }}>→</span>
+                            <div key={i} style={{ fontSize: '11px', color: '#5A6473', marginBottom: '5px', paddingLeft: '12px', position: 'relative', lineHeight: '1.55' }}>
+                              <span style={{ position: 'absolute', left: 0, color: '#2C5FE0' }}>→</span>
                               {txt}
                             </div>
                           )
@@ -843,12 +843,12 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                     <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
                       {[
                         { label: 'Investimento', value: rlFmt(rRm.totalSpend, 'R$', '', 0), color: '#F0B429', show: rRm.totalSpend > 0 },
-                        { label: 'Leads gerados', value: rlFmt(rRm.totalLeads, '', '', 0), color: '#38BDF8', show: rRm.totalLeads > 0 },
-                        { label: 'CPL Médio', value: rlFmt(rRm.avgCPL, 'R$', '', 2), color: '#A78BFA', show: rRm.avgCPL > 0 },
-                        { label: 'ROAS', value: rlFmt(rRm.avgROAS, '', '×', 2), color: '#22C55E', show: rRm.avgROAS > 0 },
+                        { label: 'Leads gerados', value: rlFmt(rRm.totalLeads, '', '', 0), color: '#2C5FE0', show: rRm.totalLeads > 0 },
+                        { label: 'CPL Médio', value: rlFmt(rRm.avgCPL, 'R$', '', 2), color: '#2C5FE0', show: rRm.avgCPL > 0 },
+                        { label: 'ROAS', value: rlFmt(rRm.avgROAS, '', '×', 2), color: '#0E9E6E', show: rRm.avgROAS > 0 },
                       ].filter(k => k.show).map(k => (
                         <div key={k.label} style={{ flex: 1, minWidth: '90px', padding: '10px 12px', background: '#0A0D18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px' }}>{k.label}</div>
+                          <div style={{ fontSize: '9px', color: '#8A93A3', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px' }}>{k.label}</div>
                           <div style={{ fontSize: '16px', fontWeight: 700, color: k.color }}>{k.value}</div>
                         </div>
                       ))}
@@ -860,9 +860,9 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                           {rWinners.slice(0, 4).map((c: any, i: number) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: '8px' }}>
-                              <span style={{ fontSize: '12px', color: '#22C55E', flexShrink: 0 }}>★</span>
+                              <span style={{ fontSize: '12px', color: '#0E9E6E', flexShrink: 0 }}>★</span>
                               <span style={{ fontSize: '12px', color: '#CBD5E1', flex: 1 }}>{rlTrunc(c.campaign_name || c.name, 52)}</span>
-                              {c.cpl > 0 && <span style={{ fontSize: '11px', color: '#22C55E', fontWeight: 700, flexShrink: 0 }}>CPL R${c.cpl.toFixed(2)}</span>}
+                              {c.cpl > 0 && <span style={{ fontSize: '11px', color: '#0E9E6E', fontWeight: 700, flexShrink: 0 }}>CPL R${c.cpl.toFixed(2)}</span>}
                             </div>
                           ))}
                         </div>
@@ -876,8 +876,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                           {rOport.slice(0, 4).map((o: any, i: number) => {
                             const txt = typeof o === 'string' ? o : o.titulo || o.descricao || ''
                             return (
-                              <div key={i} style={{ fontSize: '12px', color: '#94A3B8', paddingLeft: '14px', position: 'relative', lineHeight: '1.55' }}>
-                                <span style={{ position: 'absolute', left: 0, color: '#7C3AED' }}>→</span>
+                              <div key={i} style={{ fontSize: '12px', color: '#5A6473', paddingLeft: '14px', position: 'relative', lineHeight: '1.55' }}>
+                                <span style={{ position: 'absolute', left: 0, color: '#2C5FE0' }}>→</span>
                                 {txt}
                               </div>
                             )
@@ -891,8 +891,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         <div style={sectionLabel}>O QUE JÁ FIZEMOS</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {rCompleted.slice(0, 5).map((a, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94A3B8' }}>
-                              <span style={{ color: '#22C55E', flexShrink: 0 }}>✓</span>
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#5A6473' }}>
+                              <span style={{ color: '#0E9E6E', flexShrink: 0 }}>✓</span>
                               <span>{a.title}</span>
                             </div>
                           ))}
@@ -905,14 +905,14 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                         <div style={sectionLabel}>PRÓXIMAS AÇÕES</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {rPending.slice(0, 3).map((a, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94A3B8' }}>
-                              <span style={{ color: '#7C3AED', flexShrink: 0 }}>·</span>
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#5A6473' }}>
+                              <span style={{ color: '#2C5FE0', flexShrink: 0 }}>·</span>
                               <span>{a.title}</span>
                             </div>
                           ))}
                           {(rPlano.quinze_dias as string[] || []).slice(0, 3).map((item: string, i: number) => (
-                            <div key={`p-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94A3B8' }}>
-                              <span style={{ color: '#7C3AED', flexShrink: 0 }}>·</span>
+                            <div key={`p-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#5A6473' }}>
+                              <span style={{ color: '#2C5FE0', flexShrink: 0 }}>·</span>
                               <span>{item}</span>
                             </div>
                           ))}
@@ -927,7 +927,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                           const txt = typeof ins === 'string' ? ins : `${ins.titulo ? ins.titulo + ': ' : ''}${ins.texto || ''}`
                           return (
                             <div key={i} style={{ fontSize: '12px', color: '#CBD5E1', marginBottom: '6px', lineHeight: '1.6', paddingLeft: '12px', position: 'relative' }}>
-                              <span style={{ position: 'absolute', left: 0, color: '#A78BFA' }}>→</span>
+                              <span style={{ position: 'absolute', left: 0, color: '#2C5FE0' }}>→</span>
                               {txt}
                             </div>
                           )
@@ -939,7 +939,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
 
                 {/* PDF Export */}
                 <div style={{ marginTop: '18px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                  <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>
+                  <p style={{ fontSize: '11px', color: '#8A93A3', margin: 0 }}>
                     O PDF exportado reflete exatamente as informações exibidas acima.
                   </p>
                   <button
@@ -961,9 +961,9 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
         {/* Section heading */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
           <IconLink size={17} />
-          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Link de Relatório para o Cliente</h3>
+          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', margin: 0 }}>Link de Relatório para o Cliente</h3>
         </div>
-        <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 20px', lineHeight: '1.6' }}>
+        <p style={{ fontSize: '12px', color: '#8A93A3', margin: '0 0 20px', lineHeight: '1.6' }}>
           Gera um link público que o cliente acessa sem precisar fazer login.
           Mostra os KPIs de forma visual e simples, sem jargão técnico.
         </p>
@@ -991,7 +991,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                 onChange={e => setPrimaryColor(e.target.value)}
                 style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', cursor: 'pointer', padding: '2px' }}
               />
-              <span style={{ fontSize: '12px', color: '#94A3B8', fontFamily: 'monospace' }}>{primaryColor}</span>
+              <span style={{ fontSize: '12px', color: '#5A6473', fontFamily: 'monospace' }}>{primaryColor}</span>
             </div>
           </div>
 
@@ -1019,7 +1019,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
             borderRadius: '10px',
             padding: '9px 14px',
             fontSize: '13px',
-            color: '#EF4444',
+            color: '#E1483F',
             marginBottom: '16px',
           }}>
             {shareError}
@@ -1041,13 +1041,13 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{
                 flex: 1,
-                background: '#131E35',
+                background: '#FBFCFD',
                 border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: '10px',
                 padding: '9px 12px',
                 fontSize: '12px',
                 fontFamily: 'monospace',
-                color: '#94A3B8',
+                color: '#5A6473',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -1064,7 +1064,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                   fontWeight: 700,
                   cursor: 'pointer',
                   background: copied ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.06)',
-                  color: copied ? '#22C55E' : '#CBD5E1',
+                  color: copied ? '#0E9E6E' : '#CBD5E1',
                   border: `1px solid ${copied ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.10)'}`,
                   transition: 'all 0.15s',
                 }}
@@ -1092,7 +1092,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
             </div>
             <button
               onClick={() => setShareResult(null)}
-              style={{ background: 'none', border: 'none', fontSize: '12px', color: '#64748B', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+              style={{ background: 'none', border: 'none', fontSize: '12px', color: '#8A93A3', cursor: 'pointer', textAlign: 'left', padding: 0 }}
             >
               + Gerar novo link
             </button>
@@ -1105,7 +1105,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
         {/* Section heading */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
           <IconMail size={17} />
-          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Relatório Automático por Email</h3>
+          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', margin: 0 }}>Relatório Automático por Email</h3>
           {existingSchedule && (
             <span style={{
               fontSize: '10px',
@@ -1114,14 +1114,14 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
               borderRadius: '100px',
               marginLeft: '4px',
               background: existingSchedule.active ? 'rgba(34,197,94,0.10)' : 'rgba(100,116,139,0.10)',
-              color: existingSchedule.active ? '#22C55E' : '#64748B',
+              color: existingSchedule.active ? '#0E9E6E' : '#8A93A3',
               border: `1px solid ${existingSchedule.active ? 'rgba(34,197,94,0.2)' : 'rgba(100,116,139,0.2)'}`,
             }}>
               {existingSchedule.active ? 'Ativo' : 'Pausado'}
             </span>
           )}
         </div>
-        <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 20px', lineHeight: '1.6' }}>
+        <p style={{ fontSize: '12px', color: '#8A93A3', margin: '0 0 20px', lineHeight: '1.6' }}>
           Envia automaticamente um resumo de performance para os emails cadastrados.
           Configure a frequência e o dia preferido.
         </p>
@@ -1189,7 +1189,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                   borderRadius: '11px',
                   border: 'none',
                   cursor: 'pointer',
-                  background: scheduleActive ? '#22C55E' : 'rgba(255,255,255,0.10)',
+                  background: scheduleActive ? '#0E9E6E' : 'rgba(255,255,255,0.10)',
                   position: 'relative',
                   flexShrink: 0,
                   transition: 'background 0.15s',
@@ -1206,7 +1206,7 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
                   transition: 'left 0.15s',
                 }} />
               </button>
-              <span style={{ fontSize: '12px', color: '#94A3B8' }}>
+              <span style={{ fontSize: '12px', color: '#5A6473' }}>
                 {scheduleActive ? 'Relatório automático ativado' : 'Relatório automático pausado'}
               </span>
             </div>
@@ -1216,8 +1216,8 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
           {scheduleMsg && (
             <div style={
               scheduleMsg.startsWith('✓')
-                ? { background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '10px', padding: '9px 14px', fontSize: '12px', color: '#22C55E' }
-                : { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '10px', padding: '9px 14px', fontSize: '12px', color: '#EF4444' }
+                ? { background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '10px', padding: '9px 14px', fontSize: '12px', color: '#0E9E6E' }
+                : { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '10px', padding: '9px 14px', fontSize: '12px', color: '#E1483F' }
             }>
               {scheduleMsg}
             </div>
@@ -1242,39 +1242,39 @@ export function TabRelatorios({ onNavigateToConnections }: Props) {
         {/* Section heading */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
           <IconEye size={17} />
-          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Prévia do Relatório</h3>
+          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', margin: 0 }}>Prévia do Relatório</h3>
         </div>
 
         {hasData ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
               {[
-                { label: 'Investimento', value: `R$${rm?.totalSpend?.toFixed(0) || 0}`, color: '#F59E0B' },
-                { label: 'Leads', value: String(rm?.totalLeads || rm?.leads || '—'), color: '#38BDF8' },
-                { label: 'CPL Médio', value: (rm?.avgCPL || rm?.cpl) > 0 ? `R$${rm?.avgCPL || rm?.cpl}` : '—', color: '#A78BFA' },
-                { label: 'ROAS', value: (rm?.avgROAS || rm?.roas) > 0 ? `${rm?.avgROAS || rm?.roas}×` : '—', color: '#22C55E' },
+                { label: 'Investimento', value: `R$${rm?.totalSpend?.toFixed(0) || 0}`, color: '#E08B0B' },
+                { label: 'Leads', value: String(rm?.totalLeads || rm?.leads || '—'), color: '#2C5FE0' },
+                { label: 'CPL Médio', value: (rm?.avgCPL || rm?.cpl) > 0 ? `R$${rm?.avgCPL || rm?.cpl}` : '—', color: '#2C5FE0' },
+                { label: 'ROAS', value: (rm?.avgROAS || rm?.roas) > 0 ? `${rm?.avgROAS || rm?.roas}×` : '—', color: '#0E9E6E' },
               ].map(k => (
                 <div key={k.label} style={{
-                  background: '#131E35',
+                  background: '#FBFCFD',
                   border: '1px solid rgba(255,255,255,0.06)',
                   borderRadius: '10px',
                   padding: '10px 12px',
                   textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>{k.label}</div>
+                  <div style={{ fontSize: '10px', color: '#8A93A3', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>{k.label}</div>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: k.color }}>{k.value}</div>
                 </div>
               ))}
             </div>
-            <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
+            <p style={{ fontSize: '12px', color: '#8A93A3', margin: 0 }}>
               O cliente verá esses dados de forma visual e simplificada, sem métricas técnicas complexas.
             </p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '32px 0', textAlign: 'center' }}>
             <IconEye size={32} />
-            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Nenhum dado disponível</h4>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
+            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', margin: 0 }}>Nenhum dado disponível</h4>
+            <p style={{ fontSize: '13px', color: '#8A93A3', margin: 0 }}>
               Execute a análise Meta ou Google Intelligence para gerar a prévia.
             </p>
           </div>

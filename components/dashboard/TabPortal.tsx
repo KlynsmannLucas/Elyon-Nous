@@ -6,18 +6,18 @@ import { useAppStore } from '@/lib/store'
 import type { ClientPortal } from '@/lib/store'
 
 const C = {
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
   purpleD:  'rgba(124,58,237,0.10)',
   purpleB:  'rgba(124,58,237,0.22)',
-  green:    '#22C55E',
+  green:    '#0E9E6E',
   greenD:   'rgba(34,197,94,0.10)',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
-  text3:    '#64748B',
+  text1:    '#161B26',
+  text2:    '#5A6473',
+  text3:    '#8A93A3',
 }
 
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://elyon.app'
@@ -224,7 +224,7 @@ export function TabPortal({ clientData }: Props) {
           </div>
 
           {createError && (
-            <div style={{ fontSize: '11px', color: '#EF4444', marginBottom: '12px', padding: '8px 10px', borderRadius: '6px', background: 'rgba(239,68,68,0.08)' }}>
+            <div style={{ fontSize: '11px', color: '#E1483F', marginBottom: '12px', padding: '8px 10px', borderRadius: '6px', background: 'rgba(239,68,68,0.08)' }}>
               {createError}
             </div>
           )}
@@ -234,7 +234,7 @@ export function TabPortal({ clientData }: Props) {
             disabled={creating}
             style={{
               width: '100%', padding: '10px', borderRadius: '10px', border: 'none',
-              background: creating ? 'rgba(124,58,237,0.3)' : 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+              background: creating ? 'rgba(124,58,237,0.3)' : 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
               color: '#fff', fontSize: '13px', fontWeight: 700,
               cursor: creating ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
@@ -295,7 +295,7 @@ export function TabPortal({ clientData }: Props) {
                         fontSize: '14px', flexShrink: 0,
                         transition: 'color 0.15s',
                       }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#EF4444' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E1483F' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = C.text3 }}
                       title="Remover portal"
                     >
@@ -374,7 +374,7 @@ export function TabPortal({ clientData }: Props) {
 
 const tagStyle: React.CSSProperties = {
   fontSize: '10px', padding: '2px 7px', borderRadius: '4px',
-  color: '#A78BFA', background: 'rgba(124,58,237,0.08)',
+  color: '#2C5FE0', background: 'rgba(124,58,237,0.08)',
   border: '1px solid rgba(124,58,237,0.2)',
   fontFamily: 'var(--font-mono)',
 }

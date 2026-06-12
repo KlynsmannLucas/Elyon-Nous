@@ -1,0 +1,157 @@
+// app/hoje/page.tsx — Tela Hoje (Home diária)
+// "terminal de dados premium" (light theme)
+'use client'
+
+import { useState } from 'react'
+import { Card, Badge, Button, SectionHead, Delta, SourceBadge } from '@/components/dashboard/v2'
+import { useAppStore } from '@/lib/store'
+
+const MOCK_KPIS = [
+  { label: 'Receita 7d', value: 'R$ 12.4K', trend: 12 },
+  { label: 'ROAS', value: '3.2x', trend: 8, inverse: true },
+  { label: 'CPA', value: 'R$ 14', trend: -5 },
+  { label: 'Leads', value: '247', trend: 23 },
+]
+
+const MOCK_HEALTH = {
+  score: 78,
+  pillars: [
+    { name: 'Aquisição', value: 82, benchmark: 75 },
+    { name: 'Conversão', value: 71, benchmark: 65 },
+    { name: 'Retenção', value: 85, benchmark: 70 },
+    { name: 'Eficiência', value: 74, benchmark: 80 },
+  ],
+}
+
+const MOCK_ACTIONS = [
+  { rank: 1, title: 'Aumentar orçamento em Campanhas de conversão', urgency: 'alta', impact: 4200 },
+  { rank: 2, title: 'Atualizar copy dos anúncios de remarketing', urgency: 'media', impact: 1800 },
+  { rank: 3, title: 'Testar novo creativo para lookalike', urgency: 'baixa', impact: 2500 },
+]
+
+const MOCK_ALERTS = [
+  { tone: 'bad', title: 'CPA subindo há 3 dias', desc: 'Campanha Vestuário' },
+  { tone: 'warn', title: 'Creatives em fadiga', desc: '5 criativos +7 dias' },
+  { tone: 'good', title: 'Meta Ads conectado', desc: 'Sinc: 5 min' },
+]
+
+function formatCurrency() {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
+}
+
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Bom dia'
+  if (h < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+export default function HojePage() {
+  const user = useAppStore((s) => s.user)
+  const streak = 12
+  const name = user?.firstName || '一起'
+
+  return (
+    <div className="min-h-screen bg-canvas p-4 md:p-6">
+      <header className="mb-6 animate-fade-up">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-[23px] font-bold text-ink">{getGreeting()}, {name}</h1>
+          </div>
+          <Badge tone="warn" dot>🔥 {streak} dias seguidos</Badge>
+        </div>
+      </header>
+
+      <section className="mb-6 animate-fade-up d2">
+        <Card className="bg-gradient-to-br from-blue-soft to-green-soft border-blue-line">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-blue flex items-center justify-center shrink-0">
+              <span className="text-white text-xl">◎</span>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10.5px] font-mono uppercase text-ink-3">Briefing do NOUS · hoje</span>
+                <SourceBadge source="ai" />
+              </div>
+              <h2 className="text-[16px] font-semibold text-ink mb-2">Concentre esforços em campanhas</h2>
+              <p className="text-sm text-ink-2 line-clamp-2 mb-3">ROAS em 3.2x. Aumente orçamento em 15%.</p>
+              <div className="flex gap-2">
+                <Button size="sm">Ver meu plano</Button>
+                <Button size="sm" variant="soft">Perguntar ao NOUS</Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <section className="mb-6 animate-fade-up d3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {MOCK_KPIS.map((k) => (
+            <Card key={k.label} padding="sm" hover>
+              <div className="text-[10.5px] font-mono uppercase text-ink-3 mb-1">{k.label}</div>
+              <div className="flex justify-between">
+                <span className="text-[20px] font-bold font-mono text-ink">{k.value}</span>
+                {k.trend && <Delta value={k.trend} inverse={k.inverse} />}
+              </div>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-up d4">
+        <div className="lg:col-span-2 space-y-4">
+          <Card>
+            <SectionHead title="Saúde do Negócio" action={<SourceBadge source="real" />}
+            <div className="flex gap-6">
+              <div className="w-24 h-24 relative">
+                <svg viewBox="0 0 100 100" className="w-full -rotate-90">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="var(--canvas-2)" strokeWidth="8" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#0E9E6E" strokeWidth="8" strokeDasharray={`${MOCK_HEALTH.score * 2.51} 251" strokeLinecap="round" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xl font-bold font-mono text-ink">{MOCK_HEALTH.score}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {MOCK_HEALTH.pillars.map(p => (
+                  <div key={p.name} className="flex items-center gap-2">
+                    <span className="text-xs text-ink-2 w-20">{p.name}</span>
+                    <div className="flex-1 h-2 bg-canvas-2 rounded-full"><div className="h-full rounded-full" style={{width: p.value + '%', backgroundColor: p.value >= p.benchmark ? '#0E9E6E' : '#E08B0B'}} /></div>
+                    <span className="text-xs font-mono text-ink-3 w-8 text-right">{p.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+          <Card>
+            <SectionHead title="Ações Prioritárias" subtitle="Ganho: R$ 8.5K"
+            <div className="space-y-3">
+              {MOCK_ACTIONS.map(a => (
+                <div key={a.rank} className="flex gap-3 p-3 bg-canvas-2 rounded-sm">
+                  <span className="w-6 h-6 rounded-full bg-blue text-white text-xs font-bold flex items-center justify-center">{a.rank}</span>
+                  <div className="flex-1">
+                    <div className="flex justify-between"><span className="text-sm text-ink">{a.title}</span>{a.urgency === 'alta' && <Badge tone="bad" dot>Urgente</Badge>}</div>
+                    <div className="text-xs text-ink-3">Impacto: <span className="font-mono text-green">{formatCurrency(a.impact)}</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+        <div className="space-y-4">
+          <Card>
+            <SectionHead title="Alertas"
+            <div className="space-y-3">
+              {MOCK_ALERTS.map((a, i) => (
+                <div key={i} className="flex gap-2">
+                  <Badge tone={a.tone} dot>{a.tone === 'bad' ? '⚠️' : a.tone === 'warn' ? '⚡' : '✓'}</Badge>
+                  <div><div className="text-sm text-ink">{a.title}</div><div className="text-xs text-ink-3">{a.desc}</div></div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -7,21 +7,21 @@ import type { AdsCampaign } from '@/lib/store'
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const T = {
-  bg:       '#080D1A',
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  bg:       '#F4F5F7',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
   purpleD:  'rgba(124,58,237,0.10)',
   purpleB:  'rgba(124,58,237,0.22)',
-  green:    '#22C55E',
-  red:      '#EF4444',
-  amber:    '#F59E0B',
-  blue:     '#38BDF8',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
-  text3:    '#64748B',
+  green:    '#0E9E6E',
+  red:      '#E1483F',
+  amber:    '#E08B0B',
+  blue:     '#2C5FE0',
+  text1:    '#161B26',
+  text2:    '#5A6473',
+  text3:    '#8A93A3',
 }
 
 // ── Format helpers ─────────────────────────────────────────────────────────────

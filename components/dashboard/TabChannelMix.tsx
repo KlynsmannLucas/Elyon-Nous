@@ -9,9 +9,9 @@ import { SimpleSourceBadge } from './DataSourceBadge'
 
 const PRIORITY_CONFIG = {
   primary:   { label: 'Principal',   color: '#F0B429', bg: 'rgba(240,180,41,0.10)', border: 'rgba(240,180,41,0.25)' },
-  secondary: { label: 'Secundário',  color: '#38BDF8', bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.2)' },
-  test:      { label: 'Testar',      color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)' },
-  avoid:     { label: 'Evitar',      color: '#64748B', bg: 'rgba(100,116,139,0.06)', border: 'rgba(100,116,139,0.15)' },
+  secondary: { label: 'Secundário',  color: '#2C5FE0', bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.2)' },
+  test:      { label: 'Testar',      color: '#2C5FE0', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)' },
+  avoid:     { label: 'Evitar',      color: '#8A93A3', bg: 'rgba(100,116,139,0.06)', border: 'rgba(100,116,139,0.15)' },
 }
 
 function FitBar({ value, color }: { value: number; color: string }) {
@@ -27,7 +27,7 @@ function FitBar({ value, color }: { value: number; color: string }) {
 
 function AllocationDonut({ channels }: { channels: ChannelRecommendation[] }) {
   const total = channels.reduce((s, c) => s + c.allocationPct, 0)
-  const COLORS = ['#F0B429', '#38BDF8', '#A78BFA', '#22C55E', '#FF4D4D', '#FB923C']
+  const COLORS = ['#F0B429', '#2C5FE0', '#2C5FE0', '#0E9E6E', '#FF4D4D', '#FB923C']
 
   let cumulative = 0
   const segments = channels.map((ch, i) => {
@@ -223,7 +223,7 @@ export function TabChannelMix() {
               <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.55' }}>{mix.strategy}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '6px', fontStyle: 'italic' }}>{mix.maturityNote}</div>
               {source === 'ai' && (
-                <div style={{ fontSize: '10px', color: '#22C55E', marginTop: '5px', fontFamily: 'var(--font-mono)' }}>✓ Análise com Claude AI</div>
+                <div style={{ fontSize: '10px', color: '#0E9E6E', marginTop: '5px', fontFamily: 'var(--font-mono)' }}>✓ Análise com Claude AI</div>
               )}
             </div>
           </div>
@@ -236,9 +236,9 @@ export function TabChannelMix() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               {[
                 { label: 'Canal principal', value: mix.primaryChannel, color: '#F0B429' },
-                { label: 'Canais recomendados', value: `${mix.recommendedChannels.length} canais`, color: '#38BDF8' },
-                { label: 'Leads projetados/mês', value: mix.projectedTotalLeads > 0 ? mix.projectedTotalLeads : '—', color: '#22C55E' },
-                { label: 'CPL médio projetado', value: mix.projectedAvgCPL > 0 ? `R$${mix.projectedAvgCPL}` : '—', color: '#A78BFA' },
+                { label: 'Canais recomendados', value: `${mix.recommendedChannels.length} canais`, color: '#2C5FE0' },
+                { label: 'Leads projetados/mês', value: mix.projectedTotalLeads > 0 ? mix.projectedTotalLeads : '—', color: '#0E9E6E' },
+                { label: 'CPL médio projetado', value: mix.projectedAvgCPL > 0 ? `R$${mix.projectedAvgCPL}` : '—', color: '#2C5FE0' },
               ].map((card, i) => (
                 <div key={i} style={{ padding: '14px 16px', background: '#111114', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px' }}>
                   <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginBottom: '5px' }}>{card.label}</div>
@@ -300,7 +300,7 @@ export function TabChannelMix() {
                       {/* Leads */}
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '1px' }}>Leads/mês</div>
-                        <div style={{ fontSize: '13px', fontWeight: 600, color: ch.expectedLeadsPerMonth ? '#22C55E' : 'rgba(255,255,255,0.3)' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: ch.expectedLeadsPerMonth ? '#0E9E6E' : 'rgba(255,255,255,0.3)' }}>
                           {ch.expectedLeadsPerMonth ?? '—'}
                         </div>
                       </div>
@@ -325,10 +325,10 @@ export function TabChannelMix() {
                         <div style={{ paddingTop: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                           {/* Strengths */}
                           <div>
-                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#22C55E', marginBottom: '6px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>PONTOS FORTES</div>
+                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#0E9E6E', marginBottom: '6px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>PONTOS FORTES</div>
                             {ch.strengths.map((s, i) => (
                               <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
-                                <span style={{ color: '#22C55E', fontSize: '11px', flexShrink: 0 }}>+</span>
+                                <span style={{ color: '#0E9E6E', fontSize: '11px', flexShrink: 0 }}>+</span>
                                 <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.4' }}>{s}</span>
                               </div>
                             ))}
@@ -350,7 +350,7 @@ export function TabChannelMix() {
                             <div style={{ fontSize: '10px', fontWeight: 700, color: '#F0B429', marginBottom: '6px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>COMO CONFIGURAR</div>
                             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5', marginBottom: '8px' }}>{ch.setup}</div>
                             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                              <span style={{ color: '#38BDF8' }}>Melhor para:</span> {ch.bestFor}
+                              <span style={{ color: '#2C5FE0' }}>Melhor para:</span> {ch.bestFor}
                             </div>
                             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>
                               ⏱ Resultados em: {ch.timeToResults}

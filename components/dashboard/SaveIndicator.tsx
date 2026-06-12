@@ -31,7 +31,7 @@ export function SaveIndicator({ status, errorMsg }: Props) {
 
   const config = {
     saving: {
-      color:  '#F59E0B',
+      color:  '#E08B0B',
       bg:     'rgba(245,158,11,0.08)',
       border: 'rgba(245,158,11,0.2)',
       icon: (
@@ -43,7 +43,7 @@ export function SaveIndicator({ status, errorMsg }: Props) {
       label: 'Salvando...',
     },
     saved: {
-      color:  '#22C55E',
+      color:  '#0E9E6E',
       bg:     'rgba(34,197,94,0.07)',
       border: 'rgba(34,197,94,0.2)',
       icon: (
@@ -54,7 +54,7 @@ export function SaveIndicator({ status, errorMsg }: Props) {
       label: 'Salvo',
     },
     error: {
-      color:  '#EF4444',
+      color:  '#E1483F',
       bg:     'rgba(239,68,68,0.07)',
       border: 'rgba(239,68,68,0.22)',
       icon: (

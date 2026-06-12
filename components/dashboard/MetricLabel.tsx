@@ -50,7 +50,7 @@ export function MetricLabel({ metric, suffix = '', style, short = false }: Props
               fontWeight: 400, textTransform: 'none', letterSpacing: 'normal',
               boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
             }}>
-              <strong style={{ color: '#A78BFA', display: 'block', marginBottom: '3px' }}>{metric}</strong>
+              <strong style={{ color: '#2C5FE0', display: 'block', marginBottom: '3px' }}>{metric}</strong>
               {tip}
             </span>
           )}

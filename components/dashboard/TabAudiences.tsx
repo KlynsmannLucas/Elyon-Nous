@@ -73,17 +73,17 @@ export function TabAudiences({ niche }: Props) {
               <div className="text-xs text-slate-500 mt-0.5">CPL médio do nicho</div>
             </div>
             <div className="text-center">
-              <div className="font-display text-lg font-bold text-[#22C55E]">{bench.kpi_thresholds.roas_good}×</div>
+              <div className="font-display text-lg font-bold text-[#0E9E6E]">{bench.kpi_thresholds.roas_good}×</div>
               <div className="text-xs text-slate-500 mt-0.5">ROAS bom</div>
             </div>
             <div className="text-center">
-              <div className="font-display text-lg font-bold text-[#A78BFA]">
+              <div className="font-display text-lg font-bold text-[#2C5FE0]">
                 {(bench.cvr_lead_to_sale * 100).toFixed(0)}%
               </div>
               <div className="text-xs text-slate-500 mt-0.5">CVR lead→venda</div>
             </div>
             <div className="text-center">
-              <div className="font-display text-lg font-bold text-[#38BDF8]">
+              <div className="font-display text-lg font-bold text-[#2C5FE0]">
                 R${bench.budget_floor.toLocaleString('pt-BR')}
               </div>
               <div className="text-xs text-slate-500 mt-0.5">Budget mínimo</div>

@@ -85,7 +85,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
           <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 700, marginBottom: 8, fontFamily: 'var(--font-syne)' }}>
             Conecte o Meta Ads primeiro
           </h3>
-          <p style={{ color: '#64748B', fontSize: 14, marginBottom: 24 }}>
+          <p style={{ color: '#8A93A3', fontSize: 14, marginBottom: 24 }}>
             Para criar campanhas via IA você precisa conectar sua conta Meta Ads.
           </p>
           <button
@@ -192,13 +192,13 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
   const S: Record<string, React.CSSProperties> = {
     wrap:    { maxWidth: 720, margin: '0 auto', padding: '0 0 40px' },
     card:    { background: '#111114', border: '1px solid #2A2A30', borderRadius: 16, padding: 28 },
-    label:   { fontSize: 11, fontFamily: 'var(--font-mono)', color: '#64748B', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6, display: 'block' },
+    label:   { fontSize: 11, fontFamily: 'var(--font-mono)', color: '#8A93A3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6, display: 'block' },
     input:   { width: '100%', background: '#0C0C12', border: '1px solid #2A2A30', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, outline: 'none', resize: 'vertical' as const, fontFamily: 'inherit' },
     btn:     { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', border: 'none', transition: 'opacity 0.15s' },
     btnPrim: { background: 'linear-gradient(135deg, #1877F2, #0866FF)', color: '#fff' },
     btnSec:  { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' },
     row:     { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: '1px solid #1E1E24' },
-    rowKey:  { fontSize: 12, color: '#64748B', width: 140, flexShrink: 0, paddingTop: 2 },
+    rowKey:  { fontSize: 12, color: '#8A93A3', width: 140, flexShrink: 0, paddingTop: 2 },
     rowVal:  { fontSize: 14, color: '#E2E8F0', flex: 1 },
   }
 
@@ -208,7 +208,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 6 }}>
           📣 Criar Campanha com IA
         </h2>
-        <p style={{ color: '#64748B', fontSize: 14 }}>
+        <p style={{ color: '#8A93A3', fontSize: 14 }}>
           Descreva o que você quer em linguagem natural. A IA monta o plano completo e cria no Meta Ads.
         </p>
       </div>
@@ -251,7 +251,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
       <div style={{ ...S.card, textAlign: 'center', padding: 48 }}>
         <div style={{ fontSize: 40, marginBottom: 16, animation: 'spin 2s linear infinite', display: 'inline-block' }}>⚙️</div>
         <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Analisando e planejando campanha...</div>
-        <div style={{ color: '#64748B', fontSize: 13 }}>Claude está revisando os dados do cliente e gerando o plano ideal</div>
+        <div style={{ color: '#8A93A3', fontSize: 13 }}>Claude está revisando os dados do cliente e gerando o plano ideal</div>
       </div>
     </div>
   )
@@ -263,7 +263,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
           <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 4 }}>
             📋 Plano gerado — revise antes de criar
           </h2>
-          <p style={{ color: '#64748B', fontSize: 13 }}>{plan.summary}</p>
+          <p style={{ color: '#8A93A3', fontSize: 13 }}>{plan.summary}</p>
         </div>
         <button onClick={reset} style={{ ...S.btn, ...S.btnSec, padding: '7px 14px', fontSize: 12 }}>← Refazer</button>
       </div>
@@ -273,28 +273,28 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#F0B429', letterSpacing: '0.1em', marginBottom: 14 }}>CAMPANHA</div>
         <div style={S.row}><span style={S.rowKey}>Nome</span><span style={S.rowVal}>{plan.campaign.name}</span></div>
         <div style={S.row}><span style={S.rowKey}>Objetivo</span><span style={S.rowVal}>{OBJECTIVE_LABELS[plan.campaign.objective] || plan.campaign.objective}</span></div>
-        <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#94A3B8', fontSize: 13 }}>{plan.campaign.reasoning}</span></div>
+        <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#5A6473', fontSize: 13 }}>{plan.campaign.reasoning}</span></div>
       </div>
 
       {/* Ad Set */}
       <div style={{ ...S.card, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#22C55E', letterSpacing: '0.1em', marginBottom: 14 }}>PÚBLICO & ORÇAMENTO</div>
+        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#0E9E6E', letterSpacing: '0.1em', marginBottom: 14 }}>PÚBLICO & ORÇAMENTO</div>
         <div style={S.row}><span style={S.rowKey}>Orçamento diário</span><span style={S.rowVal}>R${plan.ad_set.daily_budget_brl}/dia</span></div>
         <div style={S.row}><span style={S.rowKey}>Idade</span><span style={S.rowVal}>{plan.ad_set.age_min}–{plan.ad_set.age_max} anos</span></div>
         <div style={S.row}><span style={S.rowKey}>Gênero</span><span style={S.rowVal}>{!plan.ad_set.genders?.length ? 'Todos' : plan.ad_set.genders.includes(1) && plan.ad_set.genders.includes(2) ? 'Todos' : plan.ad_set.genders.includes(1) ? 'Masculino' : 'Feminino'}</span></div>
         <div style={S.row}><span style={S.rowKey}>Região</span><span style={S.rowVal}>{plan.ad_set.geo_description || 'Brasil'}</span></div>
-        <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#94A3B8', fontSize: 13 }}>{plan.ad_set.reasoning}</span></div>
+        <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#5A6473', fontSize: 13 }}>{plan.ad_set.reasoning}</span></div>
       </div>
 
       {/* Creative */}
       <div style={{ ...S.card, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#38BDF8', letterSpacing: '0.1em', marginBottom: 14 }}>CRIATIVO</div>
+        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#2C5FE0', letterSpacing: '0.1em', marginBottom: 14 }}>CRIATIVO</div>
         <div style={S.row}><span style={S.rowKey}>Texto principal</span><span style={S.rowVal}>{plan.creative.primary_text}</span></div>
         <div style={S.row}><span style={S.rowKey}>Título</span><span style={S.rowVal}>{plan.creative.headline}</span></div>
         <div style={S.row}><span style={S.rowKey}>Descrição</span><span style={S.rowVal}>{plan.creative.description || '—'}</span></div>
         <div style={S.row}><span style={S.rowKey}>CTA</span><span style={S.rowVal}>{CTA_LABELS[plan.creative.call_to_action] || plan.creative.call_to_action}</span></div>
         <div style={S.row}><span style={S.rowKey}>URL destino</span><span style={S.rowVal}>{plan.creative.website_url}</span></div>
-        <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#94A3B8', fontSize: 13 }}>{plan.creative.reasoning}</span></div>
+        <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#5A6473', fontSize: 13 }}>{plan.creative.reasoning}</span></div>
       </div>
 
       {/* Seleção de página */}
@@ -352,7 +352,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
       </h2>
       <div style={S.card}>
         {events.length === 0 && (
-          <div style={{ color: '#64748B', fontSize: 14, textAlign: 'center', padding: 24 }}>Iniciando...</div>
+          <div style={{ color: '#8A93A3', fontSize: 14, textAlign: 'center', padding: 24 }}>Iniciando...</div>
         )}
         {events.map((e, i) => {
           if (e.type === 'tool_call') {
@@ -372,9 +372,9 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
             const hasError = !!e.result?.error
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid #1E1E24' }}>
-                <span style={{ fontSize: 16, color: hasError ? '#EF4444' : '#22C55E' }}>{hasError ? '✗' : '✓'}</span>
+                <span style={{ fontSize: 16, color: hasError ? '#E1483F' : '#0E9E6E' }}>{hasError ? '✗' : '✓'}</span>
                 <div>
-                  <div style={{ color: hasError ? '#EF4444' : '#22C55E', fontSize: 13, fontWeight: 600 }}>
+                  <div style={{ color: hasError ? '#E1483F' : '#0E9E6E', fontSize: 13, fontWeight: 600 }}>
                     {hasError ? `Erro: ${e.result.error}` : TOOL_DONE_LABELS[e.tool || ''] || 'Concluído'}
                   </div>
                   {!hasError && e.result && (
@@ -399,16 +399,16 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 8 }}>
           Campanha criada com sucesso!
         </h2>
-        <p style={{ color: '#64748B', fontSize: 14, marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
+        <p style={{ color: '#8A93A3', fontSize: 14, marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
           {events.find(e => e.type === 'done')?.summary || 'Sua campanha está pronta no Meta Ads em status pausado.'}
         </p>
 
         {/* IDs criados */}
         <div style={{ background: '#0C0C12', border: '1px solid #2A2A30', borderRadius: 10, padding: '16px 20px', marginBottom: 24, textAlign: 'left', maxWidth: 400, margin: '0 auto 24px' }}>
           {events.filter(e => e.type === 'tool_result' && !e.result?.error).map((e, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 12, color: '#94A3B8' }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 12, color: '#5A6473' }}>
               <span>{TOOL_DONE_LABELS[e.tool || ''] || e.tool}</span>
-              <span style={{ fontFamily: 'var(--font-mono)', color: '#22C55E' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', color: '#0E9E6E' }}>
                 {e.result?.campaign_id || e.result?.adset_id || e.result?.creative_id || e.result?.ad_id}
               </span>
             </div>
@@ -440,8 +440,8 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
     <div style={S.wrap}>
       <div style={{ ...S.card, textAlign: 'center', padding: 48 }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-        <h2 style={{ color: '#EF4444', fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Erro ao criar campanha</h2>
-        <p style={{ color: '#64748B', fontSize: 14, marginBottom: 24 }}>{errorMsg}</p>
+        <h2 style={{ color: '#E1483F', fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Erro ao criar campanha</h2>
+        <p style={{ color: '#8A93A3', fontSize: 14, marginBottom: 24 }}>{errorMsg}</p>
         <button onClick={reset} style={{ ...S.btn, ...S.btnSec }}>← Tentar novamente</button>
       </div>
     </div>

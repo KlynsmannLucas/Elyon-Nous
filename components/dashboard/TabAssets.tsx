@@ -26,11 +26,11 @@ interface DBAsset {
 }
 
 const ASSET_TYPES = [
-  { key: 'logo'      as const, label: 'Logo',             color: '#A78BFA' },
-  { key: 'product'   as const, label: 'Produto',          color: '#38BDF8' },
-  { key: 'lifestyle' as const, label: 'Lifestyle',        color: '#22C55E' },
-  { key: 'banner'    as const, label: 'Banner / Criativo', color: '#F59E0B' },
-  { key: 'other'     as const, label: 'Outros',           color: '#64748B' },
+  { key: 'logo'      as const, label: 'Logo',             color: '#2C5FE0' },
+  { key: 'product'   as const, label: 'Produto',          color: '#2C5FE0' },
+  { key: 'lifestyle' as const, label: 'Lifestyle',        color: '#0E9E6E' },
+  { key: 'banner'    as const, label: 'Banner / Criativo', color: '#E08B0B' },
+  { key: 'other'     as const, label: 'Outros',           color: '#8A93A3' },
 ]
 
 const TYPE_ICON: Record<string, JSX.Element> = {
@@ -242,15 +242,15 @@ export function TabAssets({ clientData }: Props) {
     elevated: '#111D33',
     border:   'rgba(255,255,255,0.06)',
     borderHi: 'rgba(124,58,237,0.35)',
-    purple:   '#7C3AED',
-    purpleHi: '#A78BFA',
+    purple:   '#2C5FE0',
+    purpleHi: '#2C5FE0',
     purpleBg: 'rgba(124,58,237,0.08)',
-    text1:    '#F1F5F9',
-    text2:    '#94A3B8',
+    text1:    '#161B26',
+    text2:    '#5A6473',
     text3:    'rgba(255,255,255,0.32)',
-    amber:    '#F59E0B',
-    green:    '#22C55E',
-    red:      '#EF4444',
+    amber:    '#E08B0B',
+    green:    '#0E9E6E',
+    red:      '#E1483F',
   }
 
   if (!clientData) {
@@ -278,7 +278,7 @@ export function TabAssets({ clientData }: Props) {
               <span style={{ fontSize: '13px', color: S.text1, fontWeight: 600 }}>{preview.name}</span>
               <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', color: S.text2, cursor: 'pointer', fontSize: '18px', lineHeight: 1 }}>×</button>
             </div>
-            <div style={{ background: '#080D1A', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', padding: '24px' }}>
+            <div style={{ background: '#F4F5F7', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', padding: '24px' }}>
               <img src={preview.public_url} alt={preview.name} style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', borderRadius: '8px' }} />
             </div>
           </div>
@@ -322,10 +322,10 @@ export function TabAssets({ clientData }: Props) {
 
         {/* ── Erro de carregamento ─────────────────────────────────────────────── */}
         {loadError && (
-          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', fontSize: '12px', color: '#EF4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', fontSize: '12px', color: '#E1483F', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             {loadError}
-            <button onClick={loadAssets} style={{ marginLeft: 'auto', fontSize: '11px', color: '#EF4444', background: 'none', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer' }}>Tentar novamente</button>
+            <button onClick={loadAssets} style={{ marginLeft: 'auto', fontSize: '11px', color: '#E1483F', background: 'none', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer' }}>Tentar novamente</button>
           </div>
         )}
 
@@ -431,7 +431,7 @@ export function TabAssets({ clientData }: Props) {
 
           {/* Erro de upload */}
           {uploadError && (
-            <div style={{ marginTop: '10px', fontSize: '12px', color: '#EF4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
+            <div style={{ marginTop: '10px', fontSize: '12px', color: '#E1483F', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
               {uploadError}
             </div>
           )}
@@ -494,7 +494,7 @@ export function TabAssets({ clientData }: Props) {
                     onMouseLeave={e => { e.currentTarget.style.border = `1px solid ${activeAssetId === asset.id ? S.borderHi : S.border}` }}
                   >
                     {/* Thumbnail */}
-                    <div style={{ position: 'relative', aspectRatio: '16/9', background: '#080D1A', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ position: 'relative', aspectRatio: '16/9', background: '#F4F5F7', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <img
                         src={asset.public_url}
                         alt={asset.name}
@@ -558,7 +558,7 @@ export function TabAssets({ clientData }: Props) {
                           width: '100%', padding: '7px 0', borderRadius: '8px',
                           fontSize: '11px', fontWeight: 700, cursor: 'pointer',
                           transition: 'opacity 0.15s',
-                          background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+                          background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
                           border: 'none', color: '#fff',
                           opacity: generating && activeAssetId === asset.id ? 0.5 : 1,
                         }}
@@ -609,8 +609,8 @@ export function TabAssets({ clientData }: Props) {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {variants.map((v, i) => {
-                    const angleColors: Record<string, string> = { dor: '#EF4444', aspiração: '#38BDF8', 'prova social': '#22C55E', urgência: '#F59E0B', oferta: '#A78BFA' }
-                    const ac = angleColors[v.angle] || '#64748B'
+                    const angleColors: Record<string, string> = { dor: '#E1483F', aspiração: '#2C5FE0', 'prova social': '#0E9E6E', urgência: '#E08B0B', oferta: '#2C5FE0' }
+                    const ac = angleColors[v.angle] || '#8A93A3'
                     return (
                       <div key={i} style={{ borderRadius: '10px', padding: '16px', background: S.elevated, border: `1px solid ${S.border}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>

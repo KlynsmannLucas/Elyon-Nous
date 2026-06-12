@@ -40,7 +40,7 @@ export function TermsModal({ onAccept }: Props) {
         <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>
           Bem-vindo à plataforma
         </h2>
-        <p style={{ color: '#64748B', fontSize: '14px', lineHeight: 1.6, margin: '0 0 24px' }}>
+        <p style={{ color: '#8A93A3', fontSize: '14px', lineHeight: 1.6, margin: '0 0 24px' }}>
           Antes de começar, confirme que leu e concorda com os documentos abaixo, em conformidade com a LGPD (Lei 13.709/2018).
         </p>
 
@@ -59,7 +59,7 @@ export function TermsModal({ onAccept }: Props) {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 16px', background: '#16161A',
                 border: '1px solid #2A2A30', borderRadius: '12px',
-                color: '#94A3B8', fontSize: '14px', textDecoration: 'none',
+                color: '#5A6473', fontSize: '14px', textDecoration: 'none',
                 transition: 'border-color 0.2s',
               }}
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(245,165,0,0.3)')}

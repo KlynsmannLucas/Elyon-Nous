@@ -168,7 +168,7 @@ export function DashboardTopbar({
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'all 0.15s',
       }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.08)'; e.currentTarget.style.borderColor = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#A78BFA' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.08)'; e.currentTarget.style.borderColor = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#2C5FE0' }}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}
       >
         <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
@@ -184,13 +184,13 @@ export function DashboardTopbar({
       {/* Page title + subtitle */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
             {tabTitle || 'Dashboard'}
           </span>
           {clientData?.niche && (
             <>
               <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px' }}>·</span>
-              <span style={{ fontSize: '11px', color: '#A78BFA', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
+              <span style={{ fontSize: '11px', color: '#2C5FE0', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
                 {clientData.niche}
               </span>
             </>
@@ -236,7 +236,7 @@ export function DashboardTopbar({
           >
             <div style={{
               width: '18px', height: '18px', borderRadius: '5px',
-              background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+              background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '9px', fontWeight: 700, color: '#fff', flexShrink: 0,
             }}>
@@ -253,7 +253,7 @@ export function DashboardTopbar({
           {clientMenuOpen && (
             <div style={{
               position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 9999,
-              background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+              background: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: '10px', padding: '6px', minWidth: '160px',
               boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
             }}>
@@ -342,7 +342,7 @@ export function DashboardTopbar({
         {briefingTooltip && (
           <div style={{
             position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 9999,
-            background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+            background: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '8px', padding: '6px 10px', whiteSpace: 'nowrap',
             fontSize: '11px', color: '#CBD5E1',
             boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
@@ -368,7 +368,7 @@ export function DashboardTopbar({
       <div style={{ position: 'relative', flexShrink: 0 }}>
         <div style={{
           display: 'flex', borderRadius: '8px', overflow: 'hidden',
-          background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+          background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
           boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
         }}>
           <button onClick={() => onExport('full')} disabled={pdfLoading} style={{
@@ -391,7 +391,7 @@ export function DashboardTopbar({
         {pdfMenuOpen && (
           <div className="animate-scale-in" style={{
             position: 'fixed', top: '60px', right: '20px', zIndex: 9999,
-            background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+            background: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '12px', padding: '6px', minWidth: '172px',
             boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
           }}>

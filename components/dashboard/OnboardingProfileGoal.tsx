@@ -24,12 +24,12 @@ const C = {
   bg:       '#050B1A',
   surface:  '#0C1426',
   border:   'rgba(255,255,255,0.08)',
-  purple:   '#7C3AED',
-  purpleHi: '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleHi: '#2C5FE0',
   purpleBg: 'rgba(124,58,237,0.08)',
-  green:    '#22C55E',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  green:    '#0E9E6E',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.4)',
 }
 
@@ -178,7 +178,7 @@ export function OnboardingProfileGoal({ onComplete }: Props) {
 
         {/* Logo + progresso */}
         <div style={{ textAlign: 'center' as const, marginBottom: '32px' }}>
-          <div style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #A78BFA, #7C3AED)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block' }}>ELYON</div>
+          <div style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block' }}>ELYON</div>
           <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginTop: '14px' }}>
             {[1, 2, 3].map(n => (
               <span key={n} style={{ width: n === step ? '24px' : '7px', height: '7px', borderRadius: '99px', background: n <= step ? C.purpleHi : 'rgba(255,255,255,0.15)', transition: 'all 0.25s' }} />
@@ -256,7 +256,7 @@ export function OnboardingProfileGoal({ onComplete }: Props) {
             {/* Ações */}
             <button
               onClick={() => finish(true)}
-              style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)', marginBottom: '10px' }}
+              style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)', marginBottom: '10px' }}
             >
               Começar pelo caminho recomendado →
             </button>

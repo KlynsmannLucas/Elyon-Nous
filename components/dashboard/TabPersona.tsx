@@ -6,25 +6,25 @@ import type { ClientData, GeneratedPersona } from '@/lib/store'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
-  bg:       '#080D1A',
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  bg:       '#F4F5F7',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(99,120,255,0.1)',
   borderSub:'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
   purpleBg: 'rgba(124,58,237,0.08)',
-  green:    '#22C55E',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.08)',
-  red:      '#EF4444',
+  red:      '#E1483F',
   redBg:    'rgba(239,68,68,0.08)',
-  blue:     '#38BDF8',
+  blue:     '#2C5FE0',
   blueBg:   'rgba(56,189,248,0.08)',
-  gold:     '#F59E0B',
+  gold:     '#E08B0B',
   goldBg:   'rgba(245,158,11,0.08)',
   orange:   '#F97316',
   orangeBg: 'rgba(249,115,22,0.08)',
-  text1:    '#F1F5F9',
+  text1:    '#161B26',
   text2:    'rgba(255,255,255,0.5)',
   text3:    'rgba(255,255,255,0.25)',
 }
@@ -39,11 +39,11 @@ const ROLES = [
 ]
 
 const INITIALS_COLORS = [
-  { bg: 'linear-gradient(135deg, #7C3AED, #A78BFA)', shadow: 'rgba(124,58,237,0.4)' },
-  { bg: 'linear-gradient(135deg, #0EA5E9, #38BDF8)', shadow: 'rgba(14,165,233,0.4)' },
-  { bg: 'linear-gradient(135deg, #D97706, #F59E0B)', shadow: 'rgba(217,119,6,0.4)' },
-  { bg: 'linear-gradient(135deg, #DC2626, #EF4444)', shadow: 'rgba(220,38,38,0.35)' },
-  { bg: 'linear-gradient(135deg, #059669, #22C55E)', shadow: 'rgba(5,150,105,0.4)' },
+  { bg: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)', shadow: 'rgba(124,58,237,0.4)' },
+  { bg: 'linear-gradient(135deg, #0EA5E9, #2C5FE0)', shadow: 'rgba(14,165,233,0.4)' },
+  { bg: 'linear-gradient(135deg, #D97706, #E08B0B)', shadow: 'rgba(217,119,6,0.4)' },
+  { bg: 'linear-gradient(135deg, #DC2626, #E1483F)', shadow: 'rgba(220,38,38,0.35)' },
+  { bg: 'linear-gradient(135deg, #059669, #0E9E6E)', shadow: 'rgba(5,150,105,0.4)' },
 ]
 
 function getAvatarStyle(name: string) {
@@ -86,9 +86,9 @@ function calcConfidence(cd: ClientData): { pct: number; label: string; detail: s
 type BadgeType = 'confirmed' | 'inferred' | 'benchmark'
 function DataBadge({ type }: { type: BadgeType }) {
   const cfg = {
-    confirmed:  { dot: '#22C55E', label: 'Confirmado',        bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.2)' },
-    inferred:   { dot: '#F59E0B', label: 'Inferido pela IA',  bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.2)' },
-    benchmark:  { dot: '#38BDF8', label: 'Padrão do nicho',   bg: 'rgba(56,189,248,0.08)',  border: 'rgba(56,189,248,0.2)' },
+    confirmed:  { dot: '#0E9E6E', label: 'Confirmado',        bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.2)' },
+    inferred:   { dot: '#E08B0B', label: 'Inferido pela IA',  bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.2)' },
+    benchmark:  { dot: '#2C5FE0', label: 'Padrão do nicho',   bg: 'rgba(56,189,248,0.08)',  border: 'rgba(56,189,248,0.2)' },
   }[type]
   return (
     <span style={{
@@ -172,9 +172,9 @@ function PersonaCard({ persona, clientData }: { persona: GeneratedPersona; clien
             height: '100%', borderRadius: 99, transition: 'width 0.8s ease',
             width: `${confidence.pct}%`,
             background: confidence.pct >= 50
-              ? `linear-gradient(90deg, #22C55E, #4ADE80)`
+              ? `linear-gradient(90deg, #0E9E6E, #4ADE80)`
               : confidence.pct >= 35
-              ? `linear-gradient(90deg, #F59E0B, #FCD34D)`
+              ? `linear-gradient(90deg, #E08B0B, #FCD34D)`
               : `linear-gradient(90deg, #F97316, #FB923C)`,
           }} />
         </div>

@@ -101,7 +101,7 @@ export function TabGrowth({ analysis, clientData }: Props) {
             revenue: fmtRevenue(c.revenue),
             roas: c.roas,
             recommended: false,
-            color: '#94A3B8',
+            color: '#5A6473',
             description: budget > 0 ? 'Conservador — 50% do orçamento atual' : 'Investimento inicial mínimo',
           },
           {
@@ -123,7 +123,7 @@ export function TabGrowth({ analysis, clientData }: Props) {
             revenue: fmtRevenue(a.revenue),
             roas: a.roas,
             recommended: false,
-            color: '#22C55E',
+            color: '#0E9E6E',
             description: budget > 0 ? 'Agressivo — 2× o orçamento atual' : 'Escala máxima e dominância',
           },
         ],
@@ -201,7 +201,7 @@ export function TabGrowth({ analysis, clientData }: Props) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">ROAS</span>
-                  <span className="font-semibold text-[#22C55E]">{s.roas}×</span>
+                  <span className="font-semibold text-[#0E9E6E]">{s.roas}×</span>
                 </div>
               </div>
 
@@ -219,7 +219,7 @@ export function TabGrowth({ analysis, clientData }: Props) {
                 <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
                   style={{
                     background: scenarios.dataSource === 'real' ? 'rgba(34,197,94,0.08)' : 'rgba(240,180,41,0.08)',
-                    color:      scenarios.dataSource === 'real' ? '#22C55E' : '#F0B429',
+                    color:      scenarios.dataSource === 'real' ? '#0E9E6E' : '#F0B429',
                     border:     `1px solid ${scenarios.dataSource === 'real' ? 'rgba(34,197,94,0.2)' : 'rgba(240,180,41,0.2)'}`,
                   }}>
                   {scenarios.dataSource === 'real' ? 'Orçamento real' : 'Benchmark do nicho'}
@@ -227,7 +227,7 @@ export function TabGrowth({ analysis, clientData }: Props) {
                 <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
                   style={{
                     background: scenarios.cplSource === 'real' ? 'rgba(56,189,248,0.08)' : 'rgba(148,163,184,0.08)',
-                    color:      scenarios.cplSource === 'real' ? '#38BDF8' : '#64748B',
+                    color:      scenarios.cplSource === 'real' ? '#2C5FE0' : '#8A93A3',
                     border:     `1px solid ${scenarios.cplSource === 'real' ? 'rgba(56,189,248,0.2)' : 'rgba(148,163,184,0.15)'}`,
                   }}>
                   CPL {scenarios.cplSource === 'real' ? 'real' : 'bench'} R${scenarios.cplAvg.toFixed(0)}
@@ -280,7 +280,7 @@ export function TabGrowth({ analysis, clientData }: Props) {
                 <div className="flex items-center gap-2 mb-3">
                   <div
                     className="font-display font-bold text-sm"
-                    style={{ color: isCurrent ? '#F0B429' : '#94A3B8' }}
+                    style={{ color: isCurrent ? '#F0B429' : '#5A6473' }}
                   >
                     {month.month}
                   </div>

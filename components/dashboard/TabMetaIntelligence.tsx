@@ -140,7 +140,7 @@ function fmt(n: number) {
 }
 
 function scoreColor(score: number) {
-  if (score >= 80) return '#22C55E'
+  if (score >= 80) return '#0E9E6E'
   if (score >= 65) return '#F0B429'
   if (score >= 50) return '#FB923C'
   return '#FF4D4D'
@@ -224,14 +224,14 @@ function HealthBadge({ score }: { score: number }) {
 
 function StatusBadge({ campaign, freqLimit }: { campaign: Campaign; freqLimit: number }) {
   const isActive = campaign.status === 'ACTIVE' && campaign.spend30 > 0
-  if (!isActive) return <Chip color="#64748B" label="Pausada" />
+  if (!isActive) return <Chip color="#8A93A3" label="Pausada" />
   if (campaign.learningPhase === 'learning_limited') return <Chip color="#FB923C" label="Aprendizado Limitado" />
-  if (campaign.learningPhase === 'learning') return <Chip color="#38BDF8" label="Em Aprendizado" />
+  if (campaign.learningPhase === 'learning') return <Chip color="#2C5FE0" label="Em Aprendizado" />
   const score = computeHealthScore(campaign, freqLimit)
-  if (score >= 80 && campaign.issues.length === 0) return <Chip color="#22C55E" label="Vencedora" />
+  if (score >= 80 && campaign.issues.length === 0) return <Chip color="#0E9E6E" label="Vencedora" />
   if (score < 50 || campaign.issues.length >= 2) return <Chip color="#FF4D4D" label="Problema Crítico" />
   if (score < 65 || campaign.issues.length > 0) return <Chip color="#F0B429" label="Atenção" />
-  return <Chip color="#22C55E" label="Ativa" />
+  return <Chip color="#0E9E6E" label="Ativa" />
 }
 
 function Chip({ color, label }: { color: string; label: string }) {
@@ -245,9 +245,9 @@ function Chip({ color, label }: { color: string; label: string }) {
 
 function AgeBadge({ age, days }: { age: Campaign['age']; days: number }) {
   const map = {
-    new: { label: 'Nova', color: '#38BDF8' },
-    growing: { label: 'Crescendo', color: '#A78BFA' },
-    established: { label: 'Madura', color: '#22C55E' },
+    new: { label: 'Nova', color: '#2C5FE0' },
+    growing: { label: 'Crescendo', color: '#2C5FE0' },
+    established: { label: 'Madura', color: '#0E9E6E' },
     veteran: { label: 'Veterana', color: '#F0B429' },
   }
   const s = map[age]
@@ -263,7 +263,7 @@ function AgeBadge({ age, days }: { age: Campaign['age']; days: number }) {
 function DeltaBadge({ delta, invertColor }: { delta: number | null | undefined; invertColor?: boolean }) {
   if (delta == null) return null
   const positive = invertColor ? delta < 0 : delta > 0
-  const color = positive ? '#22C55E' : '#FF4D4D'
+  const color = positive ? '#0E9E6E' : '#FF4D4D'
   return (
     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
       style={{ color, background: `${color}18` }}>
@@ -298,7 +298,7 @@ function InnerTabBar({ active, onChange, counts }: {
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0"
             style={{
               background: isActive ? 'rgba(24,119,242,0.15)' : 'rgba(255,255,255,0.03)',
-              color: isActive ? '#60A5FA' : '#64748B',
+              color: isActive ? '#60A5FA' : '#8A93A3',
               border: `1px solid ${isActive ? 'rgba(24,119,242,0.35)' : 'rgba(255,255,255,0.06)'}`,
             }}>
             <span>{t.icon}</span>
@@ -307,7 +307,7 @@ function InnerTabBar({ active, onChange, counts }: {
               <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
                 style={{
                   background: (isProblems && count > 0) ? 'rgba(255,77,77,0.2)' : 'rgba(255,255,255,0.1)',
-                  color: (isProblems && count > 0) ? '#FF4D4D' : '#94A3B8',
+                  color: (isProblems && count > 0) ? '#FF4D4D' : '#5A6473',
                 }}>
                 {count}
               </span>
@@ -358,7 +358,7 @@ function Sparkline({ spend30, spend7, height = 28 }: { spend30: number; spend7: 
     dailyRecent * 0.9, dailyRecent * 1.05, dailyRecent,
   ]
   const max = Math.max(...bars, 1)
-  const trend = dailyRecent > dailyOlder * 1.05 ? '#22C55E' : dailyRecent < dailyOlder * 0.9 ? '#FF4D4D' : '#F0B429'
+  const trend = dailyRecent > dailyOlder * 1.05 ? '#0E9E6E' : dailyRecent < dailyOlder * 0.9 ? '#FF4D4D' : '#F0B429'
   return (
     <svg width={56} height={height} viewBox={`0 0 56 ${height}`} style={{ display: 'block' }}>
       {bars.map((v, i) => {
@@ -413,7 +413,7 @@ function ColumnSelector({ visible, onChange }: { visible: Set<ColKey>; onChange:
           fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '7px',
           background: open ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.04)',
           border: `1px solid ${open ? 'rgba(124,58,237,0.35)' : 'rgba(255,255,255,0.08)'}`,
-          color: open ? '#A78BFA' : '#64748B', cursor: 'pointer',
+          color: open ? '#2C5FE0' : '#8A93A3', cursor: 'pointer',
         }}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
@@ -424,11 +424,11 @@ function ColumnSelector({ visible, onChange }: { visible: Set<ColKey>; onChange:
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 9999,
-          background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+          background: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '10px', padding: '10px', minWidth: '180px',
           boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
         }}>
-          <div style={{ fontSize: '10px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', padding: '0 4px' }}>
+          <div style={{ fontSize: '10px', color: '#8A93A3', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', padding: '0 4px' }}>
             Colunas visíveis
           </div>
           {ALL_COLS.map(col => (
@@ -437,7 +437,7 @@ function ColumnSelector({ visible, onChange }: { visible: Set<ColKey>; onChange:
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '6px 8px', borderRadius: '6px',
                 background: 'transparent', border: 'none', cursor: 'pointer',
-                color: visible.has(col.key) ? '#F1F5F9' : '#475569',
+                color: visible.has(col.key) ? '#161B26' : '#475569',
                 fontSize: '12px', textAlign: 'left', transition: 'background 0.1s',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
@@ -445,8 +445,8 @@ function ColumnSelector({ visible, onChange }: { visible: Set<ColKey>; onChange:
             >
               <span style={{
                 width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0,
-                background: visible.has(col.key) ? '#7C3AED' : 'rgba(255,255,255,0.06)',
-                border: `1px solid ${visible.has(col.key) ? '#7C3AED' : 'rgba(255,255,255,0.12)'}`,
+                background: visible.has(col.key) ? '#2C5FE0' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${visible.has(col.key) ? '#2C5FE0' : 'rgba(255,255,255,0.12)'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {visible.has(col.key) && <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>✓</span>}
@@ -489,7 +489,7 @@ function FilterBar({ search, onSearch, status, onStatus, objectives, objective, 
         </div>
         {(['all', 'active', 'paused', 'issues'] as const).map(s => {
           const labels = { all: 'Todos', active: 'Ativos', paused: 'Pausados', issues: 'Problemas' }
-          const colors = { all: '#64748B', active: '#22C55E', paused: '#94A3B8', issues: '#FF4D4D' }
+          const colors = { all: '#8A93A3', active: '#0E9E6E', paused: '#5A6473', issues: '#FF4D4D' }
           const isActive = status === s
           return (
             <button key={s} onClick={() => onStatus(s)}
@@ -505,7 +505,7 @@ function FilterBar({ search, onSearch, status, onStatus, objectives, objective, 
         })}
         {objectives && objectives.length > 1 && (
           <select value={objective} onChange={e => onObjective(e.target.value)}
-            style={{ fontSize: '12px', background: '#16161A', border: '1px solid #2A2A30', borderRadius: '8px', padding: '5px 8px', color: '#94A3B8', outline: 'none' }}>
+            style={{ fontSize: '12px', background: '#16161A', border: '1px solid #2A2A30', borderRadius: '8px', padding: '5px 8px', color: '#5A6473', outline: 'none' }}>
             <option value="">Todos os objetivos</option>
             {objectives.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
@@ -514,7 +514,7 @@ function FilterBar({ search, onSearch, status, onStatus, objectives, objective, 
           <button onClick={() => setShowAdvanced(v => !v)}
             style={{
               fontSize: '11px', fontWeight: 600, padding: '5px 10px', borderRadius: '8px',
-              color: hasAdvancedFilter ? '#A78BFA' : '#64748B',
+              color: hasAdvancedFilter ? '#2C5FE0' : '#8A93A3',
               background: hasAdvancedFilter ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.04)',
               border: `1px solid ${hasAdvancedFilter ? 'rgba(124,58,237,0.35)' : 'rgba(255,255,255,0.08)'}`,
               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
@@ -539,9 +539,9 @@ function FilterBar({ search, onSearch, status, onStatus, objectives, objective, 
               <button key={k} onClick={() => onPerformance(k)}
                 style={{
                   fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px',
-                  color: performance === k ? '#0D0D10' : '#64748B',
-                  background: performance === k ? '#A78BFA' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${performance === k ? '#A78BFA' : 'rgba(255,255,255,0.08)'}`,
+                  color: performance === k ? '#0D0D10' : '#8A93A3',
+                  background: performance === k ? '#2C5FE0' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${performance === k ? '#2C5FE0' : 'rgba(255,255,255,0.08)'}`,
                   cursor: 'pointer',
                 }}>
                 {label}
@@ -560,7 +560,7 @@ function FilterBar({ search, onSearch, status, onStatus, objectives, objective, 
                 <button key={k} onClick={() => onFreqFilter(k)}
                   style={{
                     fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px',
-                    color: freqFilter === k ? '#0D0D10' : '#64748B',
+                    color: freqFilter === k ? '#0D0D10' : '#8A93A3',
                     background: freqFilter === k ? '#FB923C' : 'rgba(255,255,255,0.05)',
                     border: `1px solid ${freqFilter === k ? '#FB923C' : 'rgba(255,255,255,0.08)'}`,
                     cursor: 'pointer',
@@ -644,11 +644,11 @@ function CampaignDrawerContent({ campaign: c, freqLimit }: { campaign: Campaign;
       <div className="text-xs text-slate-500">Objetivo: <span className="text-slate-300 font-semibold">{c.objectiveLabel}</span></div>
       <div className="grid grid-cols-3 gap-2">
         <StatCell label="Investido" value={fmt(c.spend30)} color="#F0B429" />
-        <StatCell label="Leads" value={c.leads30 > 0 ? String(c.leads30) : '—'} color="#38BDF8" />
+        <StatCell label="Leads" value={c.leads30 > 0 ? String(c.leads30) : '—'} color="#2C5FE0" />
         <StatCell label="CPL" value={c.cpl30 > 0 ? `R$${c.cpl30}` : '—'} />
-        <StatCell label="CTR" value={`${c.ctr30}%`} color={c.ctr30 < 0.5 ? '#FF4D4D' : '#22C55E'} />
+        <StatCell label="CTR" value={`${c.ctr30}%`} color={c.ctr30 < 0.5 ? '#FF4D4D' : '#0E9E6E'} />
         <StatCell label="Frequência" value={`${c.frequency}×`} color={c.frequency > freqLimit ? '#FB923C' : '#CBD5E1'} />
-        <StatCell label="ROAS" value={c.roas30 > 0 ? `${c.roas30}×` : '—'} color="#22C55E" />
+        <StatCell label="ROAS" value={c.roas30 > 0 ? `${c.roas30}×` : '—'} color="#0E9E6E" />
         <StatCell label="CPC" value={`R$${c.cpc30}`} />
         <StatCell label="CPM" value={`R$${c.cpm30}`} />
         <StatCell label="Alcance" value={c.reach > 0 ? c.reach.toLocaleString('pt-BR') : '—'} />
@@ -684,7 +684,7 @@ function AdSetDrawerContent({ adset: as }: { adset: AdSet }) {
       <div>
         <h3 className="font-bold text-white text-base leading-snug mb-2">{as.name}</h3>
         <div className="flex flex-wrap gap-2">
-          {as.hasRemarketing && <Chip color="#A78BFA" label="Remarketing" />}
+          {as.hasRemarketing && <Chip color="#2C5FE0" label="Remarketing" />}
           {as.issues.length > 0 && <Chip color="#FF4D4D" label={`${as.issues.length} problema(s)`} />}
         </div>
       </div>
@@ -696,7 +696,7 @@ function AdSetDrawerContent({ adset: as }: { adset: AdSet }) {
       </div>
       <div className="grid grid-cols-2 gap-2">
         <StatCell label="Gasto" value={as.spend > 0 ? fmt(as.spend) : '—'} color="#F0B429" />
-        <StatCell label="Leads" value={as.leads > 0 ? String(as.leads) : '—'} color="#38BDF8" />
+        <StatCell label="Leads" value={as.leads > 0 ? String(as.leads) : '—'} color="#2C5FE0" />
         <StatCell label="CPL" value={as.cpl > 0 ? `R$${as.cpl}` : '—'} />
         <StatCell label="CTR" value={as.ctr > 0 ? `${as.ctr}%` : '—'} color={as.ctr < 0.5 ? '#FF4D4D' : '#CBD5E1'} />
         <StatCell label="Frequência" value={`${as.frequency}×`} />
@@ -718,10 +718,10 @@ function AdSetDrawerContent({ adset: as }: { adset: AdSet }) {
 
 function AdDrawerContent({ ad }: { ad: AdCreative }) {
   const tagConfig = {
-    winner: { label: 'Vencedor', color: '#22C55E', icon: '🏆' },
+    winner: { label: 'Vencedor', color: '#0E9E6E', icon: '🏆' },
     waste: { label: 'Pausar', color: '#FF4D4D', icon: '⛔' },
-    learning: { label: 'Aprendendo', color: '#38BDF8', icon: '📚' },
-    ok: { label: 'Neutro', color: '#64748B', icon: '✓' },
+    learning: { label: 'Aprendendo', color: '#2C5FE0', icon: '📚' },
+    ok: { label: 'Neutro', color: '#8A93A3', icon: '✓' },
   }
   const t = tagConfig[ad.tag]
   return (
@@ -735,7 +735,7 @@ function AdDrawerContent({ ad }: { ad: AdCreative }) {
       {ad.body && <div className="text-xs text-slate-500 leading-relaxed">{ad.body}</div>}
       <div className="grid grid-cols-2 gap-2">
         <StatCell label="Gasto" value={ad.spend > 0 ? fmt(ad.spend) : '—'} color="#F0B429" />
-        <StatCell label="Leads" value={ad.leads > 0 ? String(ad.leads) : '—'} color="#38BDF8" />
+        <StatCell label="Leads" value={ad.leads > 0 ? String(ad.leads) : '—'} color="#2C5FE0" />
         <StatCell label="CPL" value={ad.cpl > 0 ? `R$${ad.cpl}` : '—'} />
         <StatCell label="CTR" value={ad.ctr > 0 ? `${ad.ctr}%` : '—'} color={ad.ctr < 0.5 ? '#FF4D4D' : '#CBD5E1'} />
         <StatCell label="Frequência" value={ad.frequency > 0 ? `${ad.frequency}×` : '—'} />
@@ -812,7 +812,7 @@ function OpportunitiesPanel({ opportunities }: { opportunities: DetectedOpportun
   }
   return (
     <div className="space-y-3">
-      <div className="text-[10px] text-[#22C55E] uppercase font-bold tracking-wider px-1">
+      <div className="text-[10px] text-[#0E9E6E] uppercase font-bold tracking-wider px-1">
         {opportunities.length} oportunidade{opportunities.length !== 1 ? 's' : ''} detectada{opportunities.length !== 1 ? 's' : ''}
       </div>
       {opportunities.map((o, i) => (
@@ -824,7 +824,7 @@ function OpportunitiesPanel({ opportunities }: { opportunities: DetectedOpportun
                 {{ campaign: '📋 Campanha', creative: '🎨 Criativo', geo: '🗺️ Região', adset: '📦 Ad Set' }[o.entityType]}
               </div>
               <div className="text-sm font-semibold text-white mb-0.5">{o.title}</div>
-              <div className="text-[11px] text-[#22C55E] font-semibold mb-1">{o.entityName}</div>
+              <div className="text-[11px] text-[#0E9E6E] font-semibold mb-1">{o.entityName}</div>
               <div className="text-xs text-slate-400 leading-relaxed">{o.action}</div>
             </div>
           </div>
@@ -845,14 +845,14 @@ function CampaignRowExpand({ campaign: c, freqLimit, colSpan }: { campaign: Camp
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '80px' }}>
             <div style={{ fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tendência 7d</div>
             <Sparkline spend30={c.spend30} spend7={c.spend7} height={36} />
-            <div style={{ fontSize: '10px', color: '#64748B' }}>
+            <div style={{ fontSize: '10px', color: '#8A93A3' }}>
               {c.spend7 > 0 && c.spend30 > 0 && (() => {
                 const dailyRecent = c.spend7 / 7
                 const dailyOlder  = c.spend30 > c.spend7 ? (c.spend30 - c.spend7) / 23 : dailyRecent
                 const pct = dailyOlder > 0 ? ((dailyRecent - dailyOlder) / dailyOlder * 100).toFixed(0) : null
                 if (!pct) return null
                 const up = +pct > 0
-                return <span style={{ color: up ? '#22C55E' : '#FF4D4D', fontWeight: 700 }}>{up ? '↑' : '↓'}{Math.abs(+pct)}% vs mês</span>
+                return <span style={{ color: up ? '#0E9E6E' : '#FF4D4D', fontWeight: 700 }}>{up ? '↑' : '↓'}{Math.abs(+pct)}% vs mês</span>
               })()}
             </div>
           </div>
@@ -862,10 +862,10 @@ function CampaignRowExpand({ campaign: c, freqLimit, colSpan }: { campaign: Camp
             <div style={{ fontSize: '10px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Resumo</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
               {[
-                { label: 'ROAS', value: c.roas30 > 0 ? `${c.roas30}×` : '—', color: '#22C55E' },
-                { label: 'CPC',  value: c.cpc30 > 0 ? `R$${c.cpc30}` : '—', color: '#A78BFA' },
-                { label: 'CPM',  value: c.cpm30 > 0 ? `R$${c.cpm30}` : '—', color: '#38BDF8' },
-                { label: 'Alcance', value: c.reach > 0 ? (c.reach >= 1000 ? `${(c.reach / 1000).toFixed(0)}k` : String(c.reach)) : '—', color: '#94A3B8' },
+                { label: 'ROAS', value: c.roas30 > 0 ? `${c.roas30}×` : '—', color: '#0E9E6E' },
+                { label: 'CPC',  value: c.cpc30 > 0 ? `R$${c.cpc30}` : '—', color: '#2C5FE0' },
+                { label: 'CPM',  value: c.cpm30 > 0 ? `R$${c.cpm30}` : '—', color: '#2C5FE0' },
+                { label: 'Alcance', value: c.reach > 0 ? (c.reach >= 1000 ? `${(c.reach / 1000).toFixed(0)}k` : String(c.reach)) : '—', color: '#5A6473' },
               ].map(m => (
                 <div key={m.label} style={{ background: '#111114', borderRadius: '8px', padding: '6px 8px', border: '1px solid #2A2A30' }}>
                   <div style={{ fontSize: '9px', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>{m.label}</div>
@@ -888,7 +888,7 @@ function CampaignRowExpand({ campaign: c, freqLimit, colSpan }: { campaign: Camp
               </>
             ) : c.recommendations.length > 0 ? (
               <>
-                <div style={{ fontSize: '10px', color: '#22C55E', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Recomendação</div>
+                <div style={{ fontSize: '10px', color: '#0E9E6E', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Recomendação</div>
                 <div style={{ fontSize: '11px', color: '#86EFAC', lineHeight: 1.4 }}>{c.recommendations[0]}</div>
               </>
             ) : (
@@ -999,19 +999,19 @@ function CampaignsTable({ campaigns, freqLimit, onSelect, onDrillDown }: {
                     onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent' }}>
                     <td style={{ padding: '10px 16px', color: '#475569' }}>{i + 1}</td>
                     <td style={{ padding: '10px 12px', maxWidth: '200px' }}>
-                      <div style={{ fontWeight: 600, color: isOpen ? '#60A5FA' : '#F1F5F9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.name}>{c.name}</div>
+                      <div style={{ fontWeight: 600, color: isOpen ? '#60A5FA' : '#161B26', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.name}>{c.name}</div>
                       <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>{c.objectiveLabel}</div>
                     </td>
                     {vis.has('status') && <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()}><StatusBadge campaign={c} freqLimit={freqLimit} /></td>}
                     {vis.has('spend')       && <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600, color: '#F0B429', fontVariantNumeric: 'tabular-nums' }}>{c.spend30 > 0 ? fmt(c.spend30) : '—'}</td>}
-                    {vis.has('leads')       && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#38BDF8', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{c.leads30 > 0 ? c.leads30 : '—'}</td>}
+                    {vis.has('leads')       && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#2C5FE0', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{c.leads30 > 0 ? c.leads30 : '—'}</td>}
                     {vis.has('cpl')         && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#CBD5E1', fontVariantNumeric: 'tabular-nums' }}>{c.cpl30 > 0 ? `R$${c.cpl30}` : '—'}</td>}
                     {vis.has('ctr')         && <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}><span style={{ color: c.ctr30 < 0.5 && c.impressions > 500 ? '#F87171' : '#CBD5E1' }}>{c.ctr30}%</span></td>}
                     {vis.has('freq')        && <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}><span style={{ color: c.frequency > freqLimit ? '#FB923C' : '#CBD5E1' }}>{c.frequency > 0 ? `${c.frequency}×` : '—'}</span></td>}
-                    {vis.has('cpc')         && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#94A3B8', fontVariantNumeric: 'tabular-nums' }}>{c.cpc30 > 0 ? `R$${c.cpc30}` : '—'}</td>}
-                    {vis.has('cpm')         && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#94A3B8', fontVariantNumeric: 'tabular-nums' }}>{c.cpm30 > 0 ? `R$${c.cpm30}` : '—'}</td>}
-                    {vis.has('impressions') && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#94A3B8', fontVariantNumeric: 'tabular-nums' }}>{c.impressions > 0 ? c.impressions.toLocaleString('pt-BR') : '—'}</td>}
-                    {vis.has('roas')        && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#22C55E', fontVariantNumeric: 'tabular-nums' }}>{c.roas30 > 0 ? `${c.roas30}×` : '—'}</td>}
+                    {vis.has('cpc')         && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#5A6473', fontVariantNumeric: 'tabular-nums' }}>{c.cpc30 > 0 ? `R$${c.cpc30}` : '—'}</td>}
+                    {vis.has('cpm')         && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#5A6473', fontVariantNumeric: 'tabular-nums' }}>{c.cpm30 > 0 ? `R$${c.cpm30}` : '—'}</td>}
+                    {vis.has('impressions') && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#5A6473', fontVariantNumeric: 'tabular-nums' }}>{c.impressions > 0 ? c.impressions.toLocaleString('pt-BR') : '—'}</td>}
+                    {vis.has('roas')        && <td style={{ padding: '10px 12px', textAlign: 'right', color: '#0E9E6E', fontVariantNumeric: 'tabular-nums' }}>{c.roas30 > 0 ? `${c.roas30}×` : '—'}</td>}
                     {vis.has('score')       && <td style={{ padding: '10px 12px', textAlign: 'right' }}><span style={{ fontSize: '12px', fontWeight: 700, color: sc }}>{score}</span></td>}
                     {vis.has('trend')       && <td style={{ padding: '10px 12px' }}><Sparkline spend30={c.spend30} spend7={c.spend7} /></td>}
                     <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()}>
@@ -1022,7 +1022,7 @@ function CampaignsTable({ campaigns, freqLimit, onSelect, onDrillDown }: {
                         </button>
                         {onDrillDown && (
                           <button onClick={() => onDrillDown(c.id, c.name)}
-                            style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', color: '#94A3B8', border: 'none', cursor: 'pointer' }}>
+                            style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', color: '#5A6473', border: 'none', cursor: 'pointer' }}>
                             Ad Sets →
                           </button>
                         )}
@@ -1091,12 +1091,12 @@ function AdSetsTable({ adSets, onSelect }: { adSets: AdSet[]; onSelect: (a: AdSe
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex flex-wrap gap-1">
-                    {as.hasRemarketing && <Chip color="#A78BFA" label="Remarketing" />}
+                    {as.hasRemarketing && <Chip color="#2C5FE0" label="Remarketing" />}
                     <Chip color="#475569" label={as.optimizationGoalLabel} />
                   </div>
                 </td>
                 <td className="px-3 py-3 text-right text-[#F0B429] font-semibold tabular-nums">{as.spend > 0 ? fmt(as.spend) : '—'}</td>
-                <td className="px-3 py-3 text-right text-[#38BDF8] tabular-nums">{as.leads > 0 ? as.leads : '—'}</td>
+                <td className="px-3 py-3 text-right text-[#2C5FE0] tabular-nums">{as.leads > 0 ? as.leads : '—'}</td>
                 <td className="px-3 py-3 text-right text-slate-300 tabular-nums">{as.cpl > 0 ? `R$${as.cpl}` : '—'}</td>
                 <td className="px-3 py-3 text-right tabular-nums">
                   <span className={as.ctr < 0.5 && as.ctr > 0 ? 'text-red-400' : 'text-slate-300'}>{as.ctr > 0 ? `${as.ctr}%` : '—'}</span>
@@ -1119,10 +1119,10 @@ function AdsTable({ ads, onSelect }: { ads: AdCreative[]; onSelect: (a: AdCreati
   const [status, setStatus] = useState('all')
 
   const tagConfig = {
-    winner: { label: 'Vencedor', color: '#22C55E' },
+    winner: { label: 'Vencedor', color: '#0E9E6E' },
     waste: { label: 'Pausar', color: '#FF4D4D' },
-    learning: { label: 'Aprendendo', color: '#38BDF8' },
-    ok: { label: 'Neutro', color: '#64748B' },
+    learning: { label: 'Aprendendo', color: '#2C5FE0' },
+    ok: { label: 'Neutro', color: '#8A93A3' },
   }
 
   const filtered = useMemo(() => {
@@ -1175,7 +1175,7 @@ function AdsTable({ ads, onSelect }: { ads: AdCreative[]; onSelect: (a: AdCreati
                   </td>
                   <td className="px-3 py-3"><Chip color={t.color} label={t.label} /></td>
                   <td className="px-3 py-3 text-right text-[#F0B429] font-semibold tabular-nums">{ad.spend > 0 ? fmt(ad.spend) : '—'}</td>
-                  <td className="px-3 py-3 text-right text-[#38BDF8] tabular-nums">{ad.leads > 0 ? ad.leads : '—'}</td>
+                  <td className="px-3 py-3 text-right text-[#2C5FE0] tabular-nums">{ad.leads > 0 ? ad.leads : '—'}</td>
                   <td className="px-3 py-3 text-right text-slate-300 tabular-nums">{ad.cpl > 0 ? `R$${ad.cpl}` : '—'}</td>
                   <td className="px-3 py-3 text-right tabular-nums">
                     <span className={ad.ctr < 0.5 && ad.ctr > 0 ? 'text-red-400' : 'text-slate-300'}>{ad.ctr > 0 ? `${ad.ctr}%` : '—'}</span>
@@ -1198,10 +1198,10 @@ function CreativesPanel({ ads }: { ads: AdCreative[] }) {
   if (ads.length === 0) return <div className="py-12 text-center text-slate-600 text-sm">Nenhum criativo disponível.</div>
 
   const tagConfig = {
-    winner: { label: 'Melhor Performance', color: '#22C55E', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.25)', icon: '🏆' },
+    winner: { label: 'Melhor Performance', color: '#0E9E6E', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.25)', icon: '🏆' },
     waste: { label: 'Rec. Pausar', color: '#FF4D4D', bg: 'rgba(255,77,77,0.1)', border: 'rgba(255,77,77,0.25)', icon: '⛔' },
-    learning: { label: 'Em Aprendizado', color: '#38BDF8', bg: 'rgba(56,189,248,0.1)', border: 'rgba(56,189,248,0.25)', icon: '📚' },
-    ok: { label: 'Neutro', color: '#64748B', bg: 'rgba(100,116,139,0.1)', border: 'rgba(100,116,139,0.25)', icon: '✓' },
+    learning: { label: 'Em Aprendizado', color: '#2C5FE0', bg: 'rgba(56,189,248,0.1)', border: 'rgba(56,189,248,0.25)', icon: '📚' },
+    ok: { label: 'Neutro', color: '#8A93A3', bg: 'rgba(100,116,139,0.1)', border: 'rgba(100,116,139,0.25)', icon: '✓' },
   }
   const counts = { winner: ads.filter(a => a.tag === 'winner').length, waste: ads.filter(a => a.tag === 'waste').length, learning: ads.filter(a => a.tag === 'learning').length }
   const filtered = ads.filter(a => filter === 'all' || a.tag === filter).sort((a, b) => ({ winner: 0, ok: 1, learning: 2, waste: 3 }[a.tag] - { winner: 0, ok: 1, learning: 2, waste: 3 }[b.tag] || b.spend - a.spend))
@@ -1210,10 +1210,10 @@ function CreativesPanel({ ads }: { ads: AdCreative[] }) {
     <div>
       <div className="flex gap-2 flex-wrap p-4 border-b border-[#1E1E24]">
         {([
-          { key: 'all', label: `Todos (${ads.length})`, color: '#64748B' },
-          { key: 'winner', label: `🏆 Melhor Performance (${counts.winner})`, color: '#22C55E' },
+          { key: 'all', label: `Todos (${ads.length})`, color: '#8A93A3' },
+          { key: 'winner', label: `🏆 Melhor Performance (${counts.winner})`, color: '#0E9E6E' },
           { key: 'waste', label: `⛔ Rec. Pausar (${counts.waste})`, color: '#FF4D4D' },
-          { key: 'learning', label: `📚 Em Aprendizado (${counts.learning})`, color: '#38BDF8' },
+          { key: 'learning', label: `📚 Em Aprendizado (${counts.learning})`, color: '#2C5FE0' },
         ] as const).map(f => (
           <button key={f.key} onClick={() => setFilter(f.key as any)}
             className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
@@ -1241,7 +1241,7 @@ function CreativesPanel({ ads }: { ads: AdCreative[] }) {
                   {ad.title && <div className="text-xs text-slate-400 mb-1">"{ad.title}"</div>}
                   <div className="flex gap-3 text-xs text-slate-500 flex-wrap">
                     {ad.spend > 0 && <span>Gasto: <strong className="text-[#F0B429]">{fmt(ad.spend)}</strong></span>}
-                    {ad.leads > 0 && <span>Leads: <strong className="text-[#38BDF8]">{ad.leads}</strong></span>}
+                    {ad.leads > 0 && <span>Leads: <strong className="text-[#2C5FE0]">{ad.leads}</strong></span>}
                     {ad.cpl > 0 && <span>CPL: <strong className="text-white">R${ad.cpl}</strong></span>}
                     {ad.ctr > 0 && <span>CTR: <strong className={ad.ctr < 0.5 ? 'text-red-400' : 'text-slate-300'}>{ad.ctr}%</strong></span>}
                     {ad.frequency > 0 && <span>Freq: <strong className="text-slate-300">{ad.frequency}×</strong></span>}
@@ -1267,7 +1267,7 @@ function PixelCard({ pixel }: { pixel: PixelInfo | null }) {
   )
   const lastFiredDate = pixel.lastFiredTime ? new Date(pixel.lastFiredTime) : null
   const hoursAgo = lastFiredDate ? Math.floor((Date.now() - lastFiredDate.getTime()) / 3600000) : null
-  const statusColor = pixel.isActive ? '#22C55E' : '#FF4D4D'
+  const statusColor = pixel.isActive ? '#0E9E6E' : '#FF4D4D'
   return (
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
       <h3 className="font-display font-bold text-white mb-4 flex items-center gap-2"><span>🔵</span> Pixel Meta</h3>
@@ -1301,7 +1301,7 @@ function PixelCard({ pixel }: { pixel: PixelInfo | null }) {
 
 // ── Tracking Audit Panel ──────────────────────────────────────────────────────
 const TRACKING_STATUS_ICON: Record<string, string> = { ok: '✅', warning: '⚠️', error: '❌', not_checked: '⬜' }
-const TRACKING_STATUS_COLOR: Record<string, string> = { ok: '#22C55E', warning: '#F0B429', error: '#FF4D4D', not_checked: '#475569' }
+const TRACKING_STATUS_COLOR: Record<string, string> = { ok: '#0E9E6E', warning: '#F0B429', error: '#FF4D4D', not_checked: '#475569' }
 
 function TrackingAuditPanel({ audit, loading }: { audit: TrackingAudit | null; loading: boolean }) {
   if (loading) return (
@@ -1311,7 +1311,7 @@ function TrackingAuditPanel({ audit, loading }: { audit: TrackingAudit | null; l
     </div>
   )
   if (!audit) return null
-  const overallColor = TRACKING_STATUS_COLOR[audit.overallStatus] || '#64748B'
+  const overallColor = TRACKING_STATUS_COLOR[audit.overallStatus] || '#8A93A3'
   const overallLabel = { ok: 'OK', warning: 'Atenção', error: 'Erro', not_checked: 'Parcial' }[audit.overallStatus] || ''
   return (
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
@@ -1345,7 +1345,7 @@ function RecCard({ rec, index }: { rec: { type: RecType; title: string; descript
   const map = {
     critical: { color: '#FF4D4D', bg: 'rgba(255,77,77,0.06)', border: 'rgba(255,77,77,0.2)', icon: '🚨' },
     warning: { color: '#F0B429', bg: 'rgba(240,180,41,0.06)', border: 'rgba(240,180,41,0.2)', icon: '⚠️' },
-    opportunity: { color: '#22C55E', bg: 'rgba(34,197,94,0.06)', border: 'rgba(34,197,94,0.2)', icon: '💡' },
+    opportunity: { color: '#0E9E6E', bg: 'rgba(34,197,94,0.06)', border: 'rgba(34,197,94,0.2)', icon: '💡' },
   }
   const s = map[rec.type]
   return (
@@ -1366,7 +1366,7 @@ function ObjectiveCard({ group, objective }: { group: ObjGroup; objective: strin
   const isSales = objective.includes('SALES') || objective === 'CONVERSIONS'
   const isLeads = objective.includes('LEAD')
   const isMsg = objective === 'MESSAGES'
-  const color = isSales ? '#22C55E' : isLeads ? '#38BDF8' : isMsg ? '#A78BFA' : '#F0B429'
+  const color = isSales ? '#0E9E6E' : isLeads ? '#2C5FE0' : isMsg ? '#2C5FE0' : '#F0B429'
   return (
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
       <div className="flex items-start justify-between mb-4">
@@ -1413,8 +1413,8 @@ function CampaignSpendChart({ campaigns }: { campaigns: Campaign[] }) {
       <ResponsiveContainer width="100%" height={Math.max(200, top.length * 48)}>
         <ComposedChart data={top} layout="vertical" margin={{ left: 8, right: 56, top: 0, bottom: 0 }}>
           <XAxis type="number" hide />
-          <YAxis type="category" dataKey="name" width={170} tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} />
-          {hasLeads && <YAxis yAxisId="leads" orientation="right" type="number" tick={{ fill: '#38BDF8', fontSize: 10 }} axisLine={false} tickLine={false} width={36} />}
+          <YAxis type="category" dataKey="name" width={170} tick={{ fill: '#5A6473', fontSize: 11 }} axisLine={false} tickLine={false} />
+          {hasLeads && <YAxis yAxisId="leads" orientation="right" type="number" tick={{ fill: '#2C5FE0', fontSize: 10 }} axisLine={false} tickLine={false} width={36} />}
           <Tooltip cursor={{ fill: 'rgba(255,255,255,0.025)' }} content={({ active, payload }) => {
             if (!active || !payload?.length) return null
             const d = payload[0].payload
@@ -1422,22 +1422,22 @@ function CampaignSpendChart({ campaigns }: { campaigns: Campaign[] }) {
               <div style={{ background: '#16161A', border: '1px solid #2A2A30', borderRadius: 10, padding: '10px 14px', fontSize: 12 }}>
                 <div className="text-slate-300 font-semibold mb-2">{d.name}</div>
                 <div className="text-[#F0B429]">Investido: R${d.spend.toLocaleString('pt-BR')}</div>
-                {d.leads > 0 && <div className="text-[#38BDF8]">Leads: {d.leads}</div>}
+                {d.leads > 0 && <div className="text-[#2C5FE0]">Leads: {d.leads}</div>}
                 {d.cpl > 0 && <div className="text-slate-400">CPL: R${d.cpl}</div>}
               </div>
             )
           }} />
           <Bar dataKey="spend" name="Investido" fill="#F0B429" radius={[0, 6, 6, 0]} barSize={18}>
-            <LabelList dataKey="spend" position="right" formatter={(v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v}`} style={{ fill: '#94A3B8', fontSize: 10 }} />
+            <LabelList dataKey="spend" position="right" formatter={(v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v}`} style={{ fill: '#5A6473', fontSize: 10 }} />
           </Bar>
-          {hasLeads && <Line yAxisId="leads" dataKey="leads" stroke="#38BDF8" strokeWidth={2} dot={{ fill: '#38BDF8', r: 4 }} type="monotone" />}
+          {hasLeads && <Line yAxisId="leads" dataKey="leads" stroke="#2C5FE0" strokeWidth={2} dot={{ fill: '#2C5FE0', r: 4 }} type="monotone" />}
         </ComposedChart>
       </ResponsiveContainer>
     </div>
   )
 }
 
-const OBJ_COLORS = ['#1877F2', '#38BDF8', '#22C55E', '#F0B429', '#A78BFA', '#F472B6', '#FB923C', '#64748B']
+const OBJ_COLORS = ['#1877F2', '#2C5FE0', '#0E9E6E', '#F0B429', '#2C5FE0', '#F472B6', '#FB923C', '#8A93A3']
 
 function ObjectiveDonut({ byObjective, totalSpend }: { byObjective: Record<string, ObjGroup>; totalSpend: number }) {
   const data = Object.entries(byObjective).filter(([, g]) => g.totalSpend > 0)
@@ -1485,12 +1485,12 @@ function PlatformBarChart({ platforms }: { platforms: PlatformBreakdown[] }) {
     grouped[p.platform].spend += p.spend; grouped[p.platform].leads += p.leads
   }
   const data = Object.entries(grouped).sort(([, a], [, b]) => b.spend - a.spend)
-    .map(([plat, totals]) => ({ name: platformLabel[plat] || plat, spend: Math.round(totals.spend), leads: totals.leads, color: platformColor[plat] || '#64748B' }))
+    .map(([plat, totals]) => ({ name: platformLabel[plat] || plat, spend: Math.round(totals.spend), leads: totals.leads, color: platformColor[plat] || '#8A93A3' }))
   if (data.length === 0) return null
   return (
     <ResponsiveContainer width="100%" height={160}>
       <BarChart data={data} margin={{ left: 0, right: 8, top: 4, bottom: 4 }}>
-        <XAxis dataKey="name" tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} />
+        <XAxis dataKey="name" tick={{ fill: '#5A6473', fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis hide />
         <Tooltip content={({ active, payload }) => {
           if (!active || !payload?.length) return null
@@ -1499,13 +1499,13 @@ function PlatformBarChart({ platforms }: { platforms: PlatformBreakdown[] }) {
             <div style={{ background: '#16161A', border: '1px solid #2A2A30', borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
               <div style={{ color: d.color }} className="font-semibold mb-1">{d.name}</div>
               <div className="text-[#F0B429]">R${d.spend.toLocaleString('pt-BR')}</div>
-              {d.leads > 0 && <div className="text-[#38BDF8]">{d.leads} leads</div>}
+              {d.leads > 0 && <div className="text-[#2C5FE0]">{d.leads} leads</div>}
             </div>
           )
         }} />
         <Bar dataKey="spend" radius={[6, 6, 0, 0]} barSize={40}>
           {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-          <LabelList dataKey="spend" position="top" formatter={(v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v}`} style={{ fill: '#94A3B8', fontSize: 10 }} />
+          <LabelList dataKey="spend" position="top" formatter={(v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v}`} style={{ fill: '#5A6473', fontSize: 10 }} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
@@ -1520,7 +1520,7 @@ function GeoTable({ geo }: { geo: GeoBreakdown[] }) {
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
       <div className="px-5 py-4 border-b border-[#2A2A30] flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-display font-bold text-white flex items-center gap-2"><span>🗺️</span> Performance Geográfica</h3>
-        {bestRegion && <span className="text-xs px-2 py-1 rounded-full font-semibold" style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)' }}>Melhor: {bestRegion.region} — CPL R${bestRegion.cpl}</span>}
+        {bestRegion && <span className="text-xs px-2 py-1 rounded-full font-semibold" style={{ background: 'rgba(34,197,94,0.1)', color: '#0E9E6E', border: '1px solid rgba(34,197,94,0.2)' }}>Melhor: {bestRegion.region} — CPL R${bestRegion.cpl}</span>}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -1539,11 +1539,11 @@ function GeoTable({ geo }: { geo: GeoBreakdown[] }) {
               const isBest = row === bestRegion
               return (
                 <tr key={i} className="hover:bg-[#16161A] transition-colors">
-                  <td className="px-5 py-2.5"><span className="font-semibold" style={{ color: isBest ? '#22C55E' : '#CBD5E1' }}>{row.region}</span>{isBest && <span className="ml-2 text-[10px] text-[#22C55E]">★ Melhor CPL</span>}</td>
+                  <td className="px-5 py-2.5"><span className="font-semibold" style={{ color: isBest ? '#0E9E6E' : '#CBD5E1' }}>{row.region}</span>{isBest && <span className="ml-2 text-[10px] text-[#0E9E6E]">★ Melhor CPL</span>}</td>
                   <td className="px-3 py-2.5 text-right text-[#F0B429] font-semibold">{fmt(row.spend)}</td>
-                  <td className="px-3 py-2.5 text-right text-[#38BDF8] font-semibold">{row.leads || '—'}</td>
+                  <td className="px-3 py-2.5 text-right text-[#2C5FE0] font-semibold">{row.leads || '—'}</td>
                   <td className="px-3 py-2.5 text-right text-slate-300 font-semibold">{row.cpl > 0 ? `R$${row.cpl}` : '—'}</td>
-                  <td className="px-5 py-2.5"><div className="h-1.5 bg-[#1E1E24] rounded-full overflow-hidden w-24"><div className="h-full rounded-full" style={{ width: `${pct}%`, background: isBest ? '#22C55E' : 'linear-gradient(90deg,#1877F2,#38BDF8)' }} /></div></td>
+                  <td className="px-5 py-2.5"><div className="h-1.5 bg-[#1E1E24] rounded-full overflow-hidden w-24"><div className="h-full rounded-full" style={{ width: `${pct}%`, background: isBest ? '#0E9E6E' : 'linear-gradient(90deg,#1877F2,#2C5FE0)' }} /></div></td>
                 </tr>
               )
             })}
@@ -1567,7 +1567,7 @@ function PlatformPanel({ platforms }: { platforms: PlatformBreakdown[] }) {
       <PlatformBarChart platforms={platforms} />
       <div className="mt-4 space-y-4">
         {Object.entries(grouped).map(([plat, rows]) => {
-          const color = platformColor[plat] || '#64748B'
+          const color = platformColor[plat] || '#8A93A3'
           const totalSpend = rows.reduce((s, r) => s + r.spend, 0)
           const totalLeads = rows.reduce((s, r) => s + r.leads, 0)
           const platCpl = totalLeads > 0 ? +(totalSpend / totalLeads).toFixed(2) : 0
@@ -1579,7 +1579,7 @@ function PlatformPanel({ platforms }: { platforms: PlatformBreakdown[] }) {
                   <span className="font-semibold text-white text-sm">{platformLabel[plat] || plat}</span>
                 </div>
                 <div className="flex gap-3 text-xs text-slate-500">
-                  {totalLeads > 0 && <span className="text-[#38BDF8]">{totalLeads} leads</span>}
+                  {totalLeads > 0 && <span className="text-[#2C5FE0]">{totalLeads} leads</span>}
                   {platCpl > 0 && <span className="text-slate-300">CPL R${platCpl}</span>}
                 </div>
               </div>
@@ -1605,7 +1605,7 @@ function DemoPanel({ demo }: { demo: DemoBreakdown[] }) {
   const ages = [...new Set(demo.map(d => d.age))].sort()
   const genders = [...new Set(demo.map(d => d.gender))]
   const genderLabel: Record<string, string> = { male: 'Homens', female: 'Mulheres', unknown: 'Desconh.' }
-  const genderColor: Record<string, string> = { male: '#38BDF8', female: '#F472B6', unknown: '#64748B' }
+  const genderColor: Record<string, string> = { male: '#2C5FE0', female: '#F472B6', unknown: '#8A93A3' }
   const maxSpend = Math.max(...demo.map(d => d.spend), 1)
   return (
     <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-5">
@@ -1615,7 +1615,7 @@ function DemoPanel({ demo }: { demo: DemoBreakdown[] }) {
           <thead>
             <tr className="border-b border-[#1E1E24]">
               <th className="py-2 pr-4 text-left text-slate-600 font-semibold uppercase">Faixa</th>
-              {genders.map(g => <th key={g} className="py-2 px-2 text-center font-semibold" style={{ color: genderColor[g] || '#64748B' }}>{genderLabel[g] || g}</th>)}
+              {genders.map(g => <th key={g} className="py-2 px-2 text-center font-semibold" style={{ color: genderColor[g] || '#8A93A3' }}>{genderLabel[g] || g}</th>)}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1A1A20]">
@@ -1626,7 +1626,7 @@ function DemoPanel({ demo }: { demo: DemoBreakdown[] }) {
                   const cell = demo.find(d => d.age === age && d.gender === gender)
                   if (!cell) return <td key={gender} className="py-2.5 px-2 text-center text-slate-700">—</td>
                   const intensity = Math.round((cell.spend / maxSpend) * 90) + 10
-                  const color = genderColor[gender] || '#64748B'
+                  const color = genderColor[gender] || '#8A93A3'
                   return (
                     <td key={gender} className="py-2.5 px-2 text-center">
                       <div className="rounded-lg px-2 py-1 inline-block min-w-[60px]" style={{ background: `${color}${Math.round(intensity * 0.3).toString(16).padStart(2, '0')}` }}>
@@ -1660,8 +1660,8 @@ function OverviewTab({ data, trackingAudit, trackingLoading }: {
           <h3 className="font-display font-bold text-white mb-4 flex items-center gap-2"><span>🧠</span> Fase de Aprendizado</h3>
           <div className="grid grid-cols-3 gap-3 mb-4">
             {[
-              { label: 'Estáveis', count: data.campaigns.filter(c => c.learningPhase === 'stable').length, color: '#22C55E' },
-              { label: 'Aprendendo', count: data.campaigns.filter(c => c.learningPhase === 'learning').length, color: '#38BDF8' },
+              { label: 'Estáveis', count: data.campaigns.filter(c => c.learningPhase === 'stable').length, color: '#0E9E6E' },
+              { label: 'Aprendendo', count: data.campaigns.filter(c => c.learningPhase === 'learning').length, color: '#2C5FE0' },
               { label: 'Limitado', count: data.campaigns.filter(c => c.learningPhase === 'learning_limited').length, color: '#FB923C' },
             ].map(s => (
               <div key={s.label} className="bg-[#16161A] rounded-xl px-3 py-2.5 text-center">
@@ -1671,7 +1671,7 @@ function OverviewTab({ data, trackingAudit, trackingLoading }: {
             ))}
           </div>
           <div className="space-y-1.5 text-xs text-slate-500">
-            <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#38BDF8] flex-shrink-0" /><span>Em Aprendizado: evite editar para não reiniciar o ciclo</span></div>
+            <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#2C5FE0] flex-shrink-0" /><span>Em Aprendizado: evite editar para não reiniciar o ciclo</span></div>
             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#FB923C] flex-shrink-0" /><span>Limitado: aumente orçamento ou amplie a audiência</span></div>
           </div>
         </div>
@@ -1924,9 +1924,9 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
                   </div>
                   {[
                     { label: 'Investido 30d', value: fmt(data.totals.spend), color: '#F0B429', delta: prev?.spendDelta, invertColor: false, sub: data.totals.activeCampaigns > 0 ? `${data.totals.activeCampaigns} ativa${data.totals.activeCampaigns !== 1 ? 's' : ''}` : undefined, tooltip: 'Valor total investido nos últimos 30 dias' },
-                    { label: 'Leads', value: data.totals.leads > 0 ? String(data.totals.leads) : '—', color: '#38BDF8', delta: prev?.leadsDelta, invertColor: false, sub: data.totals.cpl > 0 ? `CPL: R$${data.totals.cpl}` : undefined, tooltip: 'Total de leads gerados (Custo Por Lead médio)' },
-                    { label: 'ROAS', value: data.totals.roas > 0 ? `${data.totals.roas}×` : '—', color: '#22C55E', delta: prev?.roasDelta ?? null, invertColor: false, sub: data.totals.revenue > 0 ? `Receita: ${fmt(data.totals.revenue)}` : undefined, tooltip: 'Retorno sobre investimento em anúncios' },
-                    { label: 'CTR Médio', value: `${data.totals.avgCTR}%`, color: data.totals.avgCTR < 0.5 ? '#FF4D4D' : data.totals.avgCTR >= 1.5 ? '#22C55E' : '#F0B429', delta: prev?.ctrDelta ?? null, invertColor: false, sub: `Freq: ${data.totals.avgFrequency}×`, tooltip: 'Taxa de cliques média. Acima de 1% é considerado bom' },
+                    { label: 'Leads', value: data.totals.leads > 0 ? String(data.totals.leads) : '—', color: '#2C5FE0', delta: prev?.leadsDelta, invertColor: false, sub: data.totals.cpl > 0 ? `CPL: R$${data.totals.cpl}` : undefined, tooltip: 'Total de leads gerados (Custo Por Lead médio)' },
+                    { label: 'ROAS', value: data.totals.roas > 0 ? `${data.totals.roas}×` : '—', color: '#0E9E6E', delta: prev?.roasDelta ?? null, invertColor: false, sub: data.totals.revenue > 0 ? `Receita: ${fmt(data.totals.revenue)}` : undefined, tooltip: 'Retorno sobre investimento em anúncios' },
+                    { label: 'CTR Médio', value: `${data.totals.avgCTR}%`, color: data.totals.avgCTR < 0.5 ? '#FF4D4D' : data.totals.avgCTR >= 1.5 ? '#0E9E6E' : '#F0B429', delta: prev?.ctrDelta ?? null, invertColor: false, sub: `Freq: ${data.totals.avgFrequency}×`, tooltip: 'Taxa de cliques média. Acima de 1% é considerado bom' },
                   ].map(kpi => (
                     <div key={kpi.label} title={kpi.tooltip} className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-4 flex flex-col justify-between cursor-help">
                       <div className="text-[10px] text-slate-600 uppercase tracking-wider">{kpi.label}</div>
@@ -1942,12 +1942,12 @@ export function TabMetaIntelligence({ onNavigateToConnections }: Props) {
                 {/* Row 2: métricas secundárias */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                   {[
-                    { label: 'CPC Médio',  value: avgCPC > 0 ? `R$${avgCPC}` : '—', color: '#A78BFA', delta: prev?.cpcDelta ?? null, invertColor: true, sub: 'Custo por clique', tooltip: 'Custo Por Clique médio de todas as campanhas' },
-                    { label: 'CPM Médio',  value: avgCPM > 0 ? `R$${avgCPM}` : '—', color: '#38BDF8', delta: prev?.cpmDelta ?? null, invertColor: true, sub: 'A cada 1000 imp.', tooltip: 'Custo Por Mil Impressões médio' },
-                    { label: 'Freq. Média',value: `${data.totals.avgFrequency}×`, color: data.totals.avgFrequency > (freqLimit + 1) ? '#FB923C' : '#94A3B8', delta: prev?.freqDelta ?? null, invertColor: true, sub: `Limite: ${freqLimit}×`, tooltip: `Frequência média. Acima de ${freqLimit}× indica fadiga de anúncio` },
-                    { label: 'Gasto Desperdiçado', value: wastedSpend > 0 ? fmt(wastedSpend) : 'R$0', color: wastedSpend > 100 ? '#FF4D4D' : '#22C55E', delta: null, invertColor: true, sub: wastedSpend > 0 ? 'sem conversão' : 'sem desperdício', tooltip: 'Soma do gasto em campanhas com R$50+ investidos e zero conversões' },
-                    { label: 'C/ Problemas',value: problemCampaigns > 0 ? String(problemCampaigns) : '0', color: problemCampaigns > 0 ? '#F0B429' : '#22C55E', delta: null, invertColor: true, sub: 'campanhas', tooltip: 'Número de campanhas com algum problema detectado' },
-                    { label: 'Criativos Top',value: winnerCreatives > 0 ? String(winnerCreatives) : '0', color: winnerCreatives > 0 ? '#22C55E' : '#64748B', delta: null, invertColor: false, sub: 'vencedores', tooltip: 'Criativos classificados como Melhor Performance' },
+                    { label: 'CPC Médio',  value: avgCPC > 0 ? `R$${avgCPC}` : '—', color: '#2C5FE0', delta: prev?.cpcDelta ?? null, invertColor: true, sub: 'Custo por clique', tooltip: 'Custo Por Clique médio de todas as campanhas' },
+                    { label: 'CPM Médio',  value: avgCPM > 0 ? `R$${avgCPM}` : '—', color: '#2C5FE0', delta: prev?.cpmDelta ?? null, invertColor: true, sub: 'A cada 1000 imp.', tooltip: 'Custo Por Mil Impressões médio' },
+                    { label: 'Freq. Média',value: `${data.totals.avgFrequency}×`, color: data.totals.avgFrequency > (freqLimit + 1) ? '#FB923C' : '#5A6473', delta: prev?.freqDelta ?? null, invertColor: true, sub: `Limite: ${freqLimit}×`, tooltip: `Frequência média. Acima de ${freqLimit}× indica fadiga de anúncio` },
+                    { label: 'Gasto Desperdiçado', value: wastedSpend > 0 ? fmt(wastedSpend) : 'R$0', color: wastedSpend > 100 ? '#FF4D4D' : '#0E9E6E', delta: null, invertColor: true, sub: wastedSpend > 0 ? 'sem conversão' : 'sem desperdício', tooltip: 'Soma do gasto em campanhas com R$50+ investidos e zero conversões' },
+                    { label: 'C/ Problemas',value: problemCampaigns > 0 ? String(problemCampaigns) : '0', color: problemCampaigns > 0 ? '#F0B429' : '#0E9E6E', delta: null, invertColor: true, sub: 'campanhas', tooltip: 'Número de campanhas com algum problema detectado' },
+                    { label: 'Criativos Top',value: winnerCreatives > 0 ? String(winnerCreatives) : '0', color: winnerCreatives > 0 ? '#0E9E6E' : '#8A93A3', delta: null, invertColor: false, sub: 'vencedores', tooltip: 'Criativos classificados como Melhor Performance' },
                   ].map(kpi => (
                     <div key={kpi.label} title={kpi.tooltip} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-3 flex flex-col cursor-help">
                       <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">{kpi.label}</div>

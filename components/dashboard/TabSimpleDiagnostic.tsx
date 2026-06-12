@@ -18,17 +18,17 @@ const C = {
   surface:  '#0C1426',
   elevated: '#111D33',
   border:   'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleHi: '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleHi: '#2C5FE0',
   purpleBg: 'rgba(124,58,237,0.08)',
-  green:    '#22C55E',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.07)',
-  amber:    '#F59E0B',
+  amber:    '#E08B0B',
   amberBg:  'rgba(245,158,11,0.07)',
-  red:      '#EF4444',
+  red:      '#E1483F',
   redBg:    'rgba(239,68,68,0.07)',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.32)',
 }
 
@@ -193,7 +193,7 @@ export function TabSimpleDiagnostic({ clientData, onNavigate }: Props) {
           </p>
           <button
             onClick={() => onNavigate?.('anuncios')}
-            style={{ padding: '11px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}
+            style={{ padding: '11px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' }}
           >
             Conectar minha conta de anúncios →
           </button>
@@ -311,7 +311,7 @@ export function TabSimpleDiagnostic({ clientData, onNavigate }: Props) {
             <p style={{ fontSize: '12px', color: C.text2, lineHeight: 1.6, margin: '0 0 12px' }}>{nextAction.desc}</p>
             <button
               onClick={() => onNavigate?.('acoes')}
-              style={{ fontSize: '12px', fontWeight: 700, padding: '9px 18px', borderRadius: '9px', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}
+              style={{ fontSize: '12px', fontWeight: 700, padding: '9px 18px', borderRadius: '9px', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' }}
             >
               Ver passo a passo →
             </button>

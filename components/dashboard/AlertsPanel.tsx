@@ -13,8 +13,8 @@ interface Props {
 const TYPE_CONFIG = {
   critical:    { color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)',   border: 'rgba(255,77,77,0.2)',   icon: '🔴', label: 'Crítico' },
   warning:     { color: '#F0B429', bg: 'rgba(240,180,41,0.08)',  border: 'rgba(240,180,41,0.2)',  icon: '🟡', label: 'Alerta' },
-  opportunity: { color: '#22C55E', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.2)',   icon: '🟢', label: 'Oportunidade' },
-  info:        { color: '#38BDF8', bg: 'rgba(56,189,248,0.08)',  border: 'rgba(56,189,248,0.2)',  icon: '🔵', label: 'Info' },
+  opportunity: { color: '#0E9E6E', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.2)',   icon: '🟢', label: 'Oportunidade' },
+  info:        { color: '#2C5FE0', bg: 'rgba(56,189,248,0.08)',  border: 'rgba(56,189,248,0.2)',  icon: '🔵', label: 'Info' },
 }
 
 export function AlertsPanel({ clientName, niche }: Props) {
@@ -105,7 +105,7 @@ export function AlertsPanel({ clientName, niche }: Props) {
   }
 
   const criticalCount = summary.critical
-  const badgeColor = criticalCount > 0 ? '#FF4D4D' : summary.warning > 0 ? '#F0B429' : '#22C55E'
+  const badgeColor = criticalCount > 0 ? '#FF4D4D' : summary.warning > 0 ? '#F0B429' : '#0E9E6E'
 
   return (
     <div style={{ position: 'relative' }}>
@@ -150,7 +150,7 @@ export function AlertsPanel({ clientName, niche }: Props) {
             fontSize: '9px', fontWeight: 700, lineHeight: 1,
             padding: '2px 4px', borderRadius: '999px',
             minWidth: '14px', textAlign: 'center',
-            border: '1.5px solid #080D1A',
+            border: '1.5px solid #F4F5F7',
           }}>
             {unread > 9 ? '9+' : unread}
           </span>
@@ -162,7 +162,7 @@ export function AlertsPanel({ clientName, niche }: Props) {
         <div ref={dropdownRef} style={{
           position: 'fixed', top: dropdownPos.top, right: dropdownPos.right, zIndex: 9999,
           width: '380px', maxHeight: '520px',
-          background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+          background: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '14px', boxShadow: '0 16px 48px rgba(0,0,0,0.8)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
@@ -180,7 +180,7 @@ export function AlertsPanel({ clientName, niche }: Props) {
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
                   {summary.critical > 0 && <span style={{ color: '#FF4D4D', marginRight: '8px' }}>●&nbsp;{summary.critical} crítico{summary.critical !== 1 ? 's' : ''}</span>}
                   {summary.warning > 0 && <span style={{ color: '#F0B429', marginRight: '8px' }}>●&nbsp;{summary.warning} alerta{summary.warning !== 1 ? 's' : ''}</span>}
-                  {summary.opportunity > 0 && <span style={{ color: '#22C55E' }}>●&nbsp;{summary.opportunity} oportunidade{summary.opportunity !== 1 ? 's' : ''}</span>}
+                  {summary.opportunity > 0 && <span style={{ color: '#0E9E6E' }}>●&nbsp;{summary.opportunity} oportunidade{summary.opportunity !== 1 ? 's' : ''}</span>}
                 </div>
               )}
             </div>

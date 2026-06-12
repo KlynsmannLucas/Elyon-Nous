@@ -148,9 +148,9 @@ export const SIMPLE_SIDEBAR_SECTIONS: {
 ]
 
 const PLAN_META: Record<string, { label: string; color: string; bg: string }> = {
-  individual:   { label: 'Individual',   color: '#38BDF8', bg: 'rgba(56,189,248,0.12)' },
+  individual:   { label: 'Individual',   color: '#2C5FE0', bg: 'rgba(56,189,248,0.12)' },
   profissional: { label: 'Profissional', color: '#F5A500', bg: 'rgba(245,165,0,0.12)' },
-  avancada:     { label: 'Avançada',     color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
+  avancada:     { label: 'Avançada',     color: '#2C5FE0', bg: 'rgba(167,139,250,0.12)' },
 }
 
 interface Props {
@@ -205,9 +205,9 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
     : (collapsed ? '60px' : '240px')
 
   // ── Color tokens ─────────────────────────────────────────────────────────
-  const BG       = '#0B0D1A'
+  const BG       = '#F4F5F7'
   const BORDER   = 'rgba(255,255,255,0.05)'
-  const PURPLE   = '#7C3AED'
+  const PURPLE   = '#2C5FE0'
   const PURPLE_D = 'rgba(124,58,237,0.15)'
   const PURPLE_B = 'rgba(124,58,237,0.25)'
 
@@ -256,7 +256,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
               {/* Logo mark */}
               <div style={{
                 width: '32px', height: '32px', borderRadius: '9px', flexShrink: 0,
-                background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+                background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 boxShadow: '0 4px 12px rgba(124,58,237,0.4)',
               }}>
@@ -272,7 +272,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                 }}>ELYON</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                   <span className="status-dot-live" style={{ width: '5px', height: '5px' }} />
-                  <span style={{ fontSize: '9px', color: '#22C55E', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', fontWeight: 600 }}>LIVE</span>
+                  <span style={{ fontSize: '9px', color: '#0E9E6E', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', fontWeight: 600 }}>LIVE</span>
                 </div>
               </div>
             </div>
@@ -281,7 +281,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
           {collapsed && (
             <div style={{
               width: '32px', height: '32px', borderRadius: '9px',
-              background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+              background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 4px 12px rgba(124,58,237,0.3)',
             }}>
@@ -425,7 +425,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                           ) : item.key === 'acoes' && pendingCritical > 0 ? (
                             <span style={{
                               fontSize: '9px', fontWeight: 800,
-                              color: '#fff', background: '#EF4444',
+                              color: '#fff', background: '#E1483F',
                               borderRadius: '99px', padding: '1px 6px',
                               flexShrink: 0, minWidth: '18px', textAlign: 'center',
                             }}>
@@ -440,7 +440,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                               title={item.badge === 'IA' ? 'Usa Inteligência Artificial — pode consumir créditos conforme o tipo de análise' : undefined}
                               style={{
                                 fontSize: '8px', fontFamily: 'var(--font-mono)',
-                                color: '#A78BFA',
+                                color: '#2C5FE0',
                                 background: 'rgba(167,139,250,0.12)',
                                 border: '1px solid rgba(167,139,250,0.25)',
                                 borderRadius: '4px', padding: '1px 5px',
@@ -480,7 +480,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
             <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', marginBottom: '3px' }}>CLIENTE ATIVO</div>
             <div style={{ fontSize: '12px', color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{clientData.clientName}</div>
             {clientData.niche && (
-              <div style={{ fontSize: '11px', color: '#A78BFA', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{clientData.niche}</div>
+              <div style={{ fontSize: '11px', color: '#2C5FE0', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{clientData.niche}</div>
             )}
           </div>
         )}
@@ -492,7 +492,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
               width: '32px', height: '32px', borderRadius: '8px',
               background: PURPLE_D, border: `1px solid ${PURPLE_B}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '13px', color: '#A78BFA', fontWeight: 700,
+              fontSize: '13px', color: '#2C5FE0', fontWeight: 700,
             }}>
               {clientData.clientName.charAt(0).toUpperCase()}
             </div>
@@ -510,7 +510,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                 {/* Avatar */}
                 <div style={{
                   width: '34px', height: '34px', borderRadius: '9px', flexShrink: 0,
-                  background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+                  background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '13px', fontWeight: 700, color: '#fff',
                   boxShadow: '0 2px 8px rgba(124,58,237,0.35)',
@@ -525,7 +525,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                       display: 'inline-block', marginTop: '2px',
                     }}>{plan.label.toUpperCase()}</span>
                   ) : (
-                    <span style={{ fontSize: '9px', color: '#64748B', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>TRIAL</span>
+                    <span style={{ fontSize: '9px', color: '#8A93A3', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>TRIAL</span>
                   )}
                 </div>
               </div>
@@ -541,7 +541,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                     border: `1px solid ${BORDER}`, color: 'rgba(255,255,255,0.3)',
                     textDecoration: 'none', transition: 'all 0.15s',
                   }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = PURPLE_B; (e.currentTarget as HTMLElement).style.color = '#A78BFA' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = PURPLE_B; (e.currentTarget as HTMLElement).style.color = '#2C5FE0' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderColor = BORDER; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)' }}
                   >{btn.icon}</a>
                 ))}
@@ -552,7 +552,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                     padding: '6px', borderRadius: '7px', border: `1px solid ${BORDER}`,
                     background: 'transparent', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', transition: 'all 0.15s',
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.08)'; e.currentTarget.style.borderColor = PURPLE_B; e.currentTarget.style.color = '#A78BFA' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.08)'; e.currentTarget.style.borderColor = PURPLE_B; e.currentTarget.style.color = '#2C5FE0' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
@@ -562,7 +562,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: '6px', borderRadius: '7px',
                     border: `1px solid ${PURPLE_B}`, background: PURPLE_D,
-                    color: '#A78BFA', fontSize: '10px', fontWeight: 700, textDecoration: 'none',
+                    color: '#2C5FE0', fontSize: '10px', fontWeight: 700, textDecoration: 'none',
                   }}>⚡</a>
                 )}
 
@@ -572,7 +572,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                   border: `1px solid ${BORDER}`, background: 'transparent',
                   color: 'rgba(255,255,255,0.3)', cursor: 'pointer', transition: 'all 0.15s',
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; e.currentTarget.style.color = '#EF4444' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; e.currentTarget.style.color = '#E1483F' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -585,7 +585,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
               <div title={userName} style={{
                 width: '32px', height: '32px', borderRadius: '8px',
-                background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+                background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '12px', fontWeight: 700, color: '#fff',
               }}>{avatarLetter}</div>
@@ -594,7 +594,7 @@ export function DashboardSidebar({ active, onChange, clientData, userPlan, user,
                 borderRadius: '6px', border: `1px solid ${BORDER}`, background: 'transparent',
                 color: 'rgba(255,255,255,0.3)', cursor: 'pointer', transition: 'all 0.15s',
               }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#E1483F'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.borderColor = BORDER }}
               >
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

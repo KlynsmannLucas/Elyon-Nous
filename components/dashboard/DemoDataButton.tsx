@@ -10,11 +10,11 @@ export function DemoDataButton() {
       onClick={() => applySimpleDemoData()}
       style={{
         padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#94A3B8',
+        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#5A6473',
         transition: 'all 0.15s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.3)'; e.currentTarget.style.color = '#A78BFA' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#94A3B8' }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.3)'; e.currentTarget.style.color = '#2C5FE0' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#5A6473' }}
     >
       👀 Usar dados de exemplo
     </button>
@@ -35,7 +35,7 @@ export function DemoBanner() {
       </span>
       <button
         onClick={() => clearSimpleDemoData()}
-        style={{ flexShrink: 0, fontSize: '11px', fontWeight: 700, color: '#F59E0B', background: 'none', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '7px', padding: '5px 11px', cursor: 'pointer' }}
+        style={{ flexShrink: 0, fontSize: '11px', fontWeight: 700, color: '#E08B0B', background: 'none', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '7px', padding: '5px 11px', cursor: 'pointer' }}
       >
         Limpar dados de exemplo
       </button>

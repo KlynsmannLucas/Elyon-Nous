@@ -25,14 +25,14 @@ type Status = 'pendente' | 'em_andamento' | 'concluido'
 const C = {
   surface:  '#0C1426',
   border:   'rgba(255,255,255,0.06)',
-  purpleHi: '#A78BFA',
+  purpleHi: '#2C5FE0',
   purpleBg: 'rgba(124,58,237,0.08)',
-  green:    '#22C55E',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.07)',
-  amber:    '#F59E0B',
-  red:      '#EF4444',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  amber:    '#E08B0B',
+  red:      '#E1483F',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.32)',
 }
 
@@ -241,7 +241,7 @@ export function TabSimpleActionPlan({ clientData, onNavigate }: Props) {
             ))}
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
-            <button onClick={() => onNavigate?.('overview')} style={{ fontSize: '12px', fontWeight: 700, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}>Preencher meus números →</button>
+            <button onClick={() => onNavigate?.('overview')} style={{ fontSize: '12px', fontWeight: 700, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' }}>Preencher meus números →</button>
             <button onClick={() => askNous('Quais números preciso preencher para ter um plano de ação?')} style={{ fontSize: '12px', fontWeight: 600, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', color: C.purpleHi }}>💬 Perguntar para a IA</button>
             <DemoDataButton />
           </div>
@@ -269,7 +269,7 @@ export function TabSimpleActionPlan({ clientData, onNavigate }: Props) {
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   {/* número / prioridade */}
-                  <span style={{ width: '24px', height: '24px', borderRadius: '50%', flexShrink: 0, marginTop: '1px', background: done ? C.green : isFirst ? 'linear-gradient(135deg, #7C3AED, #A78BFA)' : 'rgba(255,255,255,0.06)', color: done || isFirst ? '#fff' : C.text2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>
+                  <span style={{ width: '24px', height: '24px', borderRadius: '50%', flexShrink: 0, marginTop: '1px', background: done ? C.green : isFirst ? 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' : 'rgba(255,255,255,0.06)', color: done || isFirst ? '#fff' : C.text2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>
                     {done ? '✓' : i + 1}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -295,7 +295,7 @@ export function TabSimpleActionPlan({ clientData, onNavigate }: Props) {
 
                     {/* botões */}
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
-                      <button onClick={() => setExpanded(expanded === a.id ? null : a.id)} style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', border: 'none', color: '#fff', background: isFirst ? 'linear-gradient(135deg, #7C3AED, #A78BFA)' : 'rgba(124,58,237,0.5)' }}>
+                      <button onClick={() => setExpanded(expanded === a.id ? null : a.id)} style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', border: 'none', color: '#fff', background: isFirst ? 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' : 'rgba(124,58,237,0.5)' }}>
                         {expanded === a.id ? 'Ocultar' : 'Ver o que fazer'}
                       </button>
                       <button onClick={() => askNous(`Como faço para "${a.title}"?`)} style={{ fontSize: '11px', fontWeight: 600, padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', color: C.purpleHi }}>

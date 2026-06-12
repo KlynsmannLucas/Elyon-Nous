@@ -25,10 +25,10 @@ export function ModeToast() {
 
   const isSimple = toast.mode === 'simple'
   const cfg = isSimple
-    ? { icon: '🟢', color: '#22C55E', border: 'rgba(34,197,94,0.35)', bg: 'rgba(10,28,20,0.96)',
+    ? { icon: '🟢', color: '#0E9E6E', border: 'rgba(34,197,94,0.35)', bg: 'rgba(10,28,20,0.96)',
         title: 'Você entrou no Modo Simplificado',
         text: 'Linguagem simples, diagnósticos claros e ações práticas.' }
-    : { icon: '⚙️', color: '#A78BFA', border: 'rgba(124,58,237,0.35)', bg: 'rgba(14,16,30,0.96)',
+    : { icon: '⚙️', color: '#2C5FE0', border: 'rgba(124,58,237,0.35)', bg: 'rgba(14,16,30,0.96)',
         title: 'Você entrou no Modo Avançado',
         text: 'Métricas detalhadas e análises técnicas.' }
 

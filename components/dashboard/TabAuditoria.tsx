@@ -24,7 +24,7 @@ function fmt(n: number) {
 }
 
 const gradeColor: Record<string, string> = {
-  'A+': '#22C55E', 'A': '#22C55E', 'A-': '#34D399',
+  'A+': '#0E9E6E', 'A': '#0E9E6E', 'A-': '#34D399',
   'B+': '#F0B429', 'B': '#F0B429', 'B-': '#FCD34D',
   'C+': '#FB923C', 'C': '#FB923C', 'D': '#FF4D4D',
 }
@@ -52,8 +52,8 @@ function Pill({ text, color }: { text: string; color: string }) {
 }
 
 function BoolBadge({ val, trueLabel = 'Sim', falseLabel = 'Não' }: { val: boolean | null; trueLabel?: string; falseLabel?: string }) {
-  if (val === null || val === undefined) return <Pill text="Não verificado" color="#64748B" />
-  return val ? <Pill text={trueLabel} color="#22C55E" /> : <Pill text={falseLabel} color="#FF4D4D" />
+  if (val === null || val === undefined) return <Pill text="Não verificado" color="#8A93A3" />
+  return val ? <Pill text={trueLabel} color="#0E9E6E" /> : <Pill text={falseLabel} color="#FF4D4D" />
 }
 
 function ItemList({ items, color, icon = '→' }: { items: string[]; color?: string; icon?: string }) {
@@ -687,7 +687,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
             <span>{icon}</span>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold text-white">{label}</div>
-              <div className="text-[10px] truncate" style={{ color: active ? '#22C55E' : '#64748B' }}>{sub}</div>
+              <div className="text-[10px] truncate" style={{ color: active ? '#0E9E6E' : '#8A93A3' }}>{sub}</div>
             </div>
           </div>
         ))}
@@ -715,7 +715,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
         {/* Dica de exportação Meta (nível de anúncio) */}
         {metaAccount && (
           <div className="flex items-start gap-2 px-1">
-            <span className="flex-shrink-0 mt-0.5 text-[10px] text-[#38BDF8]">ℹ</span>
+            <span className="flex-shrink-0 mt-0.5 text-[10px] text-[#2C5FE0]">ℹ</span>
             <p className="text-[10px] text-slate-500 leading-relaxed">
               Para auditar criativos e frequência com mais precisão, exporte no <strong className="text-slate-400">nível de anúncio</strong> incluindo: Frequência, CTR, Gasto, Leads e CPL.
             </p>
@@ -749,15 +749,15 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               const hasData = fSpend > 0 || fLeads > 0
 
               const levelLabel: Record<string, string> = { ad: 'Anúncios', adset: 'Conjuntos', campaign: 'Campanhas', mixed: 'Misto' }
-              const levelColor: Record<string, string> = { ad: '#A78BFA', adset: '#38BDF8', campaign: '#22C55E', mixed: '#F0B429' }
-              const lc = levelColor[f.level] || '#64748B'
+              const levelColor: Record<string, string> = { ad: '#2C5FE0', adset: '#2C5FE0', campaign: '#0E9E6E', mixed: '#F0B429' }
+              const lc = levelColor[f.level] || '#8A93A3'
 
               return (
                 <div key={i} className="bg-[#111114] border rounded-xl px-4 py-3"
                   style={{ borderColor: hasData ? 'rgba(34,197,94,0.2)' : 'rgba(240,180,41,0.2)' }}>
                   {/* Cabeçalho do arquivo */}
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-sm" style={{ color: hasData ? '#22C55E' : '#F0B429' }}>{hasData ? '✓' : '⚠'}</span>
+                    <span className="text-sm" style={{ color: hasData ? '#0E9E6E' : '#F0B429' }}>{hasData ? '✓' : '⚠'}</span>
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-semibold text-white truncate block">{f.file.name}</span>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -787,7 +787,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                         ].map(({ label, val }) => (
                           <div key={label} className="bg-[#16161A] rounded-lg px-2.5 py-1.5 text-center">
                             <div className="text-[9px] text-slate-500 uppercase tracking-wider">{label}</div>
-                            <div className="text-xs font-bold text-[#22C55E]">{val}</div>
+                            <div className="text-xs font-bold text-[#0E9E6E]">{val}</div>
                           </div>
                         ))}
                       </div>
@@ -820,9 +820,9 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                                 style={{ gridTemplateColumns: '1fr 70px 50px 70px 60px' }}>
                                 <span className="text-[10px] text-slate-300 truncate pr-2">{c.name || '—'}</span>
                                 <span className="text-[10px] text-right text-slate-400">{fmt(c.spend || 0)}</span>
-                                <span className="text-[10px] text-right" style={{ color: hasConv ? '#22C55E' : '#64748B' }}>{c.leads || 0}</span>
+                                <span className="text-[10px] text-right" style={{ color: hasConv ? '#0E9E6E' : '#8A93A3' }}>{c.leads || 0}</span>
                                 <span className="text-[10px] text-right text-[#F0B429]">{cpl ? fmt(cpl) : '—'}</span>
-                                <span className="text-[9px] text-right" style={{ color: hasConv ? '#22C55E' : '#FF4D4D' }}>
+                                <span className="text-[9px] text-right" style={{ color: hasConv ? '#0E9E6E' : '#FF4D4D' }}>
                                   {hasConv ? '✓ conv.' : '⛔ sem conv.'}
                                 </span>
                               </div>
@@ -887,7 +887,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               >
                 <span className="text-base flex-shrink-0 mt-0.5">{icon}</span>
                 <div>
-                  <div className="text-xs font-bold" style={{ color: auditSource === value ? '#F0B429' : '#94A3B8' }}>{label}</div>
+                  <div className="text-xs font-bold" style={{ color: auditSource === value ? '#F0B429' : '#5A6473' }}>{label}</div>
                   <div className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{desc}</div>
                 </div>
                 {auditSource === value && (
@@ -952,7 +952,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
             {history.map((entry) => {
               const grade = entry.audit?.grade || '—'
               const score = entry.audit?.health_score
-              const color = gradeColor[grade] || '#64748B'
+              const color = gradeColor[grade] || '#8A93A3'
               const date  = entry.createdAt
                 ? new Date(entry.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
                 : 'Legado'
@@ -964,7 +964,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                     className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
                     style={isSelected
                       ? { background: `${color}18`, border: `1px solid ${color}50`, color }
-                      : { background: 'transparent', border: '1px solid #2A2A30', color: '#64748B' }}
+                      : { background: 'transparent', border: '1px solid #2A2A30', color: '#8A93A3' }}
                   >
                     <span style={{ color }}>{grade}{score !== undefined ? ` · ${score}` : ''}</span>
                     <span>{date}</span>
@@ -1042,7 +1042,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                       {shown.map((i) => {
                         const up = (i.delta as number) > 0
                         const good = i.goodWhenUp ? up : !up
-                        const color = good ? '#22C55E' : '#EF4444'
+                        const color = good ? '#0E9E6E' : '#E1483F'
                         const sign = i.label === 'Score' ? (up ? `+${i.delta}` : `${i.delta}`) : `${up ? '+' : ''}${i.delta}%`
                         return (
                           <span key={i.label} className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
@@ -1061,10 +1061,10 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                 {(() => {
                   const s = audit.health_score as number
                   const cfg = s >= 80
-                    ? { icon: '🟢', color: '#22C55E', text: 'Conta saudável, acima da média do mercado.' }
+                    ? { icon: '🟢', color: '#0E9E6E', text: 'Conta saudável, acima da média do mercado.' }
                     : s >= 60
-                    ? { icon: '🟡', color: '#F59E0B', text: 'Oportunidades de melhoria identificadas.' }
-                    : { icon: '🔴', text: 'Gargalos estão limitando seus resultados.', color: '#EF4444' }
+                    ? { icon: '🟡', color: '#E08B0B', text: 'Oportunidades de melhoria identificadas.' }
+                    : { icon: '🔴', text: 'Gargalos estão limitando seus resultados.', color: '#E1483F' }
                   return (
                     <div style={{ marginTop: '8px', fontSize: '11px', color: cfg.color, fontWeight: 500, display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <span>{cfg.icon}</span><span>{cfg.text}</span>
@@ -1110,7 +1110,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                       </div>
                       <p style={{ fontSize: '12px', color: '#CBD5E1', lineHeight: 1.7, margin: 0 }}>
                         {posPhrase
-                          ? <>Sua conta atingiu essa nota por apresentar <strong style={{ color: '#F1F5F9' }}>{posPhrase}</strong>.</>
+                          ? <>Sua conta atingiu essa nota por apresentar <strong style={{ color: '#161B26' }}>{posPhrase}</strong>.</>
                           : 'Sua conta apresenta oportunidades de melhoria em várias dimensões.'}
                         {negPhrase && (
                           <> O principal fator que impede uma nota maior é a <strong style={{ color: '#FCD34D' }}>{negPhrase}</strong>.</>
@@ -1131,10 +1131,10 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                   return (
                     <div style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '7px', background: isWaste ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${isWaste ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)'}` }}>
                       <span style={{ fontSize: '10px' }}>{isWaste ? '💸' : '📈'}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: isWaste ? '#EF4444' : '#22C55E' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: isWaste ? '#E1483F' : '#0E9E6E' }}>
                         {isWaste ? `R$${Math.round(waste).toLocaleString('pt-BR')} a recuperar` : `+R$${Math.round(scaleGain).toLocaleString('pt-BR')} potencial`}
                       </span>
-                      <span style={{ fontSize: '9px', color: '#64748B' }}>identificado pela IA</span>
+                      <span style={{ fontSize: '9px', color: '#8A93A3' }}>identificado pela IA</span>
                     </div>
                   )
                 })()}
@@ -1145,10 +1145,10 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                     style={{ width: `${audit.health_score}%`, background: `linear-gradient(90deg, ${sc}, ${sc}88)` }} />
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <Pill text={source === 'ai' ? '⚡ IA Sênior' : '📊 Benchmark'} color={source === 'ai' ? '#A78BFA' : '#38BDF8'} />
+                  <Pill text={source === 'ai' ? '⚡ IA Sênior' : '📊 Benchmark'} color={source === 'ai' ? '#2C5FE0' : '#2C5FE0'} />
                   {audit._dataQuality && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{
-                      color:      audit._dataQuality.confidence === 'alta' ? '#22C55E' : audit._dataQuality.confidence === 'media' ? '#F0B429' : '#FF4D4D',
+                      color:      audit._dataQuality.confidence === 'alta' ? '#0E9E6E' : audit._dataQuality.confidence === 'media' ? '#F0B429' : '#FF4D4D',
                       background: audit._dataQuality.confidence === 'alta' ? 'rgba(34,197,94,0.12)' : audit._dataQuality.confidence === 'media' ? 'rgba(240,180,41,0.12)' : 'rgba(255,77,77,0.12)',
                       border:     `1px solid ${audit._dataQuality.confidence === 'alta' ? 'rgba(34,197,94,0.3)' : audit._dataQuality.confidence === 'media' ? 'rgba(240,180,41,0.3)' : 'rgba(255,77,77,0.3)'}`,
                     }}>
@@ -1159,7 +1159,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                     <span className="text-[10px] text-slate-500">{(audit._platforms as string[]).join(' + ')}</span>
                   )}
                   {audit._auditSource && audit._auditSource !== 'auto' && (
-                    <span className="text-[10px] font-semibold" style={{ color: audit._auditSource === 'api' ? '#38BDF8' : audit._auditSource === 'upload' ? '#22C55E' : '#F0B429' }}>
+                    <span className="text-[10px] font-semibold" style={{ color: audit._auditSource === 'api' ? '#2C5FE0' : audit._auditSource === 'upload' ? '#0E9E6E' : '#F0B429' }}>
                       {audit._auditSource === 'api' ? '🔗 API' : audit._auditSource === 'upload' ? '📂 Arquivo' : '⚡ Consolidado'}
                     </span>
                   )}
@@ -1203,13 +1203,13 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                 {
                   label: 'Leads / Conv.',
                   value: rm.totalLeads >= 0 ? rm.totalLeads.toLocaleString('pt-BR') : null,
-                  color: '#22C55E',
+                  color: '#0E9E6E',
                   context: rm.avgCPL && rm.totalLeads > 0 ? `R$${rm.avgCPL} por lead` : null,
                 },
                 {
                   label: 'CPL Médio',
                   value: rm.avgCPL ? fmt(rm.avgCPL) : null,
-                  color: cplPct != null && cplPct > 0 ? '#22C55E' : cplPct != null && cplPct < -20 ? '#EF4444' : '#38BDF8',
+                  color: cplPct != null && cplPct > 0 ? '#0E9E6E' : cplPct != null && cplPct < -20 ? '#E1483F' : '#2C5FE0',
                   context: cplPct != null
                     ? cplPct > 0
                       ? `${cplPct}% abaixo da média do mercado`
@@ -1223,7 +1223,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                 {
                   label: 'CTR Médio',
                   value: rm.avgCTR ? `${rm.avgCTR}%` : null,
-                  color: rm.avgCTR >= ctrBench ? '#22C55E' : rm.avgCTR >= 0.8 ? '#F0B429' : '#EF4444',
+                  color: rm.avgCTR >= ctrBench ? '#0E9E6E' : rm.avgCTR >= 0.8 ? '#F0B429' : '#E1483F',
                   context: rm.avgCTR
                     ? rm.avgCTR >= ctrBench
                       ? 'Anúncios gerando cliques acima da média'
@@ -1233,7 +1233,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                 {
                   label: 'ROAS',
                   value: rm.avgROAS ? `${rm.avgROAS}×` : null,
-                  color: roasBench && rm.avgROAS >= roasBench ? '#22C55E' : rm.avgROAS >= 1 ? '#F0B429' : '#EF4444',
+                  color: roasBench && rm.avgROAS >= roasBench ? '#0E9E6E' : rm.avgROAS >= 1 ? '#F0B429' : '#E1483F',
                   context: roasBench && rm.avgROAS
                     ? rm.avgROAS >= roasBench
                       ? `Acima da meta de ${roasBench}× do nicho`
@@ -1243,7 +1243,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                 {
                   label: 'Campanhas',
                   value: rm.campaignCount > 0 ? String(rm.campaignCount) : null,
-                  color: '#64748B',
+                  color: '#8A93A3',
                   context: audit._campanhasClassificadas
                     ? `${(audit._campanhasClassificadas as any).vencedoras?.length ?? 0} vencedoras`
                     : null,
@@ -1257,7 +1257,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                       <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-1">{k.label}</div>
                       <div className="text-base font-bold mb-1" style={{ color: k.color }}>{k.value}</div>
                       {k.context && (
-                        <div style={{ fontSize: '9px', color: k.color === '#22C55E' ? 'rgba(34,197,94,0.75)' : k.color === '#EF4444' ? 'rgba(239,68,68,0.75)' : 'rgba(255,255,255,0.3)', lineHeight: 1.35 }}>
+                        <div style={{ fontSize: '9px', color: k.color === '#0E9E6E' ? 'rgba(34,197,94,0.75)' : k.color === '#E1483F' ? 'rgba(239,68,68,0.75)' : 'rgba(255,255,255,0.3)', lineHeight: 1.35 }}>
                           {k.context}
                         </div>
                       )}
@@ -1291,9 +1291,9 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                   {/* Cabeçalho + frase de abertura impactante */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
                     <span style={{ fontSize: '13px' }}>🤖</span>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.06em' }}>O que a IA encontrou</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#2C5FE0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>O que a IA encontrou</span>
                     {rm?.campaignCount > 0 && (
-                      <span style={{ fontSize: '10px', color: '#64748B', marginLeft: 'auto' }}>
+                      <span style={{ fontSize: '10px', color: '#8A93A3', marginLeft: 'auto' }}>
                         {rm.campaignCount} campanhas analisadas
                       </span>
                     )}
@@ -1311,23 +1311,23 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                   {/* Contagem de descobertas */}
                   {(nV > 0 || nA > 0 || nC > 0) && (
                     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '5px', marginBottom: '10px' }}>
-                      {nV > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#22C55E' }}>
+                      {nV > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#0E9E6E' }}>
                         <span>✓</span><span>{nV} {nV === 1 ? 'oportunidade' : 'oportunidades'} de crescimento {nV === 1 ? 'identificada' : 'identificadas'}</span>
                       </div>}
-                      {nA > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#F59E0B' }}>
+                      {nA > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#E08B0B' }}>
                         <span>⚠</span><span>{nA} {nA === 1 ? 'ponto' : 'pontos'} de atenção {nA === 1 ? 'que necessita' : 'que necessitam'} de ajuste</span>
                       </div>}
-                      {nC > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#EF4444' }}>
+                      {nC > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#E1483F' }}>
                         <span>🔴</span><span>{nC} {nC === 1 ? 'risco crítico identificado' : 'riscos críticos identificados'}</span>
                       </div>}
-                      {nC === 0 && nA === 0 && nV >= 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#22C55E' }}>
+                      {nC === 0 && nA === 0 && nV >= 0 && <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#0E9E6E' }}>
                         <span>✓</span><span>Nenhum risco crítico imediato</span>
                       </div>}
                     </div>
                   )}
                   {/* Resumo textual da IA (discreto) */}
                   {audit.executive_summary && (
-                    <p style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.65, margin: 0, marginBottom: impactLine ? '10px' : '0' }}>
+                    <p style={{ fontSize: '11px', color: '#8A93A3', lineHeight: 1.65, margin: 0, marginBottom: impactLine ? '10px' : '0' }}>
                       {audit.executive_summary}
                     </p>
                   )}
@@ -1336,7 +1336,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)' }}>
                       <span style={{ fontSize: '12px' }}>⚡</span>
                       <span style={{ fontSize: '11px', color: '#CBD5E1', lineHeight: 1.5 }}>
-                        <strong style={{ color: '#A78BFA' }}>Impacto potencial:</strong> {impactLine}
+                        <strong style={{ color: '#2C5FE0' }}>Impacto potencial:</strong> {impactLine}
                       </span>
                     </div>
                   )}
@@ -1368,7 +1368,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
             {persistenceStatus && (() => {
               const allSaved  = persistenceStatus.auditReportSaved && persistenceStatus.priorityActionsSaved && persistenceStatus.healthScoreSaved
               const noneSaved = !persistenceStatus.auditReportSaved && !persistenceStatus.priorityActionsSaved && !persistenceStatus.healthScoreSaved
-              const color  = allSaved ? '#22C55E' : noneSaved ? '#EF4444' : '#F59E0B'
+              const color  = allSaved ? '#0E9E6E' : noneSaved ? '#E1483F' : '#E08B0B'
               const bgColor = allSaved ? 'rgba(34,197,94,0.07)' : noneSaved ? 'rgba(239,68,68,0.07)' : 'rgba(245,158,11,0.07)'
               const borderColor = allSaved ? 'rgba(34,197,94,0.2)' : noneSaved ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'
               const icon   = allSaved ? '✅' : noneSaved ? '⚠' : '⚡'
@@ -1378,7 +1378,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                   <span style={{ fontSize: '12px' }}>{icon}</span>
                   <span style={{ fontSize: '11px', fontWeight: 600, color, flex: 1 }}>{label}</span>
                   {!allSaved && (
-                    <span style={{ fontSize: '10px', color: '#94A3B8' }}>
+                    <span style={{ fontSize: '10px', color: '#5A6473' }}>
                       {[
                         persistenceStatus.auditReportSaved ? null : 'relatório',
                         persistenceStatus.priorityActionsSaved ? null : `ações (${persistenceStatus.actionsSaved ?? 0}/${(persistenceStatus.errors as string[])?.length > 0 ? '?' : '0'})`,
@@ -1387,7 +1387,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                     </span>
                   )}
                   {persistenceStatus.auditReportSaved && (
-                    <span style={{ fontSize: '10px', color: '#64748B', fontFamily: 'monospace' }}>
+                    <span style={{ fontSize: '10px', color: '#8A93A3', fontFamily: 'monospace' }}>
                       #{String(persistenceStatus.auditReportId).slice(0, 8)}
                     </span>
                   )}
@@ -1521,7 +1521,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
             const discoveries = [
               nV > 0 && {
                 icon: '🎯',
-                color: '#22C55E',
+                color: '#0E9E6E',
                 bg: 'rgba(34,197,94,0.06)',
                 border: 'rgba(34,197,94,0.18)',
                 label: 'Oportunidade',
@@ -1531,7 +1531,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               },
               hasTracking && {
                 icon: '⚠️',
-                color: '#F59E0B',
+                color: '#E08B0B',
                 bg: 'rgba(245,158,11,0.06)',
                 border: 'rgba(245,158,11,0.18)',
                 label: 'Atenção',
@@ -1541,7 +1541,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               },
               nC > 0 && {
                 icon: '🔥',
-                color: '#EF4444',
+                color: '#E1483F',
                 bg: 'rgba(239,68,68,0.06)',
                 border: 'rgba(239,68,68,0.18)',
                 label: 'Risco',
@@ -1555,7 +1555,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
             if (discoveries.length === 0) return null
             return (
               <div>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#8A93A3', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                   Principais Descobertas
                 </div>
@@ -1566,8 +1566,8 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                         <span style={{ fontSize: '13px' }}>{d.icon}</span>
                         <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: d.color }}>{d.label}</span>
                       </div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#F1F5F9', marginBottom: '4px', lineHeight: 1.4 }}>{d.title}</div>
-                      <div style={{ fontSize: '11px', color: '#94A3B8', lineHeight: 1.55, marginBottom: '8px' }}>{d.desc}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#161B26', marginBottom: '4px', lineHeight: 1.4 }}>{d.title}</div>
+                      <div style={{ fontSize: '11px', color: '#5A6473', lineHeight: 1.55, marginBottom: '8px' }}>{d.desc}</div>
                       <div style={{ fontSize: '10px', color: d.color, fontWeight: 500 }}>{d.impact}</div>
                     </div>
                   ))}
@@ -1594,28 +1594,28 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
                   <span style={{ fontSize: '15px' }}>🏆</span>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase' as const, letterSpacing: '0.07em' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#2C5FE0', textTransform: 'uppercase' as const, letterSpacing: '0.07em' }}>
                     Principal descoberta da IA
                   </span>
                 </div>
 
                 {/* Descoberta */}
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', lineHeight: 1.4, marginBottom: '6px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', lineHeight: 1.4, marginBottom: '6px' }}>
                   A campanha <span style={{ color: '#C4B5FD' }}>"{best.name}"</span> tem potencial para absorver mais investimento mantendo CPL saudável.
                 </div>
 
                 {/* Impacto */}
                 {leadsGain && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' as const }}>
-                    <span style={{ fontSize: '11px', color: '#A78BFA' }}>Impacto estimado:</span>
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#22C55E', letterSpacing: '-0.02em' }}>+{leadsGain} leads / mês</span>
-                    {cpl && <span style={{ fontSize: '11px', color: '#64748B' }}>mantendo CPL de R${cpl}</span>}
+                    <span style={{ fontSize: '11px', color: '#2C5FE0' }}>Impacto estimado:</span>
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#0E9E6E', letterSpacing: '-0.02em' }}>+{leadsGain} leads / mês</span>
+                    {cpl && <span style={{ fontSize: '11px', color: '#8A93A3' }}>mantendo CPL de R${cpl}</span>}
                   </div>
                 )}
 
                 {/* M1: Por que isso importa? */}
                 <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', marginBottom: '10px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#2C5FE0', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: '6px' }}>
                     Por que isso importa?
                   </div>
                   <p style={{ fontSize: '12px', color: '#CBD5E1', lineHeight: 1.65, margin: 0 }}>
@@ -1630,7 +1630,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                 {/* M2: Se nenhuma ação for tomada */}
                 {inactionLeads && (
                   <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)', marginBottom: '10px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#E1483F', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: '4px' }}>
                       Se nenhuma ação for tomada
                     </div>
                     <p style={{ fontSize: '12px', color: '#FCA5A5', lineHeight: 1.55, margin: 0 }}>
@@ -1640,8 +1640,8 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                 )}
 
                 {/* Ação */}
-                <div style={{ paddingTop: '10px', borderTop: '1px solid rgba(124,58,237,0.15)', fontSize: '11px', color: '#94A3B8' }}>
-                  🔥 <strong style={{ color: '#F1F5F9' }}>Ação desta semana:</strong> Aumentar o orçamento desta campanha em 20% e monitorar CPL por 3 dias consecutivos.
+                <div style={{ paddingTop: '10px', borderTop: '1px solid rgba(124,58,237,0.15)', fontSize: '11px', color: '#5A6473' }}>
+                  🔥 <strong style={{ color: '#161B26' }}>Ação desta semana:</strong> Aumentar o orçamento desta campanha em 20% e monitorar CPL por 3 dias consecutivos.
                 </div>
               </div>
             )
@@ -1665,7 +1665,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               </div>
               <div className="flex gap-2 mb-1">
                 {([
-                  { id: 'vencedoras', label: `🏆 Vencedoras (${audit._campanhasClassificadas.vencedoras.length})`, color: '#22C55E' },
+                  { id: 'vencedoras', label: `🏆 Vencedoras (${audit._campanhasClassificadas.vencedoras.length})`, color: '#0E9E6E' },
                   { id: 'atencao',   label: `⚠ Atenção (${audit._campanhasClassificadas.atencao.length})`,       color: '#F0B429' },
                   { id: 'criticas',  label: `🔴 Críticas (${audit._campanhasClassificadas.criticas.length})`,     color: '#FF4D4D' },
                 ] as const).map(({ id, label, color }) => (
@@ -1674,20 +1674,20 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                     style={{
                       background: campTab === id ? `${color}15` : 'transparent',
                       border: campTab === id ? `1px solid ${color}40` : '1px solid #2A2A30',
-                      color: campTab === id ? color : '#64748B',
+                      color: campTab === id ? color : '#8A93A3',
                     }}
                   >{label}</button>
                 ))}
               </div>
               {/* Subtítulo contextual da aba ativa */}
-              <div style={{ fontSize: '10px', color: '#64748B', marginBottom: '14px', paddingLeft: '2px', lineHeight: 1.5 }}>
+              <div style={{ fontSize: '10px', color: '#8A93A3', marginBottom: '14px', paddingLeft: '2px', lineHeight: 1.5 }}>
                 {campTab === 'vencedoras' && 'Geram resultado acima da média · Recomendação: escalar gradualmente'}
                 {campTab === 'atencao'   && 'Necessitam de otimizações · Recomendação: monitorar e ajustar'}
                 {campTab === 'criticas'  && 'Consomem verba sem retorno esperado · Recomendação: revisar ou pausar'}
               </div>
               {(() => {
                 const camps: any[] = audit._campanhasClassificadas[campTab] || []
-                const tabColor = campTab === 'vencedoras' ? '#22C55E' : campTab === 'atencao' ? '#F0B429' : '#FF4D4D'
+                const tabColor = campTab === 'vencedoras' ? '#0E9E6E' : campTab === 'atencao' ? '#F0B429' : '#FF4D4D'
                 if (camps.length === 0) return <p className="text-[11px] text-slate-600 py-4 text-center">Nenhuma campanha nesta categoria.</p>
                 return (
                   <div className="space-y-2">
@@ -1770,7 +1770,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                   <span style={{ fontSize: '16px' }}>🤖</span>
                   <h3 className="font-display font-bold text-white text-base">O que a IA faria se esta conta fosse dela?</h3>
                 </div>
-                <p style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.55 }}>
+                <p style={{ fontSize: '12px', color: '#8A93A3', margin: 0, lineHeight: 1.55 }}>
                   As 4 ações abaixo foram priorizadas por impacto. Elas representam o caminho mais direto para melhorar o resultado desta conta nos próximos 30 dias.
                 </p>
               </div>
@@ -1793,7 +1793,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                   const impacto   = isObj ? action.impacto   : null
                   const prazo     = isObj ? action.prazo     : null
                   const esforco   = isObj ? action.esforco   : null
-                  const prioColor = prioridade === 'P1' ? '#FF4D4D' : prioridade === 'P2' ? '#F0B429' : '#64748B'
+                  const prioColor = prioridade === 'P1' ? '#FF4D4D' : prioridade === 'P2' ? '#F0B429' : '#8A93A3'
                   return (
                     <div key={i} className="rounded-xl px-4 py-3"
                       style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
@@ -1816,7 +1816,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                           </div>
                           {motivo && <p className="text-xs text-slate-400 mt-1 leading-relaxed">{motivo}</p>}
                           {evidencia && <p className="text-[10px] text-[#F0B429]/70 mt-1 leading-relaxed">📊 {evidencia}</p>}
-                          {impacto && <p className="text-[10px] text-[#22C55E]/80 mt-1 leading-relaxed">→ {impacto}</p>}
+                          {impacto && <p className="text-[10px] text-[#0E9E6E]/80 mt-1 leading-relaxed">→ {impacto}</p>}
                         </div>
                         {clientData && (
                           <button
@@ -1850,7 +1850,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                             className="flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-lg transition-all"
                             style={{
                               background: sentActions.has(i) ? 'rgba(34,197,94,0.1)' : 'rgba(240,180,41,0.1)',
-                              color:      sentActions.has(i) ? '#22C55E' : '#F0B429',
+                              color:      sentActions.has(i) ? '#0E9E6E' : '#F0B429',
                               border:     `1px solid ${sentActions.has(i) ? 'rgba(34,197,94,0.3)' : 'rgba(240,180,41,0.25)'}`,
                             }}
                           >{sentActions.has(i) ? '✓ Enviado' : '+ Ações'}</button>
@@ -1889,15 +1889,15 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
 
           {/* ── 09 OPORTUNIDADES ── */}
           {audit.oportunidades?.length > 0 && (
-            <div className="bg-[#111114] border border-[#22C55E]/20 rounded-2xl p-5">
-              <SectionHeader num="09" icon="🚀" title="Oportunidades de Escala" color="#22C55E" />
+            <div className="bg-[#111114] border border-[#0E9E6E]/20 rounded-2xl p-5">
+              <SectionHeader num="09" icon="🚀" title="Oportunidades de Escala" color="#0E9E6E" />
               <div className="grid md:grid-cols-2 gap-3">
                 {audit.oportunidades.map((op: any, i: number) => (
-                  <div key={i} className="bg-[#16161A] border border-[#22C55E]/15 rounded-xl p-4">
+                  <div key={i} className="bg-[#16161A] border border-[#0E9E6E]/15 rounded-xl p-4">
                     <div className="font-semibold text-white text-sm mb-2">{op.titulo}</div>
                     <p className="text-xs text-slate-400 leading-relaxed mb-2">{op.descricao}</p>
                     {op.potencial && (
-                      <div className="text-xs font-semibold text-[#22C55E]">📈 Potencial: {op.potencial}</div>
+                      <div className="text-xs font-semibold text-[#0E9E6E]">📈 Potencial: {op.potencial}</div>
                     )}
                   </div>
                 ))}
@@ -1911,7 +1911,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
                 onClick={() => setCollapsed(prev => ({ ...prev, visao_geral: !prev.visao_geral }))}>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
-                  style={{ background: 'rgba(56,189,248,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.2)' }}>01</span>
+                  style={{ background: 'rgba(56,189,248,0.1)', color: '#2C5FE0', border: '1px solid rgba(56,189,248,0.2)' }}>01</span>
                 <span className="text-base">🏢</span>
                 <span className="font-display font-bold text-white text-sm">Visão Geral do Negócio</span>
                 <span className="ml-auto text-slate-600 text-xs">{collapsed.visao_geral ? '▼ Ver' : '▲ Ocultar'}</span>
@@ -1919,7 +1919,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               {!collapsed.visao_geral && (
                 <div className="px-5 pb-5 space-y-4 border-t border-[#2A2A30] pt-4">
                   <div>
-                    <div className="text-[10px] text-[#38BDF8] uppercase tracking-widest mb-2 font-bold">Modelo de Aquisição</div>
+                    <div className="text-[10px] text-[#2C5FE0] uppercase tracking-widest mb-2 font-bold">Modelo de Aquisição</div>
                     <p className="text-sm text-slate-300 leading-relaxed">{audit.visao_geral.modelo_aquisicao}</p>
                   </div>
                   {audit.visao_geral.desalinhamentos?.length > 0 && (
@@ -2063,7 +2063,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                   const p = checklist.filter((t: any) => t.status === 'problema').length
                   return (
                     <div className="ml-2 flex items-center gap-1.5">
-                      {v > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>{v} ✓</span>}
+                      {v > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.15)', color: '#0E9E6E' }}>{v} ✓</span>}
                       {u > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(240,180,41,0.15)', color: '#F0B429' }}>{u} ?</span>}
                       {p > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,77,77,0.15)', color: '#FF4D4D' }}>{p} ✗</span>}
                     </div>
@@ -2074,7 +2074,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               {!collapsed.checklist && (
                 <div className="px-5 pb-5 border-t border-[#2A2A30] pt-4 space-y-3">
                   {(audit._hasGoogleConversions || !!googleAccount) && (
-                    <div className="flex items-start gap-2 text-[10px] text-[#38BDF8] bg-[#38BDF8]/06 border border-[#38BDF8]/20 rounded-xl px-3 py-2">
+                    <div className="flex items-start gap-2 text-[10px] text-[#2C5FE0] bg-[#2C5FE0]/06 border border-[#2C5FE0]/20 rounded-xl px-3 py-2">
                       <span className="flex-shrink-0 mt-0.5">ℹ</span>
                       <span>No Google Ads, conversões podem incluir diferentes ações configuradas na conta (formulários, ligações, compras, eventos de site). Confirme se a conversão principal representa o evento mais relevante — lead, venda ou contato.</span>
                     </div>
@@ -2082,11 +2082,11 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                     {(audit._trackingChecklist as any[]).map((item: any) => {
                       const statusConfig = {
-                        verificado:     { color: '#22C55E', bg: 'rgba(34,197,94,0.08)',   label: '✓ Verificado' },
+                        verificado:     { color: '#0E9E6E', bg: 'rgba(34,197,94,0.08)',   label: '✓ Verificado' },
                         nao_verificado: { color: '#F0B429', bg: 'rgba(240,180,41,0.06)',  label: '? Não verificado' },
                         problema:       { color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)',   label: '✗ Problema' },
-                        indisponivel:   { color: '#64748B', bg: 'rgba(100,116,139,0.06)', label: '— Indisponível' },
-                        precisa_acesso: { color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', label: '🔑 Precisa de acesso' },
+                        indisponivel:   { color: '#8A93A3', bg: 'rgba(100,116,139,0.06)', label: '— Indisponível' },
+                        precisa_acesso: { color: '#2C5FE0', bg: 'rgba(167,139,250,0.08)', label: '🔑 Precisa de acesso' },
                       } as Record<string, { color: string; bg: string; label: string }>
                       const cfg = statusConfig[item.status] || statusConfig['nao_verificado']
                       return (
@@ -2152,7 +2152,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                                 ].map(item => (
                                   <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
                                     <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
-                                    <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
+                                    <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#8A93A3' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
                                   </div>
                                 ))}
                               </div>
@@ -2186,7 +2186,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                               ].map(item => (
                                 <div key={item.label} className="bg-[#111114] rounded-lg p-2 text-center">
                                   <div className="text-[10px] text-slate-600 mb-0.5">{item.label}</div>
-                                  <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#64748B' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
+                                  <div className="text-sm font-bold" style={{ color: item.value === '—' ? '#8A93A3' : item.warn ? '#FF4D4D' : '#F0B429' }}>{item.value}</div>
                                 </div>
                               ))}
                             </div>
@@ -2212,7 +2212,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
                 onClick={() => setCollapsed(prev => ({ ...prev, criativos: !prev.criativos }))}>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
-                  style={{ background: 'rgba(167,139,250,0.1)', color: '#A78BFA', border: '1px solid rgba(167,139,250,0.2)' }}>05</span>
+                  style={{ background: 'rgba(167,139,250,0.1)', color: '#2C5FE0', border: '1px solid rgba(167,139,250,0.2)' }}>05</span>
                 <span className="text-base">🎨</span>
                 <span className="font-display font-bold text-white text-sm">Análise de Criativos (Meta Ads)</span>
                 <span className="ml-auto text-slate-600 text-xs">{collapsed.criativos ? '▼ Ver' : '▲ Ocultar'}</span>
@@ -2220,10 +2220,10 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               {!collapsed.criativos && (
                 <div className="px-5 pb-5 border-t border-[#2A2A30] pt-5">
                   {uploadedFiles.length > 0 && !uploadedFiles.some(f => f.level === 'ad') ? (
-                    <div className="flex items-start gap-3 bg-[#A78BFA]/06 border border-[#A78BFA]/20 rounded-xl px-4 py-4">
-                      <span className="text-[#A78BFA] text-lg flex-shrink-0">🎨</span>
+                    <div className="flex items-start gap-3 bg-[#2C5FE0]/06 border border-[#2C5FE0]/20 rounded-xl px-4 py-4">
+                      <span className="text-[#2C5FE0] text-lg flex-shrink-0">🎨</span>
                       <div>
-                        <div className="text-sm font-semibold text-[#A78BFA] mb-1">Dados de nível de anúncio não encontrados</div>
+                        <div className="text-sm font-semibold text-[#2C5FE0] mb-1">Dados de nível de anúncio não encontrados</div>
                         <p className="text-xs text-slate-400 leading-relaxed">
                           Para analisar criativos com mais precisão, exporte no <strong className="text-slate-300">nível de anúncio</strong> incluindo: Frequência, CTR, Gasto e Leads por anúncio.
                         </p>
@@ -2242,7 +2242,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                           { label: 'Ângulo criativo',   value: audit.criativos_meta.angulo },
                         ].filter(i => i.value).map(item => (
                           <div key={item.label} className="bg-[#16161A] rounded-xl px-3 py-2.5">
-                            <div className="text-[10px] text-[#A78BFA] uppercase font-bold mb-1">{item.label}</div>
+                            <div className="text-[10px] text-[#2C5FE0] uppercase font-bold mb-1">{item.label}</div>
                             <div className="text-xs text-slate-300 leading-relaxed">{item.value}</div>
                           </div>
                         ))}
@@ -2266,7 +2266,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
                 onClick={() => setCollapsed(prev => ({ ...prev, publicos: !prev.publicos }))}>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
-                  style={{ background: 'rgba(56,189,248,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.2)' }}>06</span>
+                  style={{ background: 'rgba(56,189,248,0.1)', color: '#2C5FE0', border: '1px solid rgba(56,189,248,0.2)' }}>06</span>
                 <span className="text-base">👥</span>
                 <span className="font-display font-bold text-white text-sm">Análise de Públicos</span>
                 <span className="ml-auto text-slate-600 text-xs">{collapsed.publicos ? '▼ Ver' : '▲ Ocultar'}</span>
@@ -2306,13 +2306,13 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors"
                 onClick={() => setCollapsed(prev => ({ ...prev, funil: !prev.funil }))}>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
-                  style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)' }}>07</span>
+                  style={{ background: 'rgba(34,197,94,0.1)', color: '#0E9E6E', border: '1px solid rgba(34,197,94,0.2)' }}>07</span>
                 <span className="text-base">🔄</span>
                 <span className="font-display font-bold text-white text-sm">Análise de Funil e Conversão</span>
                 {audit.funil.gargalo_principal && (
                   <span className="ml-2">
                     <Pill text={`Gargalo: ${audit.funil.gargalo_principal}`}
-                      color={audit.funil.gargalo_principal === 'trafego' ? '#FB923C' : audit.funil.gargalo_principal === 'pos-clique' ? '#38BDF8' : '#F0B429'} />
+                      color={audit.funil.gargalo_principal === 'trafego' ? '#FB923C' : audit.funil.gargalo_principal === 'pos-clique' ? '#2C5FE0' : '#F0B429'} />
                   </span>
                 )}
                 <span className="ml-auto text-slate-600 text-xs">{collapsed.funil ? '▼ Ver' : '▲ Ocultar'}</span>
@@ -2328,15 +2328,15 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                       <div key={item.label} className="bg-[#16161A] rounded-xl p-3">
                         <div className="flex items-center gap-2 mb-1.5">
                           <span>{item.icon}</span>
-                          <span className="text-[10px] text-[#22C55E] font-bold uppercase">{item.label}</span>
+                          <span className="text-[10px] text-[#0E9E6E] font-bold uppercase">{item.label}</span>
                         </div>
                         <p className="text-xs text-slate-300 leading-relaxed">{item.value}</p>
                       </div>
                     ))}
                   </div>
                   {audit.funil.nota && (
-                    <div className="bg-[#22C55E]/06 border border-[#22C55E]/20 rounded-xl px-4 py-3 flex items-start gap-2">
-                      <span className="text-[#22C55E] mt-0.5">→</span>
+                    <div className="bg-[#0E9E6E]/06 border border-[#0E9E6E]/20 rounded-xl px-4 py-3 flex items-start gap-2">
+                      <span className="text-[#0E9E6E] mt-0.5">→</span>
                       <p className="text-sm text-slate-300">{audit.funil.nota}</p>
                     </div>
                   )}
@@ -2352,7 +2352,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
 
               {/* Tabs */}
               <div className="flex gap-2 mb-4">
-                {([['curto', '0–15 dias', '#22C55E'], ['medio', '15–45 dias', '#F0B429'], ['longo', '45+ dias', '#A78BFA']] as const).map(([key, label, color]) => (
+                {([['curto', '0–15 dias', '#0E9E6E'], ['medio', '15–45 dias', '#F0B429'], ['longo', '45+ dias', '#2C5FE0']] as const).map(([key, label, color]) => (
                   <button
                     key={key}
                     onClick={() => setActiveAction(key)}
@@ -2360,7 +2360,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
                     style={{
                       background: activeAction === key ? `${color}15` : 'transparent',
                       border: activeAction === key ? `1px solid ${color}40` : '1px solid #2A2A30',
-                      color: activeAction === key ? color : '#64748B',
+                      color: activeAction === key ? color : '#8A93A3',
                     }}
                   >
                     {label}
@@ -2371,7 +2371,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
               {/* Ações */}
               <div className="space-y-3">
                 {(audit.plano_acao[activeAction] || []).map((item: any, i: number) => {
-                  const color = activeAction === 'curto' ? '#22C55E' : activeAction === 'medio' ? '#F0B429' : '#A78BFA'
+                  const color = activeAction === 'curto' ? '#0E9E6E' : activeAction === 'medio' ? '#F0B429' : '#2C5FE0'
                   return (
                     <div key={i} className="bg-[#16161A] border border-[#2A2A30] rounded-xl p-4">
                       <div className="flex items-start gap-3">
@@ -2395,11 +2395,11 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
 
           {/* ── 11 INSIGHTS SÊNIOR ── */}
           {audit.insights_senior?.length > 0 && (
-            <div className="bg-[#111114] border border-[#A78BFA]/25 rounded-2xl p-5">
-              <SectionHeader num="11" icon="🧠" title="Insights Estratégicos (Nível Sênior)" color="#A78BFA" />
+            <div className="bg-[#111114] border border-[#2C5FE0]/25 rounded-2xl p-5">
+              <SectionHeader num="11" icon="🧠" title="Insights Estratégicos (Nível Sênior)" color="#2C5FE0" />
               <div className="space-y-4">
                 {audit.insights_senior.map((ins: any, i: number) => (
-                  <div key={i} className="border-l-2 border-[#A78BFA]/40 pl-4">
+                  <div key={i} className="border-l-2 border-[#2C5FE0]/40 pl-4">
                     <div className="font-semibold text-white text-sm mb-1.5">{ins.titulo}</div>
                     <p className="text-sm text-slate-400 leading-relaxed">{ins.texto}</p>
                   </div>
@@ -2417,7 +2417,7 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
           style={{
             background: actionToast.ok ? 'rgba(15,15,18,0.97)' : 'rgba(15,15,18,0.97)',
             border:     `1px solid ${actionToast.ok ? 'rgba(34,197,94,0.5)' : 'rgba(240,180,41,0.5)'}`,
-            color:      actionToast.ok ? '#22C55E' : '#F0B429',
+            color:      actionToast.ok ? '#0E9E6E' : '#F0B429',
           }}>
           <span>{actionToast.ok ? '✓' : '!'}</span>
           {actionToast.msg}

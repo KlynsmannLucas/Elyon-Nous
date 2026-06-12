@@ -7,7 +7,7 @@ export default function DashboardInner() {
   useEffect(() => { setMounted(true) }, [])
 
   if (!mounted) return (
-    <div suppressHydrationWarning style={{ minHeight: '100vh', background: '#0A0A0B' }} />
+    <div suppressHydrationWarning style={{ minHeight: '100vh', background: 'var(--canvas)' }} />
   )
 
   return <DashboardBody />

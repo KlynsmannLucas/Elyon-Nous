@@ -19,9 +19,9 @@ interface WorkflowRule {
 
 const CATEGORY_CONFIG = {
   alerta:     { label: 'Alerta',       color: '#FF4D4D', bg: 'rgba(255,77,77,0.07)',    border: 'rgba(255,77,77,0.2)' },
-  email:      { label: 'Email',        color: '#38BDF8', bg: 'rgba(56,189,248,0.07)',   border: 'rgba(56,189,248,0.2)' },
+  email:      { label: 'Email',        color: '#2C5FE0', bg: 'rgba(56,189,248,0.07)',   border: 'rgba(56,189,248,0.2)' },
   pausa:      { label: 'Pausa',        color: '#F0B429', bg: 'rgba(240,180,41,0.07)',   border: 'rgba(240,180,41,0.2)' },
-  otimizacao: { label: 'Otimização',   color: '#22C55E', bg: 'rgba(34,197,94,0.07)',    border: 'rgba(34,197,94,0.2)' },
+  otimizacao: { label: 'Otimização',   color: '#0E9E6E', bg: 'rgba(34,197,94,0.07)',    border: 'rgba(34,197,94,0.2)' },
 }
 
 const DEFAULT_RULES: WorkflowRule[] = [
@@ -149,7 +149,7 @@ export function TabWorkflow() {
             <span style={{ fontSize: '20px' }}>🔔</span>
             <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>{useViewMode().mode === 'simple' ? 'Alertas Automáticos' : 'Regras de Alerta'}</h2>
             <span style={{
-              fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#94A3B8',
+              fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#5A6473',
               background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)',
               borderRadius: '4px', padding: '2px 6px', letterSpacing: '0.06em',
             }}>Em desenvolvimento</span>
@@ -160,14 +160,14 @@ export function TabWorkflow() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           {saved && (
-            <span style={{ fontSize: '11px', color: '#22C55E', fontFamily: 'var(--font-mono)' }}>✓ Salvo</span>
+            <span style={{ fontSize: '11px', color: '#0E9E6E', fontFamily: 'var(--font-mono)' }}>✓ Salvo</span>
           )}
           <div style={{
             padding: '8px 14px', borderRadius: '9px',
             background: enabledCount > 0 ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
             border: `1px solid ${enabledCount > 0 ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.06)'}`,
             fontSize: '12px', fontWeight: 700,
-            color: enabledCount > 0 ? '#22C55E' : 'rgba(255,255,255,0.3)',
+            color: enabledCount > 0 ? '#0E9E6E' : 'rgba(255,255,255,0.3)',
           }}>
             {enabledCount} configurada{enabledCount !== 1 ? 's' : ''}
           </div>
@@ -221,7 +221,7 @@ export function TabWorkflow() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {filtered.map(rule => {
           const cfg = CATEGORY_CONFIG[rule.category]
-          const severityColors = { critical: '#FF4D4D', warning: '#F0B429', info: '#38BDF8' }
+          const severityColors = { critical: '#FF4D4D', warning: '#F0B429', info: '#2C5FE0' }
           return (
             <div key={rule.id} style={{
               background: '#111114',

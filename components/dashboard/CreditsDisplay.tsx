@@ -34,7 +34,7 @@ export function CreditsDisplay() {
   const pct     = Math.round((data.used / data.limit) * 100)
   const isLow   = data.remaining <= data.limit * 0.15
   const isEmpty = data.remaining === 0
-  const color   = isEmpty ? '#EF4444' : isLow ? '#F59E0B' : '#A78BFA'
+  const color   = isEmpty ? '#E1483F' : isLow ? '#E08B0B' : '#2C5FE0'
   const bgColor = isEmpty ? 'rgba(239,68,68,0.1)' : isLow ? 'rgba(245,158,11,0.1)' : 'rgba(124,58,237,0.08)'
   const border  = isEmpty ? 'rgba(239,68,68,0.25)' : isLow ? 'rgba(245,158,11,0.25)' : 'rgba(124,58,237,0.2)'
 
@@ -60,7 +60,7 @@ export function CreditsDisplay() {
       {open && (
         <div style={{
           position: 'fixed', top: 60, right: 20, zIndex: 9999,
-          background: '#0F1629', border: '1px solid rgba(255,255,255,0.08)',
+          background: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 12, padding: 16, width: 280,
           boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
         }}>
@@ -70,7 +70,7 @@ export function CreditsDisplay() {
             cursor: 'pointer', fontSize: 14, lineHeight: 1,
           }}>×</button>
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#F1F5F9', marginBottom: 6 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#161B26', marginBottom: 6 }}>
             ⚡ Créditos de IA
           </div>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', lineHeight: 1.5, marginBottom: 12 }}>
@@ -80,19 +80,19 @@ export function CreditsDisplay() {
           {/* Usage bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
             <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>Usados este mês</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#F1F5F9' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#161B26' }}>
               {data.used} / {data.limit}
             </span>
           </div>
           <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3, marginBottom: 8, overflow: 'hidden' }}>
             <div style={{
               height: '100%', width: `${Math.min(pct, 100)}%`,
-              background: isEmpty ? '#EF4444' : isLow ? '#F59E0B' : 'linear-gradient(90deg, #7C3AED, #A78BFA)',
+              background: isEmpty ? '#E1483F' : isLow ? '#E08B0B' : 'linear-gradient(90deg, #2C5FE0, #2C5FE0)',
               borderRadius: 3, transition: 'width 0.4s ease',
             }} />
           </div>
 
-          <div style={{ fontSize: 11, color: isEmpty ? '#EF4444' : isLow ? '#F59E0B' : '#A78BFA', marginBottom: 12, fontWeight: 600 }}>
+          <div style={{ fontSize: 11, color: isEmpty ? '#E1483F' : isLow ? '#E08B0B' : '#2C5FE0', marginBottom: 12, fontWeight: 600 }}>
             {isEmpty
               ? '⚠️ Créditos esgotados — faça upgrade para continuar'
               : isLow
@@ -110,7 +110,7 @@ export function CreditsDisplay() {
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{row.op}</span>
                 <span style={{
                   fontSize: 10, fontWeight: 700,
-                  color: '#A78BFA',
+                  color: '#2C5FE0',
                   background: 'rgba(124,58,237,0.1)',
                   borderRadius: 4, padding: '1px 6px',
                 }}>−{row.cost}</span>
@@ -122,7 +122,7 @@ export function CreditsDisplay() {
             <a href="/landing#pricing" style={{
               display: 'block', textAlign: 'center', padding: '8px',
               background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)',
-              borderRadius: 8, fontSize: 11, fontWeight: 700, color: '#A78BFA',
+              borderRadius: 8, fontSize: 11, fontWeight: 700, color: '#2C5FE0',
               textDecoration: 'none', transition: 'all 0.15s',
             }}>
               ⚡ Fazer upgrade do plano →

@@ -12,23 +12,23 @@ interface Props {
 }
 
 const C = {
-  bg:       '#080D1A',
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  bg:       '#F4F5F7',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
-  green:    '#22C55E',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.1)',
-  red:      '#EF4444',
+  red:      '#E1483F',
   redBg:    'rgba(239,68,68,0.1)',
-  blue:     '#38BDF8',
+  blue:     '#2C5FE0',
   blueBg:   'rgba(56,189,248,0.1)',
-  gold:     '#F59E0B',
+  gold:     '#E08B0B',
   goldBg:   'rgba(245,158,11,0.1)',
   orange:   '#F97316',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.25)',
 }
 
@@ -234,7 +234,7 @@ export function diagnose(entry: Omit<FunnelEntry, 'id' | 'createdAt'>, benchKey:
   return { stages, bottleneck, score: Math.round(avgScore), roas, cac }
 }
 
-const STAGE_COLORS = [C.purple, C.blue, C.gold, C.green, '#22D3EE', '#A78BFA']
+const STAGE_COLORS = [C.purple, C.blue, C.gold, C.green, '#22D3EE', '#2C5FE0']
 
 function StageCard({ stage, isBottleneck }: { stage: StageResult; isBottleneck: boolean }) {
   const color = stage.status === 'bom' ? C.green : stage.status === 'atencao' ? C.gold : C.red
@@ -396,7 +396,7 @@ function FunnelForm({ clientData, onSubmit, prefill }: { clientData: ClientData;
 
       <button type="submit" style={{
         width: '100%', padding: '14px 0', borderRadius: 12, fontWeight: 700, fontSize: 14,
-        color: '#fff', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+        color: '#fff', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
         border: 'none', cursor: 'pointer', letterSpacing: 0.3,
       }}>
         🔬 Diagnosticar Gargalo
@@ -536,7 +536,7 @@ export function TabFunil({ clientData }: Props) {
             {auditPrefill && (
               <span style={{
                 fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99,
-                background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)',
+                background: 'rgba(34,197,94,0.1)', color: '#0E9E6E', border: '1px solid rgba(34,197,94,0.2)',
               }}>
                 ✓ Pré-preenchido com dados da auditoria
               </span>

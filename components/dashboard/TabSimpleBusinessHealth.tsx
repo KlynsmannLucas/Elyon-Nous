@@ -21,16 +21,16 @@ interface Props {
 const C = {
   surface:  '#0C1426',
   border:   'rgba(255,255,255,0.06)',
-  purpleHi: '#A78BFA',
+  purpleHi: '#2C5FE0',
   purpleBg: 'rgba(124,58,237,0.08)',
-  green:    '#22C55E',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.07)',
-  amber:    '#F59E0B',
+  amber:    '#E08B0B',
   amberBg:  'rgba(245,158,11,0.07)',
-  red:      '#EF4444',
+  red:      '#E1483F',
   redBg:    'rgba(239,68,68,0.07)',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.32)',
 }
 
@@ -231,7 +231,7 @@ export function TabSimpleBusinessHealth({ clientData, onNavigate }: Props) {
             ))}
           </div>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' as const }}>
-            <button onClick={() => onNavigate?.('overview')} style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}>
+            <button onClick={() => onNavigate?.('overview')} style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' }}>
               Preencher meus números →
             </button>
             <button onClick={() => askNous('Quais números preciso para avaliar a saúde do meu negócio?')} style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 600, color: C.purpleHi, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', cursor: 'pointer' }}>
@@ -289,7 +289,7 @@ export function TabSimpleBusinessHealth({ clientData, onNavigate }: Props) {
               <div style={{ fontSize: '13px', fontWeight: 700, color: C.text1, marginBottom: '3px' }}>{r.title}</div>
               <p style={{ fontSize: '12px', color: C.text2, lineHeight: 1.55, margin: '0 0 10px' }}>{r.desc}</p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
-                <button onClick={() => onNavigate?.('acoes')} style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}>
+                <button onClick={() => onNavigate?.('acoes')} style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' }}>
                   Ver o que fazer →
                 </button>
                 <button onClick={() => askNous(r.q)} style={{ fontSize: '11px', fontWeight: 600, padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', color: C.purpleHi }}>

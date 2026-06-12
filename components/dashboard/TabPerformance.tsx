@@ -14,22 +14,22 @@ interface Props {
 }
 
 const C = {
-  bg:       '#080D1A',
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  bg:       '#F4F5F7',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(99,120,255,0.1)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
-  green:    '#22C55E',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.1)',
-  red:      '#EF4444',
+  red:      '#E1483F',
   redBg:    'rgba(239,68,68,0.1)',
-  blue:     '#38BDF8',
+  blue:     '#2C5FE0',
   blueBg:   'rgba(56,189,248,0.1)',
-  gold:     '#F59E0B',
+  gold:     '#E08B0B',
   goldBg:   'rgba(245,158,11,0.1)',
   orange:   '#F97316',
-  text1:    '#F1F5F9',
+  text1:    '#161B26',
   text2:    'rgba(255,255,255,0.5)',
   text3:    'rgba(255,255,255,0.25)',
 }
@@ -298,7 +298,7 @@ function SimuladorCenarios({ clientData }: { clientData: ClientData | null }) {
                   <div style={{
                     position: 'absolute', height: '100%', borderRadius: 4, opacity: 0.3,
                     left: `${minPct}%`, width: `${maxPct - minPct}%`,
-                    background: 'linear-gradient(90deg,#22C55E,#F59E0B,#EF4444)',
+                    background: 'linear-gradient(90deg,#0E9E6E,#E08B0B,#E1483F)',
                   }} />
                   <div style={{
                     position: 'absolute', width: 14, height: 14, borderRadius: '50%',
@@ -722,7 +722,7 @@ function AddHistoryForm({ onClose }: { onClose: () => void }) {
         <button onClick={handleSave} disabled={!form.period || !form.budgetSpent || saving} style={{
           width: '100%', padding: '12px 0', borderRadius: 12, fontSize: 13, fontWeight: 700,
           cursor: 'pointer', border: 'none', transition: 'opacity 0.2s',
-          background: 'linear-gradient(135deg, #F59E0B, #FCD34D)', color: '#000',
+          background: 'linear-gradient(135deg, #E08B0B, #FCD34D)', color: '#000',
           opacity: (!form.period || !form.budgetSpent || saving) ? 0.4 : 1,
         }}>
           {saving ? 'Salvando...' : '+ Registrar no Histórico'}

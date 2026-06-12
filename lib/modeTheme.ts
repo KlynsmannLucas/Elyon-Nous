@@ -1,6 +1,7 @@
-// lib/modeTheme.ts — Tokens de tema por modo de visualização (dark-consistent).
-// Simple = acento verde/emerald (leve, consultivo). Avançado = roxo (técnico, atual).
-// Mantém o dark theme premium; a diferenciação vem do ACENTO, badge e tint de fundo.
+// lib/modeTheme.ts — Tokens de tema por modo de visualização (light)
+// Simple = accent green (leve, consultivo). Avançado = blue (técnico, atual)
+
+import { getCssVariableValue } from '@/lib/cssVars'
 
 export interface ModeTheme {
   name: string
@@ -21,13 +22,13 @@ const SIMPLE: ModeTheme = {
   badgeIcon:   '🟢',
   badgeText:   'Linguagem simples',
   microcopy:   'Para entender e agir',
-  accent:      '#22C55E',
-  accentSoft:  'rgba(34,197,94,0.12)',
-  accentBorder:'rgba(34,197,94,0.30)',
-  activeBg:    'rgba(34,197,94,0.14)',
-  activeBorder:'rgba(34,197,94,0.30)',
-  activeText:  '#4ADE80',
-  pageBg:      'linear-gradient(160deg, rgba(34,197,94,0.05) 0%, #080D1A 38%)',
+  accent:      '#0E9E6E',
+  accentSoft:  'rgba(14,158,110,0.08)',
+  accentBorder:'rgba(14,158,110,0.20)',
+  activeBg:    'rgba(14,158,110,0.10)',
+  activeBorder:'rgba(14,158,110,0.20)',
+  activeText:  '#0E9E6E',
+  pageBg:      '#F4F5F7',
 }
 
 const ADVANCED: ModeTheme = {
@@ -35,13 +36,13 @@ const ADVANCED: ModeTheme = {
   badgeIcon:   '⚙️',
   badgeText:   'Análise técnica',
   microcopy:   'Para analisar em detalhe',
-  accent:      '#7C3AED',
-  accentSoft:  'rgba(124,58,237,0.12)',
-  accentBorder:'rgba(124,58,237,0.25)',
-  activeBg:    'rgba(124,58,237,0.15)',
-  activeBorder:'rgba(124,58,237,0.25)',
-  activeText:  '#A78BFA',
-  pageBg:      '#080D1A',
+  accent:      '#2C5FE0',
+  accentSoft:  'rgba(44,95,224,0.08)',
+  accentBorder:'rgba(44,95,224,0.20)',
+  activeBg:    'rgba(44,95,224,0.10)',
+  activeBorder:'rgba(44,95,224,0.20)',
+  activeText:  '#2C5FE0',
+  pageBg:      '#F4F5F7',
 }
 
 export function getModeTheme(mode: 'simple' | 'pro'): ModeTheme {

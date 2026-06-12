@@ -30,8 +30,8 @@ interface CROAnalysis {
 const PRIORITY_CONFIG = {
   urgent: { color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.2)', label: 'Urgente', emoji: '🔴' },
   high:   { color: '#F0B429', bg: 'rgba(240,180,41,0.08)', border: 'rgba(240,180,41,0.2)', label: 'Alta',   emoji: '🟡' },
-  medium: { color: '#38BDF8', bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.2)', label: 'Média',  emoji: '🔵' },
-  low:    { color: '#94A3B8', bg: 'rgba(148,163,184,0.05)', border: 'rgba(148,163,184,0.1)', label: 'Baixa', emoji: '⚪' },
+  medium: { color: '#2C5FE0', bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.2)', label: 'Média',  emoji: '🔵' },
+  low:    { color: '#5A6473', bg: 'rgba(148,163,184,0.05)', border: 'rgba(148,163,184,0.1)', label: 'Baixa', emoji: '⚪' },
 }
 
 const AREA_LABELS: Record<string, { label: string; icon: string }> = {
@@ -45,7 +45,7 @@ const AREA_LABELS: Record<string, { label: string; icon: string }> = {
 }
 
 const EFFORT_CONFIG = {
-  baixo: { color: '#22C55E', label: 'Esforço baixo' },
+  baixo: { color: '#0E9E6E', label: 'Esforço baixo' },
   médio: { color: '#F0B429', label: 'Esforço médio' },
   alto:  { color: '#FF4D4D', label: 'Esforço alto' },
 }
@@ -97,8 +97,8 @@ export function TabCRO() {
     ? (filter === 'all' ? cro.recommendations : cro.recommendations.filter(r => r.priority === filter))
     : []
 
-  const scoreColor = !cro ? '#64748B'
-    : cro.score >= 80 ? '#22C55E'
+  const scoreColor = !cro ? '#8A93A3'
+    : cro.score >= 80 ? '#0E9E6E'
     : cro.score >= 60 ? '#F0B429'
     : '#FF4D4D'
 
@@ -205,7 +205,7 @@ export function TabCRO() {
                 🎯 Gargalo principal: <span style={{ color: '#F0B429' }}>{cro.bottleneck}</span>
               </div>
               {source === 'ai' && (
-                <div style={{ fontSize: '10px', color: '#22C55E', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ fontSize: '10px', color: '#0E9E6E', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
                   ✓ Análise gerada com Claude AI
                 </div>
               )}
@@ -219,7 +219,7 @@ export function TabCRO() {
                 borderRadius: '10px',
               }}>
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>CPL após otimização</div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#22C55E' }}>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#0E9E6E' }}>
                   R${cro.estimatedCPLWithOptimization}
                 </div>
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
@@ -235,13 +235,13 @@ export function TabCRO() {
               background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.15)',
               borderRadius: '12px', padding: '16px 20px',
             }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#22C55E', marginBottom: '10px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#0E9E6E', marginBottom: '10px' }}>
                 ⚡ Quick Wins — ações imediatas de alto impacto
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {cro.quickWins.map((win, i) => (
                   <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '11px', color: '#22C55E', flexShrink: 0, marginTop: '1px' }}>→</span>
+                    <span style={{ fontSize: '11px', color: '#0E9E6E', flexShrink: 0, marginTop: '1px' }}>→</span>
                     <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.65)' }}>{win}</span>
                   </div>
                 ))}
@@ -325,7 +325,7 @@ export function TabCRO() {
                         </span>
                         {rec.estimatedCPLReduction && (
                           <span style={{
-                            fontSize: '10px', color: '#22C55E',
+                            fontSize: '10px', color: '#0E9E6E',
                             background: 'rgba(34,197,94,0.08)', borderRadius: '4px', padding: '1px 6px',
                             border: '1px solid rgba(34,197,94,0.15)',
                           }}>
@@ -366,7 +366,7 @@ export function TabCRO() {
                           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>{rec.problem}</div>
                         </div>
                         <div>
-                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#22C55E', marginBottom: '4px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>SOLUÇÃO</div>
+                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#0E9E6E', marginBottom: '4px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>SOLUÇÃO</div>
                           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5' }}>{rec.solution}</div>
                         </div>
                         <div style={{

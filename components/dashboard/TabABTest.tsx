@@ -57,7 +57,7 @@ function VariantForm({ label, variant, onChange }: {
   variant: CreativeVariant
   onChange: (v: CreativeVariant) => void
 }) {
-  const color = label === 'A' ? '#38BDF8' : '#A78BFA'
+  const color = label === 'A' ? '#2C5FE0' : '#2C5FE0'
   const u = (k: keyof CreativeVariant, v: any) => onChange({ ...variant, [k]: v })
 
   return (
@@ -110,7 +110,7 @@ function VariantMetrics({ label, variant, isWinner, isLoser }: {
   isWinner: boolean
   isLoser: boolean
 }) {
-  const color = label === 'A' ? '#38BDF8' : '#A78BFA'
+  const color = label === 'A' ? '#2C5FE0' : '#2C5FE0'
   const ctr = calcCTR(variant)
   const cpl = calcCPL(variant)
   const cvr = calcConvRate(variant)
@@ -123,7 +123,7 @@ function VariantMetrics({ label, variant, isWinner, isLoser }: {
       }}>
       {isWinner && (
         <div className="absolute -top-2 left-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
-          style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)', color: '#22C55E' }}>
+          style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)', color: '#0E9E6E' }}>
           🏆 Vencedora
         </div>
       )}
@@ -139,12 +139,12 @@ function VariantMetrics({ label, variant, isWinner, isLoser }: {
       )}
       <div className="grid grid-cols-2 gap-2">
         {[
-          { label: 'Impressões', value: variant.impressions > 0 ? variant.impressions.toLocaleString('pt-BR') : '—', color: '#64748B' },
-          { label: 'Cliques', value: variant.clicks > 0 ? variant.clicks.toLocaleString('pt-BR') : '—', color: '#64748B' },
-          { label: 'CTR', value: variant.impressions > 0 ? `${ctr.toFixed(2)}%` : '—', color: ctr > 3 ? '#22C55E' : ctr > 1 ? '#F0B429' : '#FF4D4D' },
+          { label: 'Impressões', value: variant.impressions > 0 ? variant.impressions.toLocaleString('pt-BR') : '—', color: '#8A93A3' },
+          { label: 'Cliques', value: variant.clicks > 0 ? variant.clicks.toLocaleString('pt-BR') : '—', color: '#8A93A3' },
+          { label: 'CTR', value: variant.impressions > 0 ? `${ctr.toFixed(2)}%` : '—', color: ctr > 3 ? '#0E9E6E' : ctr > 1 ? '#F0B429' : '#FF4D4D' },
           { label: 'CPL', value: cpl > 0 ? `R$${cpl}` : '—', color: '#F0B429' },
-          { label: 'Conversões', value: variant.conversions > 0 ? String(variant.conversions) : '—', color: '#22C55E' },
-          { label: 'Conv. Rate', value: variant.clicks > 0 ? `${cvr.toFixed(1)}%` : '—', color: '#A78BFA' },
+          { label: 'Conversões', value: variant.conversions > 0 ? String(variant.conversions) : '—', color: '#0E9E6E' },
+          { label: 'Conv. Rate', value: variant.clicks > 0 ? `${cvr.toFixed(1)}%` : '—', color: '#2C5FE0' },
         ].map(m => (
           <div key={m.label} className="bg-[#0A0A0B] rounded-lg p-2 text-center">
             <div className="text-xs font-bold" style={{ color: m.color }}>{m.value}</div>
@@ -182,7 +182,7 @@ function MetricsForm({ test, onSave, onClose }: {
         {(['A', 'B'] as const).map((lbl) => {
           const vals = lbl === 'A' ? a : b
           const upd = lbl === 'A' ? ua : ub
-          const color = lbl === 'A' ? '#38BDF8' : '#A78BFA'
+          const color = lbl === 'A' ? '#2C5FE0' : '#2C5FE0'
           return (
             <div key={lbl}>
               <div className="text-[10px] font-bold mb-2" style={{ color }}>Variante {lbl}</div>
@@ -226,10 +226,10 @@ function TestCard({ test, clientData }: { test: CreativeTest; clientData: Client
   const displayWinner = winner ?? suggested
 
   const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-    running:  { label: '🟢 Rodando',    color: '#22C55E' },
-    winner_a: { label: '🏆 A venceu',   color: '#38BDF8' },
-    winner_b: { label: '🏆 B venceu',   color: '#A78BFA' },
-    paused:   { label: '⏸ Pausado',     color: '#64748B' },
+    running:  { label: '🟢 Rodando',    color: '#0E9E6E' },
+    winner_a: { label: '🏆 A venceu',   color: '#2C5FE0' },
+    winner_b: { label: '🏆 B venceu',   color: '#2C5FE0' },
+    paused:   { label: '⏸ Pausado',     color: '#8A93A3' },
   }
   const st = STATUS_LABELS[test.status]
 
@@ -329,8 +329,8 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
       {suggested && !winner && (
         <div className="px-5 py-3 border-t border-[#1E1E24] flex items-center gap-2"
           style={{ background: 'rgba(34,197,94,0.04)' }}>
-          <span className="text-[#22C55E] text-sm">💡</span>
-          <span className="text-xs text-[#22C55E] font-semibold">
+          <span className="text-[#0E9E6E] text-sm">💡</span>
+          <span className="text-xs text-[#0E9E6E] font-semibold">
             Variante {suggested.toUpperCase()} está performando melhor — declare vencedora acima.
           </span>
         </div>
@@ -354,13 +354,13 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
                   <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">{m.label}</div>
                   <div className="flex h-1.5 rounded-full overflow-hidden mb-2">
                     <div className="transition-all duration-500"
-                      style={{ width: `${pctA}%`, background: aWins ? '#38BDF8' : '#2A2A30' }} />
+                      style={{ width: `${pctA}%`, background: aWins ? '#2C5FE0' : '#2A2A30' }} />
                     <div className="transition-all duration-500"
-                      style={{ width: `${100 - pctA}%`, background: bWins ? '#A78BFA' : '#2A2A30' }} />
+                      style={{ width: `${100 - pctA}%`, background: bWins ? '#2C5FE0' : '#2A2A30' }} />
                   </div>
                   <div className="flex justify-between text-[10px]">
-                    <span style={{ color: aWins ? '#38BDF8' : '#475569' }}>{m.fmt(m.a)}</span>
-                    <span style={{ color: bWins ? '#A78BFA' : '#475569' }}>{m.fmt(m.b)}</span>
+                    <span style={{ color: aWins ? '#2C5FE0' : '#475569' }}>{m.fmt(m.a)}</span>
+                    <span style={{ color: bWins ? '#2C5FE0' : '#475569' }}>{m.fmt(m.b)}</span>
                   </div>
                 </div>
               )
@@ -374,7 +374,7 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
         <button
           onClick={() => setShowMetrics((x) => !x)}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
-          style={{ background: '#16161A', border: '1px solid #2A2A30', color: '#94A3B8' }}
+          style={{ background: '#16161A', border: '1px solid #2A2A30', color: '#5A6473' }}
         >
           📊 Atualizar métricas
         </button>
@@ -439,7 +439,7 @@ function CreateForm({ onClose }: { onClose: () => void }) {
                 style={{
                   background: channel === c ? 'rgba(240,180,41,0.12)' : '#16161A',
                   border: channel === c ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                  color: channel === c ? '#F0B429' : '#64748B',
+                  color: channel === c ? '#F0B429' : '#8A93A3',
                 }}>{c}</button>
             ))}
           </div>
@@ -447,10 +447,10 @@ function CreateForm({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="grid grid-cols-2 gap-6 mb-5">
-        <div className="bg-[#0D0D10] rounded-xl p-4 border border-[#38BDF820]">
+        <div className="bg-[#0D0D10] rounded-xl p-4 border border-[#2C5FE020]">
           <VariantForm label="A" variant={variantA} onChange={setVariantA} />
         </div>
-        <div className="bg-[#0D0D10] rounded-xl p-4 border border-[#A78BFA20]">
+        <div className="bg-[#0D0D10] rounded-xl p-4 border border-[#2C5FE020]">
           <VariantForm label="B" variant={variantB} onChange={setVariantB} />
         </div>
       </div>

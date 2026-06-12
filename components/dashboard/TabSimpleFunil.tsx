@@ -20,15 +20,15 @@ interface Props {
 const C = {
   surface:  '#0C1426',
   border:   'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleHi: '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleHi: '#2C5FE0',
   purpleBg: 'rgba(124,58,237,0.08)',
-  green:    '#22C55E',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.07)',
-  amber:    '#F59E0B',
-  red:      '#EF4444',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  amber:    '#E08B0B',
+  red:      '#E1483F',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.32)',
 }
 
@@ -129,7 +129,7 @@ export function TabSimpleFunil({ clientData, onNavigate }: Props) {
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' as const }}>
             <button
               onClick={() => useAppStore.getState().setDashboardMode('pro')}
-              style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}
+              style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' }}
             >
               Preencher meus números →
             </button>

@@ -19,17 +19,17 @@ interface Props {
   subtitle?: string
 }
 
-const PURPLE  = '#7C3AED'
-const PURPLE_L = '#A78BFA'
+const PURPLE  = '#2C5FE0'
+const PURPLE_L = '#2C5FE0'
 const C_BORDER = 'rgba(255,255,255,0.05)'
-const C_TEXT2  = '#94A3B8'
-const C_TEXT3  = '#64748B'
+const C_TEXT2  = '#5A6473'
+const C_TEXT3  = '#8A93A3'
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
     <div style={{
-      background: '#0F1629', border: '1px solid rgba(124,58,237,0.25)',
+      background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.25)',
       borderRadius: '10px', padding: '10px 14px',
       boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
       fontSize: '12px', minWidth: '160px',
@@ -82,15 +82,15 @@ export function RevenueChart({ data, title, subtitle }: Props) {
   if (!hasRealData) {
     return (
       <div style={{
-        background: '#0F1629', border: '1px solid rgba(255,255,255,0.05)',
+        background: '#FFFFFF', border: '1px solid rgba(255,255,255,0.05)',
         borderRadius: '16px', padding: '22px',
         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
         minHeight: '200px', gap: '8px',
       }}>
-        <div style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', marginBottom: '2px' }}>
+        <div style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', marginBottom: '2px' }}>
           {title || 'Performance ao longo do tempo'}
         </div>
-        <div style={{ fontSize: '12px', color: '#64748B', textAlign: 'center', lineHeight: 1.6 }}>
+        <div style={{ fontSize: '12px', color: '#8A93A3', textAlign: 'center', lineHeight: 1.6 }}>
           Sem dados reais para exibir ainda.<br />
           Configure o orçamento e execute a auditoria para ver a projeção.
         </div>
@@ -105,13 +105,13 @@ export function RevenueChart({ data, title, subtitle }: Props) {
 
   return (
     <div style={{
-      background: '#0F1629', border: `1px solid ${C_BORDER}`,
+      background: '#FFFFFF', border: `1px solid ${C_BORDER}`,
       borderRadius: '16px', padding: '22px',
     }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', marginBottom: '2px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#161B26', marginBottom: '2px' }}>
             {title || 'Receita Real vs Meta'}
           </div>
           <div style={{ fontSize: '11px', color: C_TEXT3 }}>

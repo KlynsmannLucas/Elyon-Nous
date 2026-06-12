@@ -22,13 +22,13 @@ interface Props {
 const C = {
   surface:  '#0C1426',
   border:   'rgba(255,255,255,0.06)',
-  purpleHi: '#A78BFA',
+  purpleHi: '#2C5FE0',
   purpleBg: 'rgba(124,58,237,0.08)',
-  green:    '#22C55E',
-  amber:    '#F59E0B',
-  red:      '#EF4444',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  green:    '#0E9E6E',
+  amber:    '#E08B0B',
+  red:      '#E1483F',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.32)',
 }
 
@@ -98,7 +98,7 @@ export function TabSimpleExecutiveSummary({ clientData, onNavigate }: Props) {
             {missing.map(t => <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: C.text2 }}><span style={{ color: C.purpleHi }}>○</span>{t}</div>)}
           </div>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' as const }}>
-            <button onClick={() => onNavigate?.('overview')} style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}>Preencher meus números →</button>
+            <button onClick={() => onNavigate?.('overview')} style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#fff', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' }}>Preencher meus números →</button>
             <button onClick={() => askAIWithContext({ source: 'resumo', title: 'Resumo Executivo', suggestedPrompt: 'Quais números preciso preencher para gerar um resumo do meu negócio?' })} style={{ padding: '10px 18px', borderRadius: '9px', fontSize: '13px', fontWeight: 600, color: C.purpleHi, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.25)', cursor: 'pointer' }}>💬 Perguntar para a IA</button>
             <DemoDataButton />
           </div>
@@ -268,7 +268,7 @@ ${isHealth && compliance ? `\nOBSERVAÇÃO\n${compliance}\n` : ''}
           ))}
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={copy} style={{ fontSize: '12px', fontWeight: 700, padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', border: 'none', color: copied ? C.green : '#fff', background: copied ? 'rgba(34,197,94,0.12)' : 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}>
+          <button onClick={copy} style={{ fontSize: '12px', fontWeight: 700, padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', border: 'none', color: copied ? C.green : '#fff', background: copied ? 'rgba(34,197,94,0.12)' : 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' }}>
             {copied ? '✓ Copiado' : '📋 Copiar resumo'}
           </button>
           <button onClick={() => askAIWithContext({
@@ -321,7 +321,7 @@ ${isHealth && compliance ? `\nOBSERVAÇÃO\n${compliance}\n` : ''}
             </div>
           ))}
         </div>
-        <button onClick={() => onNavigate?.('acoes')} style={{ marginTop: '12px', fontSize: '11px', fontWeight: 700, padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}>
+        <button onClick={() => onNavigate?.('acoes')} style={{ marginTop: '12px', fontSize: '11px', fontWeight: 700, padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)' }}>
           Ver plano de ação completo →
         </button>
       </div>

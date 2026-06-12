@@ -27,17 +27,17 @@ function isSensitiveNiche(niche?: string) {
 }
 
 const C = {
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
   purpleD:  'rgba(124,58,237,0.12)',
   purpleB:  'rgba(124,58,237,0.22)',
-  amber:    '#F59E0B',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
-  text3:    '#64748B',
+  amber:    '#E08B0B',
+  text1:    '#161B26',
+  text2:    '#5A6473',
+  text3:    '#8A93A3',
 }
 
 export function TabAnalise({ clientData, planHasAudit, onUpgrade, autoRun, onAutoRunConsumed }: Props) {
@@ -134,7 +134,7 @@ export function TabAnalise({ clientData, planHasAudit, onUpgrade, autoRun, onAut
                       display: 'inline-flex', alignItems: 'center', gap: '8px',
                       padding: '12px 20px', borderRadius: '12px', fontWeight: 700,
                       fontSize: '13px', color: '#fff', cursor: 'pointer',
-                      background: 'linear-gradient(135deg, #7C3AED, #A78BFA)', border: 'none',
+                      background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)', border: 'none',
                       boxShadow: '0 2px 12px rgba(124,58,237,0.35)',
                     }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.9' }}

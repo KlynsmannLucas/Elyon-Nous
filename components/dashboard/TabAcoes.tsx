@@ -13,23 +13,23 @@ interface Props {
 }
 
 const C = {
-  bg:       '#080D1A',
-  surface:  '#0F1629',
-  elevated: '#131E35',
+  bg:       '#F4F5F7',
+  surface:  '#FFFFFF',
+  elevated: '#FBFCFD',
   border:   'rgba(255,255,255,0.06)',
-  purple:   '#7C3AED',
-  purpleL:  '#A78BFA',
-  green:    '#22C55E',
+  purple:   '#2C5FE0',
+  purpleL:  '#2C5FE0',
+  green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.1)',
-  red:      '#EF4444',
+  red:      '#E1483F',
   redBg:    'rgba(239,68,68,0.1)',
-  blue:     '#38BDF8',
+  blue:     '#2C5FE0',
   blueBg:   'rgba(56,189,248,0.1)',
-  gold:     '#F59E0B',
+  gold:     '#E08B0B',
   goldBg:   'rgba(245,158,11,0.1)',
   orange:   '#F97316',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.25)',
 }
 
@@ -198,7 +198,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
           </p>
           {hydrating && (
             <span style={{ fontSize: 10, color: C.text3, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 999, border: '1.5px solid rgba(124,58,237,0.3)', borderTopColor: '#A78BFA', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ width: 8, height: 8, borderRadius: 999, border: '1.5px solid rgba(124,58,237,0.3)', borderTopColor: '#2C5FE0', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
               Sincronizando com a nuvem…
             </span>
           )}
@@ -221,7 +221,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
               borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-              background: 'linear-gradient(135deg, #7C3AED, #A78BFA)', color: '#fff',
+              background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)', color: '#fff',
               border: 'none', opacity: loading ? 0.6 : 1,
             }}>
             {loading
@@ -278,12 +278,12 @@ export function TabAcoes({ clientData, strategyData }: Props) {
               )}
               <span style={{
                 fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999,
-                background: 'rgba(167,139,250,0.1)', color: '#A78BFA', border: '1px solid rgba(167,139,250,0.25)',
+                background: 'rgba(167,139,250,0.1)', color: '#2C5FE0', border: '1px solid rgba(167,139,250,0.25)',
               }}>
                 Auto-gerado da auditoria
               </span>
             </div>
-            <button onClick={() => setShowAuditActions(v => !v)} style={{ fontSize: 11, color: '#A78BFA', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={() => setShowAuditActions(v => !v)} style={{ fontSize: 11, color: '#2C5FE0', background: 'none', border: 'none', cursor: 'pointer' }}>
               {showAuditActions ? '▲ Recolher' : '▼ Expandir'}
             </button>
           </div>
@@ -387,7 +387,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
                                 <span style={{
                                   fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4,
                                   background: item.platform === 'meta' ? 'rgba(24,119,242,0.12)' : item.platform === 'google' ? 'rgba(234,67,53,0.12)' : 'rgba(124,58,237,0.1)',
-                                  color: item.platform === 'meta' ? '#1877F2' : item.platform === 'google' ? '#EA4335' : '#A78BFA',
+                                  color: item.platform === 'meta' ? '#1877F2' : item.platform === 'google' ? '#EA4335' : '#2C5FE0',
                                   border: `1px solid ${item.platform === 'meta' ? 'rgba(24,119,242,0.25)' : item.platform === 'google' ? 'rgba(234,67,53,0.25)' : 'rgba(124,58,237,0.25)'}`,
                                 }}>
                                   {item.platform === 'meta' ? '📘 Meta' : item.platform === 'google' ? '🔍 Google' : '📡 Ambos'}
@@ -487,7 +487,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
 
       {loading && (
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 48, textAlign: 'center' }}>
-          <div style={{ width: 48, height: 48, borderRadius: 999, border: '2px solid rgba(124,58,237,0.15)', borderTopColor: '#A78BFA', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
+          <div style={{ width: 48, height: 48, borderRadius: 999, border: '2px solid rgba(124,58,237,0.15)', borderTopColor: '#2C5FE0', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text1, marginBottom: 6 }}>Consultando especialista sênior...</div>
           <div style={{ fontSize: 12, color: C.text2 }}>Analisando estratégia, auditoria e nicho para criar ações específicas</div>
         </div>
@@ -522,7 +522,7 @@ export function TabAcoes({ clientData, strategyData }: Props) {
               <div style={{
                 height: 6, borderRadius: 999, transition: 'width 0.5s ease',
                 width: `${pct}%`,
-                background: pct === 100 ? C.green : 'linear-gradient(90deg, #7C3AED, #A78BFA)',
+                background: pct === 100 ? C.green : 'linear-gradient(90deg, #2C5FE0, #2C5FE0)',
               }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>

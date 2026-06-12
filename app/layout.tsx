@@ -1,7 +1,15 @@
 import type { Metadata } from 'next'
-import { Syne, DM_Sans, JetBrains_Mono } from 'next/font/google'
+import { Syne, DM_Sans, JetBrains_Mono, Schibsted_Grotesk } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
+
+// Redesign v2 — "terminal de dados premium" (light). Fonte de UI/títulos.
+const schibsted = Schibsted_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-schibsted',
+  display: 'swap',
+})
 
 const syne = Syne({
   subsets: ['latin'],
@@ -60,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       afterSignUpUrl="/dashboard"
     >
       <html lang="pt-BR" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}>
-        <body className="bg-[#0A0A0B] text-slate-200 font-body antialiased">
+        <body className="bg-canvas text-ink font-body antialiased">
           {children}
         </body>
       </html>

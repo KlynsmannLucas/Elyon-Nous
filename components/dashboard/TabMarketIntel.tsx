@@ -35,7 +35,7 @@ function SeasonalityChart({ chartData }: { chartData: ReturnType<typeof getSeaso
           const barH = Math.max(15, pct)
           const color = d.isCurrent ? '#F0B429'
             : d.isPeak ? '#FF4D4D'
-            : d.isValley ? '#22C55E'
+            : d.isValley ? '#0E9E6E'
             : '#2A2A30'
           return (
             <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
@@ -60,7 +60,7 @@ function SeasonalityChart({ chartData }: { chartData: ReturnType<typeof getSeaso
       <div className="flex items-center gap-4 mt-3 text-[10px] text-slate-600">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#F0B429] inline-block" /> Mês atual</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#FF4D4D] inline-block" /> Pico (+ caro)</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#22C55E] inline-block" /> Vale (+ barato)</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#0E9E6E] inline-block" /> Vale (+ barato)</span>
       </div>
     </div>
   )
@@ -118,7 +118,7 @@ function CreativeAnglesPanel({ niche }: { niche: string }) {
   const sections = [
     { key: 'saturated', label: '🔴 Saturados — evitar', items: angles.saturated, color: '#FF4D4D', bg: 'rgba(255,77,77,0.05)', border: 'rgba(255,77,77,0.2)' },
     { key: 'trending', label: '🟡 Em alta — testar agora', items: angles.trending, color: '#F0B429', bg: 'rgba(240,180,41,0.05)', border: 'rgba(240,180,41,0.2)' },
-    { key: 'underexplored', label: '🟢 Subexplorados — oportunidade', items: angles.underexplored, color: '#22C55E', bg: 'rgba(34,197,94,0.05)', border: 'rgba(34,197,94,0.2)' },
+    { key: 'underexplored', label: '🟢 Subexplorados — oportunidade', items: angles.underexplored, color: '#0E9E6E', bg: 'rgba(34,197,94,0.05)', border: 'rgba(34,197,94,0.2)' },
   ]
 
   return (
@@ -168,7 +168,7 @@ function CityIntelCard({ clientData, bench }: { clientData: ClientData; bench: N
             <div className="w-2 h-2 rounded-full flex-shrink-0"
               style={{ background: isActive ? '#F0B429' : '#2A2A30' }} />
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold" style={{ color: isActive ? '#F0B429' : '#64748B' }}>{t.label}</div>
+              <div className="text-xs font-semibold" style={{ color: isActive ? '#F0B429' : '#8A93A3' }}>{t.label}</div>
               <div className="text-[10px] text-slate-600">{t.example}</div>
             </div>
             <div className="text-right flex-shrink-0">
@@ -310,9 +310,9 @@ export function TabMarketIntel({ clientData }: Props) {
 
     // M1: Labels consequenciais — comunicam resultado, não classificação
     const cfg = {
-      green: { icon: '🟢', label: 'Excelente momento para captar clientes com menor custo.', color: '#22C55E', bg: 'rgba(34,197,94,0.07)', border: 'rgba(34,197,94,0.2)' },
-      amber: { icon: '🟡', label: 'Momento estável. Escalar com cautela.',                   color: '#F59E0B', bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)' },
-      red:   { icon: '🔴', label: 'Mercado mais competitivo que o normal.',                   color: '#EF4444', bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.2)' },
+      green: { icon: '🟢', label: 'Excelente momento para captar clientes com menor custo.', color: '#0E9E6E', bg: 'rgba(34,197,94,0.07)', border: 'rgba(34,197,94,0.2)' },
+      amber: { icon: '🟡', label: 'Momento estável. Escalar com cautela.',                   color: '#E08B0B', bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)' },
+      red:   { icon: '🔴', label: 'Mercado mais competitivo que o normal.',                   color: '#E1483F', bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.2)' },
     }[status]
 
     // Diagnóstico em 1 linha — foco em consequência para o negócio
@@ -392,14 +392,14 @@ export function TabMarketIntel({ clientData }: Props) {
               <div style={{ fontSize: '9px', fontWeight: 700, color: execSummary.cfg.color, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '5px' }}>
                 Impacto para o seu negócio
               </div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: '#F1F5F9', lineHeight: 1.5 }}>{execSummary.impact}</div>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#161B26', lineHeight: 1.5 }}>{execSummary.impact}</div>
             </div>
           )}
           <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)' }}>
-            <div style={{ fontSize: '9px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '5px' }}>
+            <div style={{ fontSize: '9px', fontWeight: 700, color: '#2C5FE0', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '5px' }}>
               🔥 O que fazer agora
             </div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#F1F5F9', lineHeight: 1.5 }}>{execSummary.action}</div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#161B26', lineHeight: 1.5 }}>{execSummary.action}</div>
           </div>
         </div>
 
@@ -452,13 +452,13 @@ export function TabMarketIntel({ clientData }: Props) {
         return (
           <div style={{ padding: '16px 18px', borderRadius: '12px', marginBottom: '14px', background: '#0C1426', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2C5FE0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
-              <span style={{ fontSize: '10px', fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>O que identificamos</span>
+              <span style={{ fontSize: '10px', fontWeight: 700, color: '#2C5FE0', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>O que identificamos</span>
             </div>
             <p style={{ fontSize: '13px', color: '#E2E8F0', fontWeight: 600, lineHeight: 1.6, margin: '0 0 6px' }}>{finding}</p>
-            <p style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.6, margin: '0 0 10px' }}>{explanation}</p>
+            <p style={{ fontSize: '12px', color: '#8A93A3', lineHeight: 1.6, margin: '0 0 10px' }}>{explanation}</p>
             <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.18)', fontSize: '12px', color: '#C4B5FD', fontWeight: 500 }}>
               {discoveryImpact}
             </div>
@@ -505,13 +505,13 @@ export function TabMarketIntel({ clientData }: Props) {
             value: `${proj.seasonalityIndex.toFixed(2)}×`,
             label: 'Índice sazonal',
             sub: proj.seasonalityIndex >= 1.1 ? 'Pico' : proj.seasonalityIndex <= 0.9 ? 'Valle' : 'Normal',
-            color: proj.seasonalityIndex >= 1.1 ? '#EF4444' : proj.seasonalityIndex <= 0.9 ? '#22C55E' : '#F59E0B',
+            color: proj.seasonalityIndex >= 1.1 ? '#E1483F' : proj.seasonalityIndex <= 0.9 ? '#0E9E6E' : '#E08B0B',
           },
           {
             value: `R$${proj.adjustedCPLAvg}`,
             label: 'CPL ajustado',
             sub: benchMeta?.dataSource === 'real_market_data' ? '✓ real' : '~ estimado',
-            color: '#F59E0B',
+            color: '#E08B0B',
           },
           {
             value: `${maturity.cplMultiplier.toFixed(2)}×`,
@@ -523,7 +523,7 @@ export function TabMarketIntel({ clientData }: Props) {
             value: `${Math.round(proj.citySizeModifier * 100)}%`,
             label: 'CPL vs capital',
             sub: proj.citySizeLabel,
-            color: '#A78BFA',
+            color: '#2C5FE0',
           },
         ].map((stat, i) => (
           <div key={i} style={{
@@ -558,17 +558,17 @@ export function TabMarketIntel({ clientData }: Props) {
               display: 'flex', alignItems: 'center', gap: '5px',
               padding: '8px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
               background: 'transparent', border: 'none', borderRadius: '0',
-              borderBottom: activeSection === t.key ? '2px solid #F59E0B' : '2px solid transparent',
-              color: activeSection === t.key ? '#F59E0B' : '#64748B',
+              borderBottom: activeSection === t.key ? '2px solid #E08B0B' : '2px solid transparent',
+              color: activeSection === t.key ? '#E08B0B' : '#8A93A3',
               transition: 'color 0.12s, border-color 0.12s',
               marginBottom: '-1px',
             }}
-            onMouseEnter={e => { if (activeSection !== t.key) e.currentTarget.style.color = '#94A3B8' }}
-            onMouseLeave={e => { if (activeSection !== t.key) e.currentTarget.style.color = '#64748B' }}
+            onMouseEnter={e => { if (activeSection !== t.key) e.currentTarget.style.color = '#5A6473' }}
+            onMouseLeave={e => { if (activeSection !== t.key) e.currentTarget.style.color = '#8A93A3' }}
           >
             {t.label}
             {t.badge && (
-              <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(240,180,41,0.12)', color: '#F59E0B' }}>
+              <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(240,180,41,0.12)', color: '#E08B0B' }}>
                 {t.badge}
               </span>
             )}
@@ -661,9 +661,9 @@ export function TabMarketIntel({ clientData }: Props) {
                 <div className="text-[10px] text-slate-500 mt-0.5">Origem e frescor dos dados por nicho</div>
               </div>
               <div className="flex items-center gap-3 text-[10px]">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#22C55E] inline-block" /> Dados reais (Tavily)</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#0E9E6E] inline-block" /> Dados reais (Tavily)</span>
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#F0B429] inline-block" /> Estimados (pesquisa)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#EF4444] inline-block" /> Indisponível</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#E1483F] inline-block" /> Indisponível</span>
               </div>
             </div>
 
@@ -685,7 +685,7 @@ export function TabMarketIntel({ clientData }: Props) {
                   </thead>
                   <tbody>
                     {auditData.map(row => {
-                      const color = row.dataSource === 'real_market_data' ? '#22C55E' : row.dataSource === 'estimated_data' ? '#F0B429' : '#EF4444'
+                      const color = row.dataSource === 'real_market_data' ? '#0E9E6E' : row.dataSource === 'estimated_data' ? '#F0B429' : '#E1483F'
                       const label = row.dataSource === 'real_market_data' ? 'real' : row.dataSource === 'estimated_data' ? 'estimado' : 'indisponível'
                       const isRefreshing = refreshingKey === row.key
                       const msg = refreshMsg?.key === row.key ? refreshMsg : null
@@ -694,7 +694,7 @@ export function TabMarketIntel({ clientData }: Props) {
                           <td className="py-2 px-2">
                             <div className="text-slate-300 text-xs truncate max-w-[200px]">{row.name}</div>
                             {msg && (
-                              <div className="text-[10px] mt-0.5" style={{ color: msg.ok ? '#22C55E' : '#EF4444' }}>
+                              <div className="text-[10px] mt-0.5" style={{ color: msg.ok ? '#0E9E6E' : '#E1483F' }}>
                                 {msg.ok ? '✓ ' : '✗ '}{msg.text}
                               </div>
                             )}
@@ -711,7 +711,7 @@ export function TabMarketIntel({ clientData }: Props) {
                           </td>
                           <td className="py-2 px-2 text-right text-[10px]">
                             {row.updatedAt ? (
-                              <span style={{ color: (row.freshDays ?? 99) > 35 ? '#EF4444' : '#22C55E' }}>
+                              <span style={{ color: (row.freshDays ?? 99) > 35 ? '#E1483F' : '#0E9E6E' }}>
                                 {row.freshDays}d atrás
                               </span>
                             ) : (
@@ -739,9 +739,9 @@ export function TabMarketIntel({ clientData }: Props) {
                 </table>
                 <div className="mt-4 flex items-center gap-4 text-[10px] text-slate-600">
                   <span>Total: {auditData.length} nichos</span>
-                  <span className="text-[#22C55E]">Real: {auditData.filter(r => r.dataSource === 'real_market_data').length}</span>
+                  <span className="text-[#0E9E6E]">Real: {auditData.filter(r => r.dataSource === 'real_market_data').length}</span>
                   <span className="text-[#F0B429]">Estimado: {auditData.filter(r => r.dataSource === 'estimated_data').length}</span>
-                  <span className="text-[#EF4444]">Indisponível: {auditData.filter(r => r.dataSource === 'unavailable').length}</span>
+                  <span className="text-[#E1483F]">Indisponível: {auditData.filter(r => r.dataSource === 'unavailable').length}</span>
                   {refreshingKey && <span className="text-[#F0B429] animate-pulse">· atualizando {refreshingKey}...</span>}
                 </div>
               </div>

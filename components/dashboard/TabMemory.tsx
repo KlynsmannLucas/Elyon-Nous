@@ -26,19 +26,19 @@ interface MemoryItem {
 }
 
 const TYPE_CONFIG: Record<MemoryType, { label: string; icon: string; color: string; bg: string; border: string }> = {
-  winning_creative:  { label: 'Criativo vencedor', icon: '🏆', color: '#22C55E', bg: 'rgba(34,197,94,0.07)',   border: 'rgba(34,197,94,0.2)' },
+  winning_creative:  { label: 'Criativo vencedor', icon: '🏆', color: '#0E9E6E', bg: 'rgba(34,197,94,0.07)',   border: 'rgba(34,197,94,0.2)' },
   losing_pattern:    { label: 'Padrão perdedor',   icon: '⚠️', color: '#FF4D4D', bg: 'rgba(255,77,77,0.07)',   border: 'rgba(255,77,77,0.2)' },
-  benchmark:         { label: 'Benchmark',          icon: '📊', color: '#38BDF8', bg: 'rgba(56,189,248,0.07)',  border: 'rgba(56,189,248,0.2)' },
-  audience_insight:  { label: 'Insight de público', icon: '👥', color: '#A78BFA', bg: 'rgba(167,139,250,0.07)', border: 'rgba(167,139,250,0.2)' },
+  benchmark:         { label: 'Benchmark',          icon: '📊', color: '#2C5FE0', bg: 'rgba(56,189,248,0.07)',  border: 'rgba(56,189,248,0.2)' },
+  audience_insight:  { label: 'Insight de público', icon: '👥', color: '#2C5FE0', bg: 'rgba(167,139,250,0.07)', border: 'rgba(167,139,250,0.2)' },
   copy_angle:        { label: 'Ângulo de copy',     icon: '✍️', color: '#F0B429', bg: 'rgba(240,180,41,0.07)',  border: 'rgba(240,180,41,0.2)' },
   funnel_insight:    { label: 'Insight de funil',   icon: '🔬', color: '#FB923C', bg: 'rgba(251,146,60,0.07)',  border: 'rgba(251,146,60,0.2)' },
-  general:           { label: 'Geral',              icon: '💡', color: '#94A3B8', bg: 'rgba(148,163,184,0.07)', border: 'rgba(148,163,184,0.2)' },
+  general:           { label: 'Geral',              icon: '💡', color: '#5A6473', bg: 'rgba(148,163,184,0.07)', border: 'rgba(148,163,184,0.2)' },
 }
 
 const CONFIDENCE_COLORS: Record<Confidence, string> = {
-  alta:  '#22C55E',
+  alta:  '#0E9E6E',
   media: '#F0B429',
-  baixa: '#94A3B8',
+  baixa: '#5A6473',
 }
 
 const EMPTY_FORM = {
@@ -143,7 +143,7 @@ export function TabMemory() {
             <span style={{ fontSize: '20px' }}>🧠</span>
             <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>{useViewMode().mode === 'simple' ? 'O Que Já Aprendemos' : 'Memória da Campanha'}</h2>
             <span style={{
-              fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#A78BFA',
+              fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#2C5FE0',
               background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)',
               borderRadius: '4px', padding: '2px 6px', letterSpacing: '0.06em',
             }}>RAG</span>
@@ -157,7 +157,7 @@ export function TabMemory() {
           style={{
             padding: '9px 18px', borderRadius: '9px', flexShrink: 0,
             background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)',
-            color: '#A78BFA', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+            color: '#2C5FE0', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
           }}
         >
           {showForm ? '✕ Cancelar' : '+ Novo aprendizado'}
@@ -170,7 +170,7 @@ export function TabMemory() {
           background: '#111114', border: '1px solid rgba(167,139,250,0.2)', borderRadius: '14px',
           padding: '20px 24px', marginBottom: '20px',
         }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#A78BFA', marginBottom: '16px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#2C5FE0', marginBottom: '16px' }}>
             + Registrar novo aprendizado
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
@@ -275,14 +275,14 @@ export function TabMemory() {
                 padding: '8px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
                 background: saving || !form.title.trim() ? 'rgba(255,255,255,0.04)' : 'rgba(167,139,250,0.12)',
                 border: `1px solid ${saving || !form.title.trim() ? 'rgba(255,255,255,0.06)' : 'rgba(167,139,250,0.3)'}`,
-                color: saving || !form.title.trim() ? 'rgba(255,255,255,0.25)' : '#A78BFA',
+                color: saving || !form.title.trim() ? 'rgba(255,255,255,0.25)' : '#2C5FE0',
                 cursor: saving || !form.title.trim() ? 'not-allowed' : 'pointer',
               }}
             >
               {saving ? '⏳ Salvando...' : '💾 Salvar'}
             </button>
             {saveMsg && (
-              <span style={{ fontSize: '12px', color: saveMsg.startsWith('✓') ? '#22C55E' : '#FF4D4D', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: '12px', color: saveMsg.startsWith('✓') ? '#0E9E6E' : '#FF4D4D', fontFamily: 'var(--font-mono)' }}>
                 {saveMsg}
               </span>
             )}
@@ -325,7 +325,7 @@ export function TabMemory() {
           style={{
             padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
             background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)',
-            color: '#A78BFA', cursor: 'pointer',
+            color: '#2C5FE0', cursor: 'pointer',
           }}
         >
           🔍 Buscar
@@ -357,7 +357,7 @@ export function TabMemory() {
               style={{
                 padding: '9px 20px', borderRadius: '9px', fontSize: '13px', fontWeight: 600,
                 background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)',
-                color: '#A78BFA', cursor: 'pointer',
+                color: '#2C5FE0', cursor: 'pointer',
               }}
             >
               + Registrar primeiro aprendizado
@@ -398,12 +398,12 @@ export function TabMemory() {
                         </span>
                       )}
                       {conf && (
-                        <span style={{ fontSize: '10px', color: CONFIDENCE_COLORS[conf] || '#94A3B8', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ fontSize: '10px', color: CONFIDENCE_COLORS[conf] || '#5A6473', fontFamily: 'var(--font-mono)' }}>
                           confiança {conf}
                         </span>
                       )}
                       {m.similarity !== undefined && (
-                        <span style={{ fontSize: '10px', color: '#A78BFA', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ fontSize: '10px', color: '#2C5FE0', fontFamily: 'var(--font-mono)' }}>
                           {(m.similarity * 100).toFixed(0)}% relevante
                         </span>
                       )}
@@ -435,7 +435,7 @@ export function TabMemory() {
                           <span key={t} style={{
                             fontSize: '10px', padding: '1px 7px', borderRadius: '4px',
                             background: 'rgba(167,139,250,0.07)', border: '1px solid rgba(167,139,250,0.15)',
-                            color: '#A78BFA',
+                            color: '#2C5FE0',
                           }}>#{t}</span>
                         ))}
                       </div>

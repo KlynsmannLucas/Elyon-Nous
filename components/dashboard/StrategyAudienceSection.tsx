@@ -12,9 +12,9 @@ import { SimpleSourceBadge } from './DataSourceBadge'
 import type { ClientData } from '@/lib/store'
 
 const C = {
-  surface: '#0F1629', elevated: '#131E35', border: 'rgba(255,255,255,0.06)',
-  purpleL: '#A78BFA', green: '#22C55E', gold: '#F59E0B', blue: '#38BDF8',
-  text1: '#F1F5F9', text2: '#94A3B8', text3: 'rgba(255,255,255,0.4)',
+  surface: '#FFFFFF', elevated: '#FBFCFD', border: 'rgba(255,255,255,0.06)',
+  purpleL: '#2C5FE0', green: '#0E9E6E', gold: '#E08B0B', blue: '#2C5FE0',
+  text1: '#161B26', text2: '#5A6473', text3: 'rgba(255,255,255,0.4)',
 }
 
 const card: React.CSSProperties = { background: C.elevated, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 16px' }
@@ -139,7 +139,7 @@ export default function StrategyAudienceSection({ strategy, clientData }: { stra
               <button onClick={generatePersona} disabled={genLoading} style={primaryBtn}>{genLoading ? '⏳ Gerando…' : '✨ Gerar persona'}</button>
             </div>
           )}
-          {genError && <div style={{ marginTop: 8, fontSize: 11, color: '#EF4444' }}>{genError}</div>}
+          {genError && <div style={{ marginTop: 8, fontSize: 11, color: '#E1483F' }}>{genError}</div>}
         </div>
 
         {/* ── Demografia ── */}
@@ -246,9 +246,9 @@ const chip = (color: string): React.CSSProperties => ({
 })
 const primaryBtn: React.CSSProperties = {
   fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
-  background: 'linear-gradient(135deg,#7C3AED,#A78BFA)', border: 'none', color: '#fff',
+  background: 'linear-gradient(135deg,#2C5FE0,#2C5FE0)', border: 'none', color: '#fff',
 }
 const ghostBtn: React.CSSProperties = {
   fontSize: 11, fontWeight: 600, padding: '6px 12px', borderRadius: 7, cursor: 'pointer',
-  background: 'transparent', border: '1px solid rgba(167,139,250,0.3)', color: '#A78BFA',
+  background: 'transparent', border: '1px solid rgba(167,139,250,0.3)', color: '#2C5FE0',
 }

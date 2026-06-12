@@ -8,7 +8,9 @@ import type { SavedClient } from '@/lib/store'
 import { TAB_SIMPLE_INTRO } from '@/lib/viewMode'
 import { enforceUserScope, clearUserScopeOnLogout } from '@/lib/userScope'
 import { SetupWizard, type WizardImportData } from '@/components/dashboard/SetupWizard'
-import { TabOverview }        from '@/components/dashboard/TabOverview'
+import { TabOverview } from '@/components/dashboard/TabOverview'
+import { Card, Badge, Button, SectionHead, Delta, SourceBadge } from '@/components/dashboard/v2'
+import { SidebarV2, TopbarV2, NousRail } from '@/components/dashboard/v2'
 import { TabSimpleOverview }  from '@/components/dashboard/TabSimpleOverview'
 import { TabSimpleDiagnostic } from '@/components/dashboard/TabSimpleDiagnostic'
 import { TabSimpleFunil }      from '@/components/dashboard/TabSimpleFunil'
@@ -315,7 +317,7 @@ function ClientSelector({
   ]
 
   return (
-    <div className="min-h-screen bg-[#080D1A] animate-fade-in">
+    <div className="min-h-screen bg-[bg-canvas] animate-fade-in">
       <div className="max-w-2xl mx-auto px-6 pt-10 pb-8">
 
         {/* Header: Logo + logout */}
@@ -343,7 +345,7 @@ function ClientSelector({
         </div>
 
         {/* Card do perfil do usuário */}
-        <div className="bg-[#0F1629] border border-[rgba(99,120,255,0.12)] rounded-2xl p-5 mb-8">
+        <div className="bg-[bg-paper] border border-[rgba(99,120,255,0.12)] rounded-2xl p-5 mb-8">
           <div className="flex items-center gap-4 mb-5">
             {/* Avatar */}
             <div
@@ -400,7 +402,7 @@ function ClientSelector({
               {savedClients.map((sc) => (
                 <div
                   key={sc.id}
-                  className="flex items-center gap-4 bg-[#0F1629] border border-[rgba(99,120,255,0.12)] rounded-2xl p-4 hover:border-[rgba(240,180,41,0.3)] transition-all group"
+                  className="flex items-center gap-4 bg-[bg-paper] border border-[rgba(99,120,255,0.12)] rounded-2xl p-4 hover:border-[rgba(240,180,41,0.3)] transition-all group"
                 >
                   {/* Ícone + info */}
                   <button
@@ -1025,14 +1027,14 @@ export default function DashboardBody() {
 
             {/* Value cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-              <div style={{ background: '#0F1629', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div style={{ background: 'bg-paper', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>💡</span>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#22C55E', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Por que isso importa</div>
                   <div style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.65 }}>{preview.benefit}</div>
                 </div>
               </div>
-              <div style={{ background: '#0F1629', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div style={{ background: 'bg-paper', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>🎯</span>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#A78BFA', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ideal para</div>
@@ -1087,7 +1089,7 @@ export default function DashboardBody() {
           <p style={{ color: '#64748B', fontSize: 14, marginBottom: 24 }}>
             Disponível no plano <strong style={{ color: '#F0B429' }}>{req.name}</strong> — {req.price}
           </p>
-          <div style={{ background: '#0F1629', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 12, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
+          <div style={{ background: 'bg-paper', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 12, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
             {info.items.map((item) => (
               <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', color: '#94A3B8', fontSize: 13 }}>
                 <span style={{ color: '#22C55E', fontSize: 12 }}>✓</span>
@@ -1230,7 +1232,7 @@ export default function DashboardBody() {
 
   // ── Aguardando Clerk carregar ──
   if (!isLoaded && !clerkTimeout) return (
-    <div style={{ minHeight: '100vh', background: '#080D1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: 'bg-canvas', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: '#64748B', fontSize: 14 }}>Carregando...</p>
     </div>
   )
@@ -1238,7 +1240,7 @@ export default function DashboardBody() {
   // ── Clerk falhou a inicializar em 5s — mostra tela de reconexão ──
   if (clerkTimeout && !isLoaded) {
     return (
-      <div className="min-h-screen bg-[#080D1A] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[bg-canvas] flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
           <span className="font-display font-bold text-2xl block mb-6" style={{
             background: 'linear-gradient(135deg, #F0B429, #FFD166)',
@@ -1273,7 +1275,7 @@ export default function DashboardBody() {
   // ── Sem acesso (trial expirado + sem plano) ──
   if (isLoaded && !hasAccess) {
     return (
-      <div className="min-h-screen bg-[#080D1A] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[bg-canvas] flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <span className="font-display font-bold text-3xl mb-6 block" style={{
             background: 'linear-gradient(135deg, #F0B429, #FFD166)',
@@ -1281,7 +1283,7 @@ export default function DashboardBody() {
           }}>
             ELYON
           </span>
-          <div className="bg-[#0F1629] border border-[rgba(99,120,255,0.12)] rounded-2xl p-8 mb-4">
+          <div className="bg-[bg-paper] border border-[rgba(99,120,255,0.12)] rounded-2xl p-8 mb-4">
             <div className="text-4xl mb-4">🔒</div>
             <h2 className="font-display text-2xl font-bold text-white mb-3">
               Seu período gratuito encerrou
@@ -1360,7 +1362,7 @@ export default function DashboardBody() {
   // ── Wizard ──
   if (view === 'wizard') {
     return (
-      <div className="min-h-screen bg-[#080D1A] animate-fade-in">
+      <div className="min-h-screen bg-[bg-canvas] animate-fade-in">
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-8">
           <div className="text-center mb-12">
             <span className="font-display font-bold text-3xl" style={{
@@ -1393,7 +1395,7 @@ export default function DashboardBody() {
   // ── Gerando estratégia ──
   if (isGenerating && clientData) {
     return (
-      <div className="min-h-screen bg-[#080D1A] animate-fade-in pt-16">
+      <div className="min-h-screen bg-[bg-canvas] animate-fade-in pt-16">
         <GeneratingScreen clientName={clientData.clientName} niche={clientData.niche} />
       </div>
     )
@@ -1402,7 +1404,7 @@ export default function DashboardBody() {
   // ── Erro ──
   if (genError) {
     return (
-      <div className="min-h-screen bg-[#080D1A] flex items-center justify-center">
+      <div className="min-h-screen bg-[bg-canvas] flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="text-4xl mb-4">⚠️</div>
           <h3 className="font-display text-xl font-bold text-white mb-2">Erro ao gerar estratégia</h3>
@@ -1418,7 +1420,7 @@ export default function DashboardBody() {
 
   // ── Dashboard completo ──
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#080D1A', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', background: 'bg-canvas', overflow: 'hidden' }}>
       {showTermsModal && (
         <TermsModal onAccept={() => {
           localStorage.setItem('elyon_terms_v1', '1')

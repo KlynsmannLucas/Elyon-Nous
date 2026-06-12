@@ -29,20 +29,20 @@ const T = {
   elevated: '#111D33',
   border:   'rgba(255,255,255,0.06)',
   borderMd: 'rgba(255,255,255,0.10)',
-  purple:   '#7C3AED',
-  purpleHi: '#A78BFA',
+  purple:   '#2C5FE0',
+  purpleHi: '#2C5FE0',
   purpleBg: 'rgba(124,58,237,0.08)',
-  text1:    '#F1F5F9',
-  text2:    '#94A3B8',
+  text1:    '#161B26',
+  text2:    '#5A6473',
   text3:    'rgba(255,255,255,0.32)',
   mono:     'var(--font-mono)',
 }
 
 const CATEGORIES = [
-  { tipo: 'oportunidade_mercado', icon: '◎', label: 'Mercado',    color: '#F59E0B' },
-  { tipo: 'audiencia_avancada',   icon: '◎', label: 'Audiência',  color: '#22C55E' },
-  { tipo: 'alocacao_orcamento',   icon: '◎', label: 'Orçamento',  color: '#38BDF8' },
-  { tipo: 'analise_competitiva',  icon: '◎', label: 'Competição', color: '#A78BFA' },
+  { tipo: 'oportunidade_mercado', icon: '◎', label: 'Mercado',    color: '#E08B0B' },
+  { tipo: 'audiencia_avancada',   icon: '◎', label: 'Audiência',  color: '#0E9E6E' },
+  { tipo: 'alocacao_orcamento',   icon: '◎', label: 'Orçamento',  color: '#2C5FE0' },
+  { tipo: 'analise_competitiva',  icon: '◎', label: 'Competição', color: '#2C5FE0' },
   { tipo: 'escala_inteligente',   icon: '◎', label: 'Escala',     color: '#FB923C' },
   { tipo: 'criativo_estrategico', icon: '◎', label: 'Criativo',   color: '#EC4899' },
 ]
@@ -207,7 +207,7 @@ function AccordionItem({ item, index, isOpen, onToggle }: {
                 padding: '4px 10px', borderRadius: '6px', transition: 'all 0.15s',
                 background: copied ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)',
                 border: `1px solid ${copied ? 'rgba(34,197,94,0.25)' : T.border}`,
-                color: copied ? '#22C55E' : T.text3,
+                color: copied ? '#0E9E6E' : T.text3,
               }}
               onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = T.text2; e.currentTarget.style.background = 'rgba(255,255,255,0.06)' } }}
               onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = T.text3; e.currentTarget.style.background = 'rgba(255,255,255,0.04)' } }}
@@ -234,7 +234,7 @@ function buildStaticIntel(niche: string, budget: number): IntelItem[] {
       icone: '◎',
       titulo: `Janela de menor CPL em ${niche}: períodos de menor concorrência`,
       categoria: 'Mercado',
-      categoriaColor: '#F59E0B',
+      categoriaColor: '#E08B0B',
       insight: `No nicho ${niche}, CPL tende a ser 20-40% menor fora dos períodos de alta concorrência (início do mês e vésperas de datas comerciais). Poucos gestores exploram este timing.`,
       dados: 'Semanas 2 e 3 do mês: -25% no CPM. Terça a quinta: CTR 15% acima da média. Horário 10h–12h: maior intenção de compra.',
       acao_concreta: 'Analisar custos por dia da semana nos últimos 30 dias. Concentrar 70% do budget nos dias de menor concorrência identificados. Testar campanhas com início às 6h da manhã.',
@@ -245,7 +245,7 @@ function buildStaticIntel(niche: string, budget: number): IntelItem[] {
       icone: '◎',
       titulo: 'Segmento de maior conversão: quem já pesquisou concorrentes',
       categoria: 'Audiência',
-      categoriaColor: '#22C55E',
+      categoriaColor: '#0E9E6E',
       insight: `Público que visitou páginas de concorrentes nos últimos 7 dias tem intenção de compra 3× maior que tráfego frio. No nicho ${niche}, este segmento raramente é explorado.`,
       dados: 'Remarketing de concorrentes: CPL 40-60% menor. Lookalike de compradores recentes: CVR 2× maior. Audiência por engajamento com conteúdo do nicho: CTR 2.5×.',
       acao_concreta: 'Criar audiência personalizada no Meta com visitantes de páginas de concorrentes. No Google, adicionar listas de remarketing em campanhas de busca (RLSA). Testar com 20% do budget.',
@@ -256,7 +256,7 @@ function buildStaticIntel(niche: string, budget: number): IntelItem[] {
       icone: '◎',
       titulo: `Redistribuição de R$${budget.toLocaleString('pt-BR')} para máximo ROAS`,
       categoria: 'Orçamento',
-      categoriaColor: '#38BDF8',
+      categoriaColor: '#2C5FE0',
       insight: `Com budget de R$${budget.toLocaleString('pt-BR')}/mês, a alocação mais eficiente para ${niche} prioriza captura de demanda existente (Search) antes de criar demanda (Social).`,
       dados: `Google Search: CPL 30% menor mas volume limitado. Meta Awareness→Conversão: maior volume. Remarketing: menor CPL de todos os canais. Alocação ideal: 40% Search + 45% Meta + 15% Remarketing.`,
       acao_concreta: `Alocar R$${Math.round(budget * 0.4).toLocaleString('pt-BR')} em Google Search, R$${Math.round(budget * 0.45).toLocaleString('pt-BR')} em Meta e R$${Math.round(budget * 0.15).toLocaleString('pt-BR')} em remarketing unificado.`,
@@ -267,7 +267,7 @@ function buildStaticIntel(niche: string, budget: number): IntelItem[] {
       icone: '◎',
       titulo: `Brecha competitiva em ${niche}: o que os concorrentes ignoram`,
       categoria: 'Competição',
-      categoriaColor: '#A78BFA',
+      categoriaColor: '#2C5FE0',
       insight: `A maioria dos anunciantes de ${niche} compete pelo mesmo público com os mesmos criativos. Existem segmentos subservidos que representam 30-40% da demanda não atendida.`,
       dados: 'Criativos genéricos do nicho têm CTR médio de 0.8-1.2%. Criativos com dor específica: CTR 2.5-4%. Campanhas com prova social (números reais): CVR 2× maior.',
       acao_concreta: 'Pesquisar os 3 maiores concorrentes na Biblioteca de Anúncios do Meta. Identificar ângulos NÃO usados. Criar 2 criativos com ângulo diferenciado e testar contra o padrão do nicho.',
@@ -376,7 +376,7 @@ export function TabIntelligence({ clientData }: Props) {
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '8px 18px', borderRadius: '10px',
             fontSize: '13px', fontWeight: 700, cursor: loading || !clientData ? 'not-allowed' : 'pointer',
-            background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
+            background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
             border: 'none', color: '#fff', opacity: loading || !clientData ? 0.6 : 1,
             transition: 'opacity 0.15s',
             flexShrink: 0,
@@ -447,7 +447,7 @@ export function TabIntelligence({ clientData }: Props) {
           {auditRealMetrics && (
             <span style={{
               fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
-              background: 'rgba(34,197,94,0.08)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.2)',
+              background: 'rgba(34,197,94,0.08)', color: '#0E9E6E', border: '1px solid rgba(34,197,94,0.2)',
             }}>📊 Dados reais da auditoria</span>
           )}
         </div>
@@ -475,7 +475,7 @@ export function TabIntelligence({ clientData }: Props) {
       )}
 
       {error && (
-        <div style={{ padding: '10px 14px', borderRadius: '8px', margin: '4px 0', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', fontSize: '12px', color: '#EF4444' }}>
+        <div style={{ padding: '10px 14px', borderRadius: '8px', margin: '4px 0', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', fontSize: '12px', color: '#E1483F' }}>
           {error}
         </div>
       )}

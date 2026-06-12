@@ -8,15 +8,15 @@ import type { BudgetAllocation, CampaignAllocation } from '@/app/api/budget-allo
 import { SimpleSourceBadge } from './DataSourceBadge'
 
 const ACTION_CONFIG = {
-  scale:    { color: '#22C55E', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.2)',   icon: '↑', label: 'Escalar' },
-  maintain: { color: '#38BDF8', bg: 'rgba(56,189,248,0.08)',  border: 'rgba(56,189,248,0.2)',  icon: '→', label: 'Manter' },
+  scale:    { color: '#0E9E6E', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.2)',   icon: '↑', label: 'Escalar' },
+  maintain: { color: '#2C5FE0', bg: 'rgba(56,189,248,0.08)',  border: 'rgba(56,189,248,0.2)',  icon: '→', label: 'Manter' },
   reduce:   { color: '#F0B429', bg: 'rgba(240,180,41,0.08)',  border: 'rgba(240,180,41,0.2)',  icon: '↓', label: 'Reduzir' },
   pause:    { color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)',   border: 'rgba(255,77,77,0.2)',   icon: '⏸', label: 'Pausar' },
-  test:     { color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)', icon: '🧪', label: 'Testar' },
+  test:     { color: '#2C5FE0', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)', icon: '🧪', label: 'Testar' },
 }
 
 function EfficiencyBar({ value }: { value: number }) {
-  const color = value >= 75 ? '#22C55E' : value >= 55 ? '#38BDF8' : value >= 35 ? '#F0B429' : '#FF4D4D'
+  const color = value >= 75 ? '#0E9E6E' : value >= 55 ? '#2C5FE0' : value >= 35 ? '#F0B429' : '#FF4D4D'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <div style={{
@@ -37,7 +37,7 @@ function BudgetChangeChip({ change, pct }: { change: number; pct: number }) {
   return (
     <span style={{
       fontSize: '10px', fontWeight: 700,
-      color: isPos ? '#22C55E' : '#FF4D4D',
+      color: isPos ? '#0E9E6E' : '#FF4D4D',
       background: isPos ? 'rgba(34,197,94,0.08)' : 'rgba(255,77,77,0.08)',
       border: `1px solid ${isPos ? 'rgba(34,197,94,0.2)' : 'rgba(255,77,77,0.2)'}`,
       borderRadius: '4px', padding: '2px 6px',
@@ -305,7 +305,7 @@ export function TabBudgetAllocator() {
           {metaImportMsg && (
             <div style={{
               fontSize: '11px', fontFamily: 'var(--font-mono)',
-              color: metaImportMsg.startsWith('✓') ? '#22C55E' : '#FF4D4D',
+              color: metaImportMsg.startsWith('✓') ? '#0E9E6E' : '#FF4D4D',
             }}>
               {metaImportMsg}
             </div>
@@ -476,7 +476,7 @@ export function TabBudgetAllocator() {
                 </div>
               )}
               {source === 'ai' && (
-                <div style={{ fontSize: '10px', color: '#22C55E', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ fontSize: '10px', color: '#0E9E6E', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
                   ✓ Análise com Claude AI
                 </div>
               )}
@@ -496,14 +496,14 @@ export function TabBudgetAllocator() {
                 label: 'Leads/mês projetado',
                 value: allocation.summary.projectedLeadsPerMonth,
                 sub: `CPL R$${allocation.summary.projectedAvgCPL}`,
-                color: '#22C55E',
+                color: '#0E9E6E',
                 highlight: allocation.summary.leadsGain > 0,
               },
               {
                 label: 'Ganho de leads',
                 value: `+${allocation.summary.leadsGain}`,
                 sub: `+${allocation.summary.leadsGainPct.toFixed(1)}%`,
-                color: allocation.summary.leadsGain > 0 ? '#22C55E' : '#64748B',
+                color: allocation.summary.leadsGain > 0 ? '#0E9E6E' : '#8A93A3',
               },
               {
                 label: 'Redução de CPL',
@@ -513,7 +513,7 @@ export function TabBudgetAllocator() {
                 sub: allocation.summary.cplReductionPct > 0
                   ? `-${allocation.summary.cplReductionPct.toFixed(1)}%`
                   : '',
-                color: allocation.summary.cplReduction > 0 ? '#22C55E' : '#64748B',
+                color: allocation.summary.cplReduction > 0 ? '#0E9E6E' : '#8A93A3',
               },
             ].map((card, i) => (
               <div key={i} style={{
@@ -532,12 +532,12 @@ export function TabBudgetAllocator() {
           {/* Action summary pills */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {allocation.summary.campaignsToScale > 0 && (
-              <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', color: '#22C55E' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', color: '#0E9E6E' }}>
                 ↑ {allocation.summary.campaignsToScale} para escalar
               </span>
             )}
             {allocation.summary.campaignsToMaintain > 0 && (
-              <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.2)', color: '#38BDF8' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.2)', color: '#2C5FE0' }}>
                 → {allocation.summary.campaignsToMaintain} para manter
               </span>
             )}
@@ -594,7 +594,7 @@ export function TabBudgetAllocator() {
                   <div style={{ fontSize: '12px', fontWeight: 600, color: camp.currentCPL > 0 ? '#fff' : 'rgba(255,255,255,0.25)' }}>
                     {camp.currentCPL > 0 ? `R$${camp.currentCPL}` : '—'}
                     {camp.projectedCPL > 0 && camp.projectedCPL !== camp.currentCPL && (
-                      <div style={{ fontSize: '10px', color: camp.projectedCPL < camp.currentCPL ? '#22C55E' : '#FF4D4D', marginTop: '1px' }}>
+                      <div style={{ fontSize: '10px', color: camp.projectedCPL < camp.currentCPL ? '#0E9E6E' : '#FF4D4D', marginTop: '1px' }}>
                         → R${camp.projectedCPL}
                       </div>
                     )}

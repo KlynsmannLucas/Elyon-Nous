@@ -14,9 +14,9 @@ interface Review {
 }
 
 const C = {
-  surface: '#0F1629', elevated: '#131E35', border: 'rgba(255,255,255,0.06)',
-  text1: '#F1F5F9', text2: '#94A3B8', text3: '#64748B',
-  amber: '#F59E0B', green: '#22C55E', red: '#EF4444', purpleL: '#A78BFA',
+  surface: '#FFFFFF', elevated: '#FBFCFD', border: 'rgba(255,255,255,0.06)',
+  text1: '#161B26', text2: '#5A6473', text3: '#8A93A3',
+  amber: '#E08B0B', green: '#0E9E6E', red: '#E1483F', purpleL: '#2C5FE0',
 }
 
 export default function CrossCheckPanel({
