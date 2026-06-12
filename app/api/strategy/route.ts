@@ -520,6 +520,14 @@ ${mat.description}
 - ROAS real: ${rm.avgROAS ? `${rm.avgROAS}×` : 'não calculado'}
 - CTR médio: ${rm.avgCTR ? `${rm.avgCTR}%` : 'não disponível'}
 - Campanhas ativas: ${rm.campaignCount || 0}
+${recentAudit._evolution ? (() => {
+        const ev = recentAudit._evolution
+        const parts: string[] = []
+        if (ev.scoreDelta != null && ev.scoreDelta !== 0) parts.push(`score ${ev.scoreDelta > 0 ? 'subiu' : 'caiu'} ${Math.abs(ev.scoreDelta)} pts`)
+        if (ev.cplDelta   != null && ev.cplDelta   !== 0) parts.push(`CPL ${ev.cplDelta > 0 ? 'piorou' : 'melhorou'} ${Math.abs(ev.cplDelta)}%`)
+        if (ev.leadsDelta != null && ev.leadsDelta !== 0) parts.push(`leads ${ev.leadsDelta > 0 ? '+' : ''}${ev.leadsDelta}%`)
+        return parts.length ? `\nEVOLUÇÃO vs auditoria anterior (${ev.sinceDate ? new Date(ev.sinceDate).toLocaleDateString('pt-BR') : ''}): ${parts.join(', ')}. Leve essa tendência em conta: se está melhorando, foque em escalar o que funciona; se piorando, priorize correção antes de escalar.` : ''
+      })() : ''}
 
 INSTRUÇÕES OBRIGATÓRIAS BASEADAS NA MATURIDADE:
 ${mat.stage === 'veterana' ? `- Esta é uma conta VETERANA. JAMAIS diga "fase inicial" ou "primeiros 30 dias são críticos" — isso não se aplica.
