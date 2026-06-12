@@ -1,20 +1,31 @@
 'use client'
-import { useEffect } from 'react'
 
-export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+import { useEffect } from 'react'
+import { Button } from '@/components/v2/Button'
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
   useEffect(() => {
     console.error('APP ERROR:', error)
   }, [error])
 
   return (
-    <div style={{ background: 'white', color: 'black', minHeight: '100vh', padding: 40 }}>
-      <h1 style={{ color: 'red', marginBottom: 16 }}>Erro capturado em app/error.tsx</h1>
-      <pre style={{ fontSize: 13, marginBottom: 24, whiteSpace: 'pre-wrap' }}>{error?.message}</pre>
-      <pre style={{ fontSize: 11, color: '#555', whiteSpace: 'pre-wrap' }}>{error?.stack}</pre>
-      {error?.digest && <p style={{ fontSize: 11, marginTop: 16 }}>Digest: {error.digest}</p>}
-      <button onClick={reset} style={{ marginTop: 24, padding: '12px 24px', background: '#F5A500', border: 'none', cursor: 'pointer', fontWeight: 700, borderRadius: 8 }}>
-        Tentar novamente
-      </button>
+    <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
+      <div className="bg-paper border border-line rounded-lg p-6 max-w-lg w-full text-center">
+        <h1 className="text-xl font-semibold text-red mb-3">Algo deu errado</h1>
+        <p className="text-ink-2 text-sm mb-4">
+          {error?.message || 'Ocorreu um erro inesperado.'}
+        </p>
+        {error?.digest && (
+          <p className="text-xs text-ink-3 mb-4">Digest: {error.digest}</p>
+        )}
+        <Button onClick={reset}>Tentar novamente</Button>
+      </div>
     </div>
   )
 }

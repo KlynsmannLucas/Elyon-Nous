@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ELYON NOUS — Redesign · "Terminal de dados premium" (light, editorial)
+   Sem roxo. Acentos: azul + verde. Tipo: Schibsted Grotesk + JetBrains Mono
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Canvas / surfaces ---------------------------------------------------- */
+  --canvas:      #F4F5F7;   /* app background, cool off-white          */
+  --canvas-2:    #EEF0F3;   /* recessed wells                           */
+  --paper:       #FFFFFF;   /* cards                                    */
+  --paper-2:     #FBFCFD;   /* subtle card variant                      */
+
+  /* Ink / text ----------------------------------------------------------- */
+  --ink:         #161B26;   /* primary text                             */
+  --ink-2:       #5A6473;   /* secondary                                */
+  --ink-3:       #8A93A3;   /* tertiary / captions                      */
+  --ink-4:       #AAB2BF;   /* faint                                    */
+
+  /* Lines ---------------------------------------------------------------- */
+  --line:        #E6E8EC;   /* hairline border                          */
+  --line-2:      #EEF0F3;   /* faint divider                            */
+  --line-strong: #D7DAE0;
+
+  /* Accents -------------------------------------------------------------- */
+  --blue:        #2C5FE0;   /* primary action / data                    */
+  --blue-600:    #1E4FD0;
+  --blue-500:    #3B82F6;
+  --blue-soft:   #EAF0FE;   /* tint bg                                   */
+  --blue-line:   #CBDBFB;
+
+  --green:       #0E9E6E;   /* positive / growth                        */
+  --green-600:   #0B855D;
+  --green-500:   #16B981;
+  --green-soft:  #E4F6EE;
+  --green-line:  #BBE7D3;
+
+  /* Status --------------------------------------------------------------- */
+  --red:         #E1483F;
+  --red-soft:    #FCEBEA;
+  --amber:       #E08B0B;
+  --amber-soft:  #FCF1DC;
+  --teal:        #0E9CB0;
+  --slate:       #64748B;
+
+  /* Data-viz categorical (no purple) ------------------------------------ */
+  --dv-1: #2C5FE0;  /* blue   */
+  --dv-2: #0E9E6E;  /* green  */
+  --dv-3: #0E9CB0;  /* teal   */
+  --dv-4: #E08B0B;  /* amber  */
+  --dv-5: #E1483F;  /* red    */
+  --dv-6: #64748B;  /* slate  */
+
+  /* Radius --------------------------------------------------------------- */
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r-md: 13px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-pill: 999px;
+
+  /* Shadow --------------------------------------------------------------- */
+  --sh-1: 0 1px 2px rgba(20,28,46,.04), 0 1px 3px rgba(20,28,46,.05);
+  --sh-2: 0 2px 6px rgba(20,28,46,.05), 0 6px 18px rgba(20,28,46,.06);
+  --sh-3: 0 8px 24px rgba(20,28,46,.10), 0 24px 56px rgba(20,28,46,.10);
+  --sh-pop: 0 12px 40px rgba(20,28,46,.16);
+
+  /* Fonts ---------------------------------------------------------------- */
+  --sans: "Schibsted Grotesk", system-ui, -apple-system, sans-serif; /* @kind font */
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace; /* @kind font */
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root { height: 100vh; overflow: hidden; }
+
+::selection { background: rgba(44,95,224,.16); }
+
+/* Scrollbars — slim, light ------------------------------------------------ */
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D3D7DE; border: 2px solid var(--canvas); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #BCC2CC; }
+
+/* Numeric / mono helper --------------------------------------------------- */
+.mono { font-family: var(--mono); font-feature-settings: "tnum" 1; letter-spacing: -.01em; }
+.tnum { font-variant-numeric: tabular-nums; }
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+/* Focus ------------------------------------------------------------------- */
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+
+button { font-family: inherit; cursor: pointer; }
+input, textarea { font-family: inherit; }
+
+/* Animations -------------------------------------------------------------- */
+@keyframes fadeUp   { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn  { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes slideInR { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+@keyframes pulseDot { 0%,100% { opacity: 1; transform: scale(1);} 50% { opacity:.5; transform: scale(.8);} }
+@keyframes drawLine { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+@keyframes shimmer  { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes spin     { to { transform: rotate(360deg); } }
+@keyframes orbPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(44,95,224,.32);} 70% { box-shadow: 0 0 0 12px rgba(44,95,224,0);} }
+@keyframes countUp  { from { opacity: 0; } to { opacity: 1; } }
+
+.fade-up   { animation: fadeUp .5s cubic-bezier(.22,1,.36,1) both; }
+.fade-in   { animation: fadeIn .45s ease both; }
+.scale-in  { animation: scaleIn .3s cubic-bezier(.22,1,.36,1) both; }
+.slide-in  { animation: slideInR .4s cubic-bezier(.22,1,.36,1) both; }
+.d1 { animation-delay: .05s; } .d2 { animation-delay: .1s; } .d3 { animation-delay: .15s; }
+.d4 { animation-delay: .2s; } .d5 { animation-delay: .25s; } .d6 { animation-delay: .3s; }
+.d7 { animation-delay: .35s; } .d8 { animation-delay: .4s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-delay: 0 !important; }
+}
+
+.pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-500); display: inline-block; animation: pulseDot 2s ease-in-out infinite; }
+
+/* Live status indicator --------------------------------------------------- */
+.glow-ok { box-shadow: 0 0 0 3px var(--green-soft); }
+
+/* Reusable text utilities ------------------------------------------------- */
+.clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Hide scrollbar where wanted --------------------------------------------- */
+.no-sb::-webkit-scrollbar { display: none; }
+.no-sb { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Responsive layout grids ------------------------------------------------- */
+.auto-kpi   { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.auto-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); }
+.split        { display: grid; gap: 16px; grid-template-columns: 1fr 1fr;       align-items: start; }
+.split-wide   { display: grid; gap: 16px; grid-template-columns: 1.5fr 1fr;     align-items: start; }
+.split-narrow { display: grid; gap: 16px; grid-template-columns: 1fr 1.35fr;    align-items: start; }
+.cols-3       { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0,1fr)); }
+@media (max-width: 920px) {
+  .split, .split-wide, .split-narrow { grid-template-columns: 1fr; }
+  .cols-3 { grid-template-columns: 1fr; }
+}
+
+/* Topbar responsive: drop secondary controls when tight ------------------- */
+@media (max-width: 1120px) { .tb-md { display: none !important; } }
+
+/* NOUS overlay drawer (narrow viewports) ---------------------------------- */
+.nous-backdrop {
+  position: fixed; inset: 0; z-index: 190; background: rgba(20,28,46,.28);
+  backdrop-filter: blur(2px); animation: fadeIn .2s ease both;
+}
+.nous-overlay {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 195;
+  box-shadow: -12px 0 48px rgba(20,28,46,.18);
+  animation: slideInR .28s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* Skeleton ---------------------------------------------------------------- */
+.skeleton {
+  background: linear-gradient(90deg, #EEF0F3 25%, #F6F7F9 50%, #EEF0F3 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px;
+}
