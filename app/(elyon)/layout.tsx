@@ -33,6 +33,14 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const [collapsed, setCollapsed] = useState(false)
   const [nousOpen, setNousOpen] = useState(false)
   const [wide, setWide] = useState(true)
+  const [credits, setCredits] = useState<number | undefined>(undefined)
+
+  // Créditos de IA restantes (topbar)
+  useEffect(() => {
+    fetch('/api/credits').then(r => (r.ok ? r.json() : null)).then(d => {
+      if (d && typeof d.remaining === 'number') setCredits(d.remaining)
+    }).catch(() => {})
+  }, [])
 
   // Restaura conexões OAuth do servidor (persistência por usuário) + processa
   // o retorno do OAuth (?oauth_success=1) feito a partir do v2.
@@ -86,6 +94,8 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
           clients={clients}
           activeClient={activeId}
           onClientChange={(id) => loadSavedClient(id)}
+          credits={credits}
+          onOpenCredits={() => router.push('/config')}
           onOpenNous={() => setNousOpen(true)}
         />
         <main className="flex-1 overflow-y-auto bg-canvas">{children}</main>
