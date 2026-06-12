@@ -9,21 +9,6 @@ import CrossCheckPanel from '@/components/dashboard/CrossCheckPanel'
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 type SubTab = 'visao' | 'auditoria'
 
-function Empty() {
-  return (
-    <div className="p-4 md:p-6">
-      <Card className="max-w-xl mx-auto mt-12">
-        <div className="text-center py-8">
-          <div className="w-16 h-16 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4"><span className="text-blue text-2xl">🔬</span></div>
-          <h2 className="text-lg font-semibold text-ink mb-2">Diagnóstico ainda não gerado</h2>
-          <p className="text-sm text-ink-2 mb-4">Rode a Análise Profunda para receber score de saúde, gargalos, oportunidades e desperdício de verba — com os dados reais da conta.</p>
-          <Button onClick={() => (window.location.href = '/dashboard?view=audit')}>Rodar Análise Profunda</Button>
-        </div>
-      </Card>
-    </div>
-  )
-}
-
 export default function DiagnosticoPage() {
   const clientData = useAppStore(s => s.clientData)
   const savedClients = useAppStore(s => s.savedClients)
@@ -31,14 +16,50 @@ export default function DiagnosticoPage() {
   const clientHealthScores = useAppStore(s => s.clientHealthScores)
   const [mounted, setMounted] = useState(false)
   const [tab, setTab] = useState<SubTab>('visao')
+  const [running, setRunning] = useState(false)
+  const [step, setStep] = useState('')
+  const [runErr, setRunErr] = useState('')
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
-  if (!mounted) return null
-  if (!key) return <Empty />
 
-  const audit: any = auditCache[key]?.[0]?.audit
-  if (!audit) return <Empty />
+  const run = async () => {
+    setRunning(true); setRunErr('')
+    const { runAuditForActiveClient } = await import('@/lib/runAudit')
+    const r = await runAuditForActiveClient({ onStep: setStep })
+    setRunning(false); setStep('')
+    if (!r.ok) setRunErr(r.error || 'Falha na auditoria.')
+  }
+
+  if (!mounted) return null
+
+  if (running) return (
+    <div className="p-4 md:p-6 min-h-[60vh] flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-14 h-14 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4 animate-pulse"><span className="text-blue text-2xl">🔬</span></div>
+        <p className="text-ink font-semibold">Rodando Análise Profunda…</p>
+        <p className="text-sm text-ink-3 mt-1">{step || 'Isso pode levar até 1 minuto.'}</p>
+      </div>
+    </div>
+  )
+
+  const audit: any = key ? auditCache[key]?.[0]?.audit : null
+
+  if (!key || !audit) return (
+    <div className="p-4 md:p-6">
+      <Card className="max-w-xl mx-auto mt-12">
+        <div className="text-center py-8">
+          <div className="w-16 h-16 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4"><span className="text-blue text-2xl">🔬</span></div>
+          <h2 className="text-lg font-semibold text-ink mb-2">{key ? 'Diagnóstico ainda não gerado' : 'Selecione um cliente'}</h2>
+          <p className="text-sm text-ink-2 mb-4">{key ? 'Rode a Análise Profunda para receber score de saúde, gargalos, oportunidades e desperdício — com os dados reais da conta conectada.' : 'Escolha um cliente no topo para diagnosticar.'}</p>
+          {key
+            ? <Button onClick={run}>Rodar Análise Profunda</Button>
+            : <Button onClick={() => (window.location.href = '/dashboard?new=1')}>Criar cliente</Button>}
+          {runErr && <div className="text-xs text-red mt-3">{runErr}</div>}
+        </div>
+      </Card>
+    </div>
+  )
 
   const hs = clientHealthScores[key]
   const score: number | null = hs?.score ?? audit.health_score ?? null
@@ -60,10 +81,14 @@ export default function DiagnosticoPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <header className="mb-5 animate-fade-up">
-        <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>Diagnóstico</h1>
-        <p className="text-sm text-ink-2 mt-0.5">{key}{audit._period ? ` · ${audit._period}` : ''}</p>
+      <header className="mb-5 flex items-start justify-between gap-3 flex-wrap animate-fade-up">
+        <div>
+          <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>Diagnóstico</h1>
+          <p className="text-sm text-ink-2 mt-0.5">{key}{audit._period ? ` · ${audit._period}` : ''}</p>
+        </div>
+        <Button size="sm" variant="soft" onClick={run}>↻ Atualizar auditoria</Button>
       </header>
+      {runErr && <div className="text-xs text-red mb-3">{runErr}</div>}
 
       <div className="mb-5 flex gap-1 border-b border-line">
         {tabs.map(t => (
