@@ -1,107 +1,101 @@
-// app/relatorios/page.tsx — Relatórios (export, portal)
+// app/(elyon)/relatorios/page.tsx — Relatórios: export PDF real + portal do cliente.
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, Badge, Button, SectionHead, SourceBadge } from '@/components/dashboard/v2'
-
-function LoadingState() {
-  return (
-    <div className="min-h-screen bg-canvas p-4 md:p-6 flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-12 h-12 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4 animate-pulse">
-          <span className="text-blue text-2xl">📋</span>
-        </div>
-        <p className="text-ink-2">Carregando...</p>
-      </div>
-    </div>
-  )
-}
+import { Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
 
 export default function RelatoriosPage() {
   const clientData = useAppStore(s => s.clientData)
   const savedClients = useAppStore(s => s.savedClients)
+  const auditCache = useAppStore(s => s.auditCache)
+  const strategyData = useAppStore(s => s.strategyData)
+  const actionPlanCache = useAppStore(s => s.actionPlanCache)
   const [mounted, setMounted] = useState(false)
-
+  const [loading, setLoading] = useState<'full' | 'executive' | null>(null)
+  const [err, setErr] = useState('')
   useEffect(() => { setMounted(true) }, [])
 
-  if (!mounted) return <LoadingState />
+  const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
+  if (!mounted) return null
 
-  const activeClient = clientData?.clientName || savedClients?.[0]?.clientData?.clientName
+  const latestAudit = auditCache[key]?.[0]?.audit
+  const hasData = !!(clientData && (latestAudit || strategyData))
 
-  const exports = [
-    { type: 'PDF', name: 'Resumo Executivo', last: '2025-06-10', status: 'pronto' },
-    { type: 'Excel', name: 'Dados Campanhas', last: '2025-06-08', status: 'pronto' },
-    { type: 'Slides', name: 'Apresentação Mensal', last: '2025-06-05', status: 'pronto' },
-  ]
-
-  const portalLink = `https://elyon.com.br/portal/${activeClient?.toLowerCase().replace(/\s+/g, '-')}`
+  const exportPDF = async (mode: 'full' | 'executive') => {
+    if (!clientData) { window.location.href = '/dashboard?new=1'; return }
+    setLoading(mode); setErr('')
+    try {
+      const { generatePDF } = await import('@/components/pdf/RelatorioPDF')
+      await generatePDF({
+        clientData: clientData ?? null,
+        strategy: strategyData?.strategy || {},
+        auditData: latestAudit ?? null,
+        actionItems: actionPlanCache[key] || [],
+      }, mode)
+    } catch (e) {
+      console.error('Erro PDF:', e)
+      setErr('Não foi possível gerar o PDF. Tente novamente.')
+    } finally {
+      setLoading(null)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-canvas p-4 md:p-6">
-      <header className="mb-6 animate-fade-up">
-        <h1 className="text-[23px] font-bold text-ink">Relatórios</h1>
-        <p className="text-sm text-ink-2 mt-1">{activeClient || 'Selecione um cliente'}</p>
+    <div className="p-4 md:p-6">
+      <header className="mb-5 animate-fade-up">
+        <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>Relatórios</h1>
+        <p className="text-sm text-ink-2 mt-0.5">{key || 'Selecione um cliente'}</p>
       </header>
 
-      {/* NOUS Summary */}
-      <Card className="mb-6 bg-gradient-to-br from-blue-soft to-green-soft border-blue-line animate-fade-up d2">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-blue flex items-center justify-center shrink-0">
-            <span className="text-white text-lg">◎</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-up">
+        {/* Exportar */}
+        <Card>
+          <SectionHead title="Exportar relatório" subtitle="Gera um PDF com os dados reais do cliente" icon={<span>⬇️</span>} />
+          {!hasData && <p className="text-xs text-ink-3 mb-3">Rode a Análise Profunda e gere a estratégia para um relatório completo.</p>}
+          <div className="space-y-2.5">
+            <button onClick={() => exportPDF('full')} disabled={loading !== null}
+              className="w-full flex items-center gap-3 p-3.5 rounded-sm border border-line bg-paper hover:border-blue-line transition-colors text-left disabled:opacity-60">
+              <span className="w-9 h-9 rounded-md bg-blue-soft text-blue flex items-center justify-center shrink-0">📄</span>
+              <div className="flex-1"><div className="text-sm font-semibold text-ink">Relatório completo</div><div className="text-xs text-ink-3">Auditoria + estratégia + plano de ação</div></div>
+              <span className="text-ink-3">{loading === 'full' ? '⏳' : '→'}</span>
+            </button>
+            <button onClick={() => exportPDF('executive')} disabled={loading !== null}
+              className="w-full flex items-center gap-3 p-3.5 rounded-sm border border-line bg-paper hover:border-blue-line transition-colors text-left disabled:opacity-60">
+              <span className="w-9 h-9 rounded-md bg-green-soft text-green-600 flex items-center justify-center shrink-0">⚡</span>
+              <div className="flex-1"><div className="text-sm font-semibold text-ink">Resumo executivo</div><div className="text-xs text-ink-3">Visão geral de KPIs e direção</div></div>
+              <span className="text-ink-3">{loading === 'executive' ? '⏳' : '→'}</span>
+            </button>
           </div>
-          <div>
-            <div className="text-sm font-semibold text-ink mb-1">Resumo do NOUS</div>
-            <p className="text-sm text-ink-2">
-              Seu ROAS melhorou 14% este mês. Continue otimizando os criativos para manter o crecimiento.
-            </p>
-          </div>
-        </div>
-      </Card>
+          {err && <div className="text-xs text-red mt-3">{err}</div>}
+        </Card>
 
-      {/* Exports */}
-      <Card className="mb-6 animate-fade-up d3">
-        <SectionHead title="Exportações" icon={<span>📥</span>} />
-        <div className="space-y-2 mt-3">
-          {exports.map((exp, i) => (
-            <div key={i} className="flex items-center justify-between p-3 bg-canvas-2 rounded-sm">
-              <div>
-                <div className="text-sm text-ink">{exp.name}</div>
-                <div className="text-xs text-ink-3">{exp.last}</div>
-              </div>
-              <div className="flex gap-2">
-                <Badge tone="good">Pronto</Badge>
-                <Button size="sm" variant="ghost">Baixar</Button>
-              </div>
-            </div>
+        {/* Portal do cliente */}
+        <Card>
+          <SectionHead title="Portal do cliente" subtitle="Compartilhe resultados por link, sem login" icon={<span>🔗</span>}
+            action={<Badge tone="good" dot>Disponível</Badge>} />
+          <p className="text-sm text-ink-2 mb-4">Gere um link público com um resumo dos resultados deste cliente — ideal para enviar ao cliente final, sem dar acesso ao painel.</p>
+          <Button variant="soft" onClick={() => (window.location.href = '/dashboard?view=portal')}>Configurar portal</Button>
+        </Card>
+      </div>
+
+      {/* Modelos */}
+      <Card className="mt-4 animate-fade-up">
+        <SectionHead title="Modelos de relatório" subtitle="Atalhos por finalidade" icon={<span>🗂️</span>} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { t: 'Executivo mensal', d: 'KPIs do período', m: 'executive' as const },
+            { t: 'Completo', d: 'Tudo em um PDF', m: 'full' as const },
+            { t: 'Diagnóstico', d: 'Auditoria da conta', m: 'full' as const },
+            { t: 'Estratégia', d: 'Plano de 90 dias', m: 'full' as const },
+          ].map((tpl, i) => (
+            <button key={i} onClick={() => exportPDF(tpl.m)} disabled={loading !== null}
+              className="text-left p-3.5 rounded-md border border-line bg-paper hover:shadow-card-hover hover:border-blue-line transition-all disabled:opacity-60">
+              <span className="w-8 h-8 rounded-md bg-blue-soft text-blue flex items-center justify-center mb-2.5">📑</span>
+              <div className="text-sm font-semibold text-ink">{tpl.t}</div>
+              <div className="text-xs text-ink-3 mt-0.5">{tpl.d}</div>
+            </button>
           ))}
-        </div>
-        <div className="mt-4 pt-3 border-t border-line text-center">
-          <Button variant="soft">Agendar relatório</Button>
-        </div>
-      </Card>
-
-      {/* Portal do Cliente */}
-      <Card className="animate-fade-up d4">
-        <SectionHead title="Portal do Cliente" icon={<span>🔗</span>} />
-        <p className="text-sm text-ink-2 mt-3">
-          Compartilhe um link seguro com seus clientes para acompanharem os resultados.
-        </p>
-        <div className="mt-4 p-4 bg-canvas-2 rounded-sm">
-          <div className="text-xs text-ink-3 mb-1">Link compartilhável</div>
-          <div className="flex gap-2">
-            <code className="flex-1 text-sm text-ink bg-paper p-2 rounded-sm truncate">{portalLink}</code>
-            <Button size="sm" onClick={() => navigator.clipboard.writeText(portalLink)}>Copiar</Button>
-          </div>
-        </div>
-        <div className="mt-4">
-          <div className="text-sm font-medium text-ink mb-2">Seções visíveis</div>
-          <div className="flex flex-wrap gap-2">
-            <Badge tone="good" dot>Resultados</Badge>
-            <Badge tone="good" dot>Campanhas</Badge>
-            <Badge tone="neutral">Ações</Badge>
-            <Badge tone="neutral">Financeiro</Badge>
-          </div>
         </div>
       </Card>
     </div>
