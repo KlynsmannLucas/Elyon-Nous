@@ -1,6 +1,6 @@
 'use client'
 
-type Source = 'meta' | 'google' | 'instagram' | 'tiktok' | 'linkedin' | 'youtube' | 'gmail' | 'chatgpt' | 'perplexity' | 'claude' | ' Nous' | 'internal'
+type Source = 'meta' | 'google' | 'instagram' | 'tiktok' | 'linkedin' | 'youtube' | 'gmail' | 'chatgpt' | 'perplexity' | 'claude' | 'Nous' | 'internal'
 
 interface SourceBadgeProps {
   source: Source

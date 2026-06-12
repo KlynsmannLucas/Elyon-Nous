@@ -31,7 +31,7 @@ export default function PlanoPage() {
 
   if (!mounted) return <LoadingState />
 
-  const activeClient = clientData?.clientName || savedClients?.[0]?.clientName
+  const activeClient = clientData?.clientName || savedClients?.[0]?.clientData?.clientName
   const actions = activeClient ? pendingActionsCache[activeClient] || [] : []
 
   const tabs: { key: SubTab; label: string }[] = [

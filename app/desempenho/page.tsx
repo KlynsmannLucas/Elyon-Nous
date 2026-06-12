@@ -56,7 +56,7 @@ export default function DesempenhoPage() {
 
   if (!mounted) return <LoadingState />
 
-  const activeClient = clientData?.clientName || savedClients?.[0]?.clientName
+  const activeClient = clientData?.clientName || savedClients?.[0]?.clientData?.clientName
 
   if (!activeClient) {
     return <EmptyState />

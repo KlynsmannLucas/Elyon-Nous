@@ -66,7 +66,7 @@ export function SidebarV2({
       <nav className="flex-1 py-4 overflow-y-auto">
         {/* 6 Areas */}
         <div className="px-2 space-y-1">
-          {(Object.keys(AREAS) as AreaKey[]).map(area => {
+          {(Object.keys(AREAS) as (keyof typeof AREAS)[]).map(area => {
             const item = AREAS[area]
             const isActive = activeArea === area
             return (
@@ -104,7 +104,7 @@ export function SidebarV2({
 
         {/* System Areas */}
         <div className="px-2 space-y-1">
-          {(Object.keys(SYSTEM_AREAS) as AreaKey[]).map(area => {
+          {(Object.keys(SYSTEM_AREAS) as (keyof typeof SYSTEM_AREAS)[]).map(area => {
             const item = SYSTEM_AREAS[area]
             const isActive = activeArea === area
             return (

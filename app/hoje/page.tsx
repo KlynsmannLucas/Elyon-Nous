@@ -80,7 +80,7 @@ export default function HojePage() {
 
   if (!mounted) return <LoadingState />
 
-  const activeClientName = clientData?.clientName || savedClients?.[0]?.clientName
+  const activeClientName = clientData?.clientName || savedClients?.[0]?.clientData?.clientName
   const healthScore = activeClientName ? clientHealthScores[activeClientName] : null
   const actions = activeClientName ? pendingActionsCache[activeClientName] || [] : []
 

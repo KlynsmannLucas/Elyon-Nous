@@ -2,12 +2,13 @@
 // Badge de origem do dado (Dados reais / Estimativa / Fallback IA)
 import { Badge } from './Badge'
 
-type SourceType = 'real' | 'estimate' | 'ai'
+type SourceType = 'real' | 'estimate' | 'benchmark' | 'ai'
 
 const LABELS: Record<SourceType, { label: string; tone: 'good' | 'warn' | 'neutral' }> = {
-  real:     { label: 'Dados reais', tone: 'good' },
-  estimate: { label: 'Estimativa', tone: 'warn' },
-  ai:       { label: 'Fallback IA', tone: 'neutral' },
+  real:      { label: 'Dados reais', tone: 'good' },
+  estimate:  { label: 'Estimativa', tone: 'warn' },
+  benchmark: { label: 'Benchmark', tone: 'warn' },
+  ai:        { label: 'Fallback IA', tone: 'neutral' },
 }
 
 interface SourceBadgeProps {

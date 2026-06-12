@@ -31,7 +31,7 @@ export default function DiagnosticoPage() {
 
   if (!mounted) return <LoadingState />
 
-  const activeClient = clientData?.clientName || savedClients?.[0]?.clientName
+  const activeClient = clientData?.clientName || savedClients?.[0]?.clientData?.clientName
   const audits = activeClient ? auditCache[activeClient] || [] : []
   const latestAudit = audits[0]
 

@@ -27,7 +27,7 @@ export default function MercadoPage() {
 
   if (!mounted) return <LoadingState />
 
-  const activeClient = clientData?.clientName || savedClients?.[0]?.clientName
+  const activeClient = clientData?.clientName || savedClients?.[0]?.clientData?.clientName
 
   // Mock data
   const marketIndex = { value: 72, trend: 5 }

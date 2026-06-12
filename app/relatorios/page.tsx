@@ -27,7 +27,7 @@ export default function RelatoriosPage() {
 
   if (!mounted) return <LoadingState />
 
-  const activeClient = clientData?.clientName || savedClients?.[0]?.clientName
+  const activeClient = clientData?.clientName || savedClients?.[0]?.clientData?.clientName
 
   const exports = [
     { type: 'PDF', name: 'Resumo Executivo', last: '2025-06-10', status: 'pronto' },
