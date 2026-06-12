@@ -6,12 +6,23 @@ const CRON_SECRET   = process.env.CRON_SECRET
 const RESEND_KEY    = process.env.RESEND_API_KEY
 const FROM_EMAIL    = 'ELYON <relatorios@elyon.app>'
 
+interface BriefingPulse {
+  score: number | null
+  grade: string | null
+  scoreDelta: number | null
+  cplDelta: number | null
+  topActions: string[]
+  summary: string | null
+  auditAgeDays: number | null
+}
+
 function buildBriefingHtml(entry: {
   email: string
   clientName: string
   niche: string
   budget: number
   agencyName?: string
+  pulse?: BriefingPulse | null
 }): string {
   const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
   const capDay = today.charAt(0).toUpperCase() + today.slice(1)
@@ -45,21 +56,41 @@ function buildBriefingHtml(entry: {
       <div style="font-size:12px;color:#A78BFA;">${entry.niche}</div>
     </div>
 
-    <!-- Checklist do dia -->
+    ${(() => {
+      const p = entry.pulse
+      // Sem auditoria ainda → nudge para gerar a primeira
+      if (!p || p.score == null) {
+        return `
+    <div style="background:#0F1629;border:1px solid rgba(245,158,11,0.25);border-radius:14px;padding:20px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:#F59E0B;margin-bottom:8px;">🔍 Rode sua Análise Profunda</div>
+      <div style="font-size:13px;color:#94A3B8;line-height:1.6;">Conecte sua conta e gere a auditoria para receber um briefing diário com score, evolução e a ação do dia.</div>
+    </div>`
+      }
+      const deltaChip = (label: string, v: number | null, goodWhenUp: boolean, suffix: string) => {
+        if (v == null || v === 0) return ''
+        const up = v > 0; const good = goodWhenUp ? up : !up
+        const color = good ? '#22C55E' : '#EF4444'
+        return `<span style="font-size:11px;font-weight:700;color:${color};background:${color}1a;border:1px solid ${color}33;border-radius:6px;padding:2px 8px;margin-right:6px;">${label} ${up ? '↑' : '↓'} ${up && label === 'Score' ? '+' : ''}${v}${suffix}</span>`
+      }
+      const scoreColor = p.score >= 80 ? '#22C55E' : p.score >= 60 ? '#F59E0B' : '#EF4444'
+      const actions = (p.topActions || []).slice(0, 3)
+      return `
+    <!-- Pulse do dia -->
     <div style="background:#0F1629;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:700;color:#F1F5F9;margin-bottom:14px;">📋 Checklist de hoje</div>
-      ${[
-        'Verificar CTR das campanhas ativas',
-        'Checar frequência dos anúncios',
-        'Revisar pacing do orçamento diário',
-        'Analisar novos leads gerados ontem',
-      ].map(item => `
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-          <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid rgba(255,255,255,0.15);flex-shrink:0;"></div>
-          <span style="font-size:13px;color:#94A3B8;">${item}</span>
-        </div>
-      `).join('')}
-    </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="font-size:30px;font-weight:800;color:${scoreColor};line-height:1;">${p.score}<span style="font-size:14px;color:#64748B;">/100</span></div>
+        <div>${deltaChip('Score', p.scoreDelta, true, '')}${deltaChip('CPL', p.cplDelta, false, '%')}</div>
+      </div>
+      ${p.summary ? `<div style="font-size:12px;color:#94A3B8;line-height:1.6;margin-bottom:14px;">${p.summary.slice(0, 240)}</div>` : ''}
+      ${actions.length ? `<div style="font-size:12px;font-weight:700;color:#F1F5F9;margin-bottom:10px;">⚡ Ações de hoje</div>` : ''}
+      ${actions.map(a => `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid rgba(167,139,250,0.4);flex-shrink:0;margin-top:1px;"></div>
+          <span style="font-size:13px;color:#CBD5E1;">${a}</span>
+        </div>`).join('')}
+      ${p.auditAgeDays != null && p.auditAgeDays >= 3 ? `<div style="font-size:11px;color:#F59E0B;margin-top:12px;">⏱ Última auditoria há ${p.auditAgeDays} dias — rode uma nova para dados frescos.</div>` : ''}
+    </div>`
+    })()}
 
     <!-- CTA -->
     <div style="text-align:center;margin-bottom:24px;">
@@ -128,11 +159,46 @@ export async function GET(req: Request) {
     if (!emailList.length) continue
 
     const meta = sub.metadata || {}
+    const clientName = sub.client_name || meta.clientName || 'Seu cliente'
+
+    // Memória viva no email: última auditoria deste cliente
+    let pulse: BriefingPulse | null = null
+    try {
+      const { data: lastAudit } = await supabaseAdmin
+        .from('audit_reports')
+        .select('score, grade, summary, raw_response, created_at')
+        .eq('user_id', sub.user_id)
+        .eq('client_name', clientName)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (lastAudit) {
+        const raw = (lastAudit.raw_response || {}) as any
+        const ev  = raw._evolution || {}
+        const actions: string[] = Array.isArray(raw.o_que_eu_faria_agora)
+          ? raw.o_que_eu_faria_agora.map((a: any) => a?.titulo).filter(Boolean)
+          : Array.isArray(raw.gargalos) ? raw.gargalos.map((g: any) => g?.titulo).filter(Boolean) : []
+        const ageDays = lastAudit.created_at ? Math.floor((Date.now() - new Date(lastAudit.created_at).getTime()) / 86400000) : null
+        pulse = {
+          score:        lastAudit.score ?? raw.health_score ?? null,
+          grade:        lastAudit.grade ?? raw.grade ?? null,
+          scoreDelta:   typeof ev.scoreDelta === 'number' ? ev.scoreDelta : null,
+          cplDelta:     typeof ev.cplDelta === 'number' ? ev.cplDelta : null,
+          topActions:   actions,
+          summary:      lastAudit.summary ?? raw.executive_summary ?? null,
+          auditAgeDays: ageDays,
+        }
+      }
+    } catch (e) {
+      console.warn('[morning-briefing] pulse fetch falhou:', (e as Error).message)
+    }
+
     const html = buildBriefingHtml({
       email:      emailList[0],
-      clientName: sub.client_name || meta.clientName || 'Seu cliente',
+      clientName,
       niche:      meta.niche || '',
       budget:     meta.budget || 0,
+      pulse,
     })
 
     for (const email of emailList) {
