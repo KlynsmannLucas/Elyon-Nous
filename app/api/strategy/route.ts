@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { buildNichePromptContext } from '@/lib/niche_prompts'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
+import { getClientMemoryContext } from '@/lib/memory'
 import { sanitizeText } from '@/lib/sanitize'
 
 export const maxDuration = 60
@@ -403,7 +404,7 @@ function buildFallbackStrategy(data: {
 }
 
 // ── Lógica principal separada para streaming ────────────────────────────────────
-async function runStrategy(body: any) {
+async function runStrategy(body: any, memoryContext = '') {
   const {
     clientName: _cn, niche: _ni, products, budget, objective: _obj, monthlyRevenue,
     nicheDetails, city, currentCPL, currentLeadSource, mainChallenge: _mc,
@@ -502,6 +503,7 @@ ${campaignHistory.map((c: any) => `
   Obs: ${c.notes || '—'}`).join('\n')}
 
 USE ESSES DADOS REAIS para calibrar CPL esperado, identificar canais a priorizar ou evitar, e personalizar o diagnóstico de crescimento. Não ignore o histórico.` : ''}
+${memoryContext}
 ${recentAudit?._realMetrics ? (() => {
         const rm = recentAudit._realMetrics
         const rSpend  = Number(rm.totalSpend  || 0)
@@ -768,7 +770,9 @@ export async function POST(req: NextRequest) {
       }, 3000)
 
       try {
-        const result = await runStrategy(body)
+        // RAG read-back: injeta memória do histórico aprendido no prompt
+        const memoryContext = await getClientMemoryContext(userId, body.clientName || body.name || '', body.niche || '')
+        const result = await runStrategy(body, memoryContext)
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(result)}\n\n`))
       } catch (err: any) {
         console.error('Strategy stream error:', err)

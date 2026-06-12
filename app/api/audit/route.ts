@@ -5,6 +5,7 @@ import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { sanitizeText } from '@/lib/sanitize'
 import { supabaseAdmin } from '@/lib/supabase'
 import { saveAuditReport, upsertPriorityActions, upsertHealthScore } from '@/lib/persistence'
+import { getClientMemoryContext } from '@/lib/memory'
 import { errMsg } from '@/lib/errMsg'
 
 // Auditoria pode chamar Claude + (fallback) Gemini + persistência — dá folga
@@ -21,7 +22,7 @@ async function saveAuditMemory(
 ) {
   if (!supabaseAdmin) return
   try {
-    const score = audit.healthScore ?? audit.overallScore ?? 0
+    const score = audit.health_score ?? audit.healthScore ?? audit.overallScore ?? 0
     const cpl   = realMetrics?.avgCPL ?? 0
     const spend = realMetrics?.totalSpend ?? 0
     const leads = realMetrics?.totalLeads ?? 0
@@ -30,43 +31,57 @@ async function saveAuditMemory(
 
     const rows: any[] = []
     const now = new Date().toISOString()
+    const period = now.slice(0, 7)
+    const base = { user_id: userId, client_name: clientName, niche, source: 'audit', period, tags: [] as string[], updated_at: now }
+    const campCPL = (c: any) => (c.leads > 0 ? Math.round(c.spend / c.leads) : null)
 
-    // 1. Benchmark da conta
+    // 1. Benchmark da conta (tendência de CPL ao longo do tempo)
     if (cpl > 0) {
       rows.push({
-        user_id: userId, client_name: clientName, niche,
-        memory_type: 'benchmark',
+        ...base, memory_type: 'benchmark',
         title: `Benchmark real — ${niche} — CPL R$${cpl}`,
         description: `Conta com gasto R$${spend} gerou ${leads} leads com CPL médio R$${cpl}. Score de saúde: ${score}/100.`,
         metrics: { cpl, spend, leads, roas: realMetrics?.avgROAS, ctr: realMetrics?.avgCTR },
-        confidence: 0.9, source: 'audit',
-        period: now.slice(0, 7), tags: [], updated_at: now,
+        confidence: 0.9,
       })
     }
 
-    // 2. Alertas críticos como padrões de perda
-    const alerts: any[] = audit.alerts ?? []
-    for (const alert of alerts.filter((a: any) => a.type === 'critical').slice(0, 3)) {
+    // 2. Campanhas VENCEDORAS (padrões que funcionam — nome recorrente vira aprendizado)
+    const vencedoras: any[] = audit._campanhasClassificadas?.vencedoras ?? []
+    for (const c of vencedoras.slice(0, 3)) {
+      const name = c.name || c.campaign_name
+      if (!name) continue
       rows.push({
-        user_id: userId, client_name: clientName, niche,
-        memory_type: 'losing_pattern',
-        title: alert.title || 'Problema crítico detectado',
-        description: alert.description || alert.message || '',
+        ...base, memory_type: 'winning_creative',
+        title: `Vencedora: ${name}`,
+        description: c.evidence || `Campanha "${name}" com bom desempenho (CPL R$${campCPL(c) ?? '—'}).`,
+        metrics: { cpl: campCPL(c), spend: c.spend, leads: c.leads },
+        confidence: 0.85,
+      })
+    }
+
+    // 3. Campanhas CRÍTICAS + gargalos (padrões que falham/reincidem)
+    const criticas: any[] = audit._campanhasClassificadas?.criticas ?? []
+    for (const c of criticas.slice(0, 3)) {
+      const name = c.name || c.campaign_name
+      if (!name) continue
+      rows.push({
+        ...base, memory_type: 'losing_pattern',
+        title: `Crítica: ${name}`,
+        description: c.evidence || `Campanha "${name}" com performance insuficiente (CPL R$${campCPL(c) ?? '—'}).`,
+        metrics: { cpl: campCPL(c), spend: c.spend, leads: c.leads },
+        confidence: 0.85,
+      })
+    }
+    const gargalos: any[] = audit.gargalos ?? []
+    for (const g of gargalos.slice(0, 2)) {
+      if (!g?.titulo) continue
+      rows.push({
+        ...base, memory_type: 'losing_pattern',
+        title: g.titulo,
+        description: g.descricao || g.impacto || g.titulo,
         metrics: { cpl, spend },
-        confidence: 0.85, source: 'audit', tags: [], updated_at: now,
-      })
-    }
-
-    // 3. Pontos fortes como padrões vencedores
-    const highlights: string[] = audit.highlights ?? audit.topInsights ?? []
-    if (highlights.length > 0) {
-      rows.push({
-        user_id: userId, client_name: clientName, niche,
-        memory_type: 'winning_creative',
-        title: `Padrão vencedor — ${niche}`,
-        description: highlights.slice(0, 3).join(' | '),
-        metrics: { cpl, roas: realMetrics?.avgROAS },
-        confidence: 0.8, source: 'audit', tags: [], updated_at: now,
+        confidence: 0.8,
       })
     }
 
@@ -691,6 +706,9 @@ ${prevList.slice(0, 3).map((p: any, i: number) => `- ${p.date ? new Date(p.date)
 Agora: investido R$${realMetrics.totalSpend.toLocaleString('pt-BR')}, ${realMetrics.totalLeads} leads, CPL R$${realMetrics.avgCPL ?? '—'}.
 INSTRUÇÃO: Comece o resumo executivo referenciando a EVOLUÇÃO real vs a auditoria anterior (melhorou ou piorou? em quê?). Aponte padrões que se repetem (ex.: mesma campanha vencedora/perdedora reaparecendo). Seja específico com os números do delta.` : ''
 
+    // RAG read-back: histórico aprendido (memória de auditorias anteriores)
+    const memoryContext = await getClientMemoryContext(userId, clientName, niche)
+
     // ── Classificação determinística de campanhas ─────────────────────────────
     // Roda ANTES do prompt para que a IA receba classificações pré-calculadas
     // e para que a resposta final inclua os dados mesmo no fallback.
@@ -987,6 +1005,7 @@ CPL médio real: R$${realCPL}
 
 ${benchmarkText ? `=== BENCHMARK DO NICHO (${niche}) ===\n${benchmarkText}` : ''}
 ${evolutionText}
+${memoryContext}
 
 === ESTRUTURA OBRIGATÓRIA DA AUDITORIA ===
 Siga EXATAMENTE esta estrutura no JSON. Analise os dados reais acima — NÃO use dados genéricos.
