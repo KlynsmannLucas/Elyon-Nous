@@ -42,7 +42,9 @@ const CSS = `
   --r:14px;--rl:20px;--rxl:28px;
 }
 html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:var(--f-body);-webkit-font-smoothing:antialiased;line-height:1.5;}
+/* !important: o globals.css do app (tema claro) define body{background:var(--canvas)} e
+   vazaria para a landing. Aqui forçamos o tema escuro próprio da LP. */
+body{background:var(--bg) !important;color:var(--text) !important;font-family:var(--f-body);-webkit-font-smoothing:antialiased;line-height:1.5;}
 
 /* ── NAV ── */
 .nav{
