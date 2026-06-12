@@ -417,6 +417,8 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
 
   const [refreshing, setRefreshing]   = useState(false)
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<number>>(new Set())
+  const [dailyDelta, setDailyDelta] = useState<any>(null)
+  const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
 
   const key          = clientData?.clientName || ''
   const auditHistory = auditCache[key]
@@ -434,6 +436,18 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
   const hasRealData  = !!(rm && rm.totalSpend > 0 && rm.totalLeads > 0)
   const hasAIStrategy = strategy && strategy.priority_ranking?.length > 0
   const metaAccount   = connectedAccounts.find(a => a.platform === 'meta')
+
+  // Delta day-over-day real (snapshots diários do cron). Degrada para null.
+  const dailyAccountId = selectedMetaAccountByClient[key] || metaAccount?.accountId
+  useEffect(() => {
+    if (!metaAccount) { setDailyDelta(null); return }
+    let active = true
+    fetch(`/api/metrics/daily${dailyAccountId ? `?accountId=${encodeURIComponent(dailyAccountId)}` : ''}`)
+      .then(r => r.ok ? r.json() : { delta: null })
+      .then(d => { if (active) setDailyDelta(d?.delta ?? null) })
+      .catch(() => { if (active) setDailyDelta(null) })
+    return () => { active = false }
+  }, [key, dailyAccountId, metaAccount])
   const lastAuditTime = Array.isArray(auditHistory) && auditHistory[0]?.createdAt
     ? new Date(auditHistory[0].createdAt).getTime() : null
 
@@ -703,6 +717,29 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
               <div style={{ fontSize: '13px', color: C.text1, fontWeight: 600, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {topAction ? <>Foco de hoje: {topAction}</> : 'Conecte sua conta e rode a Análise Profunda para começar.'}
               </div>
+              {dailyDelta && (() => {
+                const chips: { label: string; v: number | null; goodWhenUp: boolean; suffix: string }[] = [
+                  { label: 'Investido', v: dailyDelta.spendPct, goodWhenUp: true,  suffix: '%' },
+                  { label: 'Leads',     v: dailyDelta.leadsPct, goodWhenUp: true,  suffix: '%' },
+                  { label: 'CPL',       v: dailyDelta.cplPct,   goodWhenUp: false, suffix: '%' },
+                ].filter(c => typeof c.v === 'number')
+                if (!chips.length) return null
+                return (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                    <span style={{ fontSize: '9px', color: C.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>vs ontem:</span>
+                    {chips.map(c => {
+                      const up = (c.v as number) > 0
+                      const good = c.goodWhenUp ? up : !up
+                      const color = (c.v === 0) ? C.text3 : good ? C.green : C.red
+                      return (
+                        <span key={c.label} style={{ fontSize: '10px', fontWeight: 700, color, background: `${color}15`, border: `1px solid ${color}30`, borderRadius: '6px', padding: '1px 7px' }}>
+                          {c.label} {c.v === 0 ? '—' : `${up ? '↑ +' : '↓ '}${c.v}${c.suffix}`}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </div>
             {/* CTA */}
             <button
