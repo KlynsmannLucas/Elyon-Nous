@@ -662,6 +662,65 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
+      {/* ── Pulse do dia — gancho diário ──────────────────────────────────── */}
+      {clientData && (() => {
+        const ev = latestAudit?._evolution as any
+        const pendingTop = (pendingActionsCache[key] || []).filter((a: any) => a.status === 'pendente')[0]
+        const topAction = pendingTop?.title
+          || latestAudit?.o_que_eu_faria_agora?.[0]?.titulo
+          || strategy?.next_moves?.[0]
+          || (hasRealData ? 'Reveja as campanhas com CPL acima do benchmark.' : null)
+        const staleDays = lastAuditTime ? Math.floor((Date.now() - lastAuditTime) / 86400000) : null
+        const needAudit = staleDays == null || staleDays >= 3
+        const scColor = healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red
+        const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+        const scoreDelta = typeof ev?.scoreDelta === 'number' ? ev.scoreDelta : null
+        return (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(124,58,237,0.02))',
+            border: '1px solid rgba(124,58,237,0.22)', borderRadius: '14px', padding: '16px 20px',
+            display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '20px', alignItems: 'center',
+          }}>
+            {/* Score + evolução */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: scColor, lineHeight: 1 }}>{healthScore}</div>
+                <div style={{ fontSize: '9px', color: C.text3, marginTop: '2px' }}>SAÚDE</div>
+              </div>
+              {scoreDelta != null && scoreDelta !== 0 && (
+                <span style={{
+                  fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px',
+                  color: scoreDelta > 0 ? C.green : C.red,
+                  background: `${scoreDelta > 0 ? C.green : C.red}15`, border: `1px solid ${scoreDelta > 0 ? C.green : C.red}30`,
+                }}>{scoreDelta > 0 ? '↑ +' : '↓ '}{scoreDelta} vs última</span>
+              )}
+            </div>
+            {/* Ação de hoje */}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '10px', color: C.purpleL, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                ⚡ Pulse de {today}
+              </div>
+              <div style={{ fontSize: '13px', color: C.text1, fontWeight: 600, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {topAction ? <>Foco de hoje: {topAction}</> : 'Conecte sua conta e rode a Análise Profunda para começar.'}
+              </div>
+            </div>
+            {/* CTA */}
+            <button
+              onClick={() => onNavigate?.(needAudit ? 'analise' : 'acoes')}
+              style={{
+                fontSize: '12px', fontWeight: 700, padding: '8px 16px', borderRadius: '9px', cursor: 'pointer', flexShrink: 0,
+                background: needAudit ? 'linear-gradient(135deg,#F59E0B,#FBBF24)' : 'linear-gradient(135deg,#7C3AED,#A78BFA)',
+                border: 'none', color: needAudit ? '#1a1300' : '#fff', whiteSpace: 'nowrap',
+              }}
+            >
+              {needAudit
+                ? (staleDays == null ? '🔍 Rodar auditoria' : `🔍 Auditoria (${staleDays}d atrás)`)
+                : '✓ Ver ações do dia'}
+            </button>
+          </div>
+        )
+      })()}
+
       {/* ── Page header ─────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
         <div>
