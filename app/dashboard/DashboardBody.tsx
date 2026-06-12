@@ -1118,7 +1118,7 @@ export default function DashboardBody() {
         if (dashboardMode === 'simple') return wrap('Visão Geral', <TabSimpleOverview clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
         return wrap('Overview', <TabOverview strategy={strategy} analysis={analysis} clientData={clientData} onNavigate={(tab) => setActiveTab(tab as any)} />)
       }
-      case 'strategy':      return wrap('Estratégia',        <TabStrategy strategy={strategy} analysis={analysis} />)
+      case 'strategy':      return wrap('Estratégia',        <TabStrategy strategy={strategy} analysis={analysis} onRefresh={() => handleWizardComplete()} />)
       case 'diagnostic': {
         if (dashboardMode === 'simple') {
           return wrap('Saúde do Negócio', <TabSimpleBusinessHealth clientData={clientData} onNavigate={(t) => setActiveTab(t as any)} />)

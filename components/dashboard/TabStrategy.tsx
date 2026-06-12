@@ -37,6 +37,7 @@ const card: React.CSSProperties = {
 interface Props {
   strategy: Record<string, any>
   analysis: Record<string, any>
+  onRefresh?: () => void
 }
 
 // ── Utilitários ───────────────────────────────────────────────────────────────
@@ -315,13 +316,21 @@ function calcStrategicStatus(
 
 // ── Componente principal ───────────────────────────────────────────────────────
 
-export function TabStrategy({ strategy, analysis }: Props) {
+export function TabStrategy({ strategy, analysis, onRefresh }: Props) {
   const { clientData, auditCache, connectedAccounts, addPendingActions } = useAppStore()
+  const strategyData = useAppStore(s => s.strategyData)
 
   const cacheKey    = clientData?.clientName || ''
   const auditEntry  = auditCache[cacheKey]?.[0]
   const latestAudit = auditEntry?.audit
   const auditDate   = auditEntry?.createdAt
+
+  // Estratégia desatualizada: existe auditoria mais nova do que a geração da estratégia
+  const strategyGeneratedAt = strategyData?.generatedAt
+  const strategyStale = Boolean(
+    onRefresh && auditDate && strategyGeneratedAt &&
+    new Date(auditDate).getTime() > new Date(strategyGeneratedAt).getTime() + 60_000
+  )
 
   const realMetrics       = latestAudit?._realMetrics
   const hasRealMetrics    = Boolean(realMetrics?.totalSpend > 0 || realMetrics?.totalLeads > 0)
@@ -446,6 +455,33 @@ export function TabStrategy({ strategy, analysis }: Props) {
               color: C.purpleL,
             }}>
             Ir para Análise Profunda →
+          </button>
+        </div>
+      )}
+
+      {/* ── Estratégia desatualizada: nova auditoria mais recente que a estratégia ── */}
+      {strategyStale && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12,
+          background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)', flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>🔄</span>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>Sua estratégia está desatualizada</div>
+            <div style={{ fontSize: 11, color: C.text2, marginTop: 2 }}>
+              Há uma Análise Profunda mais recente ({auditDate && new Date(auditDate).toLocaleDateString('pt-BR')})
+              que a estratégia atual ({strategyGeneratedAt && new Date(strategyGeneratedAt).toLocaleDateString('pt-BR')}).
+              Atualize para refletir os dados mais novos da conta.
+            </div>
+          </div>
+          <button
+            onClick={onRefresh}
+            style={{
+              fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 8, cursor: 'pointer', flexShrink: 0,
+              background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', border: 'none', color: '#1a1300',
+            }}
+          >
+            ⚡ Atualizar estratégia
           </button>
         </div>
       )}
