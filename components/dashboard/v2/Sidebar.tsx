@@ -3,24 +3,25 @@
 'use client'
 
 import { useState } from 'react'
+import { Icon } from './Icon'
 
 // Nova arquitetura: 6 áreas por objetivo + 2 sistema
-export type AreaKey = 
+export type AreaKey =
   | 'hoje' | 'desempenho' | 'diagnostico' | 'mercado' | 'plano' | 'relatorios'
   | 'integracoes' | 'config'
 
 const AREAS = {
-  hoje:       { label: 'Hoje',       icon: '🏠', color: '#2C5FE0', target: '/hoje' },
-  desempenho: { label: 'Desempenho', icon: '📊', color: '#2C5FE0', target: '/desempenho' },
-  diagnostico:{ label: 'Diagnóstico',icon: '🔬', color: '#2C5FE0', target: '/diagnostico' },
-  mercado:   { label: 'Mercado',   icon: '🌐', color: '#0E9E6E', target: '/mercado' },
-  plano:    { label: 'Plano de Ação', icon: '✅', color: '#0E9E6E', target: '/plano' },
-  relatorios:{ label: 'Relatórios',icon: '📋', color: '#0E9CB0', target: '/relatorios' },
+  hoje:       { label: 'Hoje',       icon: 'home',  color: '#2C5FE0', target: '/hoje' },
+  desempenho: { label: 'Desempenho', icon: 'chart', color: '#2C5FE0', target: '/desempenho' },
+  diagnostico:{ label: 'Diagnóstico',icon: 'pulse', color: '#2C5FE0', target: '/diagnostico' },
+  mercado:   { label: 'Mercado',   icon: 'globe', color: '#0E9E6E', target: '/mercado' },
+  plano:    { label: 'Plano de Ação', icon: 'check', color: '#0E9E6E', target: '/plano' },
+  relatorios:{ label: 'Relatórios',icon: 'doc',   color: '#0E9CB0', target: '/relatorios' },
 }
 
 const SYSTEM_AREAS = {
-  integracoes:{ label: 'Integrações',icon: '🔌', color: '#64748B', target: '/integracoes' },
-  config:   { label: 'Config',    icon: '⚙️', color: '#64748B', target: '/config' },
+  integracoes:{ label: 'Integrações',icon: 'plug', color: '#64748B', target: '/integracoes' },
+  config:   { label: 'Config',    icon: 'gear', color: '#64748B', target: '/config' },
 }
 
 
@@ -84,7 +85,7 @@ export function SidebarV2({
                   }
                 `.trim()}
               >
-                <span className="text-base">{item.icon}</span>
+                <Icon name={item.icon} size={18} className="shrink-0" />
                 {!collapsed && (
                   <>
                     <span className="text-sm font-medium flex-1">{item.label}</span>
@@ -120,9 +121,9 @@ export function SidebarV2({
                   }
                 `.trim()}
               >
-                <span className="text-base opacity-60">{item.icon}</span>
+                <Icon name={item.icon} size={18} className="shrink-0 opacity-70" />
                 {!collapsed && (
-                  <span className="text-sm font-medium flex-1 opacity-60">{item.label}</span>
+                  <span className="text-sm font-medium flex-1 opacity-80">{item.label}</span>
                 )}
               </button>
             )
