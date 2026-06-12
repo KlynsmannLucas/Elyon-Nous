@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, Badge, Button, SectionHead, Delta, SourceBadge } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge } from '@/components/dashboard/v2'
 import CrossCheckPanel from '@/components/dashboard/CrossCheckPanel'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
@@ -104,7 +104,7 @@ export default function DiagnosticoPage() {
           {/* Health + summary */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card>
-              <SectionHead title="Saúde da conta" icon={<span>💚</span>} action={<SourceBadge source={hs?.source === 'ai' ? 'ai' : 'real'} />} />
+              <SectionHead title="Saúde da conta" icon={<Icon name="pulse" size={17} />} action={<SourceBadge source={hs?.source === 'ai' ? 'ai' : 'real'} />} />
               <div className="flex items-center gap-5">
                 <div className="relative w-24 h-24 shrink-0">
                   <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -134,7 +134,7 @@ export default function DiagnosticoPage() {
           {/* Gargalos */}
           {gargalos.length > 0 && (
             <Card>
-              <SectionHead title="Maiores gargalos" subtitle="O que está travando o crescimento" icon={<span>🚧</span>} />
+              <SectionHead title="Maiores gargalos" subtitle="O que está travando o crescimento" icon={<Icon name="alert" size={17} />} />
               <div className="space-y-2.5">
                 {gargalos.slice(0, 5).map((g, i) => (
                   <div key={i} className="flex items-start gap-3 p-3 rounded-sm" style={{ background: '#FCEBEA', border: '1px solid #F3CFCC' }}>
@@ -155,7 +155,7 @@ export default function DiagnosticoPage() {
           {/* Oportunidades */}
           {oportunidades.length > 0 && (
             <Card>
-              <SectionHead title="Oportunidades de escala" icon={<span>🚀</span>} />
+              <SectionHead title="Oportunidades de escala" icon={<Icon name="rocket" size={17} />} />
               <div className="grid md:grid-cols-2 gap-3">
                 {oportunidades.slice(0, 4).map((op, i) => (
                   <div key={i} className="p-3 rounded-sm bg-green-soft border border-green-line">
@@ -175,7 +175,7 @@ export default function DiagnosticoPage() {
           {/* Desperdício */}
           {waste.length > 0 && (
             <Card>
-              <SectionHead title="Desperdício de verba" subtitle={`${audit._wastePercent ?? 0}% do investimento · sem conversão`} icon={<span>💸</span>}
+              <SectionHead title="Desperdício de verba" subtitle={`${audit._wastePercent ?? 0}% do investimento · sem conversão`} icon={<Icon name="money" size={17} />}
                 action={<span className="font-mono text-base font-bold text-red">−{brl(wasteTotal)}</span>} />
               <div className="space-y-2">
                 {waste.slice(0, 6).map((c, i) => (
@@ -192,7 +192,7 @@ export default function DiagnosticoPage() {
           {/* Tracking */}
           {tracking.length > 0 && (
             <Card>
-              <SectionHead title="Checklist de tracking" subtitle="Confiabilidade dos dados de conversão" icon={<span>✅</span>} />
+              <SectionHead title="Checklist de tracking" subtitle="Confiabilidade dos dados de conversão" icon={<Icon name="check" size={17} />} />
               <div className="flex gap-2 flex-wrap">
                 {tv > 0 && <Badge tone="good" dot>{tv} verificados</Badge>}
                 {tu > 0 && <Badge tone="warn" dot>{tu} não verificados</Badge>}

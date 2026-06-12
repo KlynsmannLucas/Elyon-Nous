@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, Badge, Button, SectionHead, Delta, SourceBadge } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge } from '@/components/dashboard/v2'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
@@ -168,7 +168,7 @@ export default function HojePage() {
         <div className="lg:col-span-2 space-y-4">
           {/* Health */}
           <Card>
-            <SectionHead title="Saúde do negócio" subtitle="Índice geral da conta" icon={<span className="text-lg">💚</span>}
+            <SectionHead title="Saúde do negócio" subtitle="Índice geral da conta" icon={<Icon name="pulse" size={18} />}
               action={<SourceBadge source={hs?.source === 'ai' ? 'ai' : rm ? 'real' : 'benchmark'} />} />
             {score != null ? (
               <div className="flex items-center gap-6">
@@ -197,7 +197,7 @@ export default function HojePage() {
 
           {/* Priority actions */}
           <Card>
-            <SectionHead title={pro ? 'Ações prioritárias' : 'O que fazer agora'} subtitle={actions.length ? `${actions.length} priorizadas pelo NOUS` : undefined} icon={<span className="text-lg">🎯</span>} />
+            <SectionHead title={pro ? 'Ações prioritárias' : 'O que fazer agora'} subtitle={actions.length ? `${actions.length} priorizadas pelo NOUS` : undefined} icon={<Icon name="target" size={18} />} />
             {actions.length > 0 ? (
               <div className="divide-y divide-line-2">
                 {actions.map((a, i) => (
@@ -227,7 +227,7 @@ export default function HojePage() {
         {/* Alerts */}
         <div className="space-y-4">
           <Card>
-            <SectionHead title="Alertas" subtitle="O que precisa de atenção" icon={<span className="text-lg">🔔</span>}
+            <SectionHead title="Alertas" subtitle="O que precisa de atenção" icon={<Icon name="bell" size={18} />}
               action={alerts.length ? <Badge tone="bad" dot>{alerts.length}</Badge> : undefined} />
             {alerts.length > 0 ? (
               <div className="space-y-2.5">

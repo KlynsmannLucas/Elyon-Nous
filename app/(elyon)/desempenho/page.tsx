@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
@@ -122,7 +122,7 @@ export default function DesempenhoPage() {
             ))}
           </div>
           <Card>
-            <SectionHead title="Top campanhas" subtitle={camps.length ? `${camps.length} com investimento` : undefined} icon={<span>📊</span>} />
+            <SectionHead title="Top campanhas" subtitle={camps.length ? `${camps.length} com investimento` : undefined} icon={<Icon name="chart" size={17} />} />
             {camps.length > 0 ? <CampTable rows={camps.slice(0, 8)} /> : <p className="text-center py-8 text-ink-3 text-sm">Sem dados por campanha. Rode a Análise Profunda.</p>}
           </Card>
         </div>
@@ -130,14 +130,14 @@ export default function DesempenhoPage() {
 
       {tab === 'campanhas' && (
         <Card className="animate-fade-up">
-          <SectionHead title="Todas as campanhas" subtitle={`${camps.length} campanhas`} icon={<span>📡</span>} />
+          <SectionHead title="Todas as campanhas" subtitle={`${camps.length} campanhas`} icon={<Icon name="megaphone" size={17} />} />
           {camps.length > 0 ? <CampTable rows={camps} /> : <p className="text-center py-8 text-ink-3 text-sm">Nenhuma campanha.</p>}
         </Card>
       )}
 
       {tab === 'canais' && (
         <Card className="animate-fade-up">
-          <SectionHead title="Canais recomendados" subtitle="Ranking e alocação sugerida pela IA" icon={<span>🧩</span>} />
+          <SectionHead title="Canais recomendados" subtitle="Ranking e alocação sugerida pela IA" icon={<Icon name="layers" size={17} />} />
           {ranking.length > 0 ? (
             <div className="space-y-3">
               {ranking.map((ch: any, i: number) => (
@@ -162,7 +162,7 @@ export default function DesempenhoPage() {
 
       {tab === 'funil' && (
         <Card className="animate-fade-up">
-          <SectionHead title="Funil de conversão" subtitle="Da impressão ao lead" icon={<span>🔻</span>} />
+          <SectionHead title="Funil de conversão" subtitle="Da impressão ao lead" icon={<Icon name="funnel" size={17} />} />
           {rm && (rm.totalImpressions || rm.totalClicks || rm.totalLeads) ? (
             <div className="space-y-3 max-w-xl">
               {[

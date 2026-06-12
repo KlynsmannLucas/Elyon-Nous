@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
 
 export default function RelatoriosPage() {
   const clientData = useAppStore(s => s.clientData)
@@ -51,7 +51,7 @@ export default function RelatoriosPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-up">
         {/* Exportar */}
         <Card>
-          <SectionHead title="Exportar relatório" subtitle="Gera um PDF com os dados reais do cliente" icon={<span>⬇️</span>} />
+          <SectionHead title="Exportar relatório" subtitle="Gera um PDF com os dados reais do cliente" icon={<Icon name="download" size={17} />} />
           {!hasData && <p className="text-xs text-ink-3 mb-3">Rode a Análise Profunda e gere a estratégia para um relatório completo.</p>}
           <div className="space-y-2.5">
             <button onClick={() => exportPDF('full')} disabled={loading !== null}
@@ -72,7 +72,7 @@ export default function RelatoriosPage() {
 
         {/* Portal do cliente */}
         <Card>
-          <SectionHead title="Portal do cliente" subtitle="Compartilhe resultados por link, sem login" icon={<span>🔗</span>}
+          <SectionHead title="Portal do cliente" subtitle="Compartilhe resultados por link, sem login" icon={<Icon name="link" size={17} />}
             action={<Badge tone="good" dot>Disponível</Badge>} />
           <p className="text-sm text-ink-2 mb-4">Gere um link público com um resumo dos resultados deste cliente — ideal para enviar ao cliente final, sem dar acesso ao painel.</p>
           <Button variant="soft" onClick={() => (window.location.href = '/dashboard?view=portal')}>Configurar portal</Button>
@@ -81,7 +81,7 @@ export default function RelatoriosPage() {
 
       {/* Modelos */}
       <Card className="mt-4 animate-fade-up">
-        <SectionHead title="Modelos de relatório" subtitle="Atalhos por finalidade" icon={<span>🗂️</span>} />
+        <SectionHead title="Modelos de relatório" subtitle="Atalhos por finalidade" icon={<Icon name="grid" size={17} />} />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { t: 'Executivo mensal', d: 'KPIs do período', m: 'executive' as const },

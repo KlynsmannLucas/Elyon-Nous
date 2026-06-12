@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, Badge, Button, SectionHead, SourceBadge } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, SourceBadge } from '@/components/dashboard/v2'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
@@ -36,7 +36,7 @@ export default function MercadoPage() {
       {/* Você vs mercado */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 animate-fade-up">
         <Card hover>
-          <SectionHead title="CPL · você vs mercado" icon={<span>🎯</span>} action={<SourceBadge source={cpl != null ? 'real' : 'benchmark'} />} />
+          <SectionHead title="CPL · você vs mercado" icon={<Icon name="target" size={17} />} action={<SourceBadge source={cpl != null ? 'real' : 'benchmark'} />} />
           {bench ? (
             <>
               <div className="flex items-baseline gap-2">
@@ -54,12 +54,12 @@ export default function MercadoPage() {
           ) : <p className="text-sm text-ink-3">Nicho não mapeado.</p>}
         </Card>
         <Card hover>
-          <SectionHead title="Ticket médio do nicho" icon={<span>💰</span>} action={<SourceBadge source="benchmark" />} />
+          <SectionHead title="Ticket médio do nicho" icon={<Icon name="money" size={17} />} action={<SourceBadge source="benchmark" />} />
           <span className="text-2xl font-bold font-mono text-ink">{bench ? brl(bench.avg_ticket) : '—'}</span>
           <p className="text-xs text-ink-3 mt-1">{bench ? `Conversão lead→venda ~${Math.round(bench.cvr_lead_to_sale * 100)}%` : ''}</p>
         </Card>
         <Card hover>
-          <SectionHead title="Picos de demanda" icon={<span>📈</span>} action={<SourceBadge source="benchmark" />} />
+          <SectionHead title="Picos de demanda" icon={<Icon name="chart" size={17} />} action={<SourceBadge source="benchmark" />} />
           <div className="flex flex-wrap gap-1.5">
             {bench?.seasonality?.length ? bench.seasonality.map((m: string, i: number) => <Badge key={i} tone="warn">{m}</Badge>) : <span className="text-sm text-ink-3">—</span>}
           </div>
@@ -69,7 +69,7 @@ export default function MercadoPage() {
       {/* Melhores canais */}
       {bench?.best_channels?.length ? (
         <Card className="mb-4 animate-fade-up">
-          <SectionHead title="Melhores canais do nicho" subtitle="Onde esse mercado costuma performar" icon={<span>🧩</span>} action={<SourceBadge source="benchmark" />} />
+          <SectionHead title="Melhores canais do nicho" subtitle="Onde esse mercado costuma performar" icon={<Icon name="layers" size={17} />} action={<SourceBadge source="benchmark" />} />
           <div className="flex flex-wrap gap-2">
             {bench.best_channels.map((ch: string, i: number) => (
               <span key={i} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill bg-blue-soft border border-blue-line text-sm text-blue font-medium">
@@ -82,7 +82,7 @@ export default function MercadoPage() {
 
       {/* Concorrentes */}
       <Card className="animate-fade-up">
-        <SectionHead title="Concorrentes" subtitle={competitors.length ? `${competitors.length} analisados` : 'Análise da concorrência'} icon={<span>🏁</span>}
+        <SectionHead title="Concorrentes" subtitle={competitors.length ? `${competitors.length} analisados` : 'Análise da concorrência'} icon={<Icon name="flag" size={17} />}
           action={<SourceBadge source="real" />} />
         {competitors.length > 0 ? (
           <div className="space-y-3">

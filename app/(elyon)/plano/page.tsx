@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 type SubTab = 'execucao' | 'estrategia'
@@ -117,7 +117,7 @@ export default function PlanoPage() {
 
             {matrix && (
               <Card>
-                <SectionHead title="Matriz estratégica" subtitle="Decisão por iniciativa" icon={<span>🎯</span>} />
+                <SectionHead title="Matriz estratégica" subtitle="Decisão por iniciativa" icon={<Icon name="target" size={17} />} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {QUAD.map(q => (
                     <div key={q.k} className="rounded-md p-4" style={{ background: q.bg, border: `1px solid ${q.bd}` }}>
@@ -136,7 +136,7 @@ export default function PlanoPage() {
 
             {ta && (
               <Card>
-                <SectionHead title="Persona-alvo & público" icon={<span>🎯</span>} />
+                <SectionHead title="Persona-alvo & público" icon={<Icon name="target" size={17} />} />
                 <div className="flex flex-wrap items-baseline gap-2 mb-2">
                   <span className="text-base font-bold text-ink">{ta.persona_snapshot?.name}</span>
                   <span className="text-sm text-ink-2">{[ta.demographics?.age_range, ta.demographics?.gender, ta.demographics?.income_range].filter(Boolean).join(' · ')}</span>
@@ -157,7 +157,7 @@ export default function PlanoPage() {
 
             {ranking.length > 0 && (
               <Card>
-                <SectionHead title="Ranking de canais" subtitle="Onde investir" icon={<span>🧩</span>} />
+                <SectionHead title="Ranking de canais" subtitle="Onde investir" icon={<Icon name="layers" size={17} />} />
                 <div className="space-y-2">
                   {ranking.map((ch: any, i: number) => (
                     <div key={ch.channel || i} className="flex items-center gap-3 p-2.5 bg-canvas-2 rounded-sm">
@@ -172,7 +172,7 @@ export default function PlanoPage() {
 
             {plan && (
               <Card>
-                <SectionHead title="Plano 7 / 30 / 90 dias" icon={<span>📅</span>} />
+                <SectionHead title="Plano 7 / 30 / 90 dias" icon={<Icon name="calendar" size={17} />} />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[['7 dias', plan.seven_days, '#2C5FE0'], ['30 dias', plan.thirty_days, '#0E9CB0'], ['90 dias', plan.ninety_days, '#0E9E6E']].map(([label, items, c]: any) => (
                     <div key={label}>

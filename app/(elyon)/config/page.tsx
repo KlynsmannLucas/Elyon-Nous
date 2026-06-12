@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
 
 function LoadingState() {
   return (
@@ -36,7 +36,7 @@ export default function ConfigPage() {
 
       {/* Preferências */}
       <Card className="mb-6 animate-fade-up d2">
-        <SectionHead title="Preferências" icon={<span>🎛️</span>} />
+        <SectionHead title="Preferências" icon={<Icon name="gear" size={17} />} />
         <div className="space-y-4 mt-4">
           <div className="flex items-center justify-between">
             <div>
@@ -71,7 +71,7 @@ export default function ConfigPage() {
 
       {/* Perfil */}
       <Card className="mb-6 animate-fade-up d3">
-        <SectionHead title="Perfil" icon={<span>👤</span>} />
+        <SectionHead title="Perfil" icon={<Icon name="users" size={17} />} />
         <div className="space-y-3 mt-3">
           <div className="p-3 bg-canvas-2 rounded-sm">
             <div className="text-xs text-ink-3">Nome</div>
@@ -86,7 +86,7 @@ export default function ConfigPage() {
 
       {/* Danger Zone */}
       <Card className="animate-fade-up d4 border-red/20">
-        <SectionHead title="Zona de Perigo" icon={<span>⚠️</span>} />
+        <SectionHead title="Zona de Perigo" icon={<Icon name="alert" size={17} />} />
         <div className="space-y-3 mt-3">
           <div className="flex items-center justify-between">
             <div>

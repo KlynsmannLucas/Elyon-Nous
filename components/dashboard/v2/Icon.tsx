@@ -21,6 +21,14 @@ export const ICONS: Record<string, string> = {
   layers:'M12 3 3 8l9 5 9-5-9-5ZM3 13l9 5 9-5M3 18l9 5 9-5',
   money: 'M12 2v20M16 6.5C16 4.6 14.2 4 12 4S8 4.6 8 6.5 9.8 9 12 9.5 16 11.1 16 13s-1.8 2.5-4 2.5-4-.6-4-2.5',
   flag:  'M5 21V4M5 4h11l-1.5 3.5L16 11H5',
+  users: 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM22 19v-1a4 4 0 0 0-3-3.8M16 4.2a3.5 3.5 0 0 1 0 6.6',
+  calendar:'M7 3v3M17 3v3M3 8h18M5 6h14v15H5V6Z',
+  megaphone:'M3 11v2l3 1 2 5h2l-1-4 8 3V5L9 9H4a1 1 0 0 0-1 1ZM18 8a3 3 0 0 1 0 8',
+  download:'M12 3v12M7 11l5 5 5-5M5 21h14',
+  rocket:'M5 15c-1 1-1 4-1 4s3 0 4-1m6.5-6.5a8 8 0 0 0 2-7 8 8 0 0 0-7 2C7 9 6 12 6 12l6 6s3-1 3.5-3.5ZM14 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z',
+  link:  'M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5',
+  grid:  'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
+  spark: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18',
 }
 
 export function Icon({ name, size = 18, w = 1.8, className }: { name: string; size?: number; w?: number; className?: string }) {
