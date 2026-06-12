@@ -1,6 +1,6 @@
 // app/not-found.tsx — Página 404 customizada (v2 light)
 import Link from 'next/link'
-import { Button } from '@/components/v2/Button'
+import { Button } from '@/components/dashboard/v2'
 
 export default function NotFound() {
   return (
