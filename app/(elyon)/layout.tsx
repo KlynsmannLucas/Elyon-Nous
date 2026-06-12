@@ -21,21 +21,18 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const savedClients = useAppStore(s => s.savedClients)
   const clientData   = useAppStore(s => s.clientData)
   const loadSavedClient = useAppStore(s => s.loadSavedClient)
+  // Modo compartilhado com o app (persistido no store): pro↔avançado, simple↔simplificado
+  const dashboardMode = useAppStore(s => s.dashboardMode)
+  const setDashboardMode = useAppStore(s => s.setDashboardMode)
+  const mode: 'simplified' | 'advanced' = dashboardMode === 'pro' ? 'advanced' : 'simplified'
 
   const area = (pathname?.split('/')[1] || 'hoje') as AreaKey
   const activeArea: AreaKey = TITLES[area] ? area : 'hoje'
 
-  const [mode, setMode] = useState<'simplified' | 'advanced'>('advanced')
   const [period, setPeriod] = useState('30d')
   const [collapsed, setCollapsed] = useState(false)
   const [nousOpen, setNousOpen] = useState(false)
   const [wide, setWide] = useState(true)
-
-  // Persiste o modo
-  useEffect(() => {
-    try { const m = localStorage.getItem('elyon_v2_mode'); if (m === 'simplified' || m === 'advanced') setMode(m) } catch {}
-  }, [])
-  useEffect(() => { try { localStorage.setItem('elyon_v2_mode', mode) } catch {} }, [mode])
 
   // NOUS docked em telas largas (≥1280); drawer abaixo
   useEffect(() => {
@@ -61,7 +58,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
         <TopbarV2
           title={TITLES[activeArea]}
           mode={mode}
-          onModeChange={setMode}
+          onModeChange={(m) => setDashboardMode(m === 'advanced' ? 'pro' : 'simple')}
           period={period}
           onPeriodChange={setPeriod}
           clients={clients}
