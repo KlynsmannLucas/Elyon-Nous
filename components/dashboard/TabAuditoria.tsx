@@ -9,7 +9,11 @@ import { getBenchmark } from '@/lib/niche_benchmarks'
 import { errMsg } from '@/lib/errMsg'
 import CrossCheckPanel from './CrossCheckPanel'
 
-interface Props { clientData: ClientData | null }
+interface Props {
+  clientData: ClientData | null
+  autoRun?: boolean
+  onAutoRunConsumed?: () => void
+}
 
 // ─── Helpers visuais ─────────────────────────────────────────────────────────
 function fmt(n: number) {
@@ -354,7 +358,7 @@ interface UploadedFile {
 }
 
 // ─── Componente principal ────────────────────────────────────────────────────
-export function TabAuditoria({ clientData }: Props) {
+export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) {
   const { connectedAccounts, auditCache, setAuditCache, deleteAuditEntry, selectedMetaAccountByClient, selectedGoogleAccountByClient, addPendingActions, setClientHealthScore } = useAppStore()
   const clientKey = clientData?.clientName || ''
   const selectedMetaAccountId   = selectedMetaAccountByClient[clientKey]   || ''
@@ -615,6 +619,18 @@ export function TabAuditoria({ clientData }: Props) {
       setLoadingStep('')
     }
   }
+
+  // Fast-lane (Pilar C): dispara a auditoria automaticamente uma vez, assim que
+  // a conta Meta estiver disponível (após o retorno do OAuth).
+  const autoRanRef = useRef(false)
+  useEffect(() => {
+    if (!autoRun || autoRanRef.current) return
+    if (!clientData || !metaAccount || loading || audit) return
+    autoRanRef.current = true
+    onAutoRunConsumed?.()
+    handleAudit()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRun, metaAccount, clientData?.clientName, loading, audit])
 
   const sc = audit ? gradeColor[audit.grade] || '#F0B429' : '#F0B429'
 

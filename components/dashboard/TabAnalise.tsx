@@ -10,6 +10,8 @@ interface Props {
   clientData: ClientData | null
   planHasAudit: boolean
   onUpgrade: () => void
+  autoRun?: boolean
+  onAutoRunConsumed?: () => void
 }
 
 const SENSITIVE_KEYWORDS = [
@@ -38,7 +40,7 @@ const C = {
   text3:    '#64748B',
 }
 
-export function TabAnalise({ clientData, planHasAudit, onUpgrade }: Props) {
+export function TabAnalise({ clientData, planHasAudit, onUpgrade, autoRun, onAutoRunConsumed }: Props) {
   const [mode, setMode] = useState<'auditoria' | 'pipeline'>('auditoria')
   const sensitive = isSensitiveNiche(clientData?.niche)
 
@@ -115,7 +117,7 @@ export function TabAnalise({ clientData, planHasAudit, onUpgrade }: Props) {
       <div key={mode}>
         {mode === 'auditoria' ? (
           planHasAudit
-            ? <TabAuditoria clientData={clientData} />
+            ? <TabAuditoria clientData={clientData} autoRun={autoRun} onAutoRunConsumed={onAutoRunConsumed} />
             : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh' }}>
                 <div style={{ maxWidth: '360px', textAlign: 'center' }}>

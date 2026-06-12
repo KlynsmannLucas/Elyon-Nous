@@ -195,6 +195,24 @@ export function SetupWizard({ onComplete, initialData }: Props) {
   const [importDragOver, setImportDragOver] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
 
+  // ── Fast-lane (Pilar C): quem já anuncia conecta o Meta e recebe a auditoria
+  // automática, sem passar pelos 8 passos. initialData (edição) nunca usa fast-lane.
+  const [fastLane, setFastLane] = useState(false)
+  const fastLaneConnect = () => {
+    const cn = form.clientName.trim()
+    const nc = (form.niche === 'Outro' ? form.customNiche : form.niche).trim()
+    if (cn.length < 2 || nc.length < 2) { setError('Informe o nome do cliente e o nicho.'); return }
+    setClientData({ clientName: cn, niche: nc, products: [], budget: 3000, objective: 'leads', monthlyRevenue: 0 })
+    try { localStorage.setItem('elyon_fastlane', JSON.stringify({ clientName: cn, niche: nc })) } catch {}
+    const csrf = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now())
+    document.cookie = `oauth_csrf=${csrf}; path=/; max-age=300; samesite=lax`
+    const appId = process.env.NEXT_PUBLIC_META_APP_ID
+    const redirectUri = `${window.location.origin}/api/oauth/callback`
+    window.location.href =
+      `https://www.facebook.com/v19.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&scope=ads_read,ads_management,business_management&state=${encodeURIComponent(`meta:${csrf}`)}`
+  }
+
   const step      = wizardStep
   const niche     = form.niche === 'Outro' ? form.customNiche : form.niche
   const bench     = getBenchmark(niche)
@@ -340,7 +358,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <button
-              onClick={() => { setAdvertisingExp('yes'); setUserExperience('experienced') }}
+              onClick={() => { setAdvertisingExp('yes'); setUserExperience('experienced'); if (!initialData) setFastLane(true) }}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: '16px',
                 padding: '20px 22px', borderRadius: '14px', cursor: 'pointer',
@@ -384,6 +402,72 @@ export function SetupWizard({ onComplete, initialData }: Props) {
           </div>
           <p style={{ textAlign: 'center', fontSize: '11px', color: '#475569', marginTop: '20px' }}>
             Você poderá mudar isso depois a qualquer momento.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Fast-lane: conectar Meta e analisar (mínimo de campos) ───────────────
+  if (fastLane) {
+    const nicheList = NICHE_GROUPS.flatMap(g => g.niches)
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="w-full max-w-lg animate-fade-up">
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <div style={{ fontSize: '38px', marginBottom: '14px' }}>⚡</div>
+            <h2 style={{ fontSize: '23px', fontWeight: 800, color: '#F1F5F9', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+              Conecte o Meta e receba sua análise
+            </h2>
+            <p style={{ fontSize: '14px', color: '#64748B', margin: 0, lineHeight: 1.6 }}>
+              Só o essencial — a auditoria roda sozinha assim que conectar.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+            <input
+              className={inputClass()}
+              placeholder="Nome do cliente / empresa"
+              value={form.clientName}
+              onChange={(e) => setForm(f => ({ ...f, clientName: e.target.value }))}
+              autoFocus
+            />
+            <input
+              className={inputClass()}
+              placeholder="Nicho (ex: Odontologia, Loja de Móveis...)"
+              list="fastlane-niches"
+              value={form.niche === 'Outro' ? form.customNiche : form.niche}
+              onChange={(e) => setForm(f => ({ ...f, niche: e.target.value, customNiche: '' }))}
+            />
+            <datalist id="fastlane-niches">
+              {nicheList.map(n => <option key={n} value={n} />)}
+            </datalist>
+          </div>
+
+          {error && <div style={{ fontSize: '12px', color: '#EF4444', marginBottom: '12px' }}>{error}</div>}
+
+          <button
+            onClick={fastLaneConnect}
+            style={{
+              width: '100%', padding: '14px', borderRadius: '12px', cursor: 'pointer',
+              background: 'linear-gradient(135deg,#1877F2,#0a5dc2)', border: 'none', color: '#fff',
+              fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>📘</span> Conectar Meta Ads e analisar
+          </button>
+
+          <button
+            onClick={() => { setFastLane(false); setError('') }}
+            style={{
+              width: '100%', marginTop: '12px', padding: '10px', borderRadius: '10px', cursor: 'pointer',
+              background: 'transparent', border: '1px solid #2A2A30', color: '#94A3B8', fontSize: '13px', fontWeight: 600,
+            }}
+          >
+            Preencher manualmente (cadastro completo)
+          </button>
+          <p style={{ textAlign: 'center', fontSize: '11px', color: '#475569', marginTop: '16px', lineHeight: 1.5 }}>
+            Sem campanha no Meta? Use o cadastro completo e importe um CSV na Análise Profunda.
           </p>
         </div>
       </div>

@@ -649,10 +649,12 @@ export default function DashboardBody() {
         const list = Array.isArray(clients) ? clients : []
         setSavedClients(list)  // banco vazio → lista vazia (estado vazio, sem fallback local)
 
-        // Validação de ownership: se o clientData ativo não pertence à conta atual, limpa
+        // Validação de ownership: se o clientData ativo não pertence à conta atual, limpa.
+        // Exceção: cliente recém-criado pelo fast-lane (ainda não salvo no banco).
         const activeName = useAppStore.getState().clientData?.clientName
         const ownsActive = activeName ? list.some((c: any) => c.clientData?.clientName === activeName) : false
-        if (activeName && !ownsActive) {
+        const isFastlaneClient = fastlaneRef.current && activeName === fastlaneRef.current.clientName
+        if (activeName && !ownsActive && !isFastlaneClient) {
           useAppStore.setState({ clientData: null, strategyData: null })
         }
 
@@ -742,6 +744,13 @@ export default function DashboardBody() {
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('new') === '1'
   )
 
+  // Fast-lane (Pilar C): intenção "conectar Meta e analisar" guardada antes do
+  // redirect do OAuth. Sobrevive ao reload e ao DB-load (guarda de ownership).
+  const fastlaneRef = useRef<{ clientName: string; niche: string } | null>(
+    (() => { try { return JSON.parse(localStorage.getItem('elyon_fastlane') || 'null') } catch { return null } })()
+  )
+  const [autoRunAudit, setAutoRunAudit] = useState(false)
+
   // Onboarding por perfil/objetivo — mostra se ainda não foi feito
   const [showProfileGoal, setShowProfileGoal] = useState(false)
   useEffect(() => {
@@ -765,6 +774,30 @@ export default function DashboardBody() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+
+    // Retorno do fast-lane (OAuth Meta): garante o cliente, abre a Análise
+    // Profunda e dispara a auditoria automática.
+    if (fastlaneRef.current && params.get('oauth_success') !== '1') {
+      // Flag órfã (OAuth não concluído) — limpa p/ não misturar com conexões futuras
+      try { localStorage.removeItem('elyon_fastlane') } catch {}
+      fastlaneRef.current = null
+    }
+    if (fastlaneRef.current && params.get('oauth_success') === '1') {
+      window.history.replaceState({}, '', '/dashboard')
+      const fl = fastlaneRef.current
+      const cd = useAppStore.getState().clientData
+      if (!cd || cd.clientName !== fl.clientName) {
+        useAppStore.getState().setClientData({ clientName: fl.clientName, niche: fl.niche, products: [], budget: 3000, objective: 'leads', monthlyRevenue: 0 })
+      }
+      // Persiste o cliente recém-criado (savedClients + banco) p/ sobreviver a reloads
+      saveCurrentClient()
+      saveToDb()
+      setView('dashboard')
+      setActiveTab('analise')
+      setAutoRunAudit(true)
+      try { localStorage.removeItem('elyon_fastlane') } catch {}
+      return
+    }
 
     if (params.get('new') === '1') {
       window.history.replaceState({}, '', '/dashboard')
@@ -1132,7 +1165,7 @@ export default function DashboardBody() {
         if (dashboardMode === 'simple' && hasAudit && planLimits.hasAudit) {
           return wrap('Diagnóstico da Conta', <TabSimpleDiagnostic clientData={clientData} onNavigate={(t) => setActiveTab(t as any)} />)
         }
-        return wrap('Análise Profunda', <TabAnalise clientData={clientData} planHasAudit={planLimits.hasAudit} onUpgrade={goUpgrade} />)
+        return wrap('Análise Profunda', <TabAnalise clientData={clientData} planHasAudit={planLimits.hasAudit} onUpgrade={goUpgrade} autoRun={autoRunAudit} onAutoRunConsumed={() => setAutoRunAudit(false)} />)
       }
       case 'anuncios':      return wrap('Anúncios IA',       <TabAnuncios planHasConnections={planLimits.hasConnections} onUpgrade={goUpgrade} clientData={clientData} />)
       case 'audiencias':    return wrap('Audiências',        <TabAudiences niche={clientData?.niche} />)
