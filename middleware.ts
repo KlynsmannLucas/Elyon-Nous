@@ -23,9 +23,9 @@ export default clerkMiddleware((auth, req) => {
     return NextResponse.redirect(signInUrl)
   }
 
-  // Usuário logado tentando ir para sign-in/sign-up → manda pro dashboard
+  // Usuário logado tentando ir para sign-in/sign-up → manda pra home (redesign)
   if (userId && isAuthRoute(req)) {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+    return NextResponse.redirect(new URL('/hoje', req.url))
   }
 })
 

@@ -64,8 +64,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <ClerkProvider
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      afterSignInUrl="/dashboard"
-      afterSignUpUrl="/dashboard"
+      afterSignInUrl="/hoje"
+      afterSignUpUrl="/hoje"
     >
       <html lang="pt-BR" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${schibsted.variable}`}>
         <body className="bg-canvas text-ink font-body antialiased">
