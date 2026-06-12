@@ -567,6 +567,15 @@ export function TabAuditoria({ clientData }: Props) {
             campaigns: f.campaigns,
           })),
           auditSource: hasSourceConflict ? auditSource : 'auto',
+          // Memória viva: resumo das auditorias anteriores p/ a IA comparar evolução
+          previousAudits: (auditCache[clientData.clientName] || []).slice(0, 3).map((e: any) => ({
+            date:         e.createdAt,
+            health_score: e.audit?.health_score,
+            grade:        e.audit?.grade,
+            totalSpend:   e.audit?._realMetrics?.totalSpend,
+            totalLeads:   e.audit?._realMetrics?.totalLeads,
+            avgCPL:       e.audit?._realMetrics?.avgCPL,
+          })),
         }),
       })
 
@@ -1002,6 +1011,36 @@ export function TabAuditoria({ clientData }: Props) {
                   <span className="font-display text-3xl font-bold mb-0.5" style={{ color: sc }}>{audit.grade}</span>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1">Score de saúde</div>
+                {/* Memória viva: evolução vs auditoria anterior */}
+                {audit._evolution && (() => {
+                  const ev = audit._evolution as any
+                  const items: { label: string; delta: number | null; goodWhenUp: boolean }[] = [
+                    { label: 'Score', delta: ev.scoreDelta, goodWhenUp: true },
+                    { label: 'CPL',   delta: ev.cplDelta,   goodWhenUp: false },
+                    { label: 'Leads', delta: ev.leadsDelta, goodWhenUp: true },
+                  ]
+                  const shown = items.filter(i => typeof i.delta === 'number' && i.delta !== 0)
+                  if (!shown.length) return null
+                  return (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      {shown.map((i) => {
+                        const up = (i.delta as number) > 0
+                        const good = i.goodWhenUp ? up : !up
+                        const color = good ? '#22C55E' : '#EF4444'
+                        const sign = i.label === 'Score' ? (up ? `+${i.delta}` : `${i.delta}`) : `${up ? '+' : ''}${i.delta}%`
+                        return (
+                          <span key={i.label} className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                            style={{ color, background: `${color}15`, border: `1px solid ${color}30` }}>
+                            {i.label} {up ? '↑' : '↓'} {sign}
+                          </span>
+                        )
+                      })}
+                      <span className="text-[10px] text-slate-600">
+                        vs {ev.sinceDate ? new Date(ev.sinceDate).toLocaleDateString('pt-BR') : 'auditoria anterior'}
+                      </span>
+                    </div>
+                  )
+                })()}
                 {/* Situação atual — tradução humana do score */}
                 {(() => {
                   const s = audit.health_score as number

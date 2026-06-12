@@ -578,6 +578,7 @@ export async function POST(req: NextRequest) {
       datePreset        = 'last_30d',
       period            = null,
       auditSource       = 'auto',
+      previousAudits    = [],
     } = body
     const clientName = sanitizeText(_cn, 120)
     const niche      = sanitizeText(_ni, 120)
@@ -666,6 +667,29 @@ export async function POST(req: NextRequest) {
       campaignCount: allCampaigns.length,
       dataSource:    srcHasMeta && srcHasGoogle ? 'meta+google' : srcHasMeta ? 'meta' : srcHasGoogle ? 'google' : 'upload',
     }
+
+    // ── Memória viva: evolução vs auditorias anteriores deste cliente ──────────
+    // O frontend envia previousAudits (resumos das auditorias passadas). Calcula
+    // deltas para a IA referenciar a evolução e para a UI mostrar a tendência.
+    const prevList = Array.isArray(previousAudits) ? previousAudits.filter((p: any) => p && (p.health_score != null || p.avgCPL != null)) : []
+    const prevAudit = prevList[0] || null
+    const pct = (cur: number, prev: number) => (prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null)
+    const evolution = prevAudit ? {
+      sinceDate:      prevAudit.date ?? null,
+      cplDelta:       (realMetrics.avgCPL != null && prevAudit.avgCPL != null) ? pct(realMetrics.avgCPL, prevAudit.avgCPL) : null,
+      leadsDelta:     (prevAudit.totalLeads != null) ? pct(realMetrics.totalLeads, prevAudit.totalLeads) : null,
+      spendDelta:     (prevAudit.totalSpend != null) ? pct(realMetrics.totalSpend, prevAudit.totalSpend) : null,
+      prevScore:      prevAudit.health_score ?? null,
+      prevCPL:        prevAudit.avgCPL ?? null,
+      count:          prevList.length,
+    } : null
+
+    const evolutionText = prevList.length > 0 ? `
+
+EVOLUÇÃO HISTÓRICA DESTE CLIENTE (auditorias anteriores — use para comparar e mostrar progresso/regressão real):
+${prevList.slice(0, 3).map((p: any, i: number) => `- ${p.date ? new Date(p.date).toLocaleDateString('pt-BR') : `auditoria ${i + 1}`}: score ${p.health_score ?? '—'}/100${p.grade ? ` (${p.grade})` : ''}, investido R$${Math.round(p.totalSpend || 0).toLocaleString('pt-BR')}, ${p.totalLeads ?? 0} leads, CPL R$${p.avgCPL ?? '—'}`).join('\n')}
+Agora: investido R$${realMetrics.totalSpend.toLocaleString('pt-BR')}, ${realMetrics.totalLeads} leads, CPL R$${realMetrics.avgCPL ?? '—'}.
+INSTRUÇÃO: Comece o resumo executivo referenciando a EVOLUÇÃO real vs a auditoria anterior (melhorou ou piorou? em quê?). Aponte padrões que se repetem (ex.: mesma campanha vencedora/perdedora reaparecendo). Seja específico com os números do delta.` : ''
 
     // ── Classificação determinística de campanhas ─────────────────────────────
     // Roda ANTES do prompt para que a IA receba classificações pré-calculadas
@@ -962,6 +986,7 @@ Total de leads/conversões: ${totalLeads}
 CPL médio real: R$${realCPL}
 
 ${benchmarkText ? `=== BENCHMARK DO NICHO (${niche}) ===\n${benchmarkText}` : ''}
+${evolutionText}
 
 === ESTRUTURA OBRIGATÓRIA DA AUDITORIA ===
 Siga EXATAMENTE esta estrutura no JSON. Analise os dados reais acima — NÃO use dados genéricos.
@@ -1167,6 +1192,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
         }
         audit.generated_at             = new Date().toISOString()
         audit._realMetrics             = realMetrics
+        audit._evolution               = evolution ? { ...evolution, scoreDelta: (typeof audit.health_score === 'number' && evolution.prevScore != null) ? audit.health_score - evolution.prevScore : null } : null
         audit._campanhasClassificadas  = classifiedCampaigns
         audit._wasteCampaigns          = wasteCampaigns
         audit._wastePercent            = wastePercent
@@ -1236,6 +1262,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     const audit: Record<string, any> = geminiAudit
       ?? buildFallbackAudit(clientName, niche, allCampaigns, srcMetaTotals, srcGoogleTotals, bench!)
     audit._realMetrics             = realMetrics
+    audit._evolution               = evolution ? { ...evolution, scoreDelta: (typeof audit.health_score === 'number' && evolution.prevScore != null) ? audit.health_score - evolution.prevScore : null } : null
     audit._campanhasClassificadas  = classifiedCampaigns
     audit._wasteCampaigns          = wasteCampaigns
     audit._wastePercent            = wastePercent
