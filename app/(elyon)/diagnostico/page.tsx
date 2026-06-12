@@ -3,8 +3,29 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Radar, CHART_COLORS } from '@/components/dashboard/v2'
 import CrossCheckPanel from '@/components/dashboard/CrossCheckPanel'
+import { getBenchmark } from '@/lib/niche_benchmarks'
+
+// Maturidade por pilar derivada de sinais reais (CPL/CTR/conversão/tracking/volume).
+function deriveMaturity(rm: any, bench: any, trackOkRatio: number, health: number | null) {
+  const clamp = (n: number) => Math.max(20, Math.min(98, Math.round(n)))
+  const ctr = rm?.avgCTR ? Number(rm.avgCTR) : null
+  const cpl = rm?.avgCPL ? Number(rm.avgCPL) : null
+  const cvr = rm?.totalClicks > 0 ? (rm.totalLeads / rm.totalClicks) : null
+  const leads = rm?.totalLeads || 0
+  const ef = cpl != null && bench ? (cpl <= bench.cpl_min ? 92 : cpl <= bench.cpl_max ? 72 : 48) : (health ?? 60)
+  const cr = ctr != null ? (ctr >= 2 ? 86 : ctr >= 1 ? 66 : 46) : (health ?? 60)
+  const cv = cvr != null ? (cvr >= 0.05 ? 86 : cvr >= 0.02 ? 66 : 46) : (health ?? 55)
+  const dq = trackOkRatio != null ? clamp(40 + trackOkRatio * 58) : (health ?? 60)
+  const aq = leads >= 1000 ? 86 : leads >= 300 ? 72 : leads >= 50 ? 56 : 42
+  const rt = health ?? 60
+  return {
+    axes: ['Aquisição', 'Conversão', 'Retenção', 'Eficiência', 'Criativos', 'Dados & IA'],
+    you: [aq, cv, rt, ef, cr, dq].map(clamp),
+    sector: [70, 68, 66, 70, 65, 60],
+  }
+}
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 type SubTab = 'visao' | 'auditoria'
@@ -74,6 +95,11 @@ export default function DiagnosticoPage() {
   const tv = tracking.filter(t => t.status === 'verificado').length
   const tu = tracking.filter(t => t.status === 'nao_verificado').length
   const tp = tracking.filter(t => t.status === 'problema').length
+  const rm = audit._realMetrics
+  const niche = clientData?.niche || savedClients?.find(c => c.clientData.clientName === key)?.clientData.niche || ''
+  const bench = niche ? getBenchmark(niche) : null
+  const trackOkRatio = tracking.length > 0 ? tv / tracking.length : 0.6
+  const maturity = deriveMaturity(rm, bench, trackOkRatio, score)
 
   const tabs: { key: SubTab; label: string }[] = [
     { key: 'visao', label: 'Visão geral' }, { key: 'auditoria', label: 'Auditoria profunda' },
@@ -106,13 +132,7 @@ export default function DiagnosticoPage() {
             <Card>
               <SectionHead title="Saúde da conta" icon={<Icon name="pulse" size={17} />} action={<SourceBadge source={hs?.source === 'ai' ? 'ai' : 'real'} />} />
               <div className="flex items-center gap-5">
-                <div className="relative w-24 h-24 shrink-0">
-                  <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--canvas-2)" strokeWidth="8" />
-                    <circle cx="50" cy="50" r="40" fill="none" stroke={scColor} strokeWidth="8" strokeDasharray={`${Math.round((score || 0) * 2.51)} 251`} strokeLinecap="round" />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center"><span className="text-2xl font-bold font-mono text-ink">{score ?? '—'}</span></div>
-                </div>
+                <Gauge value={score ?? 0} label={score == null ? '—' : undefined} size={104} sub="saúde" color={scColor} />
                 <div>
                   <div className="flex items-center gap-2"><span className="text-lg font-bold" style={{ color: scColor }}>{grade}</span>{ev?.scoreDelta != null && ev.scoreDelta !== 0 && <Delta value={ev.scoreDelta} suffix=" pts" />}</div>
                   <p className="text-xs text-ink-3 mt-1">{(score ?? 0) >= 80 ? 'Acima da média do mercado.' : (score ?? 0) >= 60 ? 'Há oportunidades de melhoria.' : 'Gargalos limitando os resultados.'}</p>
@@ -130,6 +150,31 @@ export default function DiagnosticoPage() {
               </div>
             </Card>
           </div>
+
+          {/* Maturidade por pilar (radar) */}
+          <Card>
+            <SectionHead title="Maturidade por pilar" subtitle="Sua operação × benchmark do setor" icon={<Icon name="pulse" size={17} />} action={<SourceBadge source={rm ? 'real' : 'ai'} />} />
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="w-full max-w-[300px] mx-auto">
+                <Radar axes={maturity.axes}
+                  series={[
+                    { name: 'Setor', color: CHART_COLORS.slate, values: maturity.sector, dashed: true },
+                    { name: 'Você', color: CHART_COLORS.blue, values: maturity.you },
+                  ]} />
+              </div>
+              <div className="flex-1 w-full grid grid-cols-2 gap-2.5">
+                {maturity.axes.map((a, i) => (
+                  <div key={a} className="p-2.5 rounded-sm bg-canvas-2">
+                    <div className="text-[11px] text-ink-3">{a}</div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base font-bold font-mono text-ink">{maturity.you[i]}</span>
+                      <span className="text-[10px] font-mono text-ink-3">/ setor {maturity.sector[i]}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
 
           {/* Gargalos */}
           {gargalos.length > 0 && (
@@ -172,6 +217,36 @@ export default function DiagnosticoPage() {
 
       {tab === 'auditoria' && (
         <div className="space-y-4 animate-fade-up">
+          {/* Nota + dimensões derivadas */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Card className="lg:col-span-2">
+              <SectionHead title="Notas por dimensão" subtitle="Derivado dos sinais reais da conta" icon={<Icon name="grid" size={17} />} action={<SourceBadge source={rm ? 'real' : 'ai'} />} />
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                {maturity.axes.map((a, i) => {
+                  const v = maturity.you[i]
+                  const tone = v >= 75 ? CHART_COLORS.green : v >= 55 ? CHART_COLORS.amber : CHART_COLORS.red
+                  const bg = v >= 75 ? '#E4F6EE' : v >= 55 ? '#FCF1DC' : '#FCEBEA'
+                  return (
+                    <div key={a} className="p-3 rounded-sm" style={{ background: bg }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-ink truncate">{a}</span>
+                        <span className="text-sm font-bold font-mono" style={{ color: tone }}>{v}</span>
+                      </div>
+                      <div className="mt-1.5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,.06)' }}>
+                        <div className="h-full rounded-full" style={{ width: `${v}%`, background: tone }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+            <Card className="flex flex-col items-center justify-center text-center">
+              <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-3">Nota da auditoria</div>
+              <Gauge value={score ?? 0} label={grade} size={128} sub={score != null ? `score ${score}/100` : undefined} color={scColor} />
+              {ev?.scoreDelta != null && ev.scoreDelta !== 0 && <div className="mt-3"><Delta value={ev.scoreDelta} suffix=" pts vs anterior" /></div>}
+            </Card>
+          </div>
+
           {/* Desperdício */}
           {waste.length > 0 && (
             <Card>

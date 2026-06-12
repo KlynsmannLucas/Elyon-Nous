@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, HBar, CHART_COLORS } from '@/components/dashboard/v2'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 type SubTab = 'execucao' | 'estrategia'
@@ -158,14 +158,22 @@ export default function PlanoPage() {
             {ranking.length > 0 && (
               <Card>
                 <SectionHead title="Ranking de canais" subtitle="Onde investir" icon={<Icon name="layers" size={17} />} />
-                <div className="space-y-2">
-                  {ranking.map((ch: any, i: number) => (
-                    <div key={ch.channel || i} className="flex items-center gap-3 p-2.5 bg-canvas-2 rounded-sm">
-                      <span className="w-6 h-6 rounded-md bg-paper border border-line text-ink font-mono text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                      <span className="flex-1 text-sm font-medium text-ink">{ch.channel}</span>
-                      <span className="text-xs font-mono text-ink-3">{ch.budget_brl ? `${brl(ch.budget_brl)}/mês` : ''}{ch.cpl_avg ? ` · CPL ~${brl(ch.cpl_avg)}` : ''}</span>
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  {(() => {
+                    const maxB = Math.max(...ranking.map((c: any) => c.budget_brl || 0), 1)
+                    const palette = [CHART_COLORS.blue, CHART_COLORS.green, CHART_COLORS.teal, CHART_COLORS.amber, CHART_COLORS.slate]
+                    return ranking.map((ch: any, i: number) => (
+                      <div key={ch.channel || i}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="w-5 h-5 rounded-md bg-canvas-2 text-ink font-mono text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                          <span className="flex-1 text-sm font-medium text-ink truncate">{ch.channel}</span>
+                          <span className="text-xs font-mono text-ink-3">{ch.budget_brl ? `${brl(ch.budget_brl)}/mês` : ''}{ch.cpl_avg ? ` · CPL ~${brl(ch.cpl_avg)}` : ''}</span>
+                          {ch.roi_range && <Badge tone={i === 0 ? 'good' : i < 2 ? 'blue' : 'neutral'}>{i === 0 ? 'Escalar' : i < 2 ? 'Otimizar' : 'Manter'}</Badge>}
+                        </div>
+                        <HBar value={ch.budget_brl || 0} max={maxB} color={palette[i % palette.length]} h={8} />
+                      </div>
+                    ))
+                  })()}
                 </div>
               </Card>
             )}

@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, SourceBadge } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, SourceBadge, CHART_COLORS } from '@/components/dashboard/v2'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
@@ -44,10 +44,22 @@ export default function MercadoPage() {
                 <span className="text-sm font-mono text-ink-3">vs {brl(bench.cpl_min)}–{brl(bench.cpl_max)}</span>
               </div>
               {cpl != null && cplBenchMid != null && (
-                <div className="mt-2">
-                  <Badge tone={cpl <= bench.cpl_min ? 'good' : cpl <= bench.cpl_max ? 'warn' : 'bad'}>
-                    {cpl <= bench.cpl_min ? 'Abaixo do mercado ✓' : cpl <= bench.cpl_max ? 'Dentro do benchmark' : 'Acima do mercado ⚠'}
-                  </Badge>
+                <div className="mt-3">
+                  <div className="relative h-2 rounded-full bg-canvas-2 overflow-hidden">
+                    {/* faixa do benchmark */}
+                    <div className="absolute inset-y-0 rounded-full" style={{ left: '20%', right: '20%', background: 'var(--green-soft)' }} />
+                    {/* marcador do cliente: posiciona dentro da faixa min..max (clamp 6–94%) */}
+                    <div className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-paper"
+                      style={{ left: `${Math.max(4, Math.min(94, ((cpl - bench.cpl_min) / Math.max(1, bench.cpl_max - bench.cpl_min)) * 60 + 20))}%`, background: cpl <= bench.cpl_max ? CHART_COLORS.green : CHART_COLORS.red }} />
+                  </div>
+                  <div className="flex justify-between text-[10px] font-mono text-ink-3 mt-1">
+                    <span>{brl(bench.cpl_min)}</span><span>mercado</span><span>{brl(bench.cpl_max)}</span>
+                  </div>
+                  <div className="mt-2">
+                    <Badge tone={cpl <= bench.cpl_min ? 'good' : cpl <= bench.cpl_max ? 'warn' : 'bad'}>
+                      {cpl <= bench.cpl_min ? 'Abaixo do mercado ✓' : cpl <= bench.cpl_max ? 'Dentro do benchmark' : 'Acima do mercado ⚠'}
+                    </Badge>
+                  </div>
                 </div>
               )}
             </>

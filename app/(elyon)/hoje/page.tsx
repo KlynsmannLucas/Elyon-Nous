@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, CHART_COLORS } from '@/components/dashboard/v2'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
@@ -80,12 +80,18 @@ export default function HojePage() {
   const grade: string = hs?.grade ?? latestAudit?.grade ?? '—'
   const scColor = score == null ? '#8A93A3' : score >= 70 ? '#0E9E6E' : score >= 50 ? '#E08B0B' : '#E1483F'
 
+  // Série honesta de 2 pontos (período anterior → atual), reconstruída do delta real.
+  const spark = (cur: number, deltaPct: number | null | undefined): number[] | null => {
+    if (cur == null || deltaPct == null || deltaPct === 0) return null
+    const prevVal = cur / (1 + deltaPct / 100)
+    return [prevVal, cur]
+  }
   const kpis = rm ? [
-    { label: 'Investimento', value: brl(rm.totalSpend), trend: prev?.spendDelta ?? null, inverse: false },
-    { label: 'Leads', value: int(rm.totalLeads), trend: prev?.leadsDelta ?? null, inverse: false },
-    { label: 'ROAS', value: rm.avgROAS ? `${rm.avgROAS}x` : '—', trend: null, inverse: false },
-    { label: 'CPL', value: rm.avgCPL ? brl(rm.avgCPL) : '—', trend: prev?.cplDelta ?? null, inverse: true },
-    { label: 'CTR', value: rm.avgCTR ? `${rm.avgCTR}%` : '—', trend: null, inverse: false },
+    { label: 'Investimento', value: brl(rm.totalSpend), trend: prev?.spendDelta ?? null, inverse: false, series: spark(rm.totalSpend, prev?.spendDelta), up: (prev?.spendDelta ?? 0) >= 0 },
+    { label: 'Leads', value: int(rm.totalLeads), trend: prev?.leadsDelta ?? null, inverse: false, series: spark(rm.totalLeads, prev?.leadsDelta), up: (prev?.leadsDelta ?? 0) >= 0 },
+    { label: 'ROAS', value: rm.avgROAS ? `${rm.avgROAS}x` : '—', trend: null, inverse: false, series: null, up: true },
+    { label: 'CPL', value: rm.avgCPL ? brl(rm.avgCPL) : '—', trend: prev?.cplDelta ?? null, inverse: true, series: spark(rm.avgCPL, prev?.cplDelta), up: (prev?.cplDelta ?? 0) <= 0 },
+    { label: 'CTR', value: rm.avgCTR ? `${rm.avgCTR}%` : '—', trend: null, inverse: false, series: null, up: true },
   ].slice(0, pro ? 5 : 4) : []
 
   const actions = (pendingActionsCache[key] || [])
@@ -152,11 +158,12 @@ export default function HojePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {kpis.map(kpi => (
               <Card key={kpi.label} padding="sm" hover>
-                <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">{kpi.label}</div>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[20px] font-bold font-mono text-ink" style={{ letterSpacing: '-0.02em' }}>{kpi.value}</span>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">{kpi.label}</span>
                   {kpi.trend != null && kpi.trend !== 0 && <Delta value={kpi.trend} inverse={kpi.inverse} />}
                 </div>
+                <span className="text-[20px] font-bold font-mono text-ink block" style={{ letterSpacing: '-0.02em' }}>{kpi.value}</span>
+                {kpi.series && <div className="mt-2"><Sparkline data={kpi.series} h={28} color={kpi.up ? CHART_COLORS.green : CHART_COLORS.red} /></div>}
               </Card>
             ))}
           </div>
@@ -172,13 +179,7 @@ export default function HojePage() {
               action={<SourceBadge source={hs?.source === 'ai' ? 'ai' : rm ? 'real' : 'benchmark'} />} />
             {score != null ? (
               <div className="flex items-center gap-6">
-                <div className="relative w-24 h-24 shrink-0">
-                  <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--canvas-2)" strokeWidth="8" />
-                    <circle cx="50" cy="50" r="40" fill="none" stroke={scColor} strokeWidth="8" strokeDasharray={`${Math.round(score * 2.51)} 251`} strokeLinecap="round" />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center"><span className="text-2xl font-bold font-mono text-ink">{score}</span></div>
-                </div>
+                <Gauge value={score} size={108} sub="saúde" color={scColor} />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-bold" style={{ color: scColor }}>{grade}</span>
