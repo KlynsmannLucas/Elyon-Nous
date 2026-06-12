@@ -225,9 +225,13 @@ export async function GET(req: NextRequest) {
       accounts: allAccounts,
     })).toString('base64')
 
+    // Volta para onde o usuário iniciou a conexão (ex.: /integracoes no v2), default /dashboard
+    const rt = req.cookies.get('oauth_return')?.value
+    const returnTo = rt && rt.startsWith('/') && !rt.includes('//') ? rt : '/dashboard'
     const res = NextResponse.redirect(
-      new URL(`/dashboard?oauth_success=1&platform=${platform}`, req.url)
+      new URL(`${returnTo}?oauth_success=1&platform=${platform}`, req.url)
     )
+    res.cookies.set('oauth_return', '', { maxAge: 0, path: '/' })
     res.cookies.set('oauth_result', oauthResult, {
       httpOnly: true,
       secure:   process.env.NODE_ENV === 'production',

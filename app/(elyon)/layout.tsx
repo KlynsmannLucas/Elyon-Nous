@@ -34,6 +34,28 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const [nousOpen, setNousOpen] = useState(false)
   const [wide, setWide] = useState(true)
 
+  // Restaura conexões OAuth do servidor (persistência por usuário) + processa
+  // o retorno do OAuth (?oauth_success=1) feito a partir do v2.
+  useEffect(() => {
+    const restore = () => {
+      fetch('/api/connections')
+        .then(r => (r.ok ? r.json() : { connections: [] }))
+        .then(({ connections }) => {
+          if (!Array.isArray(connections)) return
+          const cur = useAppStore.getState().connectedAccounts
+          for (const conn of connections) {
+            if (!cur.some(c => c.platform === conn.platform)) useAppStore.getState().connectAccount(conn)
+          }
+        })
+        .catch(() => {})
+    }
+    restore()
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('oauth_success') === '1') {
+      window.history.replaceState({}, '', window.location.pathname)
+      setTimeout(restore, 600) // dá tempo do callback persistir antes do refetch
+    }
+  }, [])
+
   // NOUS docked em telas largas (≥1280); drawer abaixo
   useEffect(() => {
     const check = () => { const w = window.innerWidth >= 1280; setWide(w); setNousOpen(w) }
