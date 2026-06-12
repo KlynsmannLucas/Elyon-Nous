@@ -2,7 +2,12 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
 const isAuthRoute      = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/sso-callback(.*)'])
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/perfil(.*)', '/planos(.*)'])
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)', '/perfil(.*)', '/planos(.*)',
+  // Redesign v2 — áreas autenticadas
+  '/hoje(.*)', '/desempenho(.*)', '/diagnostico(.*)', '/mercado(.*)',
+  '/plano(.*)', '/relatorios(.*)', '/integracoes(.*)', '/config(.*)',
+])
 
 export default clerkMiddleware((auth, req) => {
   const { userId } = auth()
