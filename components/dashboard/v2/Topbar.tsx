@@ -14,6 +14,7 @@ interface TopbarProps {
   clients?: { id: string; name: string }[]
   activeClient?: string
   onClientChange?: (clientId: string) => void
+  onNewClient?: () => void
   credits?: number
   onOpenCredits?: () => void
   onOpenNous?: () => void
@@ -31,6 +32,7 @@ export function TopbarV2({
   clients,
   activeClient,
   onClientChange,
+  onNewClient,
   credits,
   onOpenCredits,
   onOpenNous,
@@ -102,21 +104,21 @@ export function TopbarV2({
       </div>
 
       {/* Multi-Client Selector */}
-      {clients && clients.length > 0 && (
+      {((clients && clients.length > 0) || onNewClient) && (
         <div className="relative">
           <button
             onClick={() => setShowClientMenu(!showClientMenu)}
             className="flex items-center gap-2 px-3 py-2 bg-paper border border-line rounded-sm text-sm text-ink hover:border-blue"
           >
             <span className="w-6 h-6 rounded-full bg-blue flex items-center justify-center text-white text-xs">
-              {activeClientData?.name?.charAt(0) || '?'}
+              {activeClientData?.name?.charAt(0) || '+'}
             </span>
-            <span>{activeClientData?.name || 'Selecionar'}</span>
+            <span>{activeClientData?.name || 'Novo cliente'}</span>
             <span className="text-xs">▼</span>
           </button>
           {showClientMenu && (
-            <div className="absolute top-full right-0 mt-1 w-48 bg-paper border border-line rounded-sm shadow-pop z-50">
-              {clients.map(c => (
+            <div className="absolute top-full right-0 mt-1 w-52 bg-paper border border-line rounded-sm shadow-pop z-50 overflow-hidden">
+              {clients?.map(c => (
                 <button
                   key={c.id}
                   onClick={() => { onClientChange?.(c.id); setShowClientMenu(false) }}
@@ -127,6 +129,15 @@ export function TopbarV2({
                   {c.name}
                 </button>
               ))}
+              {onNewClient && (
+                <button
+                  onClick={() => { onNewClient(); setShowClientMenu(false) }}
+                  className="w-full px-3 py-2 text-left text-sm text-blue font-medium hover:bg-blue-soft border-t border-line flex items-center gap-2"
+                >
+                  <span className="w-5 h-5 rounded-md bg-blue-soft flex items-center justify-center text-blue text-xs">+</span>
+                  Novo cliente
+                </button>
+              )}
             </div>
           )}
         </div>

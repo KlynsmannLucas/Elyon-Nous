@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, LineChart, LegendDot, CHART_COLORS } from '@/components/dashboard/v2'
+import { useDailySeries } from '@/lib/useDailySeries'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
@@ -33,7 +34,7 @@ function Empty() {
           <div className="w-16 h-16 rounded-full bg-blue flex items-center justify-center mx-auto mb-4"><span className="text-white text-2xl">+</span></div>
           <h2 className="text-lg font-semibold text-ink mb-2">Bem-vindo ao Elyon</h2>
           <p className="text-sm text-ink-2 mb-4">Selecione um cliente ou crie o primeiro para ver seu painel.</p>
-          <Button onClick={() => (window.location.href = '/dashboard?new=1')}>Criar primeiro cliente</Button>
+          <Button onClick={() => (window.location.href = '/novo')}>Criar primeiro cliente</Button>
         </div>
       </Card>
     </div>
@@ -68,6 +69,7 @@ export default function HojePage() {
     return () => { active = false }
   }, [key, dailyAccountId, metaAccount])
 
+  const dailySeries = useDailySeries(auditCache[key]?.[0]?.audit?._realMetrics?.avgROAS ?? null)
   if (!mounted) return <Loading />
   if (!key) return <Empty />
 
@@ -167,6 +169,23 @@ export default function HojePage() {
               </Card>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Tendência diária real */}
+      {dailySeries && (
+        <section className="mb-6 animate-fade-up">
+          <Card>
+            <SectionHead title={dailySeries.hasRevenue ? 'Receita × investimento' : 'Investimento × leads'} subtitle="Últimos dias · dados reais" icon={<Icon name="chart" size={18} />}
+              action={<div className="flex gap-3">{dailySeries.hasRevenue ? <LegendDot color={CHART_COLORS.green}>Receita</LegendDot> : <LegendDot color={CHART_COLORS.green}>Leads</LegendDot>}<LegendDot color={CHART_COLORS.blue}>Investimento</LegendDot></div>} />
+            <LineChart
+              labels={dailySeries.labels}
+              money={dailySeries.hasRevenue}
+              height={220}
+              series={dailySeries.hasRevenue
+                ? [{ name: 'Receita', color: CHART_COLORS.green, data: dailySeries.revenue! }, { name: 'Investimento', color: CHART_COLORS.blue, data: dailySeries.spend }]
+                : [{ name: 'Leads', color: CHART_COLORS.green, data: dailySeries.leads }, { name: 'Investimento', color: CHART_COLORS.blue, data: dailySeries.spend }]} />
+          </Card>
         </section>
       )}
 

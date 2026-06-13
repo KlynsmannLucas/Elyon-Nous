@@ -94,6 +94,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
           clients={clients}
           activeClient={activeId}
           onClientChange={(id) => loadSavedClient(id)}
+          onNewClient={() => router.push('/novo')}
           credits={credits}
           onOpenCredits={() => router.push('/config')}
           onOpenNous={() => setNousOpen(true)}

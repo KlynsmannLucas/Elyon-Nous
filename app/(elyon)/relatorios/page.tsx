@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, LineChart, LegendDot, CHART_COLORS } from '@/components/dashboard/v2'
+import { useDailySeries } from '@/lib/useDailySeries'
 
 export default function RelatoriosPage() {
   const clientData = useAppStore(s => s.clientData)
@@ -17,13 +18,14 @@ export default function RelatoriosPage() {
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
+  const daily = useDailySeries(auditCache[key]?.[0]?.audit?._realMetrics?.avgROAS ?? null)
   if (!mounted) return null
 
   const latestAudit = auditCache[key]?.[0]?.audit
   const hasData = !!(clientData && (latestAudit || strategyData))
 
   const exportPDF = async (mode: 'full' | 'executive') => {
-    if (!clientData) { window.location.href = '/dashboard?new=1'; return }
+    if (!clientData) { window.location.href = '/novo'; return }
     setLoading(mode); setErr('')
     try {
       const { generatePDF } = await import('@/components/pdf/RelatorioPDF')
@@ -47,6 +49,19 @@ export default function RelatoriosPage() {
         <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>Relatórios</h1>
         <p className="text-sm text-ink-2 mt-0.5">{key || 'Selecione um cliente'}</p>
       </header>
+
+      {daily && (
+        <Card className="mb-4 animate-fade-up">
+          <SectionHead title={daily.hasRevenue ? 'Receita × investimento' : 'Investimento × leads'} subtitle="Série diária real (Meta)" icon={<Icon name="chart" size={17} />}
+            action={<div className="flex gap-3">{daily.hasRevenue ? <LegendDot color={CHART_COLORS.green}>Receita</LegendDot> : <LegendDot color={CHART_COLORS.green}>Leads</LegendDot>}<LegendDot color={CHART_COLORS.blue}>Investimento</LegendDot></div>} />
+          <LineChart
+            labels={daily.labels}
+            money={daily.hasRevenue}
+            series={daily.hasRevenue
+              ? [{ name: 'Receita', color: CHART_COLORS.green, data: daily.revenue! }, { name: 'Investimento', color: CHART_COLORS.blue, data: daily.spend }]
+              : [{ name: 'Leads', color: CHART_COLORS.green, data: daily.leads }, { name: 'Investimento', color: CHART_COLORS.blue, data: daily.spend }]} />
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-up">
         {/* Exportar */}

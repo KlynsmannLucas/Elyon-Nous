@@ -75,7 +75,7 @@ export default function DiagnosticoPage() {
           <p className="text-sm text-ink-2 mb-4">{key ? 'Rode a Análise Profunda para receber score de saúde, gargalos, oportunidades e desperdício — com os dados reais da conta conectada.' : 'Escolha um cliente no topo para diagnosticar.'}</p>
           {key
             ? <Button onClick={run}>Rodar Análise Profunda</Button>
-            : <Button onClick={() => (window.location.href = '/dashboard?new=1')}>Criar cliente</Button>}
+            : <Button onClick={() => (window.location.href = '/novo')}>Criar cliente</Button>}
           {runErr && <div className="text-xs text-red mt-3">{runErr}</div>}
         </div>
       </Card>

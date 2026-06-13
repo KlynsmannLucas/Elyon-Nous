@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Donut, BarChart, Funnel, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, Donut, BarChart, Funnel, LineChart, LegendDot, CHART_COLORS } from '@/components/dashboard/v2'
+import { useDailySeries } from '@/lib/useDailySeries'
 
 const CHANNEL_META: Record<string, { label: string; color: string }> = {
   meta: { label: 'Meta Ads', color: CHART_COLORS.blue },
@@ -53,6 +54,7 @@ export default function DesempenhoPage() {
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
+  const daily = useDailySeries(auditCache[key]?.[0]?.audit?._realMetrics?.avgROAS ?? null)
   if (!mounted) return null
   if (!key) return <Empty />
 
@@ -148,6 +150,19 @@ export default function DesempenhoPage() {
               </Card>
             ))}
           </div>
+          {daily && (
+            <Card>
+              <SectionHead title={daily.hasRevenue ? 'Tendência de receita × investimento' : 'Tendência de investimento × leads'} subtitle="Série diária real (Meta)" icon={<Icon name="chart" size={17} />}
+                action={<div className="flex gap-3">{daily.hasRevenue ? <LegendDot color={CHART_COLORS.green}>Receita</LegendDot> : <LegendDot color={CHART_COLORS.green}>Leads</LegendDot>}<LegendDot color={CHART_COLORS.blue}>Investimento</LegendDot></div>} />
+              <LineChart
+                labels={daily.labels}
+                money={daily.hasRevenue}
+                series={daily.hasRevenue
+                  ? [{ name: 'Receita', color: CHART_COLORS.green, data: daily.revenue! }, { name: 'Investimento', color: CHART_COLORS.blue, data: daily.spend }]
+                  : [{ name: 'Leads', color: CHART_COLORS.green, data: daily.leads }, { name: 'Investimento', color: CHART_COLORS.blue, data: daily.spend }]} />
+              {daily.hasRevenue && <p className="text-[11px] text-ink-3 mt-2">Receita estimada a partir do investimento diário real × ROAS médio da conta.</p>}
+            </Card>
+          )}
           {hasChannelSplit && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Card>
