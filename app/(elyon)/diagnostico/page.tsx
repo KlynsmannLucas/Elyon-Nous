@@ -47,9 +47,11 @@ export default function DiagnosticoPage() {
   const run = async () => {
     setRunning(true); setRunErr('')
     const { runAuditForActiveClient } = await import('@/lib/runAudit')
-    const r = await runAuditForActiveClient({ onStep: setStep })
+    const preset = useAppStore.getState().globalPeriod?.preset || 'last_30d'
+    const r = await runAuditForActiveClient({ datePreset: preset, onStep: setStep })
     setRunning(false); setStep('')
     if (!r.ok) setRunErr(r.error || 'Falha na auditoria.')
+    else if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Auditoria concluída', body: 'Diagnóstico atualizado com os dados reais.' })
   }
 
   if (!mounted) return null

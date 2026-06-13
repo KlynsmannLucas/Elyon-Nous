@@ -35,9 +35,11 @@ export default function RelatoriosPage() {
         auditData: latestAudit ?? null,
         actionItems: actionPlanCache[key] || [],
       }, mode)
+      if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Relatório gerado', body: mode === 'full' ? 'PDF completo pronto para download.' : 'Resumo executivo pronto.' })
     } catch (e) {
       console.error('Erro PDF:', e)
       setErr('Não foi possível gerar o PDF. Tente novamente.')
+      if (typeof window !== 'undefined') window.toast?.({ tone: 'bad', title: 'Falha ao gerar PDF', body: 'Tente novamente.' })
     } finally {
       setLoading(null)
     }

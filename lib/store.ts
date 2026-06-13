@@ -408,6 +408,10 @@ interface AppStore {
   dashboardMode: 'pro' | 'simple'
   setDashboardMode: (mode: 'pro' | 'simple') => void
 
+  // Período global do v2 (topbar). label exibido + datePreset p/ as APIs.
+  globalPeriod: { label: string; preset: string }
+  setGlobalPeriod: (p: { label: string; preset: string }) => void
+
   // Perfil de experiência do usuário (definido no onboarding "Você já anuncia?")
   userExperience: 'beginner' | 'experienced' | null
   setUserExperience: (exp: 'beginner' | 'experienced' | null) => void
@@ -808,6 +812,9 @@ export const useAppStore = create<AppStore>()(
       dashboardMode: 'pro',
       setDashboardMode: (mode) => set({ dashboardMode: mode }),
 
+      globalPeriod: { label: 'Últimos 30 dias', preset: 'last_30d' },
+      setGlobalPeriod: (p) => set({ globalPeriod: p }),
+
       userExperience: null,
       setUserExperience: (exp) => set({ userExperience: exp }),
 
@@ -882,6 +889,7 @@ export const useAppStore = create<AppStore>()(
         feesConfig:               state.feesConfig,
         workflowRuleStates:       state.workflowRuleStates,
         dashboardMode:            state.dashboardMode,
+        globalPeriod:             state.globalPeriod,
         userExperience:           state.userExperience,
         welcomeTourSeen:          state.welcomeTourSeen,
       }),

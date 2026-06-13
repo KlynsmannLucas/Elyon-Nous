@@ -2,7 +2,11 @@
 // Redesign v2 — Nova Topbar
 'use client'
 
-import { useState, ReactNode } from 'react'
+import { useEffect, useState, ReactNode } from 'react'
+import { Icon } from './Icon'
+import { DropdownMenu, MenuItem, MenuLabel, MenuDivider } from './Overlay'
+
+export interface NotifItem { id: string; tone: 'good' | 'bad' | 'warn' | 'blue'; title: string; body?: string; when?: string; area?: string; read?: boolean }
 
 interface TopbarProps {
   title: string
@@ -11,6 +15,7 @@ interface TopbarProps {
   onModeChange: (mode: 'simplified' | 'advanced') => void
   period: string
   onPeriodChange: (period: string) => void
+  onSelectPeriod?: (p: { label: string; preset: string }) => void
   clients?: { id: string; name: string }[]
   activeClient?: string
   onClientChange?: (clientId: string) => void
@@ -18,10 +23,25 @@ interface TopbarProps {
   credits?: number
   onOpenCredits?: () => void
   onOpenNous?: () => void
-  notificationCount?: number
+  notifications?: NotifItem[]
+  onNavigate?: (area: string) => void
 }
 
-const PERIODS = ['Hoje', '7d', '30d', '90d', 'Este mês', 'Mês passado']
+const PERIODS: { label: string; preset: string }[] = [
+  { label: 'Hoje', preset: 'today' },
+  { label: 'Últimos 7 dias', preset: 'last_7d' },
+  { label: 'Últimos 14 dias', preset: 'last_14d' },
+  { label: 'Últimos 30 dias', preset: 'last_30d' },
+  { label: 'Mês atual', preset: 'this_month' },
+  { label: 'Mês anterior', preset: 'last_month' },
+  { label: 'Últimos 90 dias', preset: 'last_90d' },
+]
+const TONE_BG: Record<string, { bg: string; c: string; icon: string }> = {
+  good: { bg: '#E4F6EE', c: '#0E9E6E', icon: 'check' },
+  bad:  { bg: '#FCEBEA', c: '#E1483F', icon: 'alert' },
+  warn: { bg: '#FCF1DC', c: '#E08B0B', icon: 'flag' },
+  blue: { bg: '#EAF0FE', c: '#2C5FE0', icon: 'sparkle2' },
+}
 
 export function TopbarV2({
   title,
@@ -29,6 +49,7 @@ export function TopbarV2({
   onModeChange,
   period,
   onPeriodChange,
+  onSelectPeriod,
   clients,
   activeClient,
   onClientChange,
@@ -36,10 +57,14 @@ export function TopbarV2({
   credits,
   onOpenCredits,
   onOpenNous,
-  notificationCount = 0
+  notifications = [],
+  onNavigate,
 }: TopbarProps) {
-  const [showPeriodMenu, setShowPeriodMenu] = useState(false)
   const [showClientMenu, setShowClientMenu] = useState(false)
+  const [notifs, setNotifs] = useState<NotifItem[]>(notifications)
+  const sig = notifications.map(n => n.id).join('|')
+  useEffect(() => { setNotifs(notifications) }, [sig]) // re-seed quando o layout recalcula
+  const unread = notifs.filter(n => !n.read).length
 
   const activeClientData = clients?.find(c => c.id === activeClient)
 
@@ -77,30 +102,21 @@ export function TopbarV2({
         </button>
       </div>
 
-      {/* Period Selector */}
-      <div className="relative">
-        <button
-          onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-          className="flex items-center gap-2 px-3 py-2 bg-paper border border-line rounded-sm text-sm text-ink hover:border-blue"
-        >
-          <span>{period}</span>
-          <span className="text-xs">▼</span>
-        </button>
-        {showPeriodMenu && (
-          <div className="absolute top-full right-0 mt-1 w-32 bg-paper border border-line rounded-sm shadow-pop z-50">
-            {PERIODS.map(p => (
-              <button
-                key={p}
-                onClick={() => { onPeriodChange(p); setShowPeriodMenu(false) }}
-                className={`w-full px-3 py-2 text-left text-sm hover:bg-canvas-2 ${
-                  period === p ? 'text-blue font-medium' : 'text-ink'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        )}
+      {/* Period Selector (funcional) */}
+      <div className="tb-md">
+        <DropdownMenu align="left" minWidth={210} trigger={
+          <button className="inline-flex items-center gap-1.5 px-3 py-2 bg-paper border border-line rounded-sm text-sm text-ink-2 font-medium hover:border-line-strong transition-colors">
+            <Icon name="calendar" size={15} /><span>{period}</span><Icon name="chevD" size={13} />
+          </button>
+        }>
+          <MenuLabel>Período</MenuLabel>
+          {PERIODS.map(p => (
+            <MenuItem key={p.preset} active={p.label === period}
+              onClick={() => { onPeriodChange(p.label); onSelectPeriod?.(p) }}>{p.label}</MenuItem>
+          ))}
+          <MenuDivider />
+          <MenuItem icon="calendar" onClick={() => window.toast?.({ tone: 'blue', title: 'Período personalizado', body: 'Seletor de datas em breve.' })}>Personalizado…</MenuItem>
+        </DropdownMenu>
       </div>
 
       {/* Multi-Client Selector */}
@@ -164,14 +180,43 @@ export function TopbarV2({
       </button>
 
       {/* Notifications */}
-      <button className="relative p-2 text-ink-3 hover:text-ink">
-        <span>🔔</span>
-        {notificationCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red text-white text-[10px] rounded-full flex items-center justify-center">
-            {notificationCount}
-          </span>
-        )}
-      </button>
+      <DropdownMenu align="right" minWidth={340} trigger={
+        <button title="Notificações" className="relative w-9 h-9 rounded-sm border border-line bg-paper text-ink-2 flex items-center justify-center hover:border-line-strong">
+          <Icon name="bell" size={18} />
+          {unread > 0 && (
+            <span className="absolute top-1.5 right-2 min-w-[14px] h-[14px] px-1 rounded-full bg-red text-white text-[9px] font-bold font-mono flex items-center justify-center border-[1.5px] border-paper">{unread}</span>
+          )}
+        </button>
+      }>
+        <div className="flex justify-between items-center px-2.5 pt-1.5 pb-2">
+          <span className="text-[13px] font-bold text-ink">Notificações</span>
+          <button onClick={(e) => { e.stopPropagation(); setNotifs(s => s.map(x => ({ ...x, read: true }))) }}
+            className="text-[11.5px] font-semibold text-blue-600 hover:underline">Marcar todas como lidas</button>
+        </div>
+        <div className="h-px bg-line mx-1 mb-1" />
+        <div className="max-h-[360px] overflow-y-auto">
+          {list_empty(notifs) ? (
+            <div className="px-3 py-8 text-center text-ink-3 text-xs">Sem notificações.</div>
+          ) : notifs.map(n => {
+            const t = TONE_BG[n.tone] || TONE_BG.blue
+            return (
+              <button key={n.id} onClick={() => { setNotifs(s => s.map(x => x.id === n.id ? { ...x, read: true } : x)); if (n.area) onNavigate?.(n.area) }}
+                className="flex gap-2.5 px-2.5 py-2.5 rounded-sm w-full text-left hover:bg-canvas-2 transition-colors">
+                <span className="w-7 h-7 rounded-sm shrink-0 flex items-center justify-center" style={{ background: t.bg, color: t.c }}><Icon name={t.icon} size={15} /></span>
+                <div className="flex-1 min-w-0">
+                  <div className={`flex items-center gap-1.5 text-[12.5px] ${n.read ? 'font-medium' : 'font-bold'} text-ink`}>
+                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-blue shrink-0" />}<span className="truncate">{n.title}</span>
+                  </div>
+                  {n.body && <div className="text-[11.5px] text-ink-3 mt-0.5 truncate">{n.body}</div>}
+                  {n.when && <div className="text-[10px] font-mono text-ink-4 mt-0.5">{n.when}</div>}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </DropdownMenu>
     </header>
   )
 }
+
+function list_empty(arr: unknown[]) { return !arr || arr.length === 0 }
