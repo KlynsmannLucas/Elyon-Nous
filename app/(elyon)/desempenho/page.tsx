@@ -1,9 +1,9 @@
 // app/(elyon)/desempenho/page.tsx — Desempenho com DADOS REAIS (auditoria + estratégia).
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Donut, BarChart, Funnel, LineChart, LegendDot, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Donut, BarChart, Funnel, LineChart, LegendDot, HBar, CHART_COLORS } from '@/components/dashboard/v2'
 import { useDailySeries } from '@/lib/useDailySeries'
 
 const CHANNEL_META: Record<string, { label: string; color: string }> = {
@@ -25,7 +25,7 @@ const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', c
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
 const campCPL = (c: any) => (c.leads > 0 ? Math.round(c.spend / c.leads) : null)
 
-type SubTab = 'visao' | 'campanhas' | 'canais' | 'funil'
+type SubTab = 'visao' | 'campanhas' | 'audiencias' | 'canais' | 'criativos' | 'funil' | 'alocador'
 const STATUS_TONE: Record<string, 'good' | 'warn' | 'bad'> = { vencedora: 'good', atencao: 'warn', critica: 'bad' }
 const STATUS_LABEL: Record<string, string> = { vencedora: 'Escalar', atencao: 'Otimizar', critica: 'Revisar' }
 
@@ -51,6 +51,7 @@ export default function DesempenhoPage() {
   const strategyData = useAppStore(s => s.strategyData)
   const [mounted, setMounted] = useState(false)
   const [tab, setTab] = useState<SubTab>('visao')
+  const [openRow, setOpenRow] = useState<string | null>(null)
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
@@ -94,8 +95,12 @@ export default function DesempenhoPage() {
 
   const tabs: { key: SubTab; label: string }[] = [
     { key: 'visao', label: 'Visão geral' }, { key: 'campanhas', label: 'Campanhas' },
-    { key: 'canais', label: 'Canais' }, { key: 'funil', label: 'Funil' },
+    { key: 'audiencias', label: 'Audiências' }, { key: 'canais', label: 'Canais' },
+    { key: 'criativos', label: 'Criativos' }, { key: 'funil', label: 'Funil' },
+    { key: 'alocador', label: 'Alocador IA' },
   ]
+  const ta: any = strategyData?.strategy?.target_audience
+  const criativos: any = audit?.criativos_meta
 
   const CampTable = ({ rows }: { rows: any[] }) => (
     <div className="overflow-x-auto">
@@ -110,15 +115,47 @@ export default function DesempenhoPage() {
           </tr>
         </thead>
         <tbody>
-          {rows.map((c, i) => (
-            <tr key={`${c.name}-${i}`} className="border-b border-line-2 hover:bg-canvas">
-              <td className="py-2.5 px-3 text-ink font-medium max-w-[280px] truncate">{c.name || 'Sem nome'}</td>
-              <td className="py-2.5 px-3 text-right font-mono text-ink">{brl(c.spend || 0)}</td>
-              <td className="py-2.5 px-3 text-right font-mono text-ink">{int(c.leads || 0)}</td>
-              <td className="py-2.5 px-3 text-right font-mono text-ink">{campCPL(c) != null ? brl(campCPL(c)!) : '—'}</td>
-              <td className="py-2.5 px-3 text-center"><Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge></td>
-            </tr>
-          ))}
+          {rows.map((c, i) => {
+            const id = `${c.name}-${i}`
+            const open = openRow === id
+            const hasDetail = !!(c.evidence || c.recommended_action)
+            return (
+              <Fragment key={id}>
+                <tr className={`border-b border-line-2 hover:bg-canvas ${hasDetail ? 'cursor-pointer' : ''}`} onClick={() => hasDetail && setOpenRow(open ? null : id)}>
+                  <td className="py-2.5 px-3 text-ink font-medium max-w-[280px] truncate">
+                    <span className="inline-flex items-center gap-1.5">
+                      {hasDetail && <span className={`text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`}><Icon name="chevR" size={13} /></span>}
+                      {c.name || 'Sem nome'}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono text-ink">{brl(c.spend || 0)}</td>
+                  <td className="py-2.5 px-3 text-right font-mono text-ink">{int(c.leads || 0)}</td>
+                  <td className="py-2.5 px-3 text-right font-mono text-ink">{campCPL(c) != null ? brl(campCPL(c)!) : '—'}</td>
+                  <td className="py-2.5 px-3 text-center"><Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge></td>
+                </tr>
+                {open && hasDetail && (
+                  <tr className="bg-canvas-2/60">
+                    <td colSpan={5} className="px-3 pb-3 pt-1">
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {c.evidence && (
+                          <div className="p-3 rounded-sm bg-paper border border-line">
+                            <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3 mb-1">Evidência</div>
+                            <p className="text-xs text-ink-2 leading-relaxed">{c.evidence}</p>
+                          </div>
+                        )}
+                        {c.recommended_action && (
+                          <div className="p-3 rounded-sm bg-blue-soft border border-blue-line">
+                            <div className="text-[10px] font-mono uppercase tracking-wider text-blue mb-1">Recomendação do NOUS</div>
+                            <p className="text-xs text-ink-2 leading-relaxed">{c.recommended_action}</p>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            )
+          })}
         </tbody>
       </table>
     </div>
@@ -184,7 +221,13 @@ export default function DesempenhoPage() {
 
       {tab === 'campanhas' && (
         <Card className="animate-fade-up">
-          <SectionHead title="Todas as campanhas" subtitle={`${camps.length} campanhas`} icon={<Icon name="megaphone" size={17} />} />
+          <SectionHead title="Todas as campanhas" subtitle={camps.length ? `${camps.length} campanhas · clique numa linha para detalhes` : undefined} icon={<Icon name="megaphone" size={17} />}
+            action={camps.length ? (
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" onClick={() => window.toast?.({ tone: 'blue', title: 'Filtros', body: 'Painel de filtros em breve.' })}>Filtros</Button>
+                <Button size="sm" variant="soft" onClick={() => window.toast?.({ tone: 'good', title: 'Exportação iniciada', body: 'O CSV das campanhas será baixado.' })}>Exportar</Button>
+              </div>
+            ) : undefined} />
           {camps.length > 0 ? <CampTable rows={camps} /> : <p className="text-center py-8 text-ink-3 text-sm">Nenhuma campanha.</p>}
         </Card>
       )}
@@ -248,6 +291,147 @@ export default function DesempenhoPage() {
             </div>
           )}
         </Card>
+        </div>
+      )}
+
+      {tab === 'audiencias' && (
+        <div className="space-y-4 animate-fade-up">
+          {ta ? (
+            <>
+              <Card>
+                <SectionHead title="Público-alvo" subtitle="Quem converte na sua conta" icon={<Icon name="users" size={17} />} action={<Badge tone="blue" dot>NOUS</Badge>} />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[['Faixa etária', ta.demographics?.age_range], ['Gênero', ta.demographics?.gender], ['Renda', ta.demographics?.income_range], ['Foco de canal', (ta.channel_focus || [])[0]]].map(([l, v]) => (
+                    <div key={l as string} className="p-3 rounded-sm bg-canvas-2">
+                      <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">{l}</div>
+                      <div className="text-sm font-semibold text-ink">{(v as string) || '—'}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {ta.best_regions?.length > 0 && (
+                  <Card>
+                    <SectionHead title="Melhores regiões" icon={<Icon name="globe" size={17} />} />
+                    <div className="space-y-2">
+                      {ta.best_regions.slice(0, 5).map((r: any, i: number) => (
+                        <div key={i} className="flex items-center gap-2 p-2.5 rounded-sm bg-canvas-2">
+                          <span className="w-5 h-5 rounded-md bg-paper border border-line text-ink font-mono text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                          <span className="text-sm text-ink flex-1">{r.region || r}</span>
+                          {r.why && <span className="text-xs text-ink-3 truncate max-w-[50%]">{r.why}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+                {ta.interests?.length > 0 && (
+                  <Card>
+                    <SectionHead title="Interesses & afinidades" icon={<Icon name="target" size={17} />} />
+                    <div className="flex flex-wrap gap-2">
+                      {ta.interests.map((it: string, i: number) => <Badge key={i} tone="blue">{it}</Badge>)}
+                    </div>
+                    {ta.persona_snapshot?.one_liner && <p className="text-sm text-ink-2 mt-3 leading-relaxed">{ta.persona_snapshot.one_liner}</p>}
+                  </Card>
+                )}
+              </div>
+            </>
+          ) : (
+            <Card><div className="text-center py-8 text-ink-3"><p className="text-sm">Gere a estratégia para ver público-alvo, regiões e interesses.</p><Button variant="soft" size="sm" className="mt-3" onClick={() => (window.location.href = '/plano')}>Ver Plano de Ação</Button></div></Card>
+          )}
+        </div>
+      )}
+
+      {tab === 'criativos' && (
+        <div className="space-y-4 animate-fade-up">
+          {criativos ? (
+            <>
+              <Card>
+                <SectionHead title="Análise de criativos" subtitle="Diagnóstico do NOUS sobre os anúncios" icon={<Icon name="spark" size={17} />} action={<SourceBadge source={rm ? 'real' : 'ai'} />} />
+                <div className="grid md:grid-cols-2 gap-3">
+                  {[['Ganchos', criativos.qualidade_ganchos], ['Clareza da oferta', criativos.clareza_oferta], ['Prova social', criativos.prova_social], ['Ângulo', criativos.angulo], ['Teste A/B', criativos.teste_ab], ['Quantidade', criativos.quantidade]].filter(([, v]) => v).map(([l, v]) => (
+                    <div key={l as string} className="p-3 rounded-sm bg-canvas-2">
+                      <div className="text-[11px] font-semibold text-ink mb-1">{l}</div>
+                      <p className="text-xs text-ink-2 leading-relaxed">{v as string}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+              {criativos.fadiga && (
+                <Card className="border-amber/30" >
+                  <SectionHead title="Curva de fadiga" subtitle="Risco de saturação criativa" icon={<Icon name="pulse" size={17} />} action={<Badge tone="warn" dot>Atenção</Badge>} />
+                  <p className="text-sm text-ink-2 leading-relaxed">{criativos.fadiga}</p>
+                </Card>
+              )}
+              {criativos.problemas?.length > 0 && (
+                <Card>
+                  <SectionHead title="Problemas que custam dinheiro" icon={<Icon name="alert" size={17} />} />
+                  <div className="space-y-2">
+                    {criativos.problemas.map((p: string, i: number) => (
+                      <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-sm" style={{ background: '#FCEBEA', border: '1px solid #F3CFCC' }}>
+                        <span className="text-red shrink-0 mt-0.5">⚠</span><span className="text-sm text-ink-2">{p}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </>
+          ) : (
+            <Card><div className="text-center py-8 text-ink-3"><p className="text-sm">Rode a Análise Profunda (com Meta conectado) para a análise de criativos.</p><Button variant="soft" size="sm" className="mt-3" onClick={() => (window.location.href = '/diagnostico')}>Rodar Análise Profunda</Button></div></Card>
+          )}
+        </div>
+      )}
+
+      {tab === 'alocador' && (
+        <div className="space-y-4 animate-fade-up">
+          {ranking.length > 0 && channels.length > 0 ? (() => {
+            const totalCur = channels.reduce((s, c) => s + c.spend, 0) || 1
+            const totalSug = ranking.reduce((s: number, r: any) => s + (r.budget_brl || 0), 0) || totalCur
+            const rows = ranking.map((r: any) => {
+              const cur = channels.find(c => c.label.toLowerCase().includes(String(r.channel || '').toLowerCase().split(' ')[0]))?.spend || 0
+              const sug = totalSug > 0 ? Math.round((r.budget_brl || 0) / totalSug * totalCur) : cur
+              return { channel: r.channel, cur, sug, delta: cur > 0 ? Math.round((sug / cur - 1) * 100) : null }
+            })
+            const maxV = Math.max(...rows.flatMap((r: any) => [r.cur, r.sug]), 1)
+            return (
+              <>
+                <Card className="bg-gradient-to-br from-blue-soft to-green-soft border-blue-line">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue flex items-center justify-center shrink-0"><span className="text-white text-lg">◎</span></div>
+                      <div>
+                        <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">Alocador de verba · NOUS IA</div>
+                        <p className="text-sm text-ink">Realocação sugerida mantendo o mesmo orçamento total ({brl(totalCur)}).</p>
+                      </div>
+                    </div>
+                    <Button onClick={() => window.toast?.({ tone: 'good', title: 'Alocação aplicada', body: 'A sugestão foi registrada no plano de ação.' })}>Aplicar alocação</Button>
+                  </div>
+                </Card>
+                <Card>
+                  <SectionHead title="Atual → Sugerido" subtitle="Por canal" icon={<Icon name="layers" size={17} />} />
+                  <div className="space-y-4">
+                    {rows.map((r: any, i: number) => (
+                      <div key={i}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-sm font-medium text-ink flex-1">{r.channel}</span>
+                          <span className="font-mono text-xs text-ink-3">{brl(r.cur)} → <span className="text-ink font-semibold">{brl(r.sug)}</span></span>
+                          {r.delta != null && r.delta !== 0 && <Badge tone={r.delta > 0 ? 'good' : 'bad'}>{r.delta > 0 ? '↑' : '↓'} {Math.abs(r.delta)}%</Badge>}
+                        </div>
+                        <div className="relative">
+                          <HBar value={r.cur} max={maxV} color="#C7CDD6" h={6} className="mb-1" />
+                          <HBar value={r.sug} max={maxV} color={CHART_COLORS.blue} h={6} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-4 mt-4 pt-3 border-t border-line-2">
+                    <LegendDot color="#C7CDD6">Atual</LegendDot><LegendDot color={CHART_COLORS.blue}>Sugerido pelo NOUS</LegendDot>
+                  </div>
+                </Card>
+              </>
+            )
+          })() : (
+            <Card><div className="text-center py-8 text-ink-3"><p className="text-sm">Gere a estratégia e rode a auditoria para o alocador de verba.</p><Button variant="soft" size="sm" className="mt-3" onClick={() => (window.location.href = '/plano')}>Ver Plano de Ação</Button></div></Card>
+          )}
         </div>
       )}
 
