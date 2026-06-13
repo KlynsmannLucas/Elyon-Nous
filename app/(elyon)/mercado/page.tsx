@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, SourceBadge, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, SourceBadge, HBar, CHART_COLORS } from '@/components/dashboard/v2'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
@@ -13,6 +13,7 @@ export default function MercadoPage() {
   const savedClients = useAppStore(s => s.savedClients)
   const auditCache = useAppStore(s => s.auditCache)
   const competitorsMap = useAppStore(s => s.competitors)
+  const marketResearch = useAppStore(s => s.marketResearch)
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
@@ -91,6 +92,57 @@ export default function MercadoPage() {
           </div>
         </Card>
       ) : null}
+
+      {/* Share of Voice — presença competitiva (proxy por volume de anúncios) */}
+      {competitors.length > 0 && (() => {
+        const myCount = Math.max(1, rm?.campaignCount || 3)
+        const rows = [
+          ...competitors.map(c => ({ name: c.name, weight: Math.max(1, c.ads?.length || 1), you: false })),
+          { name: 'Sua Empresa', weight: myCount, you: true },
+        ]
+        const total = rows.reduce((s, r) => s + r.weight, 0) || 1
+        const ranked = rows.map(r => ({ ...r, pct: (r.weight / total) * 100 })).sort((a, b) => b.pct - a.pct)
+        const maxPct = ranked[0].pct || 1
+        return (
+          <Card className="mb-4 animate-fade-up">
+            <SectionHead title="Share of Voice" subtitle="Presença competitiva (proxy por volume de anúncios)" icon={<Icon name="users" size={17} />} action={<SourceBadge source="ai" />} />
+            <div className="space-y-3">
+              {ranked.map((r, i) => (
+                <div key={i}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className={`text-sm ${r.you ? 'font-bold text-blue' : 'font-medium text-ink'}`}>{r.name}</span>
+                    {r.you && <Badge tone="blue">Você</Badge>}
+                    <span className="ml-auto font-mono text-sm text-ink">{r.pct.toFixed(1)}%</span>
+                  </div>
+                  <HBar value={r.pct} max={maxPct} color={r.you ? CHART_COLORS.blue : CHART_COLORS.slate} h={8} />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )
+      })()}
+
+      {/* Oportunidades de mercado */}
+      {(() => {
+        const mr = marketResearch[key]
+        const fromResearch = mr?.opportunities ? String(mr.opportunities).split(/\n|·|;/).map(s => s.trim()).filter(s => s.length > 8).slice(0, 4) : []
+        const fromBench = bench?.best_channels?.slice(0, 3).map((ch: string) => `Expandir presença em ${ch}`) || []
+        const ops = fromResearch.length ? fromResearch : fromBench
+        if (!ops.length) return null
+        return (
+          <Card className="mb-4 animate-fade-up">
+            <SectionHead title="Oportunidades de mercado" subtitle="Segmentos e canais com maior potencial" icon={<Icon name="rocket" size={17} />} action={<SourceBadge source={fromResearch.length ? 'real' : 'benchmark'} />} />
+            <div className="grid md:grid-cols-2 gap-3">
+              {ops.map((op: string, i: number) => (
+                <div key={i} className="p-3 rounded-sm bg-green-soft border border-green-line flex items-start gap-2">
+                  <span className="text-green-600 mt-0.5 shrink-0"><Icon name="rocket" size={15} /></span>
+                  <span className="text-sm text-ink-2 line-clamp-3">{op}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )
+      })()}
 
       {/* Concorrentes */}
       <Card className="animate-fade-up">

@@ -27,6 +27,19 @@ function deriveMaturity(rm: any, bench: any, trackOkRatio: number, health: numbe
   }
 }
 
+// SWOT derivada dos pilares (maturidade real) + oportunidades/riscos do audit.
+function deriveSWOT(audit: any, maturity: { axes: string[]; you: number[]; sector: number[] }) {
+  const strong = maturity.axes.filter((_, i) => maturity.you[i] >= 70).map((a, _, arr) => a)
+  const weak = maturity.axes.filter((_, i) => maturity.you[i] <= 56)
+  const ops = (audit?.oportunidades || []).map((o: any) => o.titulo).filter(Boolean)
+  const riscos = audit?.visao_geral?.riscos || []
+  const forcas = strong.length ? strong.slice(0, 4).map(a => `${a} acima da média`) : ['Operação em estágio inicial — base para crescer']
+  const fraquezas = weak.length ? weak.slice(0, 4).map(a => `${a} abaixo do ideal`) : ['Sem fraqueza crítica detectada']
+  const oportunidades = ops.length ? ops.slice(0, 4) : ['Expandir públicos de alta performance', 'Testar novos criativos']
+  const ameacas = riscos.length ? riscos.slice(0, 4) : ['Aumento de CAC no setor', 'Concorrência mais agressiva', 'Mudanças de algoritmo/plataforma']
+  return { forcas, fraquezas, oportunidades, ameacas }
+}
+
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 type SubTab = 'visao' | 'auditoria'
 
@@ -178,28 +191,62 @@ export default function DiagnosticoPage() {
             </div>
           </Card>
 
-          {/* Gargalos */}
+          {/* Diagnóstico de causas-raiz */}
           {gargalos.length > 0 && (
             <Card>
-              <SectionHead title="Maiores gargalos" subtitle="O que está travando o crescimento" icon={<Icon name="alert" size={17} />} />
-              <div className="space-y-2.5">
-                {gargalos.slice(0, 5).map((g, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-sm" style={{ background: '#FCEBEA', border: '1px solid #F3CFCC' }}>
-                    <span className="w-5 h-5 rounded-full bg-red text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{g.rank || i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-ink">{g.titulo}</span>
-                        {g.impacto && <span className="text-[11px] font-semibold text-red ml-auto shrink-0">{g.impacto}</span>}
+              <SectionHead title="Diagnóstico de causas-raiz" subtitle="O que está travando o crescimento" icon={<Icon name="alert" size={17} />} />
+              <div className="space-y-2">
+                {gargalos.slice(0, 5).map((g, i) => {
+                  const sev = (g.rank || i + 1) <= 2 ? 'alta' : 'media'
+                  return (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-sm bg-canvas-2">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0 mt-2" style={{ background: sev === 'alta' ? '#E1483F' : '#E08B0B' }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-ink">{g.titulo}</span>
+                          <span className="ml-auto shrink-0"><Badge tone={sev === 'alta' ? 'bad' : 'warn'}>{sev}</Badge></span>
+                        </div>
+                        {g.descricao && <p className="text-xs text-ink-2 mt-0.5 leading-relaxed line-clamp-2">{g.descricao}</p>}
+                        {g.impacto && <p className="text-[11px] font-semibold text-red mt-1">{g.impacto}</p>}
                       </div>
-                      {g.descricao && <p className="text-xs text-ink-2 mt-0.5 leading-relaxed line-clamp-2">{g.descricao}</p>}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </Card>
           )}
 
-          {/* Oportunidades */}
+          {/* Análise SWOT */}
+          {(() => {
+            const swot = deriveSWOT(audit, maturity)
+            const QUAD = [
+              { k: 'forcas', label: 'Forças', icon: 'check', bg: '#E4F6EE', bd: '#BBE7D3', c: '#0B855D', items: swot.forcas },
+              { k: 'fraquezas', label: 'Fraquezas', icon: 'alert', bg: '#FCEBEA', bd: '#F3CFCC', c: '#E1483F', items: swot.fraquezas },
+              { k: 'oportunidades', label: 'Oportunidades', icon: 'rocket', bg: '#EAF0FE', bd: '#CBDBFB', c: '#1E4FD0', items: swot.oportunidades },
+              { k: 'ameacas', label: 'Ameaças', icon: 'flag', bg: '#FCF1DC', bd: '#F2DDB0', c: '#E08B0B', items: swot.ameacas },
+            ]
+            return (
+              <Card>
+                <SectionHead title="Análise SWOT" subtitle="Derivada dos seus dados" icon={<Icon name="grid" size={17} />} action={<SourceBadge source={rm ? 'real' : 'ai'} />} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {QUAD.map(q => (
+                    <div key={q.k} className="rounded-md p-4" style={{ background: q.bg, border: `1px solid ${q.bd}` }}>
+                      <div className="flex items-center gap-2 mb-2.5" style={{ color: q.c }}>
+                        <Icon name={q.icon} size={15} /><span className="font-bold text-sm">{q.label}</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {q.items.map((it: string, i: number) => (
+                          <div key={i} className="text-xs text-ink-2 flex gap-2"><span style={{ color: q.c }}>•</span><span className="line-clamp-2">{it}</span></div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )
+          })()}
+
+          {/* Oportunidades de escala (detalhe) */}
           {oportunidades.length > 0 && (
             <Card>
               <SectionHead title="Oportunidades de escala" icon={<Icon name="rocket" size={17} />} />

@@ -15,6 +15,7 @@ export default function RelatoriosPage() {
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState<'full' | 'executive' | null>(null)
   const [err, setErr] = useState('')
+  const [portal, setPortal] = useState({ resumo: true, kpis: true, plano: true, campanhas: false, custos: false })
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
@@ -90,9 +91,32 @@ export default function RelatoriosPage() {
         {/* Portal do cliente */}
         <Card>
           <SectionHead title="Portal do cliente" subtitle="Compartilhe resultados por link, sem login" icon={<Icon name="link" size={17} />}
-            action={<Badge tone="good" dot>Disponível</Badge>} />
-          <p className="text-sm text-ink-2 mb-4">Gere um link público com um resumo dos resultados deste cliente — ideal para enviar ao cliente final, sem dar acesso ao painel.</p>
-          <Button variant="soft" onClick={() => (window.location.href = '/dashboard?view=portal')}>Configurar portal</Button>
+            action={<Badge tone="good" dot>Ativo</Badge>} />
+          {(() => {
+            const slug = (key || 'cliente').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'cliente'
+            const url = `elyon.app/p/${slug}`
+            const copy = () => { try { navigator.clipboard?.writeText(`https://${url}`) } catch {}; if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Link copiado', body: url }) }
+            return (
+              <>
+                <div className="flex items-center gap-2 p-2.5 rounded-sm bg-canvas-2 border border-line mb-3">
+                  <Icon name="link" size={15} /><span className="flex-1 text-sm font-mono text-ink-2 truncate">{url}</span>
+                  <Button size="sm" variant="soft" onClick={copy}>Copiar</Button>
+                </div>
+                <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-2">Seções visíveis para o cliente</div>
+                <div className="space-y-1">
+                  {([['resumo', 'Resumo executivo'], ['kpis', 'KPIs principais'], ['plano', 'Plano de ação'], ['campanhas', 'Detalhe de campanhas'], ['custos', 'Custos e verba']] as const).map(([k, label]) => (
+                    <button key={k} onClick={() => setPortal(p => ({ ...p, [k]: !p[k] }))}
+                      className="w-full flex items-center justify-between py-2 text-left">
+                      <span className="text-sm text-ink">{label}</span>
+                      <span className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${portal[k] ? 'bg-blue' : 'bg-canvas-2 border border-line'}`}>
+                        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${portal[k] ? 'left-[18px]' : 'left-0.5'}`} />
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )
+          })()}
         </Card>
       </div>
 
