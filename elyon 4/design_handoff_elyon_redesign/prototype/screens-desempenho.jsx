@@ -119,6 +119,13 @@ function PerObjective() {
 
 function Campanhas({ mode, onOpen }) {
   const D = window.DATA;
+  const [filterOpen, setFilterOpen] = useStateD(false);
+  const [exportOpen, setExportOpen] = useStateD(false);
+  const [channelFilter, setChannelFilter] = useStateD('all');
+  const [statusFilter, setStatusFilter] = useStateD('all');
+  const filtered = D.campaigns.filter(c =>
+    (channelFilter === 'all' || c.channel === channelFilter) &&
+    (statusFilter === 'all' || c.status === statusFilter));
   const cols = [
     { label: 'Campanha', k: 'name', bold: true, render: r => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><ChannelMark name={r.channel} size={20} /><span>{r.name}</span></div>) },
@@ -137,10 +144,47 @@ function Campanhas({ mode, onOpen }) {
         {D.kpis.filter(k => ['investimento', 'conversoes', 'cpa', 'roas'].includes(k.k)).map(k => <StatCard key={k.k} kpi={k} compact />)}
       </div>
       <Card hover>
-        <SectionHead title="Desempenho por campanha" sub={`${D.campaigns.length} campanhas ativas`} icon="megaphone"
-          right={<div style={{ display: 'flex', gap: 8 }}><Button size="sm" variant="ghost" icon="filter">Filtros</Button><Button size="sm" variant="ghost" icon="download">Exportar</Button></div>} />
-        <DataTable cols={cols} rows={D.campaigns} onRow={onOpen} />
+        <SectionHead title="Desempenho por campanha" sub={`${filtered.length} de ${D.campaigns.length} campanhas`} icon="megaphone"
+          right={<div style={{ display: 'flex', gap: 8 }}><Button size="sm" variant="ghost" icon="filter" onClick={() => setFilterOpen(true)}>Filtros{channelFilter !== 'all' || statusFilter !== 'all' ? ` · ${[channelFilter !== 'all' && 1, statusFilter !== 'all' && 1].filter(Boolean).length}` : ''}</Button><Button size="sm" variant="ghost" icon="download" onClick={() => setExportOpen(true)}>Exportar</Button></div>} />
+        <DataTable cols={cols} rows={filtered} onRow={onOpen} />
       </Card>
+
+      <Modal open={filterOpen} onClose={() => setFilterOpen(false)} icon="filter" title="Filtrar campanhas" sub="Refine a lista por canal e status"
+        footer={<><Button variant="ghost" onClick={() => { setChannelFilter('all'); setStatusFilter('all'); }}>Limpar</Button><Button variant="primary" onClick={() => setFilterOpen(false)}>Aplicar</Button></>}>
+        <Field label="Canal">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {['all', 'Meta', 'Google', 'TikTok', 'LinkedIn'].map(c => (
+              <button key={c} onClick={() => setChannelFilter(c)} style={{ padding: '7px 12px', fontSize: 12.5, fontWeight: 600, borderRadius: 'var(--r-pill)',
+                border: `1.5px solid ${channelFilter === c ? 'var(--blue)' : 'var(--line)'}`, background: channelFilter === c ? 'var(--blue-soft)' : 'var(--paper)',
+                color: channelFilter === c ? 'var(--blue-600)' : 'var(--ink-2)' }}>{c === 'all' ? 'Todos' : c}</button>
+            ))}
+          </div>
+        </Field>
+        <div style={{ height: 14 }} />
+        <Field label="Status">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {['all', 'ativa', 'atenção', 'pausada'].map(s => (
+              <button key={s} onClick={() => setStatusFilter(s)} style={{ padding: '7px 12px', fontSize: 12.5, fontWeight: 600, borderRadius: 'var(--r-pill)',
+                border: `1.5px solid ${statusFilter === s ? 'var(--blue)' : 'var(--line)'}`, background: statusFilter === s ? 'var(--blue-soft)' : 'var(--paper)',
+                color: statusFilter === s ? 'var(--blue-600)' : 'var(--ink-2)' }}>{s === 'all' ? 'Todos' : s}</button>
+            ))}
+          </div>
+        </Field>
+      </Modal>
+
+      <Modal open={exportOpen} onClose={() => setExportOpen(false)} icon="download" title="Exportar campanhas" sub="Escolha o formato">
+        <div style={{ display: 'grid', gap: 9 }}>
+          {[['PDF executivo', 'doc'], ['Excel detalhado (CSV)', 'layers'], ['Slides para diretoria', 'image']].map(([l, ic]) => (
+            <button key={l} onClick={() => { setExportOpen(false); window.toast({ tone: 'good', title: 'Exportando', body: `${l} sendo gerado…` }); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 14px', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', background: 'var(--paper)', textAlign: 'left', transition: 'all .15s' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--blue-line)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--line)'}>
+              <span style={{ color: 'var(--blue)' }}><Icon name={ic} size={17} /></span>
+              <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600 }}>{l}</span>
+              <Icon name="arrowR" size={15} style={{ color: 'var(--ink-3)' }} />
+            </button>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -305,7 +349,7 @@ function Desempenho({ mode }) {
       <SubTabs tabs={tabs} value={tab} onChange={(k) => { setTab(k); setDetail(false); }} />
       <div key={tab + detail} className="fade-in">
         {tab === 'geral' && <VisaoGeral mode={mode} />}
-        {tab === 'campanhas' && (detail ? <CampanhaDetalhe onBack={() => setDetail(false)} /> : <Campanhas mode={mode} onOpen={() => setDetail(true)} />)}
+        {tab === 'campanhas' && (detail ? <CampanhaDetalhe selected={detail} onBack={() => setDetail(false)} /> : <Campanhas mode={mode} onOpen={(row) => setDetail(row)} />)}
         {tab === 'audiencias' && <Audiencias mode={mode} />}
         {tab === 'canais' && <Canais mode={mode} />}
         {tab === 'criativos' && <Criativos mode={mode} />}

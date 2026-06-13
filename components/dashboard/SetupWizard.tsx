@@ -126,8 +126,8 @@ interface Props {
 }
 
 function inputClass(focused = false) {
-  return `w-full bg-[#111114] border rounded-xl px-4 py-3.5 text-white placeholder:text-slate-600 focus:outline-none transition-colors ${
-    focused ? 'border-[#F0B429]' : 'border-[#2A2A30] focus:border-[#F0B429]'
+  return `w-full bg-[#FFFFFF] border rounded-xl px-4 py-3.5 text-ink placeholder:text-ink-3 focus:outline-none transition-colors ${
+    focused ? 'border-[#2C5FE0]' : 'border-[#E6E8EC] focus:border-[#2C5FE0]'
   }`
 }
 
@@ -140,7 +140,7 @@ function Tip({ text }: { text: string }) {
         onMouseEnter={() => setShow(true)}
         onMouseLeave={() => setShow(false)}
         className="w-4 h-4 rounded-full text-[9px] font-bold inline-flex items-center justify-center cursor-help"
-        style={{ background: 'rgba(255,255,255,0.06)', color: '#8A93A3', border: '1px solid #2A2A30' }}
+        style={{ background: 'rgba(20,28,46,0.05)', color: '#8A93A3', border: '1px solid #E6E8EC' }}
       >?</button>
       {show && (
         <div className="absolute bottom-6 left-0 z-50 w-52 text-[11px] leading-relaxed pointer-events-none"
@@ -362,11 +362,11 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: '16px',
                 padding: '20px 22px', borderRadius: '14px', cursor: 'pointer',
-                background: '#111114', border: '1px solid #2A2A30',
+                background: '#FFFFFF', border: '1px solid #E6E8EC',
                 textAlign: 'left', transition: 'all 0.15s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(240,180,41,0.4)'; e.currentTarget.style.background = 'rgba(240,180,41,0.06)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2A30'; e.currentTarget.style.background = '#111114' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(44,95,224,0.4)'; e.currentTarget.style.background = 'rgba(44,95,224,0.06)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E6E8EC'; e.currentTarget.style.background = '#FFFFFF' }}
             >
               <span style={{ fontSize: '28px', flexShrink: 0 }}>✅</span>
               <div>
@@ -383,11 +383,11 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: '16px',
                 padding: '20px 22px', borderRadius: '14px', cursor: 'pointer',
-                background: '#111114', border: '1px solid #2A2A30',
+                background: '#FFFFFF', border: '1px solid #E6E8EC',
                 textAlign: 'left', transition: 'all 0.15s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'; e.currentTarget.style.background = 'rgba(124,58,237,0.06)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2A30'; e.currentTarget.style.background = '#111114' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(44,95,224,0.4)'; e.currentTarget.style.background = 'rgba(44,95,224,0.06)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E6E8EC'; e.currentTarget.style.background = '#FFFFFF' }}
             >
               <span style={{ fontSize: '28px', flexShrink: 0 }}>🚀</span>
               <div>
@@ -461,7 +461,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             onClick={() => { setFastLane(false); setError('') }}
             style={{
               width: '100%', marginTop: '12px', padding: '10px', borderRadius: '10px', cursor: 'pointer',
-              background: 'transparent', border: '1px solid #2A2A30', color: '#5A6473', fontSize: '13px', fontWeight: 600,
+              background: 'transparent', border: '1px solid #E6E8EC', color: '#5A6473', fontSize: '13px', fontWeight: 600,
             }}
           >
             Preencher manualmente (cadastro completo)
@@ -480,7 +480,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
 
         {/* Badge de perfil no topo */}
         {advertisingExp === 'no' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', padding: '8px 14px', borderRadius: '10px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', padding: '8px 14px', borderRadius: '10px', background: 'rgba(44,95,224,0.08)', border: '1px solid rgba(44,95,224,0.2)' }}>
             <span style={{ fontSize: '14px' }}>🚀</span>
             <span style={{ fontSize: '11px', color: '#2C5FE0', fontWeight: 600 }}>Modo Iniciante</span>
             <span style={{ fontSize: '11px', color: '#8A93A3' }}>— a IA vai guiar você em cada passo</span>
@@ -495,8 +495,8 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               className="flex-1 h-1 rounded-full transition-all duration-500"
               style={{
                 background: i <= step
-                  ? 'linear-gradient(90deg, #F0B429, #FFD166)'
-                  : '#2A2A30',
+                  ? 'linear-gradient(90deg, #2C5FE0, #1E4FD0)'
+                  : '#E6E8EC',
               }}
             />
           ))}
@@ -505,13 +505,13 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {/* ── Step 0: Nome do cliente ── */}
         {step === 0 && (
           <div className="animate-fade-up">
-            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 1 de {TOTAL_STEPS}
             </p>
-            <h2 className="font-display text-3xl font-bold text-white mb-2">
+            <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Qual é o nome do cliente?
             </h2>
-            <p className="text-slate-500 text-sm mb-8">
+            <p className="text-ink-2 text-sm mb-8">
               Pode ser o nome da empresa ou da pessoa.
             </p>
             <input
@@ -525,7 +525,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               autoFocus
             />
             <div className="mt-4">
-              <label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">
                 Cidade / Região (opcional)
               </label>
               <input
@@ -542,13 +542,13 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {/* ── Step 1: Nicho ── */}
         {step === 1 && (
           <div className="animate-fade-up">
-            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 2 de {TOTAL_STEPS}
             </p>
-            <h2 className="font-display text-3xl font-bold text-white mb-2">
+            <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Qual é o segmento de mercado?
             </h2>
-            <p className="text-slate-500 text-sm mb-4">
+            <p className="text-ink-2 text-sm mb-4">
               O ELYON ajusta toda a análise ao seu mercado específico.
             </p>
 
@@ -571,7 +571,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                 if (filtered.length === 0) return null
                 return (
                   <div key={group.label}>
-                    <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5 px-1">
+                    <div className="text-[10px] text-ink-2 uppercase tracking-wider mb-1.5 px-1">
                       {group.label}
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
@@ -581,9 +581,9 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                           onClick={() => { update('niche', n); update('customNiche', '') }}
                           className="px-3 py-2 rounded-xl text-xs font-medium text-left transition-all"
                           style={{
-                            background: form.niche === n ? 'rgba(240,180,41,0.12)' : '#111114',
-                            border: form.niche === n ? '1px solid rgba(240,180,41,0.5)' : '1px solid #2A2A30',
-                            color: form.niche === n ? '#F0B429' : '#5A6473',
+                            background: form.niche === n ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
+                            border: form.niche === n ? '1px solid rgba(44,95,224,0.5)' : '1px solid #E6E8EC',
+                            color: form.niche === n ? '#2C5FE0' : '#5A6473',
                           }}
                         >
                           {n}
@@ -597,34 +597,34 @@ export function SetupWizard({ onComplete, initialData }: Props) {
 
             {form.niche && (
               <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl"
-                style={{ background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.2)' }}>
-                <span className="text-xs text-[#F0B429] font-semibold">Selecionado:</span>
-                <span className="text-xs text-white">{form.niche}</span>
-                <button onClick={() => update('niche', '')} className="ml-auto text-slate-600 hover:text-slate-400 text-sm">×</button>
+                style={{ background: 'rgba(44,95,224,0.08)', border: '1px solid rgba(44,95,224,0.2)' }}>
+                <span className="text-xs text-[#2C5FE0] font-semibold">Selecionado:</span>
+                <span className="text-xs text-ink">{form.niche}</span>
+                <button onClick={() => update('niche', '')} className="ml-auto text-ink-2 hover:text-ink text-sm">×</button>
               </div>
             )}
             {/* Preview do benchmark */}
             {bench && (
-              <div className="mt-4 p-4 rounded-xl" style={{ background: 'rgba(240,180,41,0.06)', border: '1px solid rgba(240,180,41,0.2)' }}>
-                <p className="text-xs text-[#F0B429] font-semibold mb-2">
+              <div className="mt-4 p-4 rounded-xl" style={{ background: 'rgba(44,95,224,0.06)', border: '1px solid rgba(44,95,224,0.2)' }}>
+                <p className="text-xs text-[#2C5FE0] font-semibold mb-2">
                   📊 Dados reais do mercado: {bench.name}
                 </p>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <div className="text-sm font-bold text-white">R${bench.cpl_min}–{bench.cpl_max}</div>
-                    <div className="text-[10px] text-slate-500">CPL médio</div>
+                    <div className="text-sm font-bold text-ink">R${bench.cpl_min}–{bench.cpl_max}</div>
+                    <div className="text-[10px] text-ink-2">CPL médio</div>
                   </div>
                   <div>
                     <div className="text-sm font-bold text-[#0E9E6E]">{bench.kpi_thresholds.roas_good}×</div>
-                    <div className="text-[10px] text-slate-500">ROAS bom</div>
+                    <div className="text-[10px] text-ink-2">ROAS bom</div>
                   </div>
                   <div>
                     <div className="text-sm font-bold text-[#2C5FE0]">{(bench.cvr_lead_to_sale * 100).toFixed(0)}%</div>
-                    <div className="text-[10px] text-slate-500">CVR lead→venda</div>
+                    <div className="text-[10px] text-ink-2">CVR lead→venda</div>
                   </div>
                 </div>
                 {nicheConf && (
-                  <p className="text-[10px] text-slate-500 mt-2 italic">
+                  <p className="text-[10px] text-ink-2 mt-2 italic">
                     "{nicheConf.analystRole}"
                   </p>
                 )}
@@ -636,21 +636,21 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {/* ── Step 2: Detalhes do nicho (campos dinâmicos) ── */}
         {step === 2 && (
           <div className="animate-fade-up">
-            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 3 de {TOTAL_STEPS}
             </p>
             {nicheConf ? (
               <>
-                <h2 className="font-display text-3xl font-bold text-white mb-2">
+                <h2 className="font-display text-3xl font-bold text-ink mb-2">
                   Detalhes do negócio
                 </h2>
-                <p className="text-slate-500 text-sm mb-6">
+                <p className="text-ink-2 text-sm mb-6">
                   Quanto mais específico, mais precisa é a análise do ELYON.
                 </p>
                 <div className="space-y-4">
                   {nicheConf.fields.map((field) => (
                     <div key={field.key}>
-                      <label className="text-xs text-slate-400 uppercase tracking-wider mb-2 block">
+                      <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">
                         {field.label}
                       </label>
                       {field.type === 'select' && field.options ? (
@@ -661,9 +661,9 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                               onClick={() => updateDetail(field.key, opt)}
                               className="px-3 py-2.5 rounded-xl text-sm text-left transition-all"
                               style={{
-                                background: form.nicheDetails[field.key] === opt ? 'rgba(240,180,41,0.1)' : '#111114',
-                                border: form.nicheDetails[field.key] === opt ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                                color: form.nicheDetails[field.key] === opt ? '#F0B429' : '#5A6473',
+                                background: form.nicheDetails[field.key] === opt ? 'rgba(44,95,224,0.1)' : '#FFFFFF',
+                                border: form.nicheDetails[field.key] === opt ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
+                                color: form.nicheDetails[field.key] === opt ? '#2C5FE0' : '#5A6473',
                               }}
                             >
                               {opt}
@@ -685,27 +685,27 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               </>
             ) : (
               <>
-                <h2 className="font-display text-3xl font-bold text-white mb-2">
+                <h2 className="font-display text-3xl font-bold text-ink mb-2">
                   Conte mais sobre o negócio
                 </h2>
-                <p className="text-slate-500 text-sm mb-6">
+                <p className="text-ink-2 text-sm mb-6">
                   Essas informações personalizam a análise estratégica.
                 </p>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs text-slate-400 uppercase tracking-wider mb-2 block">Ticket médio por cliente</label>
+                    <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">Ticket médio por cliente</label>
                     <input type="text" className={inputClass()} placeholder="Ex: R$500 por procedimento, R$3.000 por projeto..."
                       value={form.nicheDetails['ticket_medio'] || ''}
                       onChange={(e) => updateDetail('ticket_medio', e.target.value)} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 uppercase tracking-wider mb-2 block">Principal diferencial competitivo</label>
+                    <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">Principal diferencial competitivo</label>
                     <input type="text" className={inputClass()} placeholder="O que faz melhor que a concorrência..."
                       value={form.nicheDetails['diferencial'] || ''}
                       onChange={(e) => updateDetail('diferencial', e.target.value)} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 uppercase tracking-wider mb-2 block">Maior dificuldade atual</label>
+                    <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">Maior dificuldade atual</label>
                     <input type="text" className={inputClass()} placeholder="Ex: Gerar leads, fechar clientes, retenção..."
                       value={form.nicheDetails['maior_dor'] || ''}
                       onChange={(e) => updateDetail('maior_dor', e.target.value)} />
@@ -719,13 +719,13 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {/* ── Step 3: Produtos / Serviços ── */}
         {step === 3 && (
           <div className="animate-fade-up">
-            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 4 de {TOTAL_STEPS}
             </p>
-            <h2 className="font-display text-3xl font-bold text-white mb-2">
+            <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Quais produtos ou serviços?
             </h2>
-            <p className="text-slate-500 text-sm mb-6">
+            <p className="text-ink-2 text-sm mb-6">
               Liste um por linha. Seja específico — isso define o foco da estratégia.
             </p>
             <textarea
@@ -736,7 +736,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               value={form.products}
               onChange={(e) => update('products', e.target.value)}
             />
-            <p className="text-xs text-slate-600 mt-2">
+            <p className="text-xs text-ink-2 mt-2">
               Dica: priorize os serviços que você mais quer vender / que têm maior margem.
             </p>
           </div>
@@ -745,18 +745,18 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {/* ── Step 4: Budget ── */}
         {step === 4 && (
           <div className="animate-fade-up">
-            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 5 de {TOTAL_STEPS}
             </p>
-            <h2 className="font-display text-3xl font-bold text-white mb-2">
+            <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Investimento mensal de mídia?
             </h2>
-            <p className="text-slate-500 text-sm mb-6">
+            <p className="text-ink-2 text-sm mb-6">
               Quanto planeja investir por mês em anúncios (Meta Ads, Google Ads, etc).
               {bench ? ` Para ${bench.name}: mínimo R$${bench.budget_floor.toLocaleString('pt-BR')} · ideal R$${bench.budget_ideal.toLocaleString('pt-BR')}/mês.` : ''}
             </p>
             <div className="relative mb-4">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">R$</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-2 font-semibold">R$</span>
               <input
                 type="number"
                 className={inputClass()}
@@ -776,9 +776,9 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                   <button key={v} onClick={() => update('budget', String(v))}
                     className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all"
                     style={{
-                      background: form.budget === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
-                      border: form.budget === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                      color: form.budget === String(v) ? '#F0B429' : '#8A93A3',
+                      background: form.budget === String(v) ? 'rgba(44,95,224,0.15)' : '#FFFFFF',
+                      border: form.budget === String(v) ? '1px solid rgba(44,95,224,0.4)' : '1px solid #E6E8EC',
+                      color: form.budget === String(v) ? '#2C5FE0' : '#8A93A3',
                     }}>
                     R${v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : v}
                   </button>
@@ -787,11 +787,11 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             </div>
 
             <div>
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-2 block">
+              <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">
                 Faturamento atual (opcional — melhora a análise)
               </label>
               <div className="relative mb-2">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">R$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-2 font-semibold text-sm">R$</span>
                 <input
                   type="number"
                   className={inputClass()}
@@ -819,9 +819,9 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                     onClick={() => update('monthlyRevenue', p.value)}
                     className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
                     style={{
-                      background: form.monthlyRevenue === p.value ? 'rgba(240,180,41,0.15)' : '#111114',
-                      border: form.monthlyRevenue === p.value ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                      color: form.monthlyRevenue === p.value ? '#F0B429' : '#8A93A3',
+                      background: form.monthlyRevenue === p.value ? 'rgba(44,95,224,0.15)' : '#FFFFFF',
+                      border: form.monthlyRevenue === p.value ? '1px solid rgba(44,95,224,0.4)' : '1px solid #E6E8EC',
+                      color: form.monthlyRevenue === p.value ? '#2C5FE0' : '#8A93A3',
                     }}
                   >
                     {p.label}
@@ -831,18 +831,18 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             </div>
 
             {/* Situação atual — enriquece o diagnóstico de crescimento */}
-            <div className="pt-2 border-t border-[#1E1E24]">
-              <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-3">
+            <div className="pt-2 border-t border-line">
+              <p className="text-[10px] text-ink-2 uppercase tracking-wider mb-3">
                 Situação atual (opcional · diagnóstico mais preciso)
               </p>
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-slate-400 uppercase tracking-wider mb-1.5 block">
+                  <label className="text-xs text-ink-2 uppercase tracking-wider mb-1.5 block">
                     CPL atual (custo por lead)
                     <Tip text="CPL = Custo Por Lead. Quanto você paga para conseguir cada contato interessado no seu produto/serviço." />
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">R$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-2 text-sm">R$</span>
                     <input
                       type="number"
                       className={inputClass()}
@@ -854,7 +854,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 uppercase tracking-wider mb-1.5 block">
+                  <label className="text-xs text-ink-2 uppercase tracking-wider mb-1.5 block">
                     Principal origem de leads hoje
                   </label>
                   <input
@@ -866,7 +866,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 uppercase tracking-wider mb-1.5 block">
+                  <label className="text-xs text-ink-2 uppercase tracking-wider mb-1.5 block">
                     Maior desafio de crescimento hoje
                   </label>
                   <input
@@ -886,31 +886,31 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {/* ── Step 5: Unit Economics / Financeiro ── */}
         {step === 5 && (
           <div className="animate-fade-up">
-            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 6 de {TOTAL_STEPS}
             </p>
-            <h2 className="font-display text-3xl font-bold text-white mb-2">
+            <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Financeiro do negócio
             </h2>
-            <p className="text-slate-500 text-sm mb-2">
-              Com esses dados calculamos seu <strong className="text-white">ROAS break-even real</strong>, CPL máximo lucrativo e retorno sobre investimento.
+            <p className="text-ink-2 text-sm mb-2">
+              Com esses dados calculamos seu <strong className="text-ink">ROAS break-even real</strong>, CPL máximo lucrativo e retorno sobre investimento.
             </p>
             {bench && (
               <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl text-xs"
-                style={{ background: 'rgba(240,180,41,0.06)', border: '1px solid rgba(240,180,41,0.2)' }}>
-                <span className="text-[#F0B429]">💡</span>
-                <span className="text-slate-400">Benchmark {bench.name}: ticket típico ~R${bench.avg_ticket.toLocaleString('pt-BR')} · CVR ~{(bench.cvr_lead_to_sale * 100).toFixed(0)}%</span>
+                style={{ background: 'rgba(44,95,224,0.06)', border: '1px solid rgba(44,95,224,0.2)' }}>
+                <span className="text-[#2C5FE0]">💡</span>
+                <span className="text-ink-2">Benchmark {bench.name}: ticket típico ~R${bench.avg_ticket.toLocaleString('pt-BR')} · CVR ~{(bench.cvr_lead_to_sale * 100).toFixed(0)}%</span>
               </div>
             )}
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
+                <label className="text-xs text-ink-2 font-semibold uppercase tracking-wider mb-2 block">
                   Ticket médio por venda / cliente
                   <Tip text="Valor que o cliente paga. Se tiver múltiplos serviços, use o valor do principal ou a média ponderada." />
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">R$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-2 font-semibold">R$</span>
                   <input type="number" className={inputClass()} style={{ paddingLeft: '2.5rem', fontSize: '1.125rem' }}
                     placeholder={bench ? String(bench.avg_ticket) : '2000'}
                     value={form.ticketPrice}
@@ -921,16 +921,16 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                     <button key={v} type="button" onClick={() => update('ticketPrice', String(v))}
                       className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
                       style={{
-                        background: form.ticketPrice === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
-                        border: form.ticketPrice === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                        color: form.ticketPrice === String(v) ? '#F0B429' : '#8A93A3',
+                        background: form.ticketPrice === String(v) ? 'rgba(44,95,224,0.15)' : '#FFFFFF',
+                        border: form.ticketPrice === String(v) ? '1px solid rgba(44,95,224,0.4)' : '1px solid #E6E8EC',
+                        color: form.ticketPrice === String(v) ? '#2C5FE0' : '#8A93A3',
                       }}>
                       R${v >= 1000 ? `${v / 1000}k` : v}
                     </button>
                   ))}
                 </div>
                 {nicheConf && nicheConf.fields.length > 1 && (
-                  <p className="text-[10px] text-slate-600 mt-1.5">
+                  <p className="text-[10px] text-ink-2 mt-1.5">
                     Multi-serviços? Use o ticket do serviço principal ou a média ponderada dos que mais anuncia.
                   </p>
                 )}
@@ -938,7 +938,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
+                  <label className="text-xs text-ink-2 font-semibold uppercase tracking-wider mb-2 block">
                     Margem bruta
                     <Tip text="Do que entra de receita, quanto fica após pagar custo direto (material, mão de obra). Ex: 40% → para cada R$100 vendido, R$40 é seu lucro bruto." />
                   </label>
@@ -947,22 +947,22 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                       placeholder="40" min="1" max="100"
                       value={form.grossMargin}
                       onChange={(e) => update('grossMargin', e.target.value)} />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">%</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-2 font-semibold">%</span>
                   </div>
                   <div className="flex gap-1.5 mt-2 flex-wrap">
                     {[20, 30, 40, 50, 60, 70].map((v) => (
                       <button key={v} type="button" onClick={() => update('grossMargin', String(v))}
                         className="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
                         style={{
-                          background: form.grossMargin === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
-                          border: form.grossMargin === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                          color: form.grossMargin === String(v) ? '#F0B429' : '#8A93A3',
+                          background: form.grossMargin === String(v) ? 'rgba(44,95,224,0.15)' : '#FFFFFF',
+                          border: form.grossMargin === String(v) ? '1px solid rgba(44,95,224,0.4)' : '1px solid #E6E8EC',
+                          color: form.grossMargin === String(v) ? '#2C5FE0' : '#8A93A3',
                         }}>{v}%</button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
+                  <label className="text-xs text-ink-2 font-semibold uppercase tracking-wider mb-2 block">
                     Taxa de fechamento
                     <Tip text="CVR: de cada 100 leads gerados, quantos viram clientes pagantes. Ex: 10% = 10 de 100 leads fecham negócio." />
                   </label>
@@ -971,16 +971,16 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                       placeholder={bench ? String(Math.round((bench.cvr_lead_to_sale || 0.1) * 100)) : '10'} min="1" max="100"
                       value={form.conversionRate}
                       onChange={(e) => update('conversionRate', e.target.value)} />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">%</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-2 font-semibold">%</span>
                   </div>
                   <div className="flex gap-1.5 mt-2 flex-wrap">
                     {[5, 10, 15, 20, 30, 50].map((v) => (
                       <button key={v} type="button" onClick={() => update('conversionRate', String(v))}
                         className="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
                         style={{
-                          background: form.conversionRate === String(v) ? 'rgba(240,180,41,0.15)' : '#111114',
-                          border: form.conversionRate === String(v) ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                          color: form.conversionRate === String(v) ? '#F0B429' : '#8A93A3',
+                          background: form.conversionRate === String(v) ? 'rgba(44,95,224,0.15)' : '#FFFFFF',
+                          border: form.conversionRate === String(v) ? '1px solid rgba(44,95,224,0.4)' : '1px solid #E6E8EC',
+                          color: form.conversionRate === String(v) ? '#2C5FE0' : '#8A93A3',
                         }}>{v}%</button>
                     ))}
                   </div>
@@ -988,7 +988,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 font-semibold uppercase tracking-wider mb-2 block">
+                <label className="text-xs text-ink-2 font-semibold uppercase tracking-wider mb-2 block">
                   Modelo de receita
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1000,8 +1000,8 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                       onClick={() => setForm(f => ({ ...f, isRecurring: opt.val }))}
                       className="py-3 px-3 rounded-xl text-left transition-all"
                       style={form.isRecurring === opt.val
-                        ? { background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.45)', color: '#F0B429' }
-                        : { background: '#111114', border: '1px solid #2A2A30', color: '#8A93A3' }
+                        ? { background: 'rgba(44,95,224,0.1)', border: '1px solid rgba(44,95,224,0.45)', color: '#2C5FE0' }
+                        : { background: '#FFFFFF', border: '1px solid #E6E8EC', color: '#8A93A3' }
                       }>
                       <div className="text-lg mb-1">{opt.icon}</div>
                       <div className="text-xs font-semibold">{opt.label}</div>
@@ -1021,33 +1021,33 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               const maxCPL = cvr > 0 ? (ticket * margin * cvr).toFixed(0) : '—'
               const ltv = form.isRecurring ? (ticket / 0.05).toFixed(0) : ticket.toFixed(0)
               return (
-                <div className="mt-5 p-4 rounded-2xl" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.2)' }}>
-                  <p className="text-xs text-[#F0B429] font-bold mb-3">📊 Seus números calculados em tempo real</p>
+                <div className="mt-5 p-4 rounded-2xl" style={{ background: 'rgba(44,95,224,0.05)', border: '1px solid rgba(44,95,224,0.2)' }}>
+                  <p className="text-xs text-[#2C5FE0] font-bold mb-3">📊 Seus números calculados em tempo real</p>
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
-                      <div className="text-lg font-bold text-[#F0B429]">{breakEvenROAS}×</div>
-                      <div className="text-[10px] text-slate-500">ROAS break-even</div>
+                      <div className="text-lg font-bold text-[#2C5FE0]">{breakEvenROAS}×</div>
+                      <div className="text-[10px] text-ink-2">ROAS break-even</div>
                       <div className="text-[9px] text-slate-700">retorno mínimo s/ prejuízo</div>
                     </div>
                     <div>
                       <div className="text-lg font-bold text-[#0E9E6E]">R${maxCPL}</div>
-                      <div className="text-[10px] text-slate-500">CPL máximo</div>
+                      <div className="text-[10px] text-ink-2">CPL máximo</div>
                       <div className="text-[9px] text-slate-700">acima disso = prejuízo</div>
                     </div>
                     <div>
                       <div className="text-lg font-bold text-[#2C5FE0]">R${Number(ltv).toLocaleString('pt-BR')}</div>
-                      <div className="text-[10px] text-slate-500">LTV estimado</div>
+                      <div className="text-[10px] text-ink-2">LTV estimado</div>
                       <div className="text-[9px] text-slate-700">{form.isRecurring ? 'valor vitalício (churn 5%)' : 'venda única'}</div>
                     </div>
                   </div>
-                  <p className="text-[10px] text-slate-600 mt-3 text-center">
+                  <p className="text-[10px] text-ink-2 mt-3 text-center">
                     ROAS = retorno sobre investimento em anúncios · CPL = custo por lead · LTV = valor total do cliente
                   </p>
                 </div>
               )
             })()}
 
-            <p className="text-[10px] text-slate-600 mt-4 text-center">
+            <p className="text-[10px] text-ink-2 mt-4 text-center">
               Pode pular — mas com esses dados a estratégia fica muito mais precisa.
             </p>
           </div>
@@ -1056,14 +1056,14 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {/* ── Step 6: Import de CSV (opcional) ── */}
         {step === 6 && (
           <div className="animate-fade-up">
-            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 7 de {TOTAL_STEPS} · Opcional
             </p>
-            <h2 className="font-display text-3xl font-bold text-white mb-2">
+            <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Importar dados de campanhas
             </h2>
-            <p className="text-slate-500 text-sm mb-6">
-              Faça upload do export do <strong className="text-slate-300">Meta Ads</strong> ou <strong className="text-slate-300">Google Ads</strong> para receber uma análise completa imediata. Ou pule e faça depois na aba Auditoria.
+            <p className="text-ink-2 text-sm mb-6">
+              Faça upload do export do <strong className="text-ink-2">Meta Ads</strong> ou <strong className="text-ink-2">Google Ads</strong> para receber uma análise completa imediata. Ou pule e faça depois na aba Auditoria.
             </p>
 
             {/* Zona de drop */}
@@ -1077,8 +1077,8 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               onClick={() => importRef.current?.click()}
               className="border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-colors mb-4"
               style={{
-                borderColor: importDragOver ? '#F0B429' : '#2A2A30',
-                background: importDragOver ? 'rgba(240,180,41,0.05)' : '#111114',
+                borderColor: importDragOver ? '#2C5FE0' : '#E6E8EC',
+                background: importDragOver ? 'rgba(44,95,224,0.05)' : '#FFFFFF',
               }}
             >
               <input
@@ -1090,12 +1090,12 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                 onChange={e => { Array.from(e.target.files || []).forEach(handleImportFile); e.target.value = '' }}
               />
               {importLoading ? (
-                <div className="text-[#F0B429] text-sm font-semibold animate-pulse">⚡ Analisando arquivo...</div>
+                <div className="text-[#2C5FE0] text-sm font-semibold animate-pulse">⚡ Analisando arquivo...</div>
               ) : (
                 <>
                   <div className="text-3xl mb-3 opacity-40">📊</div>
-                  <div className="text-sm font-semibold text-white mb-1">Arraste o CSV/XLSX aqui ou clique para selecionar</div>
-                  <div className="text-xs text-slate-600">Meta Ads ou Google Ads · .csv, .xlsx</div>
+                  <div className="text-sm font-semibold text-ink mb-1">Arraste o CSV/XLSX aqui ou clique para selecionar</div>
+                  <div className="text-xs text-ink-2">Meta Ads ou Google Ads · .csv, .xlsx</div>
                 </>
               )}
             </div>
@@ -1106,15 +1106,15 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                 { platform: 'Meta Ads', steps: 'Gerenciador de Anúncios → Relatórios → Exportar CSV', icon: '📘' },
                 { platform: 'Google Ads', steps: 'Campanhas → Download → Formato CSV', icon: '🔵' },
               ].map(p => (
-                <div key={p.platform} className="bg-[#111114] border border-[#2A2A30] rounded-xl p-3">
-                  <div className="text-xs font-semibold text-white mb-1">{p.icon} {p.platform}</div>
-                  <div className="text-[10px] text-slate-600">{p.steps}</div>
+                <div key={p.platform} className="bg-[#FFFFFF] border border-[#E6E8EC] rounded-xl p-3">
+                  <div className="text-xs font-semibold text-ink mb-1">{p.icon} {p.platform}</div>
+                  <div className="text-[10px] text-ink-2">{p.steps}</div>
                 </div>
               ))}
             </div>
 
             {importError && (
-              <div className="text-xs text-red-400 bg-red-900/20 border border-red-500/30 rounded-xl px-3 py-2 mb-3">{importError}</div>
+              <div className="text-xs text-red bg-red-soft border border-red/30 rounded-xl px-3 py-2 mb-3">{importError}</div>
             )}
 
             {/* Arquivos importados */}
@@ -1122,48 +1122,48 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               <div className="space-y-3">
                 <div className="text-xs text-[#0E9E6E] font-semibold mb-1">✓ {importedFiles.length} arquivo{importedFiles.length > 1 ? 's' : ''} importado{importedFiles.length > 1 ? 's' : ''}:</div>
                 {importedFiles.map((f, i) => (
-                  <div key={i} className="bg-[#111114] border border-[#0E9E6E30] rounded-xl p-3">
+                  <div key={i} className="bg-[#FFFFFF] border border-[#0E9E6E30] rounded-xl p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-white">{f.filename}</span>
+                      <span className="text-xs font-semibold text-ink">{f.filename}</span>
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                          style={{ color: f.platform === 'meta' ? '#2C5FE0' : f.platform === 'google' ? '#F0B429' : '#8A93A3',
-                            background: f.platform === 'meta' ? 'rgba(56,189,248,0.1)' : f.platform === 'google' ? 'rgba(240,180,41,0.1)' : 'rgba(100,116,139,0.1)' }}>
+                          style={{ color: f.platform === 'meta' ? '#2C5FE0' : f.platform === 'google' ? '#2C5FE0' : '#8A93A3',
+                            background: f.platform === 'meta' ? 'rgba(56,189,248,0.1)' : f.platform === 'google' ? 'rgba(44,95,224,0.1)' : 'rgba(100,116,139,0.1)' }}>
                           {f.platform === 'unknown' ? 'desconhecido' : f.platform}
                         </span>
                         <button onClick={() => setImportedFiles(prev => prev.filter((_, j) => j !== i))}
-                          className="text-slate-700 hover:text-slate-500 text-sm">×</button>
+                          className="text-slate-700 hover:text-ink text-sm">×</button>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <div className="text-xs font-bold text-white">{f.campaigns.length}</div>
-                        <div className="text-[10px] text-slate-600">campanhas</div>
+                        <div className="text-xs font-bold text-ink">{f.campaigns.length}</div>
+                        <div className="text-[10px] text-ink-2">campanhas</div>
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-[#F0B429]">R${Math.round(f.totalSpend).toLocaleString('pt-BR')}</div>
-                        <div className="text-[10px] text-slate-600">investimento</div>
+                        <div className="text-xs font-bold text-[#2C5FE0]">R${Math.round(f.totalSpend).toLocaleString('pt-BR')}</div>
+                        <div className="text-[10px] text-ink-2">investimento</div>
                       </div>
                       <div>
                         <div className="text-xs font-bold text-[#0E9E6E]">{f.totalLeads}</div>
-                        <div className="text-[10px] text-slate-600">leads/conv.</div>
+                        <div className="text-[10px] text-ink-2">leads/conv.</div>
                       </div>
                     </div>
                     {f.avgCPL > 0 && (
-                      <div className="mt-2 text-center text-[10px] text-slate-500">
-                        CPL médio: <span className="text-[#F0B429] font-bold">R${f.avgCPL}</span>
+                      <div className="mt-2 text-center text-[10px] text-ink-2">
+                        CPL médio: <span className="text-[#2C5FE0] font-bold">R${f.avgCPL}</span>
                       </div>
                     )}
                   </div>
                 ))}
-                <div className="text-[10px] text-slate-600 text-center">
+                <div className="text-[10px] text-ink-2 text-center">
                   ✓ CPL preenchido automaticamente · a IA vai analisar esses dados ao gerar a estratégia
                 </div>
               </div>
             )}
 
             {importedFiles.length === 0 && !importLoading && (
-              <div className="text-center text-xs text-slate-600 py-2">
+              <div className="text-center text-xs text-ink-2 py-2">
                 Passo opcional — você pode pular e importar depois na aba Auditoria.
               </div>
             )}
@@ -1173,28 +1173,28 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {/* ── Step 7: Cliente Ideal / Persona ── */}
         {step === 7 && (
           <div className="animate-fade-up">
-            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 8 de {TOTAL_STEPS} · Opcional
             </p>
-            <h2 className="font-display text-3xl font-bold text-white mb-2">
+            <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Quem é o cliente ideal?
             </h2>
-            <p className="text-slate-500 text-sm mb-6">
+            <p className="text-ink-2 text-sm mb-6">
               Essas informações vão gerar a persona do seu cliente e personalizar toda a estratégia de comunicação.
             </p>
 
             {/* Faixa etária */}
             <div className="mb-5">
-              <label className="block text-xs font-semibold text-slate-400 mb-2">Faixa etária predominante</label>
+              <label className="block text-xs font-semibold text-ink-2 mb-2">Faixa etária predominante</label>
               <div className="flex flex-wrap gap-2">
                 {['18–24', '25–34', '35–44', '45–54', '55+', 'Variado'].map((age) => (
                   <button key={age} type="button"
                     onClick={() => setForm((f) => ({ ...f, targetAge: f.targetAge === age ? '' : age }))}
                     className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
                     style={{
-                      background: form.targetAge === age ? 'rgba(240,180,41,0.12)' : '#111114',
-                      border: form.targetAge === age ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                      color: form.targetAge === age ? '#F0B429' : '#5A6473',
+                      background: form.targetAge === age ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
+                      border: form.targetAge === age ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
+                      color: form.targetAge === age ? '#2C5FE0' : '#5A6473',
                     }}>
                     {age}
                   </button>
@@ -1204,16 +1204,16 @@ export function SetupWizard({ onComplete, initialData }: Props) {
 
             {/* Gênero */}
             <div className="mb-5">
-              <label className="block text-xs font-semibold text-slate-400 mb-2">Gênero predominante</label>
+              <label className="block text-xs font-semibold text-ink-2 mb-2">Gênero predominante</label>
               <div className="flex gap-2">
                 {['Majoritariamente feminino', 'Majoritariamente masculino', 'Equilibrado'].map((g) => (
                   <button key={g} type="button"
                     onClick={() => setForm((f) => ({ ...f, targetGender: f.targetGender === g ? '' : g }))}
                     className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all"
                     style={{
-                      background: form.targetGender === g ? 'rgba(240,180,41,0.12)' : '#111114',
-                      border: form.targetGender === g ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                      color: form.targetGender === g ? '#F0B429' : '#5A6473',
+                      background: form.targetGender === g ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
+                      border: form.targetGender === g ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
+                      color: form.targetGender === g ? '#2C5FE0' : '#5A6473',
                     }}>
                     {g}
                   </button>
@@ -1223,16 +1223,16 @@ export function SetupWizard({ onComplete, initialData }: Props) {
 
             {/* Renda */}
             <div className="mb-5">
-              <label className="block text-xs font-semibold text-slate-400 mb-2">Renda mensal aproximada</label>
+              <label className="block text-xs font-semibold text-ink-2 mb-2">Renda mensal aproximada</label>
               <div className="flex flex-wrap gap-2">
                 {['Até R$2k', 'R$2k–5k', 'R$5k–10k', 'R$10k–20k', 'Acima de R$20k', 'Variada'].map((inc) => (
                   <button key={inc} type="button"
                     onClick={() => setForm((f) => ({ ...f, targetIncome: f.targetIncome === inc ? '' : inc }))}
                     className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
                     style={{
-                      background: form.targetIncome === inc ? 'rgba(240,180,41,0.12)' : '#111114',
-                      border: form.targetIncome === inc ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                      color: form.targetIncome === inc ? '#F0B429' : '#5A6473',
+                      background: form.targetIncome === inc ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
+                      border: form.targetIncome === inc ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
+                      color: form.targetIncome === inc ? '#2C5FE0' : '#5A6473',
                     }}>
                     {inc}
                   </button>
@@ -1242,7 +1242,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
 
             {/* Canais online */}
             <div className="mb-5">
-              <label className="block text-xs font-semibold text-slate-400 mb-2">Onde passa o tempo online? <span className="text-slate-600">(múltiplos)</span></label>
+              <label className="block text-xs font-semibold text-ink-2 mb-2">Onde passa o tempo online? <span className="text-ink-2">(múltiplos)</span></label>
               <div className="flex flex-wrap gap-2">
                 {['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google', 'LinkedIn', 'WhatsApp', 'Twitter/X', 'Pinterest'].map((ch) => {
                   const active = form.onlineChannels.includes(ch)
@@ -1254,9 +1254,9 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                       }))}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
                       style={{
-                        background: active ? 'rgba(240,180,41,0.12)' : '#111114',
-                        border: active ? '1px solid rgba(240,180,41,0.45)' : '1px solid #2A2A30',
-                        color: active ? '#F0B429' : '#5A6473',
+                        background: active ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
+                        border: active ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
+                        color: active ? '#2C5FE0' : '#5A6473',
                       }}>
                       {ch}
                     </button>
@@ -1267,7 +1267,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
 
             {/* Dores */}
             <div className="mb-4">
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-ink-2 mb-1.5">
                 Qual a maior dor ou problema que você resolve?
               </label>
               <textarea
@@ -1275,13 +1275,13 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                 onChange={(e) => setForm((f) => ({ ...f, mainPains: e.target.value }))}
                 placeholder="Ex: Meu cliente sofre com falta de tempo para cuidar da saúde e quer resultados rápidos sem sair de casa..."
                 rows={2}
-                className="w-full bg-[#111114] border border-[#2A2A30] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 resize-none outline-none focus:border-[#F0B429]/40"
+                className="w-full bg-[#FFFFFF] border border-[#E6E8EC] rounded-xl px-4 py-3 text-sm text-ink placeholder-ink-3 resize-none outline-none focus:border-[#2C5FE0]/40"
               />
             </div>
 
             {/* Objeção */}
             <div className="mb-2">
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-ink-2 mb-1.5">
                 Qual a principal objeção de compra?
               </label>
               <input
@@ -1289,11 +1289,11 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                 value={form.mainObjection}
                 onChange={(e) => setForm((f) => ({ ...f, mainObjection: e.target.value }))}
                 placeholder="Ex: 'Não tenho dinheiro agora' / 'Vou pensar' / 'Já tentei outras coisas'"
-                className="w-full bg-[#111114] border border-[#2A2A30] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 outline-none focus:border-[#F0B429]/40"
+                className="w-full bg-[#FFFFFF] border border-[#E6E8EC] rounded-xl px-4 py-3 text-sm text-ink placeholder-ink-3 outline-none focus:border-[#2C5FE0]/40"
               />
             </div>
 
-            <div className="text-center text-xs text-slate-600 pt-3">
+            <div className="text-center text-xs text-ink-2 pt-3">
               Todos os campos são opcionais — quanto mais você preencher, mais precisa será a persona gerada.
             </div>
           </div>
@@ -1302,13 +1302,13 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         {/* ── Step 8: Objetivo + Gerar ── */}
         {step === 8 && (
           <div className="animate-fade-up">
-            <p className="text-xs text-[#F0B429] font-semibold uppercase tracking-widest mb-3">
+            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 9 de {TOTAL_STEPS} · Último passo
             </p>
-            <h2 className="font-display text-3xl font-bold text-white mb-2">
+            <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Objetivo principal?
             </h2>
-            <p className="text-slate-500 text-sm mb-6">
+            <p className="text-ink-2 text-sm mb-6">
               Isso define o foco da estratégia gerada pelo ELYON.
             </p>
             <div className="space-y-2 mb-6">
@@ -1318,9 +1318,9 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                   onClick={() => update('objective', obj.value)}
                   className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all"
                   style={{
-                    background: form.objective === obj.value ? 'rgba(240,180,41,0.08)' : '#111114',
-                    border: form.objective === obj.value ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                    color: form.objective === obj.value ? '#F0B429' : '#5A6473',
+                    background: form.objective === obj.value ? 'rgba(44,95,224,0.08)' : '#FFFFFF',
+                    border: form.objective === obj.value ? '1px solid rgba(44,95,224,0.4)' : '1px solid #E6E8EC',
+                    color: form.objective === obj.value ? '#2C5FE0' : '#5A6473',
                   }}
                 >
                   <span className="text-xl">{obj.icon}</span>
@@ -1330,9 +1330,9 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             </div>
 
             {/* Preview do que será gerado */}
-            <div className="p-4 rounded-xl mb-5" style={{ background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)' }}>
-              <div className="text-xs text-[#F0B429] font-semibold mb-2">📋 O ELYON vai gerar para você:</div>
-              <div className="space-y-1.5 text-xs text-slate-400">
+            <div className="p-4 rounded-xl mb-5" style={{ background: 'rgba(44,95,224,0.05)', border: '1px solid rgba(44,95,224,0.15)' }}>
+              <div className="text-xs text-[#2C5FE0] font-semibold mb-2">📋 O ELYON vai gerar para você:</div>
+              <div className="space-y-1.5 text-xs text-ink-2">
                 <div className="flex items-center gap-2"><span className="text-[#0E9E6E]">✓</span> Estratégia completa de canais com investimento recomendado</div>
                 <div className="flex items-center gap-2"><span className="text-[#0E9E6E]">✓</span> CPL e ROAS esperados com benchmarks reais do nicho</div>
                 <div className="flex items-center gap-2"><span className="text-[#0E9E6E]">✓</span> Plano de ação de 90 dias pronto para executar</div>
@@ -1342,7 +1342,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             </div>
 
             {error && (
-              <div className="bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 mb-4">
+              <div className="bg-red-soft border border-red/30 rounded-xl px-4 py-3 text-sm text-red mb-4">
                 {error}
               </div>
             )}
@@ -1350,8 +1350,8 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             <button
               onClick={handleGenerate}
               disabled={generating}
-              className="w-full py-4 rounded-xl font-bold text-black text-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
+              className="w-full py-4 rounded-xl font-bold text-white text-lg transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #2C5FE0, #1E4FD0)' }}
             >
               {generating ? '⚡ Gerando análise...' : '⚡ Gerar Análise Estratégica'}
             </button>
@@ -1362,7 +1362,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         <div className="flex justify-between mt-8">
           <button
             onClick={() => setWizardStep(Math.max(0, step - 1))}
-            className="px-6 py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 transition-colors"
+            className="px-6 py-2.5 rounded-xl text-sm text-ink-2 hover:text-ink transition-colors"
             style={{ visibility: step === 0 ? 'hidden' : 'visible' }}
           >
             ← Voltar
@@ -1373,9 +1373,9 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               disabled={!canNext()}
               className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
               style={{
-                background: canNext() ? 'rgba(240,180,41,0.12)' : 'transparent',
-                border: '1px solid rgba(240,180,41,0.3)',
-                color: '#F0B429',
+                background: canNext() ? 'rgba(44,95,224,0.12)' : 'transparent',
+                border: '1px solid rgba(44,95,224,0.3)',
+                color: '#2C5FE0',
               }}
             >
               {(step === 6 && importedFiles.length === 0) || step === 7 ? 'Pular →' : 'Próximo →'}

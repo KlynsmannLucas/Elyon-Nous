@@ -229,7 +229,11 @@ function PlanoAcao({ mode, onNav }) {
           <div>
             {D.actions.map((a, i) => (
               <div key={a.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '13px 0', borderBottom: '1px solid var(--line-2)' }}>
-                <button onClick={() => setDone(s => ({ ...s, [a.id]: !s[a.id] }))}
+                <button onClick={() => setDone(s => {
+                  const wasOff = !s[a.id];
+                  if (wasOff) window.toast && window.toast({ tone: 'good', title: 'Ação concluída', body: `+${D.fmt.brl(a.impact)} de impacto estimado.` });
+                  return { ...s, [a.id]: !s[a.id] };
+                })}
                   style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0, border: `2px solid ${done[a.id] ? 'var(--green)' : 'var(--line-strong)'}`,
                     background: done[a.id] ? 'var(--green)' : 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {done[a.id] && <Icon name="check" size={14} w={3} />}
@@ -348,6 +352,7 @@ function Relatorios({ mode }) {
 /* ── INTEGRAÇÕES ────────────────────────────────────────────────────────── */
 function Integracoes({ mode }) {
   const D = window.DATA;
+  const [connectOpen, setConnectOpen] = useStateM(false);
   const conns = [
     { p: 'Meta Ads', health: 'Excelente', tone: 'good', sync: 'há 3 min' },
     { p: 'Google Ads', health: 'Excelente', tone: 'good', sync: 'há 5 min' },
@@ -364,7 +369,7 @@ function Integracoes({ mode }) {
         ))}
       </div>
       <Card hover>
-        <SectionHead title="Plataformas conectadas" sub="Status de sincronização" icon="plug" right={<Button size="sm" variant="primary" icon="plus">Conectar nova</Button>} />
+        <SectionHead title="Plataformas conectadas" sub="Status de sincronização" icon="plug" right={<Button size="sm" variant="primary" icon="plus" onClick={() => setConnectOpen(true)}>Conectar nova</Button>} />
         <DataTable cols={[
           { label: 'Plataforma', bold: true, render: r => <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><ChannelMark name={r.p.split(' ')[0]} size={20} />{r.p}</div> },
           { label: 'Status', render: () => <Badge tone="good" dot>Conectado</Badge> },
@@ -372,6 +377,30 @@ function Integracoes({ mode }) {
           { label: 'Sincronização', align: 'right', mono: true, render: r => r.sync },
         ]} rows={conns} />
       </Card>
+      <Modal open={connectOpen} onClose={() => setConnectOpen(false)} icon="plug" title="Conectar nova plataforma" sub="Escolha a fonte de dados que deseja conectar via OAuth" width={560}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {[
+            { p: 'Meta Ads', d: 'Facebook & Instagram', m: 'Meta' },
+            { p: 'Google Ads', d: 'Search, Display, PMax', m: 'Google' },
+            { p: 'TikTok Ads', d: 'Vertical video ads', m: 'TikTok' },
+            { p: 'LinkedIn Ads', d: 'B2B & Lead Gen', m: 'LinkedIn' },
+            { p: 'Google Analytics 4', d: 'Métricas de site', m: 'Google' },
+            { p: 'HubSpot', d: 'CRM & marketing', m: 'Outros' },
+          ].map(opt => (
+            <button key={opt.p} onClick={() => { setConnectOpen(false); window.toast && window.toast({ tone: 'blue', title: 'Abrindo autorização', body: `Redirecionando para ${opt.p}…` }); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 13, border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', background: 'var(--paper)', textAlign: 'left', transition: 'all .15s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--blue-line)'; e.currentTarget.style.boxShadow = 'var(--sh-2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.boxShadow = 'none'; }}>
+              <ChannelMark name={opt.m} size={32} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{opt.p}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{opt.d}</div>
+              </div>
+              <Icon name="arrowR" size={15} style={{ color: 'var(--ink-3)' }} />
+            </button>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -397,7 +426,7 @@ function Config({ mode, onNav }) {
           {[['Briefing diário', true], ['Alertas proativos', true], ['Sugestões de ação', true], ['Relatório semanal automático', false]].map(([l, on], i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 0', borderBottom: '1px solid var(--line-2)' }}>
               <span style={{ fontSize: 13.5 }}>{l}</span>
-              <ToggleSwitch on={on} />
+              <ToggleSwitch on={on} onChange={(nv) => window.toast && window.toast({ tone: nv ? 'good' : 'neutral', title: `${l}: ${nv ? 'ativado' : 'desativado'}` })} />
             </div>
           ))}
         </Card>
@@ -415,10 +444,11 @@ function Config({ mode, onNav }) {
   );
 }
 
-function ToggleSwitch({ on: initial }) {
+function ToggleSwitch({ on: initial, onChange }) {
   const [on, setOn] = useStateM(initial);
+  const toggle = () => { const nv = !on; setOn(nv); onChange && onChange(nv); };
   return (
-    <button onClick={() => setOn(!on)} style={{ width: 40, height: 23, borderRadius: 99, border: 'none', padding: 2,
+    <button onClick={toggle} style={{ width: 40, height: 23, borderRadius: 99, border: 'none', padding: 2,
       background: on ? 'var(--blue)' : 'var(--line-strong)', transition: 'background .2s', position: 'relative' }}>
       <span style={{ display: 'block', width: 19, height: 19, borderRadius: 99, background: '#fff', transform: on ? 'translateX(17px)' : 'translateX(0)', transition: 'transform .2s', boxShadow: 'var(--sh-1)' }} />
     </button>

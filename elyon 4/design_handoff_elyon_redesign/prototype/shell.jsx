@@ -165,7 +165,7 @@ function Sidebar({ active, onChange, collapsed, onToggle, onLogout }) {
 }
 
 /* ── Topbar ─────────────────────────────────────────────────────────────── */
-function Topbar({ mode, onMode, title, sub, onAskNous }) {
+function Topbar({ mode, onMode, title, sub, onAskNous, period, onPeriod, onNav }) {
   const D = window.DATA;
   const Pill = ({ icon, children, onClick }) => (
     <button onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 12px', fontSize: 13,
@@ -188,17 +188,14 @@ function Topbar({ mode, onMode, title, sub, onAskNous }) {
 
       {/* Controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
-        <span className="tb-md"><Pill icon="calendar">{D.period}<Icon name="chevD" size={13} /></Pill></span>
+        <span className="tb-md"><PeriodPicker value={period} onChange={onPeriod} /></span>
         <Segmented options={[{ value: 'simple', label: 'Simplificada' }, { value: 'pro', label: 'Avançada' }]} value={mode} onChange={onMode} />
         <div className="tb-md" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)' }} title="Canais conectados">
           {D.channels.map((c, i) => <span key={i} style={{ marginLeft: i ? -4 : 0 }}><ChannelMark name={c} size={20} /></span>)}
         </div>
         <span className="tb-md"><CreditsPill /></span>
         <Button variant="dark" size="md" icon="sparkle2" onClick={onAskNous}>Perguntar ao NOUS</Button>
-        <button title="Notificações" style={{ position: 'relative', width: 38, height: 38, borderRadius: 'var(--r-sm)', border: '1px solid var(--line)', background: 'var(--paper)', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Icon name="bell" size={18} />
-          <span style={{ position: 'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: 99, background: 'var(--red)', border: '1.5px solid var(--paper)' }} />
-        </button>
+        <NotificationsPanel onNav={onNav} />
       </div>
     </header>
   );

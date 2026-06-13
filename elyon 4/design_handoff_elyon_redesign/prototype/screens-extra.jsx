@@ -52,7 +52,7 @@ function Audiencias({ mode }) {
               <div style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--ink)' }}>
                 Escale <b>Remarketing 30d</b> e <b>Lookalike 1%</b> (ROAS acima de 4,5x) e corte o <b>público amplo frio</b> (ROAS 1,6x). Realocar essa verba deve render <b style={{ color: 'var(--green-600)' }}>+R$ 18,4 mil</b>/mês.
               </div>
-              <Button size="sm" variant="primary" icon="bolt" style={{ marginTop: 12 }}>Aplicar recomendação</Button>
+              <Button size="sm" variant="primary" icon="bolt" style={{ marginTop: 12 }} onClick={() => window.toast && window.toast({ tone: 'good', title: 'Recomendação aplicada', body: 'Ganho estimado: +R$ 18,4 mil/mês' })}>Aplicar recomendação</Button>
             </div>
           </div>
         </Card>
@@ -78,7 +78,7 @@ function AlocadorIA({ mode }) {
             <div className="eyebrow">Ganho projetado</div>
             <div className="mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--green-600)' }}>+{D.fmt.brl(al.projectedGain)}</div>
           </div>
-          <Button variant={applied ? 'green' : 'primary'} icon={applied ? 'check' : 'bolt'} onClick={() => setApplied(true)}>{applied ? 'Aplicado' : 'Aplicar alocação'}</Button>
+          <Button variant={applied ? 'green' : 'primary'} icon={applied ? 'check' : 'bolt'} onClick={() => { setApplied(true); window.toast && window.toast({ tone: 'good', title: 'Alocação aplicada', body: `Ganho projetado: +${D.fmt.brl(al.projectedGain)}` }); }}>{applied ? 'Aplicado' : 'Aplicar alocação'}</Button>
         </div>
       </Card>
       <Card hover>
@@ -118,8 +118,15 @@ function AlocadorIA({ mode }) {
 }
 
 /* ═══ DRILL-DOWN DE CAMPANHA ═════════════════════════════════════════════ */
-function CampanhaDetalhe({ onBack }) {
-  const D = window.DATA, c = D.campaignDetail;
+function CampanhaDetalhe({ selected, onBack }) {
+  const D = window.DATA;
+  const tpl = D.campaignDetail;
+  // Merge static template with selected row to show the actually clicked campaign
+  const c = selected
+    ? { ...tpl, name: selected.name, channel: selected.channel,
+        objective: selected.name.toLowerCase().includes('lead') ? 'Geração de leads' : selected.name.toLowerCase().includes('view') ? 'Visualizações' : 'Conversões',
+        learning: selected.status === 'ativa' ? 'Otimizado' : selected.status === 'atenção' ? 'Aprendizado' : 'Limitado' }
+    : tpl;
   const learnTone = c.learning === 'Otimizado' ? 'good' : c.learning === 'Aprendizado' ? 'warn' : 'bad';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -413,7 +420,7 @@ function PortalBlock() {
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 8px 8px 14px', background: 'var(--canvas)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', marginBottom: 14 }}>
         <Icon name="link" size={15} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
         <span className="mono" style={{ flex: 1, fontSize: 12.5, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.link}</span>
-        <Button size="sm" variant={copied ? 'green' : 'soft'} icon={copied ? 'check' : 'copy'} onClick={() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? 'Copiado' : 'Copiar'}</Button>
+        <Button size="sm" variant={copied ? 'green' : 'soft'} icon={copied ? 'check' : 'copy'} onClick={() => { setCopied(true); try { navigator.clipboard && navigator.clipboard.writeText(p.link); } catch(e){} window.toast && window.toast({ tone: 'good', title: 'Link copiado', body: p.link }); setTimeout(() => setCopied(false), 1500); }}>{copied ? 'Copiado' : 'Copiar'}</Button>
       </div>
       <div style={{ display: 'flex', gap: 18, marginBottom: 14, fontSize: 12.5, color: 'var(--ink-3)' }}>
         <span><b style={{ color: 'var(--ink)' }}>{p.visits}</b> visitas</span>

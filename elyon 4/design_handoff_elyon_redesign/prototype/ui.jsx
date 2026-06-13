@@ -42,6 +42,7 @@ const ICONS = {
   megaphone:'M3 11v2l3 1 2 5h2l-1-4 8 3V5L9 9H4a1 1 0 0 0-1 1ZM18 8a3 3 0 0 1 0 8',
   image: 'M4 4h16v16H4V4ZM4 15l4.5-4.5 4 4L16 11l4 4M9 9a1.4 1.4 0 1 1-2.8 0 1.4 1.4 0 0 1 2.8 0Z',
   funnel:'M3 4h18l-7 8v7l-4 2v-9L3 4Z',
+  close: 'M6 6l12 12M18 6l-12 12',
   brain: 'M9 3a3 3 0 0 0-3 3 3 3 0 0 0-1 5 3 3 0 0 0 2 4 3 3 0 0 0 5 1V3.5A2.5 2.5 0 0 0 9 3ZM15 3a3 3 0 0 1 3 3 3 3 0 0 1 1 5 3 3 0 0 1-2 4 3 3 0 0 1-5 1',
   money: 'M12 2v20M16 6.5C16 4.6 14.2 4 12 4S8 4.6 8 6.5 9.8 9 12 9.5 16 11.1 16 13s-1.8 2.5-4 2.5-4-.6-4-2.5',
   share: 'M16 6l-4-4-4 4M12 2v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7',
@@ -154,7 +155,7 @@ function Badge({ children, tone = 'neutral', dot, style }) {
 }
 
 /* ── Button ─────────────────────────────────────────────────────────────── */
-function Button({ children, variant = 'primary', size = 'md', icon, iconRight, onClick, full, style, disabled }) {
+function Button({ children, variant = 'primary', size = 'md', icon, iconRight, onClick, full, style, disabled, type = 'button' }) {
   const [h, setH] = useStateU(false);
   const sizes = { sm: { p: '6px 11px', f: 12.5, g: 6 }, md: { p: '9px 15px', f: 13.5, g: 7 }, lg: { p: '12px 20px', f: 14.5, g: 8 } };
   const sz = sizes[size];
@@ -167,7 +168,7 @@ function Button({ children, variant = 'primary', size = 'md', icon, iconRight, o
   };
   const v = variants[variant] || variants.primary;
   return (
-    <button onClick={onClick} disabled={disabled}
+    <button type={type} onClick={onClick} disabled={disabled}
       onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: sz.g,

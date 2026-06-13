@@ -240,6 +240,9 @@ Container com **SubTabs**: Visão geral · Campanhas · Canais · Criativos · F
 | `Badge` | `ui.jsx` | pílula tonal (good/bad/warn/blue/neutral) com dot opcional |
 | `Button` | `ui.jsx` | primary/green/soft/ghost/dark · sm/md/lg · ícone esq/dir |
 | `Avatar`, `Segmented`, `StatCard`, `Field`, `Input` | `ui.jsx` | — |
+| `ToastProvider` (`window.toast({tone,title,body})`) | `polish.jsx` | feedback global de ações |
+| `Modal`, `DropdownMenu`, `MenuItem`, `MenuLabel`, `MenuDivider` | `polish.jsx` | sistema de overlays |
+| `PeriodPicker`, `NotificationsPanel`, `EmptyState` | `polish.jsx` | controles da topbar + estado vazio |
 | `SourceBadge` | `ui.jsx` | badge de origem do dado (Dados reais / Estimativa / Fallback IA) |
 | `ClientSwitcher`, `CreditsPill` | `shell.jsx` | seletor multi-cliente + saldo de créditos de IA |
 | `Audiencias`, `AlocadorIA`, `CampanhaDetalhe` | `screens-extra.jsx` | públicos, alocador IA, drill-down de campanha |
@@ -317,6 +320,7 @@ prototype/
   index.html              ← entrada; ordem de carga dos scripts
   app.css                 ← TODOS os tokens + utilitários + responsivo
   data.js                 ← mock data (window.DATA) = contrato de dados sugerido
+  polish.jsx              ← Toast, Modal, DropdownMenu, PeriodPicker, NotificationsPanel, EmptyState
   charts.jsx              ← Sparkline, LineChart, Donut, Funnel, Bars, Gauge, Radar, ProgressBar
   ui.jsx                  ← Icon, Card, Badge, Button, StatCard, Segmented, Input… + dicionário ICONS
   nous.jsx                ← NousOrb, NousRail (copiloto), InsightCard

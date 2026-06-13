@@ -51,7 +51,7 @@ function Login({ onEnter }) {
 
       {/* Form */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
-        <div style={{ width: '100%', maxWidth: 360 }} className="fade-up">
+        <form onSubmit={(e) => { e.preventDefault(); onEnter('app'); }} style={{ width: '100%', maxWidth: 360 }} className="fade-up">
           <h2 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-.02em', margin: 0 }}>Bem-vindo de volta</h2>
           <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '6px 0 26px' }}>Entre para continuar de onde parou.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -63,13 +63,13 @@ function Login({ onEnter }) {
               </label>
               <a href="#" style={{ color: 'var(--blue)', fontWeight: 600, textDecoration: 'none' }} onClick={e => e.preventDefault()}>Esqueci a senha</a>
             </div>
-            <Button variant="primary" size="lg" full onClick={() => onEnter('app')} iconRight="arrowR">Entrar no painel</Button>
+            <Button variant="primary" size="lg" full onClick={() => onEnter('app')} iconRight="arrowR" type="submit">Entrar no painel</Button>
             <Button variant="ghost" size="lg" full onClick={() => onEnter('onboarding')}>Criar conta / Configurar</Button>
           </div>
           <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-4)', marginTop: 28 }} className="mono">
             ELYON NOUS · INTELIGÊNCIA DE MARKETING
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
