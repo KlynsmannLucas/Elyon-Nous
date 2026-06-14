@@ -97,6 +97,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
           onChangeArea={(a) => router.push(`/${a}`)}
           collapsed={collapsed}
           onToggleCollapse={() => setCollapsed(v => !v)}
+          activeClient={clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -121,6 +122,15 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
         </div>
 
         <NousRail open={nousOpen} onClose={() => setNousOpen(false)} docked={wide} />
+
+        {/* Orb flutuante — reabre o NOUS quando recolhido */}
+        {!nousOpen && (
+          <button onClick={() => setNousOpen(true)} title="Perguntar ao NOUS"
+            className="fixed right-5 bottom-5 z-[120] flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-pill bg-paper border border-line shadow-pop hover:shadow-highlight transition-shadow">
+            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-blue to-teal flex items-center justify-center animate-pulse-dot"><span className="text-white text-base">◎</span></span>
+            <span className="text-sm font-medium text-ink">Perguntar ao NOUS</span>
+          </button>
+        )}
       </div>
     </ToastProvider>
   )

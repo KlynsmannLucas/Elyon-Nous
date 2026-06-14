@@ -1,9 +1,9 @@
-// app/(elyon)/integracoes/page.tsx — Conexões OAuth (Meta/Google) direto no v2.
+// app/(elyon)/integracoes/page.tsx — Conexões OAuth (Meta/Google) + seleção da conta de anúncio.
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Modal } from '@/components/dashboard/v2'
+import { Card, Badge, Button, SectionHead, Modal, AdAccountPicker } from '@/components/dashboard/v2'
 
 function setReturnCookie() {
   try { document.cookie = `oauth_return=/integracoes; path=/; max-age=600; samesite=lax` } catch {}
@@ -36,14 +36,13 @@ export default function IntegracoesPage() {
   useEffect(() => { setMounted(true) }, [])
   if (!mounted) return null
 
+  const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const connected = connectedAccounts.length
   const stats = [
     { label: 'Conectadas', value: connected, color: '#161B26' },
     { label: 'Saudáveis', value: connected, color: '#0B855D' },
     { label: 'Com atenção', value: 0, color: '#E08B0B' },
   ]
-
-  const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
 
   const disconnect = (platform: 'meta' | 'google') => {
     if (!window.confirm(`Desconectar ${platform === 'meta' ? 'Meta Ads' : 'Google Ads'}?`)) return
@@ -95,26 +94,21 @@ export default function IntegracoesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-up">
         {platforms.map(p => {
-          const accounts = connectedAccounts.filter(a => a.platform === p.id)
-          const connected = accounts.length > 0
+          const isConnected = connectedAccounts.some(a => a.platform === p.id)
           return (
-            <Card key={p.id} className={connected ? 'border-green-line' : ''}>
+            <Card key={p.id} className={isConnected ? 'border-green-line' : ''}>
               <SectionHead title={p.name} icon={<span>{p.icon}</span>}
-                action={<Badge tone={connected ? 'good' : 'neutral'} dot>{connected ? 'Conectado' : 'Não conectado'}</Badge>} />
-              {connected ? (
-                <div className="space-y-2">
-                  {accounts.map((acc, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm bg-canvas-2 px-3 py-2 rounded-sm">
-                      <span className="text-green-600">●</span>
-                      <span className="text-ink truncate">{acc.accountName || acc.accountId || 'Conta conectada'}</span>
-                    </div>
-                  ))}
+                action={<Badge tone={isConnected ? 'good' : 'neutral'} dot>{isConnected ? 'Conectado' : 'Não conectado'}</Badge>} />
+              {isConnected ? (
+                <div className="space-y-1.5">
+                  <AdAccountPicker platform={p.id} clientKey={key} />
+                  <p className="text-[11px] text-ink-3">A Análise Profunda e os relatórios usam a conta selecionada acima.</p>
                 </div>
               ) : (
                 <p className="text-sm text-ink-3">Conecte para sincronizar dados reais — {p.scopes}.</p>
               )}
               <div className="mt-3 pt-3 border-t border-line flex gap-2">
-                {connected ? (
+                {isConnected ? (
                   <>
                     <Button size="sm" variant="soft" onClick={p.connect}>Reconectar</Button>
                     <Button size="sm" variant="ghost" onClick={() => disconnect(p.id)}>Desconectar</Button>

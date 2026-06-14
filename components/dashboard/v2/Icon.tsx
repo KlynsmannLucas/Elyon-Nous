@@ -35,6 +35,8 @@ export const ICONS: Record<string, string> = {
   filter:'M3 5h18l-7 8v6l-4-2v-4L3 5Z',
   share: 'M4 12v8h16v-8M12 3v13M8 7l4-4 4 4',
   sparkle2: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z',
+  gem:   'M6 3h12l3 6-9 12L3 9l3-6ZM3 9h18M9 3 6 9l6 12 6-12-3-6M9.5 9 12 4l2.5 5',
+  search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM20 20l-4-4',
   spark: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18',
 }
 

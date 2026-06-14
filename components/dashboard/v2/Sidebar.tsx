@@ -30,17 +30,15 @@ interface SidebarProps {
   onChangeArea: (area: AreaKey) => void
   collapsed?: boolean
   onToggleCollapse?: () => void
-  credits?: number
-  onOpenCredits?: () => void
+  activeClient?: string
 }
 
-export function SidebarV2({ 
-  activeArea, 
-  onChangeArea, 
-  collapsed = false, 
+export function SidebarV2({
+  activeArea,
+  onChangeArea,
+  collapsed = false,
   onToggleCollapse,
-  credits,
-  onOpenCredits 
+  activeClient,
 }: SidebarProps) {
   const [hovered, setHovered] = useState<AreaKey | null>(null)
 
@@ -65,6 +63,7 @@ export function SidebarV2({
 
       {/* Navigation */}
       <nav className="flex-1 py-4 overflow-y-auto">
+        {!collapsed && <div className="px-4 mb-2 text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Operação</div>}
         {/* 6 Areas */}
         <div className="px-2 space-y-1">
           {(Object.keys(AREAS) as (keyof typeof AREAS)[]).map(area => {
@@ -101,7 +100,7 @@ export function SidebarV2({
 
         {/* Divider */}
         <div className="my-4 mx-4 border-t border-line" />
-
+        {!collapsed && <div className="px-4 mb-2 text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Sistema</div>}
 
         {/* System Areas */}
         <div className="px-2 space-y-1">
@@ -131,23 +130,24 @@ export function SidebarV2({
         </div>
       </nav>
 
-      {/* Credits / Footer */}
+      {/* Footer — cliente ativo + recolher */}
       <div className="p-3 border-t border-line">
-        {credits !== undefined && (
-          <button 
-            onClick={onOpenCredits}
-            className="w-full flex items-center justify-between px-3 py-2 bg-canvas-2 rounded-sm text-sm text-ink-2 hover:bg-canvas"
-          >
-            <span>Credits IA</span>
-            <span className="font-mono text-blue">{credits}</span>
-          </button>
+        {!collapsed && activeClient && (
+          <div className="flex items-center gap-2.5 px-2 py-2 mb-1 rounded-sm bg-canvas-2">
+            <span className="w-7 h-7 rounded-full bg-blue text-white text-xs font-semibold flex items-center justify-center shrink-0">{activeClient.charAt(0).toUpperCase()}</span>
+            <div className="min-w-0">
+              <div className="text-[9.5px] font-mono uppercase tracking-[0.12em] text-ink-3">Cliente ativo</div>
+              <div className="text-sm font-medium text-ink truncate">{activeClient}</div>
+            </div>
+          </div>
         )}
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="w-full flex items-center justify-center p-2 mt-2 text-ink-3 hover:text-ink hover:bg-canvas-2 rounded-sm"
+            className="w-full flex items-center justify-center p-2 text-ink-3 hover:text-ink hover:bg-canvas-2 rounded-sm"
+            title={collapsed ? 'Expandir' : 'Recolher'}
           >
-            <span>{collapsed ? '→' : '←'}</span>
+            <Icon name={collapsed ? 'chevR' : 'chevD'} size={16} className={collapsed ? '' : 'rotate-90'} />
           </button>
         )}
       </div>

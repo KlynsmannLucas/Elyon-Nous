@@ -130,7 +130,7 @@ export function TopbarV2({
               {activeClientData?.name?.charAt(0) || '+'}
             </span>
             <span>{activeClientData?.name || 'Novo cliente'}</span>
-            <span className="text-xs">▼</span>
+            <Icon name="chevD" size={13} className="text-ink-3" />
           </button>
           {showClientMenu && (
             <div className="absolute top-full right-0 mt-1 w-52 bg-paper border border-line rounded-sm shadow-pop z-50 overflow-hidden">
@@ -163,9 +163,10 @@ export function TopbarV2({
       {credits !== undefined && (
         <button
           onClick={onOpenCredits}
-          className="flex items-center gap-1.5 px-3 py-2 bg-blue-soft text-blue rounded-sm text-sm font-medium"
+          className="flex items-center gap-1.5 px-3 py-2 bg-blue-soft text-blue rounded-sm text-sm font-medium hover:bg-blue-line/40"
+          title="Créditos de IA"
         >
-          <span>💎</span>
+          <Icon name="gem" size={15} />
           <span className="font-mono">{credits}</span>
         </button>
       )}

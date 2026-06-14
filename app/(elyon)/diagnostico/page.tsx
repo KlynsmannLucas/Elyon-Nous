@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Radar, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Radar, AdAccountPicker, CHART_COLORS } from '@/components/dashboard/v2'
 import CrossCheckPanel from '@/components/dashboard/CrossCheckPanel'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 
@@ -48,6 +48,7 @@ export default function DiagnosticoPage() {
   const savedClients = useAppStore(s => s.savedClients)
   const auditCache = useAppStore(s => s.auditCache)
   const clientHealthScores = useAppStore(s => s.clientHealthScores)
+  const connectedAccounts = useAppStore(s => s.connectedAccounts)
   const [mounted, setMounted] = useState(false)
   const [tab, setTab] = useState<SubTab>('visao')
   const [running, setRunning] = useState(false)
@@ -72,7 +73,7 @@ export default function DiagnosticoPage() {
   if (running) return (
     <div className="p-4 md:p-6 min-h-[60vh] flex items-center justify-center">
       <div className="text-center">
-        <div className="w-14 h-14 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4 animate-pulse"><span className="text-blue text-2xl">🔬</span></div>
+        <div className="w-14 h-14 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4 animate-pulse"><Icon name="search" size={26} /></div>
         <p className="text-ink font-semibold">Rodando Análise Profunda…</p>
         <p className="text-sm text-ink-3 mt-1">{step || 'Isso pode levar até 1 minuto.'}</p>
       </div>
@@ -85,9 +86,15 @@ export default function DiagnosticoPage() {
     <div className="p-4 md:p-6">
       <Card className="max-w-xl mx-auto mt-12">
         <div className="text-center py-8">
-          <div className="w-16 h-16 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4"><span className="text-blue text-2xl">🔬</span></div>
+          <div className="w-16 h-16 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4"><Icon name="search" size={26} /></div>
           <h2 className="text-lg font-semibold text-ink mb-2">{key ? 'Diagnóstico ainda não gerado' : 'Selecione um cliente'}</h2>
           <p className="text-sm text-ink-2 mb-4">{key ? 'Rode a Análise Profunda para receber score de saúde, gargalos, oportunidades e desperdício — com os dados reais da conta conectada.' : 'Escolha um cliente no topo para diagnosticar.'}</p>
+          {key && (connectedAccounts.some(a => a.platform === 'meta') || connectedAccounts.some(a => a.platform === 'google')) && (
+            <div className="text-left space-y-3 mb-4 max-w-sm mx-auto">
+              <AdAccountPicker platform="meta" clientKey={key} />
+              <AdAccountPicker platform="google" clientKey={key} />
+            </div>
+          )}
           {key
             ? <Button onClick={run}>Rodar Análise Profunda</Button>
             : <Button onClick={() => (window.location.href = '/novo')}>Criar cliente</Button>}
@@ -127,7 +134,12 @@ export default function DiagnosticoPage() {
           <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>Diagnóstico</h1>
           <p className="text-sm text-ink-2 mt-0.5">{key}{audit._period ? ` · ${audit._period}` : ''}</p>
         </div>
-        <Button size="sm" variant="soft" onClick={run}>↻ Atualizar auditoria</Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {connectedAccounts.some(a => a.platform === 'meta') && (
+            <div className="w-[220px]"><AdAccountPicker platform="meta" clientKey={key} compact /></div>
+          )}
+          <Button size="sm" variant="soft" onClick={run}>↻ Atualizar auditoria</Button>
+        </div>
       </header>
       {runErr && <div className="text-xs text-red mb-3">{runErr}</div>}
 

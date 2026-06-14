@@ -34,7 +34,7 @@ function Empty() {
     <div className="p-4 md:p-6">
       <Card className="max-w-xl mx-auto mt-12">
         <div className="text-center py-8">
-          <div className="w-16 h-16 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4"><span className="text-blue text-2xl">📊</span></div>
+          <div className="w-16 h-16 rounded-full bg-blue-soft flex items-center justify-center mx-auto mb-4"><Icon name="chart" size={26} /></div>
           <h2 className="text-lg font-semibold text-ink mb-2">Sem dados de performance</h2>
           <p className="text-sm text-ink-2 mb-4">Rode a Análise Profunda (ou conecte suas contas) para ver o desempenho por campanha.</p>
           <Button onClick={() => (window.location.href = '/diagnostico')}>Rodar Análise Profunda</Button>
