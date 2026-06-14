@@ -21,8 +21,8 @@ const C = {
   gold:     '#E08B0B',
   goldBg:   'rgba(245,158,11,0.1)',
   text1:    '#161B26',
-  text2:    'rgba(255,255,255,0.5)',
-  text3:    'rgba(255,255,255,0.25)',
+  text2:    '#5A6473',
+  text3:    '#8A93A3',
 }
 
 interface Props { clientData: ClientData | null }
@@ -42,7 +42,7 @@ function getInitials(name: string) {
 }
 
 const AVATAR_COLORS = [
-  { bg: 'rgba(124,58,237,0.2)', border: 'rgba(124,58,237,0.4)', text: '#2C5FE0' },
+  { bg: 'rgba(44,95,224,0.2)', border: 'rgba(44,95,224,0.4)', text: '#2C5FE0' },
   { bg: 'rgba(56,189,248,0.15)', border: 'rgba(56,189,248,0.35)', text: '#2C5FE0' },
   { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.35)', text: '#E08B0B' },
   { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.3)', text: '#E1483F' },
@@ -132,7 +132,7 @@ function AnalysisCard({ competitor, onRemove }: { competitor: Competitor; onRemo
         <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{
             padding: 14, borderRadius: 10,
-            background: 'rgba(124,58,237,0.07)', border: `1px solid rgba(124,58,237,0.2)`,
+            background: 'rgba(44,95,224,0.07)', border: `1px solid rgba(44,95,224,0.2)`,
           }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: C.purpleL, marginBottom: 6 }}>
               Oferta Principal
@@ -325,7 +325,7 @@ function MarketIntelCard({ clientName, niche, city }: { clientName: string; nich
       <div style={{
         borderRadius: 14, padding: '14px 18px', marginBottom: 20,
         display: 'flex', alignItems: 'center', gap: 10,
-        background: 'rgba(124,58,237,0.06)', border: `1px solid rgba(124,58,237,0.2)`,
+        background: 'rgba(44,95,224,0.06)', border: `1px solid rgba(44,95,224,0.2)`,
       }}>
         <div style={{
           width: 8, height: 8, borderRadius: '50%', background: C.purpleL, flexShrink: 0,
@@ -343,7 +343,7 @@ function MarketIntelCard({ clientName, niche, city }: { clientName: string; nich
       <div style={{
         borderRadius: 14, padding: '14px 18px', marginBottom: 20,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(124,58,237,0.04)', border: `1px solid ${C.border}`,
+        background: 'rgba(44,95,224,0.04)', border: `1px solid ${C.border}`,
       }}>
         <span style={{ fontSize: 11, color: C.text3 }}>Pesquisa de mercado autônoma não gerada ainda.</span>
         <button
@@ -351,8 +351,8 @@ function MarketIntelCard({ clientName, niche, city }: { clientName: string; nich
           disabled={requesting || !niche}
           style={{
             fontSize: 11, padding: '6px 14px', borderRadius: 8, fontWeight: 600,
-            background: 'rgba(124,58,237,0.15)', color: C.purpleL,
-            border: `1px solid rgba(124,58,237,0.3)`, cursor: 'pointer', opacity: (requesting || !niche) ? 0.4 : 1,
+            background: 'rgba(44,95,224,0.15)', color: C.purpleL,
+            border: `1px solid rgba(44,95,224,0.3)`, cursor: 'pointer', opacity: (requesting || !niche) ? 0.4 : 1,
           }}
         >
           {requesting ? 'Iniciando...' : '⚡ Pesquisar agora'}
@@ -386,8 +386,8 @@ function MarketIntelCard({ clientName, niche, city }: { clientName: string; nich
             disabled={requesting || polling || !niche}
             style={{
               fontSize: 10, padding: '5px 12px', borderRadius: 8,
-              background: 'rgba(124,58,237,0.08)', color: C.purpleL,
-              border: `1px solid rgba(124,58,237,0.2)`, cursor: 'pointer',
+              background: 'rgba(44,95,224,0.08)', color: C.purpleL,
+              border: `1px solid rgba(44,95,224,0.2)`, cursor: 'pointer',
               opacity: (requesting || polling || !niche) ? 0.4 : 1,
             }}
           >

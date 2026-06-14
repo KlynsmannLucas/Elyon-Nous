@@ -10,10 +10,10 @@ const C = {
   surface:  '#FFFFFF',
   elevated: '#FBFCFD',
   border:   'rgba(99,120,255,0.1)',
-  borderSub:'rgba(255,255,255,0.06)',
+  borderSub:'#E6E8EC',
   purple:   '#2C5FE0',
   purpleL:  '#2C5FE0',
-  purpleBg: 'rgba(124,58,237,0.08)',
+  purpleBg: 'rgba(44,95,224,0.08)',
   green:    '#0E9E6E',
   greenBg:  'rgba(34,197,94,0.08)',
   red:      '#E1483F',
@@ -25,8 +25,8 @@ const C = {
   orange:   '#F97316',
   orangeBg: 'rgba(249,115,22,0.08)',
   text1:    '#161B26',
-  text2:    'rgba(255,255,255,0.5)',
-  text3:    'rgba(255,255,255,0.25)',
+  text2:    '#5A6473',
+  text3:    '#8A93A3',
 }
 
 interface Props { clientData: ClientData | null }
@@ -39,7 +39,7 @@ const ROLES = [
 ]
 
 const INITIALS_COLORS = [
-  { bg: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)', shadow: 'rgba(124,58,237,0.4)' },
+  { bg: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)', shadow: 'rgba(44,95,224,0.4)' },
   { bg: 'linear-gradient(135deg, #0EA5E9, #2C5FE0)', shadow: 'rgba(14,165,233,0.4)' },
   { bg: 'linear-gradient(135deg, #D97706, #E08B0B)', shadow: 'rgba(217,119,6,0.4)' },
   { bg: 'linear-gradient(135deg, #DC2626, #E1483F)', shadow: 'rgba(220,38,38,0.35)' },
@@ -167,7 +167,7 @@ function PersonaCard({ persona, clientData }: { persona: GeneratedPersona; clien
           </div>
         </div>
         {/* Barra dupla */}
-        <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 8 }}>
+        <div style={{ height: 6, borderRadius: 99, background: '#E6E8EC', overflow: 'hidden', marginBottom: 8 }}>
           <div style={{
             height: '100%', borderRadius: 99, transition: 'width 0.8s ease',
             width: `${confidence.pct}%`,
@@ -218,8 +218,8 @@ function PersonaCard({ persona, clientData }: { persona: GeneratedPersona; clien
       {/* ── 3. PERFIL DA PERSONA ─────────────────────────────────────────── */}
       <div style={{
         padding: 20, borderRadius: 14,
-        background: 'linear-gradient(135deg, rgba(124,58,237,0.08), rgba(56,189,248,0.04))',
-        border: '1px solid rgba(124,58,237,0.22)',
+        background: 'linear-gradient(135deg, rgba(44,95,224,0.08), rgba(56,189,248,0.04))',
+        border: '1px solid rgba(44,95,224,0.22)',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           <div style={{
@@ -253,7 +253,7 @@ function PersonaCard({ persona, clientData }: { persona: GeneratedPersona; clien
         </div>
 
         {/* ── Como foi construída (Melhoria 3) ── */}
-        <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #E6E8EC' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4 }}>
             Como esta persona foi construída?
           </div>
@@ -339,7 +339,7 @@ function PersonaCard({ persona, clientData }: { persona: GeneratedPersona; clien
       )}
 
       {/* ── 9. CONTRIBUIÇÃO DA IA (Melhoria 7) ──────────────────────────── */}
-      <div style={{ padding: '14px 18px', borderRadius: 12, background: C.purpleBg, border: '1px solid rgba(124,58,237,0.18)' }}>
+      <div style={{ padding: '14px 18px', borderRadius: 12, background: C.purpleBg, border: '1px solid rgba(44,95,224,0.18)' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: C.purpleL, marginBottom: 10, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>
           O que a IA acrescentou
         </div>
@@ -467,7 +467,7 @@ export function TabPersona({ clientData }: Props) {
               ~{confidence.pct}%
             </span>
           </div>
-          <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 6 }}>
+          <div style={{ height: 4, borderRadius: 99, background: '#E6E8EC', overflow: 'hidden', marginBottom: 6 }}>
             <div style={{ height: '100%', borderRadius: 99, width: `${confidence.pct}%`, background: confidence.pct >= 50 ? C.green : confidence.pct >= 35 ? C.gold : C.orange, transition: 'width 0.6s ease' }} />
           </div>
           <p style={{ fontSize: 11, color: C.text3, margin: 0, lineHeight: 1.5 }}>

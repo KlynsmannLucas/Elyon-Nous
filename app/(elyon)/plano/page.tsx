@@ -5,9 +5,10 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, HBar, CHART_COLORS } from '@/components/dashboard/v2'
 import { generateStrategyForActiveClient } from '@/lib/createClientFlow'
+import { TabPersona } from '@/components/dashboard/TabPersona'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
-type SubTab = 'execucao' | 'estrategia'
+type SubTab = 'execucao' | 'estrategia' | 'persona'
 const URGENCY_TONE: Record<string, 'bad' | 'warn' | 'neutral'> = { critica: 'bad', alta: 'warn', media: 'neutral', baixa: 'neutral' }
 const parseImpact = (s: any) => { const n = Number(String(s || '').replace(/[^\d]/g, '')); return Number.isFinite(n) ? n : 0 }
 // Esforço estimado (1=baixo, 3=alto) por palavra-chave do título da ação.
@@ -52,6 +53,7 @@ export default function PlanoPage() {
 
   const tabs: { key: SubTab; label: string }[] = [
     { key: 'execucao', label: 'Execução' }, { key: 'estrategia', label: 'Estratégia 90 dias' },
+    { key: 'persona', label: 'Persona' },
   ]
 
   const Column = ({ title, icon, items, tone }: { title: string; icon: string; items: any[]; tone: 'neutral' | 'blue' | 'good' }) => (
@@ -301,6 +303,10 @@ export default function PlanoPage() {
             </div>
           </Card>
         )
+      )}
+
+      {tab === 'persona' && (
+        <div className="animate-fade-up"><TabPersona clientData={clientData ?? null} /></div>
       )}
     </div>
   )

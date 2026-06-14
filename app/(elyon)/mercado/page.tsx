@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, SourceBadge, HBar, CHART_COLORS } from '@/components/dashboard/v2'
 import { getBenchmark } from '@/lib/niche_benchmarks'
+import { TabConcorrentes } from '@/components/dashboard/TabConcorrentes'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -14,23 +15,8 @@ export default function MercadoPage() {
   const auditCache = useAppStore(s => s.auditCache)
   const competitorsMap = useAppStore(s => s.competitors)
   const marketResearch = useAppStore(s => s.marketResearch)
-  const setMarketResearchTaskId = useAppStore(s => s.setMarketResearchTaskId)
   const [mounted, setMounted] = useState(false)
-  const [compLoading, setCompLoading] = useState(false)
   useEffect(() => { setMounted(true) }, [])
-
-  const analisarConcorrentes = async () => {
-    const nm = clientData?.niche || ''
-    if (!nm) return
-    setCompLoading(true)
-    try {
-      const r = await fetch('/api/manus/task', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: nm, city: clientData?.city, type: 'competitors' }) })
-      const d = await r.json()
-      if (d.task_id) { setMarketResearchTaskId(clientData?.clientName || '', d.task_id); window.toast?.({ tone: 'good', title: 'Análise iniciada', body: 'Os concorrentes aparecem aqui em alguns minutos.' }) }
-      else window.toast?.({ tone: 'bad', title: 'Não foi possível iniciar', body: d.error || 'Tente novamente.' })
-    } catch { window.toast?.({ tone: 'bad', title: 'Falha ao iniciar a análise' }) }
-    finally { setCompLoading(false) }
-  }
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const niche = clientData?.niche || savedClients?.find(c => c.clientData.clientName === key)?.clientData.niche || ''
@@ -162,31 +148,10 @@ export default function MercadoPage() {
         )
       })()}
 
-      {/* Concorrentes */}
-      <Card className="animate-fade-up">
-        <SectionHead title="Concorrentes" subtitle={competitors.length ? `${competitors.length} analisados` : 'Análise da concorrência'} icon={<Icon name="flag" size={17} />}
-          action={<SourceBadge source="real" />} />
-        {competitors.length > 0 ? (
-          <div className="space-y-3">
-            {competitors.map((c) => (
-              <div key={c.id} className="p-3 rounded-sm bg-canvas-2">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="text-sm font-semibold text-ink">{c.name}</span>
-                  {c.ads?.length ? <Badge tone="neutral">{c.ads.length} anúncios</Badge> : null}
-                </div>
-                {c.analysis?.positioning && <p className="text-xs text-ink-2 mt-1.5 line-clamp-2"><b className="text-ink">Posicionamento:</b> {c.analysis.positioning}</p>}
-                {c.analysis?.mainOffer && <p className="text-xs text-ink-2 mt-1 line-clamp-1"><b className="text-ink">Oferta:</b> {c.analysis.mainOffer}</p>}
-                {c.analysis?.differentiation && <p className="text-xs text-green-600 mt-1 line-clamp-2">↳ {c.analysis.differentiation}</p>}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-ink-3">
-            <p className="text-sm">Nenhum concorrente analisado ainda.</p>
-            <Button size="sm" className="mt-3" onClick={analisarConcorrentes} disabled={compLoading || !clientData?.niche}>{compLoading ? 'Iniciando…' : 'Analisar concorrentes'}</Button>
-          </div>
-        )}
-      </Card>
+      {/* Radar de Concorrentes — ferramenta completa (adicionar, analisar com IA) */}
+      <div className="animate-fade-up">
+        <TabConcorrentes clientData={clientData ?? null} />
+      </div>
     </div>
   )
 }
