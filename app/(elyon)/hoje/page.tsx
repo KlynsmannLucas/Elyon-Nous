@@ -4,6 +4,8 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, HBar, CHART_COLORS } from '@/components/dashboard/v2'
+import { deriveMaturity } from '@/lib/maturity'
+import { getBenchmark } from '@/lib/niche_benchmarks'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
@@ -86,21 +88,23 @@ export default function HojePage() {
     const prevVal = cur / (1 + deltaPct / 100)
     return [prevVal, cur]
   }
+  // KPIs com os 6 rótulos exatos do prototype (Receita/ROAS mostram "—" sem dado real).
   const kpis = rm ? [
     { label: 'Investimento', value: brl(rm.totalSpend), trend: prev?.spendDelta ?? null, inverse: false, series: spark(rm.totalSpend, prev?.spendDelta), up: (prev?.spendDelta ?? 0) >= 0 },
-    { label: 'Leads', value: int(rm.totalLeads), trend: prev?.leadsDelta ?? null, inverse: false, series: spark(rm.totalLeads, prev?.leadsDelta), up: (prev?.leadsDelta ?? 0) >= 0 },
+    { label: 'Receita', value: rm.totalRevenue > 0 ? brl(rm.totalRevenue) : '—', trend: prev?.revenueDelta ?? null, inverse: false, series: rm.totalRevenue > 0 ? spark(rm.totalRevenue, prev?.revenueDelta) : null, up: (prev?.revenueDelta ?? 0) >= 0 },
     { label: 'ROAS', value: rm.avgROAS ? `${rm.avgROAS}x` : '—', trend: null, inverse: false, series: null, up: true },
-    { label: 'CPL', value: rm.avgCPL ? brl(rm.avgCPL) : '—', trend: prev?.cplDelta ?? null, inverse: true, series: spark(rm.avgCPL, prev?.cplDelta), up: (prev?.cplDelta ?? 0) <= 0 },
-    { label: 'CTR', value: rm.avgCTR ? `${rm.avgCTR}%` : '—', trend: null, inverse: false, series: null, up: true },
-  ].slice(0, pro ? 5 : 4) : []
+    { label: 'Conversões', value: int(rm.totalLeads), trend: prev?.leadsDelta ?? null, inverse: false, series: spark(rm.totalLeads, prev?.leadsDelta), up: (prev?.leadsDelta ?? 0) >= 0 },
+    { label: 'CPA médio', value: rm.avgCPL ? brl(rm.avgCPL) : '—', trend: prev?.cplDelta ?? null, inverse: true, series: spark(rm.avgCPL, prev?.cplDelta), up: (prev?.cplDelta ?? 0) <= 0 },
+    { label: 'CTR médio', value: rm.avgCTR ? `${rm.avgCTR}%` : '—', trend: null, inverse: false, series: null, up: true },
+  ].slice(0, pro ? 6 : 4) : []
 
-  // Pilares de saúde (Aquisição/Conversão/Retenção) derivados de sinais reais.
-  const cvr = rm?.totalClicks > 0 ? rm.totalLeads / rm.totalClicks : null
-  const pillars = rm ? [
-    { label: 'Aquisição', v: rm.totalLeads >= 1000 ? 84 : rm.totalLeads >= 300 ? 72 : rm.totalLeads >= 50 ? 58 : 44 },
-    { label: 'Conversão', v: cvr != null ? (cvr >= 0.05 ? 84 : cvr >= 0.02 ? 64 : 46) : (score ?? 55) },
-    { label: 'Retenção', v: score ?? 60 },
-  ] : []
+  // 6 pilares de saúde (ordem do prototype) derivados de sinais reais.
+  const niche = clientData?.niche || savedClients?.find(c => c.clientData.clientName === key)?.clientData.niche || ''
+  const bench = niche ? getBenchmark(niche) : null
+  const trackingArr: any[] = latestAudit?._trackingChecklist || []
+  const trackOk = trackingArr.length > 0 ? trackingArr.filter((t: any) => t.status === 'verificado').length / trackingArr.length : null
+  const maturity = rm ? deriveMaturity(rm, bench, trackOk, score) : null
+  const pillars = maturity ? maturity.axes.map((a, i) => ({ label: a, v: maturity.you[i] })) : []
 
   const actions = (pendingActionsCache[key] || [])
     .filter(a => a.status === 'pendente')
@@ -120,15 +124,11 @@ export default function HojePage() {
   const firstSaved = savedClients?.[0]?.savedAt
   const streak = firstSaved ? Math.max(1, Math.floor((Date.now() - new Date(firstSaved).getTime()) / 86400000) + 1) : null
 
-  // Metas do mês — alvos derivados de forma conservadora sobre os dados reais.
+  // Metas do mês — rótulos exatos do prototype; "—" quando a conta não tem o dado (regra B).
   const goals = rm ? ([
-    rm.totalRevenue > 0
-      ? { k: 'Receita do mês', cur: rm.totalRevenue, target: Math.max(1000, Math.ceil((rm.totalRevenue * 1.25) / 1000) * 1000), fmt: 'brl' as const }
-      : { k: 'Leads do mês', cur: rm.totalLeads, target: Math.max(10, Math.ceil((rm.totalLeads * 1.2) / 10) * 10), fmt: 'int' as const },
-    { k: 'Saúde da conta', cur: score ?? 0, target: 85, fmt: 'int' as const },
-    rm.avgROAS
-      ? { k: 'ROAS alvo', cur: rm.avgROAS, target: Math.round((rm.avgROAS + 0.5) * 10) / 10, fmt: 'x' as const }
-      : { k: 'Aproveitamento', cur: Math.max(0, 100 - (latestAudit?._wastePercent ?? 0)), target: 95, fmt: 'int' as const },
+    { k: 'Receita do mês', cur: rm.totalRevenue || 0, target: rm.totalRevenue > 0 ? Math.max(1000, Math.ceil((rm.totalRevenue * 1.25) / 1000) * 1000) : 0, fmt: 'brl' as const, has: rm.totalRevenue > 0 },
+    { k: 'ROAS alvo', cur: rm.avgROAS || 0, target: rm.avgROAS ? Math.round((rm.avgROAS + 0.5) * 10) / 10 : 0, fmt: 'x' as const, has: !!rm.avgROAS },
+    { k: 'Novos clientes', cur: rm.totalLeads || 0, target: Math.max(10, Math.ceil(((rm.totalLeads || 0) * 1.2) / 10) * 10), fmt: 'int' as const, has: true },
   ]) : []
   const goalFmt = (v: number, f: 'brl' | 'int' | 'x') => f === 'brl' ? brl(v) : f === 'x' ? `${v}x` : int(v)
 
@@ -189,8 +189,8 @@ export default function HojePage() {
 
       {/* KPIs */}
       {kpis.length > 0 && (
-        <section className="mb-6 animate-fade-up">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <section className="mb-4 animate-fade-up">
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
             {kpis.map(kpi => (
               <Card key={kpi.label} padding="sm" hover>
                 <div className="flex items-center justify-between gap-2 mb-1">
@@ -227,7 +227,7 @@ export default function HojePage() {
                 </div>
                 {pillars.length > 0 && (
                   <div className="flex-1 min-w-[180px] space-y-2.5">
-                    {pillars.map(p => (
+                    {pillars.slice(0, pro ? 6 : 3).map(p => (
                       <div key={p.label}>
                         <div className="flex justify-between text-xs mb-1"><span className="text-ink-2">{p.label}</span><span className="font-mono font-semibold text-ink">{p.v}</span></div>
                         <div className="h-1.5 rounded-full bg-canvas-2 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${p.v}%`, background: p.v >= 70 ? '#0E9E6E' : p.v >= 50 ? '#E08B0B' : '#E1483F' }} /></div>
@@ -250,12 +250,12 @@ export default function HojePage() {
               <SectionHead title="Metas do mês" subtitle="Seu progresso rumo aos alvos" icon={<Icon name="target" size={18} />} />
               <div className="space-y-4">
                 {goals.map(g => {
-                  const pct = Math.min(100, Math.round((g.cur / Math.max(g.target, 0.01)) * 100))
+                  const pct = g.has ? Math.min(100, Math.round((g.cur / Math.max(g.target, 0.01)) * 100)) : 0
                   return (
                     <div key={g.k}>
                       <div className="flex justify-between items-baseline mb-1.5">
                         <span className="text-[13px] font-semibold text-ink">{g.k}</span>
-                        <span className="font-mono text-[12.5px] text-ink-2"><b className="text-ink">{goalFmt(g.cur, g.fmt)}</b> / {goalFmt(g.target, g.fmt)}</span>
+                        <span className="font-mono text-[12.5px] text-ink-2">{g.has ? <><b className="text-ink">{goalFmt(g.cur, g.fmt)}</b> / {goalFmt(g.target, g.fmt)}</> : <span className="text-ink-3">— sem dado</span>}</span>
                       </div>
                       <div className="flex items-center gap-2.5">
                         <div className="flex-1"><HBar value={pct} color={pct >= 80 ? CHART_COLORS.green : CHART_COLORS.blue} h={9} /></div>
