@@ -37,6 +37,9 @@ export const ICONS: Record<string, string> = {
   sparkle2: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z',
   gem:   'M6 3h12l3 6-9 12L3 9l3-6ZM3 9h18M9 3 6 9l6 12 6-12-3-6M9.5 9 12 4l2.5 5',
   search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM20 20l-4-4',
+  scale: 'M12 3v18M7 7 3 14h8L7 7ZM17 7l-4 7h8l-4-7ZM5 21h14',
+  trophy:'M7 4h10v4a5 5 0 0 1-10 0V4ZM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 14h6M10 18h4M9 21h6',
+  image: 'M4 4h16v16H4V4ZM4 15l4.5-4.5 4 4L16 11l4 4M9 9a1.4 1.4 0 1 1-2.8 0 1.4 1.4 0 0 1 2.8 0Z',
   spark: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18',
 }
 

@@ -98,11 +98,11 @@ export default function DesempenhoPage() {
     { label: 'CPL médio', value: rm?.avgCPL ? brl(rm.avgCPL) : '—' },
   ]
 
-  const tabs: { key: SubTab; label: string }[] = [
-    { key: 'visao', label: 'Visão geral' }, { key: 'campanhas', label: 'Campanhas' },
-    { key: 'audiencias', label: 'Audiências' }, { key: 'canais', label: 'Canais' },
-    { key: 'criativos', label: 'Criativos' }, { key: 'funil', label: 'Funil' },
-    { key: 'alocador', label: 'Alocador IA' },
+  const tabs: { key: SubTab; label: string; icon: string }[] = [
+    { key: 'visao', label: 'Visão geral', icon: 'chart' }, { key: 'campanhas', label: 'Campanhas', icon: 'megaphone' },
+    { key: 'audiencias', label: 'Audiências', icon: 'users' }, { key: 'canais', label: 'Canais', icon: 'layers' },
+    { key: 'criativos', label: 'Criativos', icon: 'spark' }, { key: 'funil', label: 'Funil', icon: 'funnel' },
+    { key: 'alocador', label: 'Alocador IA', icon: 'scale' },
   ]
   const ta: any = strategyData?.strategy?.target_audience
   const criativos: any = audit?.criativos_meta
@@ -173,11 +173,11 @@ export default function DesempenhoPage() {
         <p className="text-sm text-ink-2 mt-0.5">{key}{rm ? ` · ${int(rm.campaignCount || camps.length)} campanhas` : ''}</p>
       </header>
 
-      <div className="mb-5 flex gap-1 border-b border-line overflow-x-auto">
+      <div className="mb-5 flex gap-1 border-b border-line overflow-x-auto no-sb">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors ${tab === t.key ? 'text-blue border-blue' : 'text-ink-3 border-transparent hover:text-ink'}`}>
-            {t.label}
+            className={`px-3.5 py-2.5 text-[13.5px] font-medium border-b-2 -mb-px whitespace-nowrap transition-colors inline-flex items-center gap-1.5 ${tab === t.key ? 'text-ink border-blue font-semibold' : 'text-ink-3 border-transparent hover:text-ink'}`}>
+            <Icon name={t.icon} size={15} />{t.label}
           </button>
         ))}
       </div>

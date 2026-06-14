@@ -51,9 +51,9 @@ export default function PlanoPage() {
   const plan = strat?.plan_7_30_90
   const ranking: any[] = strat?.priority_ranking || []
 
-  const tabs: { key: SubTab; label: string }[] = [
-    { key: 'execucao', label: 'Execução' }, { key: 'estrategia', label: 'Estratégia 90 dias' },
-    { key: 'persona', label: 'Persona' },
+  const tabs: { key: SubTab; label: string; icon: string }[] = [
+    { key: 'execucao', label: 'Execução', icon: 'check' }, { key: 'estrategia', label: 'Estratégia 90 dias', icon: 'scale' },
+    { key: 'persona', label: 'Persona', icon: 'users' },
   ]
 
   const Column = ({ title, icon, items, tone }: { title: string; icon: string; items: any[]; tone: 'neutral' | 'blue' | 'good' }) => (
@@ -100,8 +100,8 @@ export default function PlanoPage() {
       <div className="mb-5 flex gap-1 border-b border-line">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === t.key ? 'text-blue border-blue' : 'text-ink-3 border-transparent hover:text-ink'}`}>
-            {t.label}
+            className={`px-3.5 py-2.5 text-[13.5px] font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${tab === t.key ? 'text-ink border-blue font-semibold' : 'text-ink-3 border-transparent hover:text-ink'}`}>
+            <Icon name={t.icon} size={15} />{t.label}
           </button>
         ))}
       </div>

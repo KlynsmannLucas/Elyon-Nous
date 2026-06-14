@@ -104,8 +104,8 @@ export default function DiagnosticoPage() {
   const trackOkRatio = tracking.length > 0 ? tv / tracking.length : 0.6
   const maturity = deriveMaturity(rm, bench, trackOkRatio, score)
 
-  const tabs: { key: SubTab; label: string }[] = [
-    { key: 'visao', label: 'Visão geral' }, { key: 'auditoria', label: 'Auditoria profunda' },
+  const tabs: { key: SubTab; label: string; icon: string }[] = [
+    { key: 'visao', label: 'Visão geral', icon: 'pulse' }, { key: 'auditoria', label: 'Auditoria profunda', icon: 'search' },
   ]
 
   return (
@@ -127,8 +127,8 @@ export default function DiagnosticoPage() {
       <div className="mb-5 flex gap-1 border-b border-line">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === t.key ? 'text-blue border-blue' : 'text-ink-3 border-transparent hover:text-ink'}`}>
-            {t.label}
+            className={`px-3.5 py-2.5 text-[13.5px] font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${tab === t.key ? 'text-ink border-blue font-semibold' : 'text-ink-3 border-transparent hover:text-ink'}`}>
+            <Icon name={t.icon} size={15} />{t.label}
           </button>
         ))}
       </div>
