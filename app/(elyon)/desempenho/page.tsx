@@ -20,6 +20,8 @@ const channelOf = (c: any): { key: string; label: string; color: string } => {
   if (hit) return { key: CHANNEL_META[hit].label, ...CHANNEL_META[hit] }
   return { key: 'Outros', label: 'Outros', color: CHART_COLORS.slate }
 }
+// ROI só é exibido quando plausível (cálculo de benchmark pode estourar p/ nichos de ticket alto).
+const roiOk = (range: any) => { const m = String(range || '').match(/(\d+)/g); return m ? Number(m[m.length - 1]) <= 600 : false }
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
@@ -74,10 +76,13 @@ export default function DesempenhoPage() {
 
   if (!rm && camps.length === 0 && ranking.length === 0) return <Empty />
 
-  // Split por canal derivado das campanhas reais (quando a plataforma é conhecida).
+  // Split por canal derivado das campanhas reais. Se a conta tem só UMA plataforma
+  // conectada (dataSource), todo o investimento é dela — evita subcontar como "Outros".
+  const singlePlatform = rm?.dataSource === 'meta' ? { label: 'Meta Ads', color: CHART_COLORS.blue }
+    : rm?.dataSource === 'google' ? { label: 'Google Ads', color: CHART_COLORS.green } : null
   const chMap = new Map<string, { label: string; color: string; spend: number; leads: number }>()
   for (const c of camps) {
-    const ch = channelOf(c)
+    const ch = singlePlatform || channelOf(c)
     const e = chMap.get(ch.label) || { label: ch.label, color: ch.color, spend: 0, leads: 0 }
     e.spend += c.spend || 0; e.leads += c.leads || 0
     chMap.set(ch.label, e)
@@ -280,7 +285,7 @@ export default function DesempenhoPage() {
                     <div className="text-sm font-medium text-ink">{ch.channel}</div>
                     <div className="text-xs text-ink-3">{ch.budget_brl ? `${brl(ch.budget_brl)}/mês` : ''}{ch.cpl_avg ? ` · CPL ~${brl(ch.cpl_avg)}` : ''}{ch.leads_min ? ` · ${int(ch.leads_min)}–${int(ch.leads_max)} leads` : ''}</div>
                   </div>
-                  {ch.roi_range && <Badge tone="good">{ch.roi_range}</Badge>}
+                  {roiOk(ch.roi_range) && <Badge tone="good">ROI {ch.roi_range}</Badge>}
                 </div>
               ))}
             </div>
@@ -475,7 +480,7 @@ export default function DesempenhoPage() {
                         <tr key={s.stage} className="border-b border-line-2">
                           <td className="py-2.5 px-2 text-ink font-medium">{s.stage}</td>
                           <td className="py-2.5 px-2 text-right font-mono text-ink">{int(s.v)}</td>
-                          <td className="py-2.5 px-2 text-right font-mono text-ink-2">{Math.round((s.v / top) * 100)}%</td>
+                          <td className="py-2.5 px-2 text-right font-mono text-ink-2">{(() => { const p = (s.v / top) * 100; return p >= 1 || p === 0 ? Math.round(p) : p.toFixed(2) })()}%</td>
                           <td className="py-2.5 px-2 text-right font-mono text-red">{drop != null ? `−${drop}%` : '—'}</td>
                         </tr>
                       )

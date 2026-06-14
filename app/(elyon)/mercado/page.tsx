@@ -95,11 +95,14 @@ export default function MercadoPage() {
 
       {/* Share of Voice — presença competitiva (proxy por volume de anúncios) */}
       {competitors.length > 0 && (() => {
-        const myCount = Math.max(1, rm?.campaignCount || 3)
-        const rows = [
-          ...competitors.map(c => ({ name: c.name, weight: Math.max(1, c.ads?.length || 1), you: false })),
-          { name: 'Sua Empresa', weight: myCount, you: true },
-        ]
+        const cleanName = (n: any) => String(n || 'Concorrente')
+          .replace(/^https?:\/\//, '').replace(/^www\./, '')
+          .replace(/^(facebook|instagram|linkedin|tiktok)\.com\//i, '@')
+          .replace(/\/.*$/, '').replace(/[-_]/g, ' ').trim() || 'Concorrente'
+        const compRows = competitors.map(c => ({ name: cleanName(c.name), weight: Math.max(1, c.ads?.length || 1), you: false }))
+        // "Você" entra par com a média dos concorrentes (não temos contagem real dos seus anúncios).
+        const avgComp = compRows.length ? compRows.reduce((s, r) => s + r.weight, 0) / compRows.length : 1
+        const rows = [...compRows, { name: 'Sua Empresa', weight: Math.max(1, Math.round(avgComp)), you: true }]
         const total = rows.reduce((s, r) => s + r.weight, 0) || 1
         const ranked = rows.map(r => ({ ...r, pct: (r.weight / total) * 100 })).sort((a, b) => b.pct - a.pct)
         const maxPct = ranked[0].pct || 1

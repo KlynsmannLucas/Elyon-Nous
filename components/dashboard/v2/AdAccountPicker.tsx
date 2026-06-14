@@ -32,13 +32,15 @@ export function AdAccountPicker({ platform, clientKey, compact }: { platform: 'm
     if (!connected) return
     let active = true
     setLoading(true); setErr('')
-    fetch(ENDPOINT[platform]).then(r => r.json()).then(d => {
+    fetch(ENDPOINT[platform], { signal: AbortSignal.timeout(20000) }).then(r => r.json()).then(d => {
       if (!active) return
-      if (d.success && Array.isArray(d.accounts)) {
+      if (d.success && Array.isArray(d.accounts) && d.accounts.length > 0) {
         setAccts(d.accounts)
         if (clientKey && !selected && d.accounts[0]) setSelected(d.accounts[0].id)
+      } else if (d.success) {
+        setErr('Nenhuma conta de anúncio encontrada nesta conexão.')
       } else setErr(d.error || 'Não foi possível listar as contas.')
-    }).catch(() => active && setErr('Falha ao listar contas.')).finally(() => active && setLoading(false))
+    }).catch((e) => active && setErr(e?.name === 'TimeoutError' ? 'A listagem demorou demais. Tente recarregar.' : 'Falha ao listar contas.')).finally(() => active && setLoading(false))
     return () => { active = false }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, platform, clientKey])
