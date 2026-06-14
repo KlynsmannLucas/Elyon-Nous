@@ -5,7 +5,7 @@ export default function SignUpPage() {
   const signUpUrl =
     'https://accounts.elyonnous.com/sign-up' +
     '?redirect_url=' +
-    encodeURIComponent('https://elyonnous.com/dashboard')
+    encodeURIComponent('https://elyonnous.com/hoje')
 
   return (
     <div className="min-h-screen bg-canvas flex">

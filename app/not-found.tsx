@@ -11,7 +11,7 @@ export default function NotFound() {
         <p className="text-ink-2 text-sm mb-6">
           O link que você acessou não existe ou foi removido.
         </p>
-        <Link href="/dashboard">
+        <Link href="/hoje">
           <Button>Voltar ao dashboard</Button>
         </Link>
       </div>

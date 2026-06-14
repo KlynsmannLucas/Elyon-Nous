@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, HBar, CHART_COLORS } from '@/components/dashboard/v2'
+import { generateStrategyForActiveClient } from '@/lib/createClientFlow'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 type SubTab = 'execucao' | 'estrategia'
@@ -26,6 +27,14 @@ export default function PlanoPage() {
   const [mounted, setMounted] = useState(false)
   const [tab, setTab] = useState<SubTab>('execucao')
   const [done, setDone] = useState<Record<string, boolean>>({})
+  const [genLoading, setGenLoading] = useState(false)
+
+  const genStrat = async () => {
+    setGenLoading(true)
+    const r = await generateStrategyForActiveClient()
+    setGenLoading(false)
+    if (typeof window !== 'undefined') window.toast?.(r.ok ? { tone: 'good', title: 'Estratégia gerada', body: 'Tese, matriz e plano 90 dias prontos.' } : { tone: 'bad', title: 'Falha ao gerar', body: r.error })
+  }
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
@@ -288,7 +297,7 @@ export default function PlanoPage() {
           <Card className="animate-fade-up">
             <div className="text-center py-8 text-ink-3">
               <p className="text-sm">Estratégia ainda não gerada para este cliente.</p>
-              <Button variant="soft" size="sm" className="mt-3" onClick={() => (window.location.href = '/dashboard')}>Gerar estratégia</Button>
+              <Button size="sm" className="mt-3" onClick={genStrat} disabled={genLoading || !key}>{genLoading ? 'Gerando…' : 'Gerar estratégia'}</Button>
             </div>
           </Card>
         )

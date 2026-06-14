@@ -18,16 +18,16 @@ const SECTIONS: { key: Section; label: string; icon: string }[] = [
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
   individual:   { label: 'Individual',   color: '#38BDF8' },
-  profissional: { label: 'Profissional', color: '#F0B429' },
-  avancada:     { label: 'Avançada',     color: '#22C55E' },
+  profissional: { label: 'Profissional', color: '#2C5FE0' },
+  avancada:     { label: 'Avançada',     color: '#0E9E6E' },
 }
 
 function Field({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="py-3 border-b border-[#1A1A1F] last:border-0">
-      <div className="text-[11px] text-slate-500 uppercase tracking-wider mb-1">{label}</div>
-      <div className="text-sm text-white font-medium">{value || '—'}</div>
-      {sub && <div className="text-xs text-slate-600 mt-0.5">{sub}</div>}
+    <div className="py-3 border-b border-[#E6E8EC] last:border-0">
+      <div className="text-[11px] text-ink-2 uppercase tracking-wider mb-1">{label}</div>
+      <div className="text-sm text-ink font-medium">{value || '—'}</div>
+      {sub && <div className="text-xs text-ink-2 mt-0.5">{sub}</div>}
     </div>
   )
 }
@@ -40,13 +40,13 @@ function InputField({
 }) {
   return (
     <div className="mb-4">
-      <label className="text-[11px] text-slate-500 uppercase tracking-wider mb-1.5 block">{label}</label>
+      <label className="text-[11px] text-ink-2 uppercase tracking-wider mb-1.5 block">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-[#16161A] border border-[#2A2A30] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[rgba(240,180,41,0.4)] transition-colors"
+        className="w-full bg-[#FFFFFF] border border-[#E6E8EC] rounded-xl px-4 py-3 text-sm text-ink placeholder-slate-600 focus:outline-none focus:border-[rgba(44,95,224,0.4)] transition-colors"
       />
     </div>
   )
@@ -216,32 +216,32 @@ export default function PerfilPageInner() {
   }
   const formatDate  = (ts: number) => new Date(ts * 1000).toLocaleDateString('pt-BR')
   const statusLabel = (s: string) => {
-    if (s === 'paid') return { label: 'Pago',      color: '#22C55E' }
-    if (s === 'open') return { label: 'Em aberto', color: '#F0B429' }
+    if (s === 'paid') return { label: 'Pago',      color: '#0E9E6E' }
+    if (s === 'open') return { label: 'Em aberto', color: '#2C5FE0' }
     if (s === 'void') return { label: 'Cancelada', color: '#64748B' }
     return               { label: s,               color: '#64748B' }
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] px-4 py-8">
+    <div className="min-h-screen bg-[#F4F5F7] px-4 py-8">
       {/* Navbar */}
       <div className="max-w-4xl mx-auto flex items-center justify-between mb-10">
         <a
-          href="/dashboard"
-          className="flex items-center gap-2 text-sm text-slate-500 hover:text-white transition-colors"
+          href="/hoje"
+          className="flex items-center gap-2 text-sm text-ink-2 hover:text-ink transition-colors"
           style={{ textDecoration: 'none' }}
         >
           ← Voltar ao dashboard
         </a>
         <span
           className="font-display font-bold text-xl"
-          style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+          style={{ background: 'linear-gradient(135deg, #2C5FE0, #1E4FD0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
         >
           ELYON
         </span>
         <a
           href="/api/auth/signout"
-          className="text-sm text-slate-600 hover:text-red-400 transition-colors flex items-center gap-1.5"
+          className="text-sm text-ink-2 hover:text-red-400 transition-colors flex items-center gap-1.5"
           style={{ textDecoration: 'none' }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -255,14 +255,14 @@ export default function PerfilPageInner() {
 
       <div className="max-w-4xl mx-auto">
         {/* Header do perfil */}
-        <div className="flex items-center gap-5 mb-8 bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-black flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
+        <div className="flex items-center gap-5 mb-8 bg-[#FFFFFF] border border-[#E6E8EC] rounded-2xl p-6">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #2C5FE0, #1E4FD0)' }}>
             {firstName?.[0] || email?.[0]?.toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-display text-xl font-bold text-white">{fullName}</div>
-            <div className="text-sm text-slate-500 truncate">{email}</div>
+            <div className="font-display text-xl font-bold text-ink">{fullName}</div>
+            <div className="text-sm text-ink-2 truncate">{email}</div>
             <div className="flex items-center gap-2 mt-2">
               {planInfo ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -270,15 +270,15 @@ export default function PerfilPageInner() {
                   {planInfo.label}
                 </span>
               ) : (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-slate-500 bg-[#2A2A30]">Sem plano</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-ink-2 bg-[#E6E8EC]">Sem plano</span>
               )}
-              <span className="text-[10px] text-slate-600">Membro desde {effectiveCreatedAt}</span>
+              <span className="text-[10px] text-ink-2">Membro desde {effectiveCreatedAt}</span>
             </div>
           </div>
           <button
             type="button"
             onClick={() => openUserProfile()}
-            className="hidden md:block text-xs font-semibold px-3 py-2 rounded-xl border border-[#2A2A30] text-slate-400 hover:text-white hover:border-[#3A3A45] transition-all"
+            className="hidden md:block text-xs font-semibold px-3 py-2 rounded-xl border border-[#E6E8EC] text-ink-2 hover:text-ink hover:border-[#E6E8EC] transition-all"
           >
             Editar perfil
           </button>
@@ -286,7 +286,7 @@ export default function PerfilPageInner() {
 
         <div className="grid md:grid-cols-[200px_1fr] gap-6">
           {/* Sidebar */}
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-2 h-fit">
+          <div className="bg-[#FFFFFF] border border-[#E6E8EC] rounded-2xl p-2 h-fit">
             {SECTIONS.map((s) => (
               <a
                 key={s.key}
@@ -295,9 +295,9 @@ export default function PerfilPageInner() {
                   display: 'flex', alignItems: 'center', gap: '12px',
                   padding: '10px 12px', borderRadius: '12px',
                   textDecoration: 'none', fontSize: '14px',
-                  background: activeSection === s.key ? 'rgba(240,180,41,0.08)' : 'transparent',
-                  color: activeSection === s.key ? '#F0B429' : '#64748B',
-                  border: activeSection === s.key ? '1px solid rgba(240,180,41,0.2)' : '1px solid transparent',
+                  background: activeSection === s.key ? 'rgba(44,95,224,0.08)' : 'transparent',
+                  color: activeSection === s.key ? '#2C5FE0' : '#64748B',
+                  border: activeSection === s.key ? '1px solid rgba(44,95,224,0.2)' : '1px solid transparent',
                   marginBottom: '2px',
                 }}
               >
@@ -308,12 +308,12 @@ export default function PerfilPageInner() {
           </div>
 
           {/* Conteúdo */}
-          <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl p-6">
+          <div className="bg-[#FFFFFF] border border-[#E6E8EC] rounded-2xl p-6">
 
             {/* ── DADOS PESSOAIS ── */}
             {activeSection === 'dados' && (
               <div>
-                <h2 className="font-display text-lg font-bold text-white mb-5">Dados Pessoais</h2>
+                <h2 className="font-display text-lg font-bold text-ink mb-5">Dados Pessoais</h2>
                 <Field label="Nome completo"  value={fullName} />
                 <Field label="Email principal" value={email} />
                 <Field label="Username"        value={username} />
@@ -324,7 +324,7 @@ export default function PerfilPageInner() {
                     type="button"
                     onClick={() => openUserProfile()}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:opacity-80"
-                    style={{ border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429', background: 'rgba(240,180,41,0.05)' }}
+                    style={{ border: '1px solid rgba(44,95,224,0.3)', color: '#2C5FE0', background: 'rgba(44,95,224,0.05)' }}
                   >
                     ✏️ Editar nome e dados pessoais
                   </button>
@@ -335,78 +335,78 @@ export default function PerfilPageInner() {
             {/* ── CONTATOS ── */}
             {activeSection === 'contatos' && (
               <div>
-                <h2 className="font-display text-lg font-bold text-white mb-5">Contatos</h2>
+                <h2 className="font-display text-lg font-bold text-ink mb-5">Contatos</h2>
                 <Field label="Email principal" value={email} />
-                <div className="py-3 border-b border-[#1A1A1F]">
-                  <div className="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Telefone</div>
+                <div className="py-3 border-b border-[#E6E8EC]">
+                  <div className="text-[11px] text-ink-2 uppercase tracking-wider mb-1">Telefone</div>
                   {phone ? (
                     <div className="flex items-center justify-between">
-                      <div className="text-sm text-white font-medium">{phone}</div>
+                      <div className="text-sm text-ink font-medium">{phone}</div>
                       <button type="button" onClick={() => { setShowPhoneForm(true); setOtpStep(false); setPhoneMsg('') }}
-                        className="text-xs text-[#F0B429] hover:underline">Alterar</button>
+                        className="text-xs text-[#2C5FE0] hover:underline">Alterar</button>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <div className="text-sm text-slate-500">Não cadastrado</div>
+                      <div className="text-sm text-ink-2">Não cadastrado</div>
                       {!showPhoneForm && (
                         <button type="button" onClick={() => { setShowPhoneForm(true); setOtpStep(false); setPhoneMsg('') }}
-                          className="text-xs text-[#F0B429] hover:underline">+ Adicionar</button>
+                          className="text-xs text-[#2C5FE0] hover:underline">+ Adicionar</button>
                       )}
                     </div>
                   )}
                   {showPhoneForm && (
-                    <div className="mt-4 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
+                    <div className="mt-4 p-4 bg-[#FFFFFF] rounded-xl border border-[#E6E8EC]">
                       {!otpStep ? (
                         <>
-                          <div className="text-xs text-slate-400 mb-3 leading-relaxed">
-                            Digite o número com código do país. Ex: <span className="text-white">+5511999990000</span>
+                          <div className="text-xs text-ink-2 mb-3 leading-relaxed">
+                            Digite o número com código do país. Ex: <span className="text-ink">+5511999990000</span>
                           </div>
                           <InputField label="Número de telefone" value={phoneInput} onChange={setPhoneInput} type="tel" placeholder="+5511999990000" />
                           <div className="flex gap-2 mt-1">
                             <button type="button" onClick={handleAddPhone} disabled={phoneLoading || !phoneInput.trim()}
                               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
-                              style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}>
+                              style={{ background: 'linear-gradient(135deg, #2C5FE0, #1E4FD0)', color: '#000' }}>
                               {phoneLoading ? 'Enviando...' : 'Enviar código SMS'}
                             </button>
                             <button type="button" onClick={() => { setShowPhoneForm(false); setPhoneMsg('') }}
-                              className="px-4 py-2.5 rounded-xl text-sm text-slate-500 border border-[#2A2A30] hover:text-white transition-colors">
+                              className="px-4 py-2.5 rounded-xl text-sm text-ink-2 border border-[#E6E8EC] hover:text-ink transition-colors">
                               Cancelar
                             </button>
                           </div>
                         </>
                       ) : (
                         <>
-                          <div className="text-xs text-slate-400 mb-3">
-                            Código enviado para <span className="text-white">{phoneInput}</span>
+                          <div className="text-xs text-ink-2 mb-3">
+                            Código enviado para <span className="text-ink">{phoneInput}</span>
                           </div>
                           <InputField label="Código de verificação" value={otpCode} onChange={setOtpCode} type="text" placeholder="000000" />
                           <div className="flex gap-2 mt-1">
                             <button type="button" onClick={handleVerifyPhone} disabled={phoneLoading || otpCode.length < 4}
                               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
-                              style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}>
+                              style={{ background: 'linear-gradient(135deg, #2C5FE0, #1E4FD0)', color: '#000' }}>
                               {phoneLoading ? 'Verificando...' : 'Confirmar código'}
                             </button>
                             <button type="button" onClick={() => { setOtpStep(false); setPhoneMsg('') }}
-                              className="px-4 py-2.5 rounded-xl text-sm text-slate-500 border border-[#2A2A30] hover:text-white transition-colors">
+                              className="px-4 py-2.5 rounded-xl text-sm text-ink-2 border border-[#E6E8EC] hover:text-ink transition-colors">
                               Voltar
                             </button>
                           </div>
                         </>
                       )}
                       {phoneMsg && (
-                        <p className="text-xs mt-3" style={{ color: phoneMsg.includes('sucesso') || phoneMsg.includes('enviado') ? '#22C55E' : '#FF4D4D' }}>
+                        <p className="text-xs mt-3" style={{ color: phoneMsg.includes('sucesso') || phoneMsg.includes('enviado') ? '#0E9E6E' : '#E1483F' }}>
                           {phoneMsg}
                         </p>
                       )}
                     </div>
                   )}
-                  {!showPhoneForm && phoneMsg && <p className="text-xs mt-2" style={{ color: '#22C55E' }}>{phoneMsg}</p>}
+                  {!showPhoneForm && phoneMsg && <p className="text-xs mt-2" style={{ color: '#0E9E6E' }}>{phoneMsg}</p>}
                 </div>
                 {user?.emailAddresses && user.emailAddresses.length > 1 && (
-                  <div className="py-3 border-b border-[#1A1A1F]">
-                    <div className="text-[11px] text-slate-500 uppercase tracking-wider mb-2">Outros emails</div>
+                  <div className="py-3 border-b border-[#E6E8EC]">
+                    <div className="text-[11px] text-ink-2 uppercase tracking-wider mb-2">Outros emails</div>
                     {user.emailAddresses.filter(e => e.id !== user.primaryEmailAddressId).map(e => (
-                      <div key={e.id} className="text-sm text-slate-400">{e.emailAddress}</div>
+                      <div key={e.id} className="text-sm text-ink-2">{e.emailAddress}</div>
                     ))}
                   </div>
                 )}
@@ -416,23 +416,23 @@ export default function PerfilPageInner() {
             {/* ── PAGAMENTOS ── */}
             {activeSection === 'pagamentos' && (
               <div>
-                <h2 className="font-display text-lg font-bold text-white mb-5">Pagamentos</h2>
+                <h2 className="font-display text-lg font-bold text-ink mb-5">Pagamentos</h2>
                 <div className="mb-5">
-                  <div className="text-[11px] text-slate-500 uppercase tracking-wider mb-2">Plano atual</div>
+                  <div className="text-[11px] text-ink-2 uppercase tracking-wider mb-2">Plano atual</div>
                   {planInfo ? (
                     <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: `${planInfo.color}08`, border: `1px solid ${planInfo.color}25` }}>
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm text-black" style={{ background: planInfo.color }}>
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm text-white" style={{ background: planInfo.color }}>
                         {planInfo.label[0]}
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-white">Plano {planInfo.label}</div>
-                        <div className="text-xs text-slate-500">Ativo · renovação automática</div>
+                        <div className="text-sm font-bold text-ink">Plano {planInfo.label}</div>
+                        <div className="text-xs text-ink-2">Ativo · renovação automática</div>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3 p-4 rounded-xl bg-[#16161A] border border-[#2A2A30]">
-                      <div className="text-sm text-slate-400">Nenhum plano ativo</div>
-                      <a href="/planos" className="ml-auto text-xs font-bold text-[#F0B429] hover:underline">Ver planos →</a>
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-[#FFFFFF] border border-[#E6E8EC]">
+                      <div className="text-sm text-ink-2">Nenhum plano ativo</div>
+                      <a href="/planos" className="ml-auto text-xs font-bold text-[#2C5FE0] hover:underline">Ver planos →</a>
                     </div>
                   )}
                 </div>
@@ -440,7 +440,7 @@ export default function PerfilPageInner() {
                   {planInfo && (
                     <button type="button" onClick={handlePortal} disabled={portalLoading}
                       className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all hover:opacity-80 disabled:opacity-50"
-                      style={{ border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429', background: 'rgba(240,180,41,0.05)' }}>
+                      style={{ border: '1px solid rgba(44,95,224,0.3)', color: '#2C5FE0', background: 'rgba(44,95,224,0.05)' }}>
                       <span className="flex items-center gap-2 text-sm font-semibold">💳 Gerenciar forma de pagamento</span>
                       <span>→</span>
                     </button>
@@ -448,7 +448,7 @@ export default function PerfilPageInner() {
                   {planInfo && (
                     <button type="button" onClick={handlePortal} disabled={portalLoading}
                       className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all hover:opacity-80 disabled:opacity-50"
-                      style={{ border: '1px solid #2A2A30', color: '#94A3B8', background: 'transparent' }}>
+                      style={{ border: '1px solid #E6E8EC', color: '#94A3B8', background: 'transparent' }}>
                       <span className="flex items-center gap-2 text-sm font-semibold">
                         {portalLoading ? '⏳ Carregando...' : '🔧 Gerenciar assinatura'}
                       </span>
@@ -457,16 +457,16 @@ export default function PerfilPageInner() {
                   )}
                   <button type="button" onClick={handleSync} disabled={syncLoading}
                     className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all hover:opacity-80 disabled:opacity-50"
-                    style={{ border: '1px solid #2A2A30', color: '#64748B', background: 'transparent' }}>
+                    style={{ border: '1px solid #E6E8EC', color: '#64748B', background: 'transparent' }}>
                     <span className="text-sm">{syncLoading ? '🔄 Verificando...' : '↺ Verificar assinatura manualmente'}</span>
                     <span>→</span>
                   </button>
-                  {syncMsg && <p className="text-xs text-center" style={{ color: syncMsg.includes('sincronizado') ? '#22C55E' : '#F0B429' }}>{syncMsg}</p>}
+                  {syncMsg && <p className="text-xs text-center" style={{ color: syncMsg.includes('sincronizado') ? '#0E9E6E' : '#2C5FE0' }}>{syncMsg}</p>}
                 </div>
                 {!planInfo && (
                   <div className="mt-5">
-                    <a href="/planos" className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-black hover:opacity-90 transition-opacity"
-                      style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
+                    <a href="/planos" className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white hover:opacity-90 transition-opacity"
+                      style={{ background: 'linear-gradient(135deg, #2C5FE0, #1E4FD0)' }}>
                       ⚡ Ver planos e assinar
                     </a>
                   </div>
@@ -477,14 +477,14 @@ export default function PerfilPageInner() {
             {/* ── FATURAS ── */}
             {activeSection === 'faturas' && (
               <div>
-                <h2 className="font-display text-lg font-bold text-white mb-5">Faturas</h2>
-                {invoicesLoading && <div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-[#F0B429]/30 border-t-[#F0B429] rounded-full animate-spin" /></div>}
+                <h2 className="font-display text-lg font-bold text-ink mb-5">Faturas</h2>
+                {invoicesLoading && <div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-[#2C5FE0]/30 border-t-[#2C5FE0] rounded-full animate-spin" /></div>}
                 {!invoicesLoading && invoicesError && <div className="text-sm text-red-400 text-center py-8">{invoicesError}</div>}
                 {!invoicesLoading && !invoicesError && invoices.length === 0 && (
                   <div className="text-center py-12">
                     <div className="text-3xl mb-3">🧾</div>
-                    <div className="text-slate-500 text-sm">Nenhuma fatura encontrada.</div>
-                    <div className="text-xs text-slate-600 mt-1">As faturas aparecem após a primeira cobrança.</div>
+                    <div className="text-ink-2 text-sm">Nenhuma fatura encontrada.</div>
+                    <div className="text-xs text-ink-2 mt-1">As faturas aparecem após a primeira cobrança.</div>
                   </div>
                 )}
                 {!invoicesLoading && invoices.length > 0 && (
@@ -492,23 +492,23 @@ export default function PerfilPageInner() {
                     {invoices.map((inv) => {
                       const st = statusLabel(inv.status)
                       return (
-                        <div key={inv.id} className="flex items-center justify-between p-4 bg-[#16161A] border border-[#2A2A30] rounded-xl hover:border-[#3A3A42] transition-colors">
+                        <div key={inv.id} className="flex items-center justify-between p-4 bg-[#FFFFFF] border border-[#E6E8EC] rounded-xl hover:border-[#E6E8EC] transition-colors">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg bg-[#111114] border border-[#2A2A30]">🧾</div>
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg bg-[#FFFFFF] border border-[#E6E8EC]">🧾</div>
                             <div>
-                              <div className="text-sm font-semibold text-white">{inv.number}</div>
-                              <div className="text-xs text-slate-500 mt-0.5 truncate max-w-[180px]">{inv.description}</div>
+                              <div className="text-sm font-semibold text-ink">{inv.number}</div>
+                              <div className="text-xs text-ink-2 mt-0.5 truncate max-w-[180px]">{inv.description}</div>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 text-right">
                             <div>
-                              <div className="text-sm font-bold text-white">{formatCurrency(inv.amount, inv.currency)}</div>
-                              <div className="text-xs text-slate-500">{formatDate(inv.date)}</div>
+                              <div className="text-sm font-bold text-ink">{formatCurrency(inv.amount, inv.currency)}</div>
+                              <div className="text-xs text-ink-2">{formatDate(inv.date)}</div>
                             </div>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}18` }}>{st.label}</span>
                             {inv.pdfUrl && (
                               <a href={inv.pdfUrl} target="_blank" rel="noopener noreferrer"
-                                className="text-xs text-slate-500 hover:text-[#F0B429] transition-colors px-2 py-1 rounded-lg border border-[#2A2A30] hover:border-[rgba(240,180,41,0.3)]"
+                                className="text-xs text-ink-2 hover:text-[#2C5FE0] transition-colors px-2 py-1 rounded-lg border border-[#E6E8EC] hover:border-[rgba(44,95,224,0.3)]"
                                 title="Baixar PDF">PDF</a>
                             )}
                           </div>
@@ -523,10 +523,10 @@ export default function PerfilPageInner() {
             {/* ── PRIVACIDADE (LGPD) ── */}
             {activeSection === 'privacidade' && (
               <div>
-                <h2 className="font-display text-lg font-bold text-white mb-1">Privacidade e seus dados</h2>
-                <p className="text-xs text-slate-500 mb-6">Conforme a LGPD (Lei 13.709/2018), você tem direito de saber quais dados armazenamos e de solicitar exclusão a qualquer momento.</p>
-                <div className="mb-6 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30] space-y-3">
-                  <div className="text-sm font-semibold text-white mb-3">Dados que armazenamos sobre você</div>
+                <h2 className="font-display text-lg font-bold text-ink mb-1">Privacidade e seus dados</h2>
+                <p className="text-xs text-ink-2 mb-6">Conforme a LGPD (Lei 13.709/2018), você tem direito de saber quais dados armazenamos e de solicitar exclusão a qualquer momento.</p>
+                <div className="mb-6 p-4 bg-[#FFFFFF] rounded-xl border border-[#E6E8EC] space-y-3">
+                  <div className="text-sm font-semibold text-ink mb-3">Dados que armazenamos sobre você</div>
                   {[
                     { icon: '👤', label: 'Conta',         desc: 'Nome, e-mail e foto de perfil (gerenciados pelo Clerk)' },
                     { icon: '💳', label: 'Pagamentos',    desc: 'Histórico de assinatura e faturas (Stripe — sem dados de cartão)' },
@@ -537,35 +537,35 @@ export default function PerfilPageInner() {
                     <div key={item.label} className="flex gap-3 items-start">
                       <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
                       <div>
-                        <div className="text-xs font-semibold text-slate-300">{item.label}</div>
-                        <div className="text-xs text-slate-500">{item.desc}</div>
+                        <div className="text-xs font-semibold text-ink-2">{item.label}</div>
+                        <div className="text-xs text-ink-2">{item.desc}</div>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mb-6 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
-                  <div className="text-sm font-semibold text-white mb-3">O que não armazenamos</div>
+                <div className="mb-6 p-4 bg-[#FFFFFF] rounded-xl border border-[#E6E8EC]">
+                  <div className="text-sm font-semibold text-ink mb-3">O que não armazenamos</div>
                   <div className="space-y-1.5">
                     {['Tokens OAuth (ficam apenas na sessão)', 'Dados de cartão (processados pelo Stripe)', 'Senhas (gerenciadas pelo Clerk)'].map(item => (
-                      <div key={item} className="flex items-start gap-2 text-xs text-slate-400"><span className="text-green-400 mt-0.5">✓</span>{item}</div>
+                      <div key={item} className="flex items-start gap-2 text-xs text-ink-2"><span className="text-green-400 mt-0.5">✓</span>{item}</div>
                     ))}
                   </div>
                 </div>
-                <div className="mb-6 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
-                  <div className="text-sm font-semibold text-white mb-1">Baixar meus dados</div>
-                  <p className="text-xs text-slate-400 mb-3 leading-relaxed">Exporte todos os seus dados em formato JSON — direito garantido pelo Art. 18 da LGPD.</p>
+                <div className="mb-6 p-4 bg-[#FFFFFF] rounded-xl border border-[#E6E8EC]">
+                  <div className="text-sm font-semibold text-ink mb-1">Baixar meus dados</div>
+                  <p className="text-xs text-ink-2 mb-3 leading-relaxed">Exporte todos os seus dados em formato JSON — direito garantido pelo Art. 18 da LGPD.</p>
                   <button type="button" onClick={handleExportData} disabled={exportLoading}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:opacity-80 disabled:opacity-50"
-                    style={{ border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429', background: 'rgba(240,180,41,0.05)' }}>
+                    style={{ border: '1px solid rgba(44,95,224,0.3)', color: '#2C5FE0', background: 'rgba(44,95,224,0.05)' }}>
                     {exportLoading ? '⏳ Gerando...' : '⬇ Baixar meus dados (JSON)'}
                   </button>
                 </div>
-                <div className="mb-6 p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
-                  <div className="text-sm font-semibold text-white mb-2">Documentos legais</div>
+                <div className="mb-6 p-4 bg-[#FFFFFF] rounded-xl border border-[#E6E8EC]">
+                  <div className="text-sm font-semibold text-ink mb-2">Documentos legais</div>
                   <div className="flex flex-wrap gap-2">
                     {[{ label: 'Termos de Uso', href: '/termos' }, { label: 'Política de Privacidade', href: '/privacidade' }, { label: 'Política de Cookies', href: '/cookies' }, { label: 'DPA', href: '/dpa' }].map(doc => (
                       <a key={doc.href} href={doc.href} target="_blank" rel="noopener noreferrer"
-                        className="text-xs px-3 py-1.5 rounded-lg border border-[#2A2A30] text-slate-400 hover:text-white hover:border-[#3A3A45] transition-all">
+                        className="text-xs px-3 py-1.5 rounded-lg border border-[#E6E8EC] text-ink-2 hover:text-ink hover:border-[#E6E8EC] transition-all">
                         {doc.label} ↗
                       </a>
                     ))}
@@ -573,7 +573,7 @@ export default function PerfilPageInner() {
                 </div>
                 <div className="p-4 bg-red-950/20 rounded-xl border border-red-500/20">
                   <div className="text-sm font-bold text-red-400 mb-1 flex items-center gap-2">⚠️ Excluir minha conta e todos os dados</div>
-                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">Esta ação é irreversível. Todos os dados serão apagados permanentemente.</p>
+                  <p className="text-xs text-ink-2 mb-4 leading-relaxed">Esta ação é irreversível. Todos os dados serão apagados permanentemente.</p>
                   {deleteStep === 'idle' && (
                     <button type="button" onClick={() => setDeleteStep('confirm')}
                       className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/05 transition-all">
@@ -584,20 +584,20 @@ export default function PerfilPageInner() {
                     <div className="space-y-3">
                       <p className="text-xs text-red-300">Para confirmar, digite <strong>excluir</strong> no campo abaixo:</p>
                       <input type="text" value={deleteConfirm} onChange={e => setDeleteConfirm(e.target.value)} placeholder="excluir"
-                        className="w-full bg-[#16161A] border border-red-500/30 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-red-500/60" />
+                        className="w-full bg-[#FFFFFF] border border-red-500/30 rounded-xl px-4 py-3 text-sm text-ink placeholder-slate-600 focus:outline-none focus:border-red-500/60" />
                       <div className="flex gap-2">
                         <button type="button" onClick={handleDeleteAccount} disabled={deleteConfirm.toLowerCase() !== 'excluir'}
-                          className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-600 text-white disabled:opacity-40 hover:bg-red-700 transition-colors">
+                          className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-600 text-ink disabled:opacity-40 hover:bg-red-700 transition-colors">
                           Excluir permanentemente
                         </button>
                         <button type="button" onClick={() => { setDeleteStep('idle'); setDeleteConfirm('') }}
-                          className="px-4 py-2.5 rounded-xl text-sm text-slate-500 border border-[#2A2A30] hover:text-white">
+                          className="px-4 py-2.5 rounded-xl text-sm text-ink-2 border border-[#E6E8EC] hover:text-ink">
                           Cancelar
                         </button>
                       </div>
                     </div>
                   )}
-                  {deleteStep === 'deleting' && <div className="flex items-center gap-2 text-sm text-slate-400"><div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />Apagando seus dados...</div>}
+                  {deleteStep === 'deleting' && <div className="flex items-center gap-2 text-sm text-ink-2"><div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />Apagando seus dados...</div>}
                   {deleteStep === 'done' && <div className="text-sm text-green-400">Conta e dados excluídos. Redirecionando...</div>}
                 </div>
               </div>
@@ -606,40 +606,40 @@ export default function PerfilPageInner() {
             {/* ── SEGURANÇA ── */}
             {activeSection === 'seguranca' && (
               <div>
-                <h2 className="font-display text-lg font-bold text-white mb-5">Login e Senha</h2>
+                <h2 className="font-display text-lg font-bold text-ink mb-5">Login e Senha</h2>
                 <Field label="Email de acesso" value={email} />
                 <Field label="Autenticação" value={hasPassword ? 'Email e senha' : 'Login social (Google, etc.)'} sub={hasPassword ? undefined : 'Conta vinculada via provedor externo'} />
                 <div className="mt-6 space-y-4">
                   {hasPassword ? (
-                    <div className="p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
-                      <div className="text-sm font-semibold text-white mb-4 flex items-center gap-2">🔑 Alterar senha</div>
+                    <div className="p-4 bg-[#FFFFFF] rounded-xl border border-[#E6E8EC]">
+                      <div className="text-sm font-semibold text-ink mb-4 flex items-center gap-2">🔑 Alterar senha</div>
                       <InputField label="Senha atual"        value={pwForm.current} onChange={v => setPwForm(f => ({ ...f, current: v }))} type="password" placeholder="••••••••" />
                       <InputField label="Nova senha"         value={pwForm.next}    onChange={v => setPwForm(f => ({ ...f, next: v }))}    type="password" placeholder="Mínimo 8 caracteres" />
                       <InputField label="Confirmar nova senha" value={pwForm.confirm} onChange={v => setPwForm(f => ({ ...f, confirm: v }))} type="password" placeholder="Repita a nova senha" />
-                      {pwMsg && <p className="text-xs mb-3" style={{ color: pwSuccess ? '#22C55E' : '#FF4D4D' }}>{pwMsg}</p>}
+                      {pwMsg && <p className="text-xs mb-3" style={{ color: pwSuccess ? '#0E9E6E' : '#E1483F' }}>{pwMsg}</p>}
                       <button type="button" onClick={handleChangePassword} disabled={pwLoading || !pwForm.current || !pwForm.next || !pwForm.confirm}
                         className="w-full py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-                        style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}>
+                        style={{ background: 'linear-gradient(135deg, #2C5FE0, #1E4FD0)', color: '#000' }}>
                         {pwLoading ? 'Salvando...' : 'Salvar nova senha'}
                       </button>
                     </div>
                   ) : (
-                    <div className="p-4 bg-[#16161A] rounded-xl border border-[#2A2A30]">
-                      <div className="text-sm text-slate-400 mb-3">Sua conta usa login social. Para alterar configurações de segurança:</div>
+                    <div className="p-4 bg-[#FFFFFF] rounded-xl border border-[#E6E8EC]">
+                      <div className="text-sm text-ink-2 mb-3">Sua conta usa login social. Para alterar configurações de segurança:</div>
                       <button type="button" onClick={() => openUserProfile()}
                         className="w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all hover:opacity-80"
-                        style={{ border: '1px solid rgba(240,180,41,0.3)', color: '#F0B429', background: 'rgba(240,180,41,0.05)' }}>
+                        style={{ border: '1px solid rgba(44,95,224,0.3)', color: '#2C5FE0', background: 'rgba(44,95,224,0.05)' }}>
                         <span className="text-sm font-semibold flex items-center gap-2">🔑 Gerenciar segurança</span>
                         <span>→</span>
                       </button>
                     </div>
                   )}
                   <button type="button" onClick={() => openUserProfile()}
-                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border border-[#2A2A30] text-slate-400 hover:text-white transition-all">
+                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border border-[#E6E8EC] text-ink-2 hover:text-ink transition-all">
                     <span className="text-sm flex items-center gap-2">🛡️ Segurança da conta (2FA, sessões)</span>
                     <span>→</span>
                   </button>
-                  <div className="pt-2 border-t border-[#2A2A30]">
+                  <div className="pt-2 border-t border-[#E6E8EC]">
                     <a href="/api/auth/signout"
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm text-red-400 border border-red-400/20 hover:bg-red-400/05 transition-all"
                       style={{ textDecoration: 'none' }}>

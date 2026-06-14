@@ -19,13 +19,13 @@ export async function GET(req: NextRequest) {
   const cookieCsrf = req.cookies.get('oauth_csrf')?.value ?? ''
   if (!csrfToken || !cookieCsrf || csrfToken !== cookieCsrf) {
     return NextResponse.redirect(
-      new URL(`/dashboard?oauth_error=csrf_invalid&platform=${platform}`, req.url)
+      new URL(`/hoje?oauth_error=csrf_invalid&platform=${platform}`, req.url)
     )
   }
 
   if (oauthErr || !code) {
     return NextResponse.redirect(
-      new URL(`/dashboard?oauth_error=${oauthErr || 'sem_codigo'}&platform=${platform}`, req.url)
+      new URL(`/hoje?oauth_error=${oauthErr || 'sem_codigo'}&platform=${platform}`, req.url)
     )
   }
 
@@ -227,7 +227,7 @@ export async function GET(req: NextRequest) {
 
     // Volta para onde o usuário iniciou a conexão (ex.: /integracoes no v2), default /dashboard
     const rt = req.cookies.get('oauth_return')?.value
-    const returnTo = rt && rt.startsWith('/') && !rt.includes('//') ? rt : '/dashboard'
+    const returnTo = rt && rt.startsWith('/') && !rt.includes('//') ? rt : '/hoje'
     const res = NextResponse.redirect(
       new URL(`${returnTo}?oauth_success=1&platform=${platform}`, req.url)
     )
@@ -244,7 +244,7 @@ export async function GET(req: NextRequest) {
 
   } catch (e: any) {
     return NextResponse.redirect(
-      new URL(`/dashboard?oauth_error=${encodeURIComponent(e.message)}&platform=${platform}`, req.url)
+      new URL(`/hoje?oauth_error=${encodeURIComponent(e.message)}&platform=${platform}`, req.url)
     )
   }
 }

@@ -14,8 +14,23 @@ export default function MercadoPage() {
   const auditCache = useAppStore(s => s.auditCache)
   const competitorsMap = useAppStore(s => s.competitors)
   const marketResearch = useAppStore(s => s.marketResearch)
+  const setMarketResearchTaskId = useAppStore(s => s.setMarketResearchTaskId)
   const [mounted, setMounted] = useState(false)
+  const [compLoading, setCompLoading] = useState(false)
   useEffect(() => { setMounted(true) }, [])
+
+  const analisarConcorrentes = async () => {
+    const nm = clientData?.niche || ''
+    if (!nm) return
+    setCompLoading(true)
+    try {
+      const r = await fetch('/api/manus/task', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: nm, city: clientData?.city, type: 'competitors' }) })
+      const d = await r.json()
+      if (d.task_id) { setMarketResearchTaskId(clientData?.clientName || '', d.task_id); window.toast?.({ tone: 'good', title: 'Análise iniciada', body: 'Os concorrentes aparecem aqui em alguns minutos.' }) }
+      else window.toast?.({ tone: 'bad', title: 'Não foi possível iniciar', body: d.error || 'Tente novamente.' })
+    } catch { window.toast?.({ tone: 'bad', title: 'Falha ao iniciar a análise' }) }
+    finally { setCompLoading(false) }
+  }
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const niche = clientData?.niche || savedClients?.find(c => c.clientData.clientName === key)?.clientData.niche || ''
@@ -168,7 +183,7 @@ export default function MercadoPage() {
         ) : (
           <div className="text-center py-8 text-ink-3">
             <p className="text-sm">Nenhum concorrente analisado ainda.</p>
-            <Button variant="soft" size="sm" className="mt-3" onClick={() => (window.location.href = '/dashboard?view=concorrentes')}>Analisar concorrentes</Button>
+            <Button size="sm" className="mt-3" onClick={analisarConcorrentes} disabled={compLoading || !clientData?.niche}>{compLoading ? 'Iniciando…' : 'Analisar concorrentes'}</Button>
           </div>
         )}
       </Card>

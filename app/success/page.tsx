@@ -44,7 +44,7 @@ function SuccessContent() {
   useEffect(() => {
     if (step !== 'done') return
     // window.location.href força reload completo → Clerk busca JWT fresco com o plano novo
-    const t = setTimeout(() => { window.location.href = '/dashboard' }, 4000)
+    const t = setTimeout(() => { window.location.href = '/hoje' }, 4000)
     return () => clearTimeout(t)
   }, [step])
 
@@ -88,7 +88,7 @@ function SuccessContent() {
               }} />
             </div>
             <button
-              onClick={() => { window.location.href = '/dashboard' }}
+              onClick={() => { window.location.href = '/hoje' }}
               className="text-sm font-bold px-6 py-3 rounded-xl hover:opacity-80 transition-opacity"
               style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)', color: '#000' }}
             >
