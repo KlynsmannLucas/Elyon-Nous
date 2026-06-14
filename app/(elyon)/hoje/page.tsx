@@ -3,8 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, LineChart, LegendDot, CHART_COLORS } from '@/components/dashboard/v2'
-import { useDailySeries } from '@/lib/useDailySeries'
+import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, HBar, CHART_COLORS } from '@/components/dashboard/v2'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
@@ -69,7 +68,6 @@ export default function HojePage() {
     return () => { active = false }
   }, [key, dailyAccountId, metaAccount])
 
-  const dailySeries = useDailySeries(auditCache[key]?.[0]?.audit?._realMetrics?.avgROAS ?? null)
   if (!mounted) return <Loading />
   if (!key) return <Empty />
 
@@ -118,47 +116,74 @@ export default function HojePage() {
   const briefing = latestAudit?.executive_summary || strategyData?.strategy?.growth_thesis
     || (rm ? `Conta com ${brl(rm.totalSpend)} investidos e ${int(rm.totalLeads)} leads.${ev?.cplDelta != null ? ` CPL ${ev.cplDelta > 0 ? 'subiu' : 'caiu'} ${Math.abs(ev.cplDelta)}% vs a auditoria anterior.` : ''}` : 'Rode a Análise Profunda para receber um briefing com base nos dados reais da conta.')
 
-  const changes: { text: string; sub: string; tone: 'good' | 'bad' | 'warn' }[] = []
+  // Streak — dias desde o primeiro cliente salvo (proxy real de uso contínuo).
+  const firstSaved = savedClients?.[0]?.savedAt
+  const streak = firstSaved ? Math.max(1, Math.floor((Date.now() - new Date(firstSaved).getTime()) / 86400000) + 1) : null
+
+  // Metas do mês — alvos derivados de forma conservadora sobre os dados reais.
+  const goals = rm ? ([
+    rm.totalRevenue > 0
+      ? { k: 'Receita do mês', cur: rm.totalRevenue, target: Math.max(1000, Math.ceil((rm.totalRevenue * 1.25) / 1000) * 1000), fmt: 'brl' as const }
+      : { k: 'Leads do mês', cur: rm.totalLeads, target: Math.max(10, Math.ceil((rm.totalLeads * 1.2) / 10) * 10), fmt: 'int' as const },
+    { k: 'Saúde da conta', cur: score ?? 0, target: 85, fmt: 'int' as const },
+    rm.avgROAS
+      ? { k: 'ROAS alvo', cur: rm.avgROAS, target: Math.round((rm.avgROAS + 0.5) * 10) / 10, fmt: 'x' as const }
+      : { k: 'Aproveitamento', cur: Math.max(0, 100 - (latestAudit?._wastePercent ?? 0)), target: 95, fmt: 'int' as const },
+  ]) : []
+  const goalFmt = (v: number, f: 'brl' | 'int' | 'x') => f === 'brl' ? brl(v) : f === 'x' ? `${v}x` : int(v)
+
+  const changes: { text: string; sub: string; tone: 'good' | 'bad' | 'warn'; icon: 'up' | 'down' | 'flag' }[] = []
   if (pro) {
-    if (ev?.scoreDelta) changes.push({ text: `Score ${ev.scoreDelta > 0 ? 'subiu' : 'caiu'} ${Math.abs(ev.scoreDelta)} pts`, sub: 'vs última auditoria', tone: ev.scoreDelta > 0 ? 'good' : 'bad' })
-    if (daily?.cplPct != null && daily.cplPct !== 0) changes.push({ text: `CPL ${daily.cplPct > 0 ? '+' : ''}${daily.cplPct}%`, sub: 'vs ontem', tone: daily.cplPct > 0 ? 'bad' : 'good' })
-    if (daily?.leadsPct != null && daily.leadsPct !== 0) changes.push({ text: `Leads ${daily.leadsPct > 0 ? '+' : ''}${daily.leadsPct}%`, sub: 'vs ontem', tone: daily.leadsPct > 0 ? 'good' : 'warn' })
+    if (ev?.scoreDelta) changes.push({ text: `Score ${ev.scoreDelta > 0 ? 'subiu' : 'caiu'} ${Math.abs(ev.scoreDelta)} pts`, sub: 'vs última auditoria', tone: ev.scoreDelta > 0 ? 'good' : 'bad', icon: ev.scoreDelta > 0 ? 'up' : 'down' })
+    if (daily?.cplPct != null && daily.cplPct !== 0) changes.push({ text: `CPL ${daily.cplPct > 0 ? '+' : ''}${daily.cplPct}%`, sub: 'vs ontem', tone: daily.cplPct > 0 ? 'bad' : 'good', icon: daily.cplPct > 0 ? 'up' : 'down' })
+    if (daily?.leadsPct != null && daily.leadsPct !== 0) changes.push({ text: `Leads ${daily.leadsPct > 0 ? '+' : ''}${daily.leadsPct}%`, sub: 'vs ontem', tone: daily.leadsPct > 0 ? 'good' : 'warn', icon: daily.leadsPct > 0 ? 'up' : 'flag' })
   }
 
   return (
     <div className="p-4 md:p-6">
-      <header className="mb-6 animate-fade-up">
-        <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>{greeting()}{key ? `, ${key.split(' ')[0]}` : ''}</h1>
-        <p className="text-sm text-ink-2 mt-0.5 capitalize">{today()}</p>
+      <header className="mb-4 flex items-center justify-between gap-3 flex-wrap animate-fade-up">
+        <div>
+          <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>{greeting()}{key ? `, ${key.split(' ')[0]}` : ''} 👋</h1>
+          <p className="text-[13.5px] text-ink-3 mt-0.5 capitalize">{today()}{key ? ` · ${key}` : ''}</p>
+        </div>
+        {streak != null && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill bg-amber-soft" style={{ border: '1px solid #F2DDB0' }}>
+            <span className="text-amber"><Icon name="bolt" size={16} /></span>
+            <span className="text-[13px] font-semibold text-amber">{streak} dias seguidos</span>
+          </div>
+        )}
       </header>
 
       {/* Briefing Hero */}
-      <section className="mb-6 animate-fade-up">
-        <Card className="bg-gradient-to-br from-blue-soft to-green-soft border-blue-line">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-blue flex items-center justify-center shrink-0"><span className="text-white text-xl">◎</span></div>
+      <section className="mb-4 animate-fade-up">
+        <Card padding="none" className="overflow-hidden">
+          <div className="flex items-start gap-[18px] p-5" style={{ background: 'linear-gradient(110deg, var(--blue-soft) 0%, transparent 42%, var(--green-soft) 100%)' }}>
+            <span className="w-12 h-12 rounded-full bg-gradient-to-br from-blue to-teal flex items-center justify-center shrink-0 animate-pulse-dot"><span className="text-white text-xl">◎</span></span>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">Briefing do NOUS · hoje</span>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-blue-600">Briefing do NOUS · hoje</span>
                 <SourceBadge source={rm ? 'real' : 'benchmark'} />
               </div>
-              <p className="text-sm text-ink-2 mb-3 line-clamp-3">{briefing}</p>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => (window.location.href = '/plano')}>Ver meu plano de hoje</Button>
-                {!rm && <Button size="sm" variant="soft" onClick={() => (window.location.href = '/diagnostico')}>Rodar Análise Profunda</Button>}
+              <p className="text-sm text-ink-2 leading-relaxed max-w-[720px]">{briefing}</p>
+              <div className="flex flex-wrap gap-2.5 mt-4">
+                <Button onClick={() => (window.location.href = '/plano')}>Ver meu plano de hoje</Button>
+                <Button variant="ghost" onClick={() => (window.location.href = '/diagnostico')}>{rm ? 'Perguntar ao NOUS' : 'Rodar Análise Profunda'}</Button>
               </div>
-              {changes.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-line">
-                  {changes.map((c, i) => (
-                    <span key={i} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-pill bg-paper border border-line">
-                      <span style={{ color: c.tone === 'good' ? '#0E9E6E' : c.tone === 'bad' ? '#E1483F' : '#E08B0B' }}>{c.tone === 'good' ? '↑' : c.tone === 'bad' ? '↓' : '⚑'}</span>
-                      <span className="font-medium text-ink">{c.text}</span><span className="text-ink-3">· {c.sub}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
+          {pro && changes.length > 0 && (
+            <div className="flex gap-2.5 p-[14px_20px] px-5 py-3.5 border-t border-line bg-paper-2 flex-wrap">
+              {changes.map((c, i) => {
+                const col = c.tone === 'good' ? { c: '#0E9E6E', bg: '#E4F6EE' } : c.tone === 'bad' ? { c: '#E1483F', bg: '#FCEBEA' } : { c: '#E08B0B', bg: '#FCF1DC' }
+                return (
+                  <div key={i} className="flex items-center gap-2.5 px-3 py-2.5 bg-paper border border-line rounded-sm flex-1 min-w-[160px]">
+                    <span className="w-[30px] h-[30px] rounded-lg shrink-0 flex items-center justify-center" style={{ background: col.bg, color: col.c }}><Icon name={c.icon === 'up' ? 'rocket' : c.icon === 'down' ? 'pulse' : 'flag'} size={16} /></span>
+                    <div className="min-w-0"><div className="text-[12.5px] font-semibold text-ink truncate">{c.text}</div><div className="text-[11px] text-ink-3">{c.sub}</div></div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </Card>
       </section>
 
@@ -180,26 +205,10 @@ export default function HojePage() {
         </section>
       )}
 
-      {/* Tendência diária real */}
-      {dailySeries && (
-        <section className="mb-6 animate-fade-up">
-          <Card>
-            <SectionHead title={dailySeries.hasRevenue ? 'Receita × investimento' : 'Investimento × leads'} subtitle="Últimos dias · dados reais" icon={<Icon name="chart" size={18} />}
-              action={<div className="flex gap-3">{dailySeries.hasRevenue ? <LegendDot color={CHART_COLORS.green}>Receita</LegendDot> : <LegendDot color={CHART_COLORS.green}>Leads</LegendDot>}<LegendDot color={CHART_COLORS.blue}>Investimento</LegendDot></div>} />
-            <LineChart
-              labels={dailySeries.labels}
-              money={dailySeries.hasRevenue}
-              height={220}
-              series={dailySeries.hasRevenue
-                ? [{ name: 'Receita', color: CHART_COLORS.green, data: dailySeries.revenue! }, { name: 'Investimento', color: CHART_COLORS.blue, data: dailySeries.spend }]
-                : [{ name: 'Leads', color: CHART_COLORS.green, data: dailySeries.leads }, { name: 'Investimento', color: CHART_COLORS.blue, data: dailySeries.spend }]} />
-          </Card>
-        </section>
-      )}
-
-      {/* Main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-up">
-        <div className="lg:col-span-2 space-y-4">
+      {/* Main grid — split-narrow (Saúde+Metas | Ações+Alertas) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.35fr] gap-4 items-start animate-fade-up">
+        {/* Coluna esquerda: Saúde + Metas */}
+        <div className="space-y-4">
           {/* Health */}
           <Card>
             <SectionHead title="Saúde do negócio" subtitle="Índice geral da conta" icon={<Icon name="pulse" size={18} />}
@@ -235,6 +244,33 @@ export default function HojePage() {
             )}
           </Card>
 
+          {/* Goals — Metas do mês */}
+          {goals.length > 0 && (
+            <Card>
+              <SectionHead title="Metas do mês" subtitle="Seu progresso rumo aos alvos" icon={<Icon name="target" size={18} />} />
+              <div className="space-y-4">
+                {goals.map(g => {
+                  const pct = Math.min(100, Math.round((g.cur / Math.max(g.target, 0.01)) * 100))
+                  return (
+                    <div key={g.k}>
+                      <div className="flex justify-between items-baseline mb-1.5">
+                        <span className="text-[13px] font-semibold text-ink">{g.k}</span>
+                        <span className="font-mono text-[12.5px] text-ink-2"><b className="text-ink">{goalFmt(g.cur, g.fmt)}</b> / {goalFmt(g.target, g.fmt)}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex-1"><HBar value={pct} color={pct >= 80 ? CHART_COLORS.green : CHART_COLORS.blue} h={9} /></div>
+                        <span className="font-mono text-xs font-bold w-9 text-right" style={{ color: pct >= 80 ? '#0B855D' : '#1E4FD0' }}>{pct}%</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          )}
+        </div>
+
+        {/* Coluna direita: Ações + Alertas */}
+        <div className="space-y-4">
           {/* Priority actions */}
           <Card>
             <SectionHead title={pro ? 'Ações prioritárias' : 'O que fazer agora'} subtitle={actions.length ? `${actions.length} priorizadas pelo NOUS` : undefined} icon={<Icon name="target" size={18} />} />
@@ -262,10 +298,8 @@ export default function HojePage() {
               </div>
             )}
           </Card>
-        </div>
 
-        {/* Alerts */}
-        <div className="space-y-4">
+          {/* Alerts */}
           <Card>
             <SectionHead title="Alertas" subtitle="O que precisa de atenção" icon={<Icon name="bell" size={18} />}
               action={alerts.length ? <Badge tone="bad" dot>{alerts.length}</Badge> : undefined} />
