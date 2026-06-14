@@ -96,6 +96,14 @@ export default function HojePage() {
     { label: 'CTR', value: rm.avgCTR ? `${rm.avgCTR}%` : '—', trend: null, inverse: false, series: null, up: true },
   ].slice(0, pro ? 5 : 4) : []
 
+  // Pilares de saúde (Aquisição/Conversão/Retenção) derivados de sinais reais.
+  const cvr = rm?.totalClicks > 0 ? rm.totalLeads / rm.totalClicks : null
+  const pillars = rm ? [
+    { label: 'Aquisição', v: rm.totalLeads >= 1000 ? 84 : rm.totalLeads >= 300 ? 72 : rm.totalLeads >= 50 ? 58 : 44 },
+    { label: 'Conversão', v: cvr != null ? (cvr >= 0.05 ? 84 : cvr >= 0.02 ? 64 : 46) : (score ?? 55) },
+    { label: 'Retenção', v: score ?? 60 },
+  ] : []
+
   const actions = (pendingActionsCache[key] || [])
     .filter(a => a.status === 'pendente')
     .sort((a, b) => (URGENCY_ORDER[a.urgency] - URGENCY_ORDER[b.urgency]) || (a.priority - b.priority))
@@ -197,15 +205,27 @@ export default function HojePage() {
             <SectionHead title="Saúde do negócio" subtitle="Índice geral da conta" icon={<Icon name="pulse" size={18} />}
               action={<SourceBadge source={hs?.source === 'ai' ? 'ai' : rm ? 'real' : 'benchmark'} />} />
             {score != null ? (
-              <div className="flex items-center gap-6">
-                <Gauge value={score} size={108} sub="saúde" color={scColor} />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold" style={{ color: scColor }}>{grade}</span>
-                    {ev?.scoreDelta != null && ev.scoreDelta !== 0 && <Delta value={ev.scoreDelta} suffix=" pts" />}
+              <div className="flex items-center gap-6 flex-wrap">
+                <div className="flex items-center gap-4">
+                  <Gauge value={score} size={108} sub="saúde" color={scColor} />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold" style={{ color: scColor }}>{grade}</span>
+                      {ev?.scoreDelta != null && ev.scoreDelta !== 0 && <Delta value={ev.scoreDelta} suffix=" pts" />}
+                    </div>
+                    <p className="text-xs text-ink-3 mt-1 max-w-[170px]">{score >= 80 ? 'Conta saudável, acima da média.' : score >= 60 ? 'Oportunidades de melhoria identificadas.' : 'Atenção: gargalos limitando resultados.'}</p>
                   </div>
-                  <p className="text-xs text-ink-3 mt-1">{score >= 80 ? 'Conta saudável, acima da média.' : score >= 60 ? 'Oportunidades de melhoria identificadas.' : 'Atenção: gargalos limitando resultados.'}</p>
                 </div>
+                {pillars.length > 0 && (
+                  <div className="flex-1 min-w-[180px] space-y-2.5">
+                    {pillars.map(p => (
+                      <div key={p.label}>
+                        <div className="flex justify-between text-xs mb-1"><span className="text-ink-2">{p.label}</span><span className="font-mono font-semibold text-ink">{p.v}</span></div>
+                        <div className="h-1.5 rounded-full bg-canvas-2 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${p.v}%`, background: p.v >= 70 ? '#0E9E6E' : p.v >= 50 ? '#E08B0B' : '#E1483F' }} /></div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-6 text-ink-3">

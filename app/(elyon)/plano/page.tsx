@@ -8,14 +8,24 @@ import { Icon, Card, Badge, Button, SectionHead, HBar, CHART_COLORS } from '@/co
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 type SubTab = 'execucao' | 'estrategia'
 const URGENCY_TONE: Record<string, 'bad' | 'warn' | 'neutral'> = { critica: 'bad', alta: 'warn', media: 'neutral', baixa: 'neutral' }
+const parseImpact = (s: any) => { const n = Number(String(s || '').replace(/[^\d]/g, '')); return Number.isFinite(n) ? n : 0 }
+// Esforço estimado (1=baixo, 3=alto) por palavra-chave do título da ação.
+const effortOf = (title: string) => {
+  const t = (title || '').toLowerCase()
+  if (/(pausar|reduzir|cortar|desativar|negativar)/.test(t)) return 1
+  if (/(renovar|criar|reestruturar|refazer|nova campanha|landing|produzir)/.test(t)) return 3
+  return 2
+}
 
 export default function PlanoPage() {
   const clientData = useAppStore(s => s.clientData)
   const savedClients = useAppStore(s => s.savedClients)
   const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
   const strategyData = useAppStore(s => s.strategyData)
+  const dashboardMode = useAppStore(s => s.dashboardMode)
   const [mounted, setMounted] = useState(false)
   const [tab, setTab] = useState<SubTab>('execucao')
+  const [done, setDone] = useState<Record<string, boolean>>({})
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
@@ -87,11 +97,89 @@ export default function PlanoPage() {
 
       {tab === 'execucao' && (
         actions.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-up">
-            <Column title="Planejado" icon="📋" items={planned} tone="neutral" />
-            <Column title="Em andamento" icon="🔄" items={inProgress} tone="blue" />
-            <Column title="Concluído" icon="✓" items={completed} tone="good" />
-          </div>
+          dashboardMode === 'simple' ? (
+            /* Modo Simplificado — checklist marcável */
+            <Card className="animate-fade-up">
+              <SectionHead title="O que fazer agora" subtitle="Marque conforme for concluindo" icon={<Icon name="check" size={17} />} />
+              <div className="divide-y divide-line-2">
+                {planned.map((a) => {
+                  const isDone = !!done[a.id]
+                  return (
+                    <button key={a.id} onClick={() => setDone(d => ({ ...d, [a.id]: !d[a.id] }))} className="w-full flex items-start gap-3 py-3 text-left">
+                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${isDone ? 'bg-green border-green text-white' : 'border-line'}`}>
+                        {isDone && <Icon name="check" size={12} w={3} />}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-medium ${isDone ? 'text-ink-3 line-through' : 'text-ink'}`}>{a.title}</div>
+                        {a.impact && <div className={`text-xs mt-0.5 ${isDone ? 'text-ink-4' : 'text-green-600 font-semibold'}`}>{a.impact}</div>}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </Card>
+          ) : (
+            /* Modo Avançado — kanban + matriz impacto×esforço + roadmap */
+            <div className="space-y-4 animate-fade-up">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Column title="Planejado" icon="📋" items={planned} tone="neutral" />
+                <Column title="Em andamento" icon="🔄" items={inProgress} tone="blue" />
+                <Column title="Concluído" icon="✓" items={completed} tone="good" />
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Matriz impacto × esforço */}
+                {(() => {
+                  const pts = planned.map(a => ({ title: a.title, impact: parseImpact(a.impact), effort: effortOf(a.title) })).filter(p => p.impact > 0)
+                  if (!pts.length) return null
+                  const maxI = Math.max(...pts.map(p => p.impact), 1)
+                  return (
+                    <Card>
+                      <SectionHead title="Impacto × esforço" subtitle="Priorize os ganhos rápidos (alto impacto, baixo esforço)" icon={<Icon name="grid" size={17} />} />
+                      <div className="relative" style={{ height: 240 }}>
+                        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 rounded-sm overflow-hidden">
+                          <div className="bg-green-soft/50 flex items-start justify-start p-2"><span className="text-[10px] font-mono uppercase tracking-wider text-green-600">Ganhos rápidos</span></div>
+                          <div className="bg-canvas-2/50" /><div className="bg-canvas-2/50" /><div className="bg-canvas-2/40" />
+                        </div>
+                        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
+                          <line x1="50" y1="0" x2="50" y2="100" stroke="var(--line)" strokeWidth="0.4" />
+                          <line x1="0" y1="50" x2="100" y2="50" stroke="var(--line)" strokeWidth="0.4" />
+                        </svg>
+                        {pts.map((p, i) => {
+                          const xPos = ((p.effort - 1) / 2) * 80 + 10 // esforço baixo → esquerda
+                          const yPos = (1 - p.impact / maxI) * 80 + 6
+                          return (
+                            <div key={i} title={`${p.title} · ${brl(p.impact)} · esforço ${p.effort}/3`}
+                              className="absolute -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-blue border-2 border-paper shadow-sm"
+                              style={{ left: `${xPos}%`, top: `${yPos}%` }} />
+                          )
+                        })}
+                        <div className="absolute bottom-1 left-2 text-[10px] font-mono text-ink-3">← menor esforço</div>
+                        <div className="absolute bottom-1 right-2 text-[10px] font-mono text-ink-3">maior esforço →</div>
+                      </div>
+                    </Card>
+                  )
+                })()}
+
+                {/* Roadmap 7/30/90 */}
+                {plan && (
+                  <Card>
+                    <SectionHead title="Roadmap 90 dias" subtitle="Sequência recomendada" icon={<Icon name="calendar" size={17} />} />
+                    <div className="space-y-3">
+                      {[['7 dias', plan.seven_days, '#2C5FE0', 33], ['30 dias', plan.thirty_days, '#0E9CB0', 66], ['90 dias', plan.ninety_days, '#0E9E6E', 100]].map(([label, items, c, w]: any) => (
+                        <div key={label}>
+                          <div className="flex items-center justify-between text-xs mb-1"><span className="font-semibold text-ink">{label}</span><span className="text-ink-3">{(items || []).length} ações</span></div>
+                          <div className="h-6 rounded-sm flex items-center px-2" style={{ width: `${w}%`, minWidth: 80, background: c }}>
+                            <span className="text-[11px] text-white truncate">{(items?.[0]?.action || items?.[0]?.objective || '—')}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </div>
+          )
         ) : (
           <Card className="animate-fade-up">
             <div className="text-center py-8 text-ink-3">
