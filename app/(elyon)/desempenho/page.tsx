@@ -1,7 +1,7 @@
 // app/(elyon)/desempenho/page.tsx — Desempenho com DADOS REAIS (auditoria + estratégia).
 'use client'
 
-import { Fragment, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Delta, Sparkline, Donut, BarChart, Funnel, LineChart, LegendDot, HBar, ChannelMark, platformName, Modal, CHART_COLORS } from '@/components/dashboard/v2'
 import { useDailySeries } from '@/lib/useDailySeries'
@@ -73,27 +73,28 @@ export default function DesempenhoPage() {
   const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
   const [mounted, setMounted] = useState(false)
   const [tab, setTab] = useState<SubTab>('visao')
-  const [openRow, setOpenRow] = useState<string | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [channelFilter, setChannelFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [creatives, setCreatives] = useState<any[] | null>(null)
-  const [creLoading, setCreLoading] = useState(false)
+  const [intel, setIntel] = useState<any | null>(null)
+  const [intelLoading, setIntelLoading] = useState(false)
+  const [detailCamp, setDetailCamp] = useState<any | null>(null)
   useEffect(() => { setMounted(true) }, [])
 
   const hasMeta = connectedAccounts.some(a => a.platform === 'meta')
   const acctKey = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const metaAcctId = selectedMetaAccountByClient[acctKey] || connectedAccounts.find(a => a.platform === 'meta')?.accountId
-  // Busca criativos reais (por anúncio) sob demanda ao abrir a aba Criativos.
-  useEffect(() => {
-    if (tab !== 'criativos' || creatives !== null || creLoading || !hasMeta) return
-    setCreLoading(true)
+  // Inteligência da conta (criativos, geo, posicionamentos, ad sets, pixel) sob demanda.
+  const loadIntel = useCallback(() => {
+    if (intel !== null || intelLoading || !hasMeta) return
+    setIntelLoading(true)
     fetch(`/api/ads-data/meta-intelligence${metaAcctId ? `?accountId=${encodeURIComponent(metaAcctId)}` : ''}`, { signal: AbortSignal.timeout(45000) })
-      .then(r => r.json()).then(d => setCreatives(d?.success && Array.isArray(d.ads) ? d.ads : []))
-      .catch(() => setCreatives([])).finally(() => setCreLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab])
+      .then(r => r.json()).then(d => setIntel(d?.success ? d : {})).catch(() => setIntel({})).finally(() => setIntelLoading(false))
+  }, [intel, intelLoading, hasMeta, metaAcctId])
+  useEffect(() => { if (tab === 'criativos') loadIntel() }, [tab, loadIntel])
+  const creatives: any[] | null = intel ? (Array.isArray(intel.ads) ? intel.ads : []) : null
+  const creLoading = intelLoading
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const daily = useDailySeries(auditCache[key]?.[0]?.audit?._realMetrics?.avgROAS ?? null)
@@ -159,7 +160,6 @@ export default function DesempenhoPage() {
     const hasRev = rows.some(r => (r.revenue || 0) > 0)
     const hasRoas = rows.some(r => (r.roas || 0) > 0)
     const hasCtr = rows.some(r => (r.ctr || 0) > 0)
-    const colCount = 5 + (hasRev ? 1 : 0) + (hasRoas ? 1 : 0) + (hasCtr ? 1 : 0)
     const th = 'py-2.5 px-3 font-semibold border-b border-line whitespace-nowrap'
     return (
       <div className="overflow-x-auto no-sb">
@@ -180,54 +180,158 @@ export default function DesempenhoPage() {
           <tbody>
             {rows.map((c, i) => {
               const id = `${c.name}-${i}`
-              const open = openRow === id
-              const hasDetail = !!(c.evidence || c.recommended_action)
               const cpa = c.leads > 0 ? Math.round(c.spend / c.leads) : null
               const roas = Number(c.roas || 0)
               const td = 'py-[11px] px-3 border-b border-line-2 whitespace-nowrap font-mono'
               return (
-                <Fragment key={id}>
-                  <tr className={`hover:bg-canvas transition-colors ${hasDetail ? 'cursor-pointer' : ''}`} onClick={() => hasDetail && setOpenRow(open ? null : id)}>
-                    <td className="py-[11px] px-3 border-b border-line-2 max-w-[300px]">
-                      <div className="flex items-center gap-2.5">
-                        <ChannelMark name={platformName(c.platform)} size={20} />
-                        <span className="text-ink font-medium truncate">{c.name || 'Sem nome'}</span>
-                      </div>
-                    </td>
-                    <td className={`text-right text-ink ${td}`}>{brl(c.spend || 0)}</td>
-                    {hasRev && <td className={`text-right text-ink ${td}`}>{(c.revenue || 0) > 0 ? brl(c.revenue) : '—'}</td>}
-                    <td className={`text-right text-ink ${td}`}>{int(c.leads || 0)}</td>
-                    {hasRoas && <td className={`text-right ${td} font-semibold`} style={{ color: roas >= 3 ? '#0B855D' : '#E08B0B' }}>{roas > 0 ? `${roas.toFixed(2)}x` : '—'}</td>}
-                    <td className={`text-right text-ink ${td}`}>{cpa != null ? brl(cpa) : '—'}</td>
-                    {hasCtr && <td className={`text-right text-ink-2 ${td}`}>{(c.ctr || 0) > 0 ? `${Number(c.ctr).toFixed(2)}%` : '—'}</td>}
-                    <td className="py-[11px] px-3 border-b border-line-2 text-center"><Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge></td>
-                    <td className="py-[11px] px-3 border-b border-line-2 text-right text-ink-4">{hasDetail && <Icon name="chevR" size={15} className={`inline transition-transform ${open ? 'rotate-90' : ''}`} />}</td>
-                  </tr>
-                  {open && hasDetail && (
-                    <tr className="bg-canvas-2/50">
-                      <td colSpan={colCount} className="px-3 pb-3 pt-1">
-                        <div className="grid md:grid-cols-2 gap-3">
-                          {c.evidence && (
-                            <div className="p-3 rounded-sm bg-paper border border-line">
-                              <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3 mb-1">Evidência</div>
-                              <p className="text-xs text-ink-2 leading-relaxed">{c.evidence}</p>
-                            </div>
-                          )}
-                          {c.recommended_action && (
-                            <div className="p-3 rounded-sm bg-blue-soft border border-blue-line">
-                              <div className="text-[10px] font-mono uppercase tracking-wider text-blue mb-1">Recomendação do NOUS</div>
-                              <p className="text-xs text-ink-2 leading-relaxed">{c.recommended_action}</p>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
+                <tr key={id} className="hover:bg-canvas transition-colors cursor-pointer" onClick={() => { setDetailCamp(c); loadIntel() }}>
+                  <td className="py-[11px] px-3 border-b border-line-2 max-w-[300px]">
+                    <div className="flex items-center gap-2.5">
+                      <ChannelMark name={platformName(c.platform)} size={20} />
+                      <span className="text-ink font-medium truncate">{c.name || 'Sem nome'}</span>
+                    </div>
+                  </td>
+                  <td className={`text-right text-ink ${td}`}>{brl(c.spend || 0)}</td>
+                  {hasRev && <td className={`text-right text-ink ${td}`}>{(c.revenue || 0) > 0 ? brl(c.revenue) : '—'}</td>}
+                  <td className={`text-right text-ink ${td}`}>{int(c.leads || 0)}</td>
+                  {hasRoas && <td className={`text-right ${td} font-semibold`} style={{ color: roas >= 3 ? '#0B855D' : '#E08B0B' }}>{roas > 0 ? `${roas.toFixed(2)}x` : '—'}</td>}
+                  <td className={`text-right text-ink ${td}`}>{cpa != null ? brl(cpa) : '—'}</td>
+                  {hasCtr && <td className={`text-right text-ink-2 ${td}`}>{(c.ctr || 0) > 0 ? `${Number(c.ctr).toFixed(2)}%` : '—'}</td>}
+                  <td className="py-[11px] px-3 border-b border-line-2 text-center"><Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge></td>
+                  <td className="py-[11px] px-3 border-b border-line-2 text-right text-ink-4"><Icon name="chevR" size={15} className="inline" /></td>
+                </tr>
               )
             })}
           </tbody>
         </table>
+      </div>
+    )
+  }
+
+  // Drill-down de campanha — breakdowns reais da conta (geo/posicionamentos/ad sets/pixel).
+  const CampanhaDetalhe = ({ c }: { c: any }) => {
+    const dv = [CHART_COLORS.blue, CHART_COLORS.green, CHART_COLORS.teal, CHART_COLORS.amber, CHART_COLORS.red, CHART_COLORS.slate]
+    const objs: any[] = intel?.byObjective ? Object.values(intel.byObjective) : []
+    const placements: any[] = (intel?.platformBreakdown || []).slice(0, 6)
+    const adsets: any[] = intel?.adSets || []
+    const geo: any[] = intel?.intelligenceData?.geoBreakdown || intel?.geoBreakdown || []
+    const pixel = intel?.pixel
+    const placeTotal = placements.reduce((s, p) => s + (p.spend || 0), 0) || 1
+    const geoTotal = geo.reduce((s, g) => s + (g.spend || 0), 0) || 1
+    const cpaC = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+    return (
+      <div className="space-y-4 animate-fade-up">
+        <button onClick={() => setDetailCamp(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-ink">
+          <Icon name="chevL" size={16} /> Voltar para campanhas
+        </button>
+        <Card>
+          <div className="flex items-center gap-3 flex-wrap">
+            <ChannelMark name={platformName(c.platform)} size={32} />
+            <div className="flex-1 min-w-[200px]">
+              <div className="text-[17px] font-bold text-ink" style={{ letterSpacing: '-0.01em' }}>{c.name || 'Campanha'}</div>
+              <div className="text-[12.5px] text-ink-3">{c.objective || (c.name?.toLowerCase().includes('lead') ? 'Geração de leads' : 'Conversões')}</div>
+            </div>
+            <Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge>
+            <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Investido</div><div className="font-mono font-bold text-ink">{brl(c.spend || 0)}</div></div>
+            <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPA</div><div className="font-mono font-bold text-ink">{cpaC != null ? brl(cpaC) : '—'}</div></div>
+          </div>
+          {(c.evidence || c.recommended_action) && (
+            <div className="grid md:grid-cols-2 gap-3 mt-3 pt-3 border-t border-line-2">
+              {c.evidence && <div className="p-3 rounded-sm bg-canvas-2"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3 mb-1">Evidência</div><p className="text-xs text-ink-2 leading-relaxed">{c.evidence}</p></div>}
+              {c.recommended_action && <div className="p-3 rounded-sm bg-blue-soft border border-blue-line"><div className="text-[10px] font-mono uppercase tracking-wider text-blue mb-1">Recomendação do NOUS</div><p className="text-xs text-ink-2 leading-relaxed">{c.recommended_action}</p></div>}
+            </div>
+          )}
+        </Card>
+
+        {intelLoading && <Card><div className="text-center py-10 text-ink-3 text-sm">Carregando detalhes da conta…</div></Card>}
+        {!intelLoading && intel && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {objs.length > 0 && (
+                <Card>
+                  <SectionHead title="CPL por objetivo" subtitle="Contexto da conta" icon={<Icon name="target" size={17} />} action={<SourceBadge source="real" />} />
+                  <BarChart height={180} data={objs.map((o, i) => ({ label: (o.label || 'Obj').slice(0, 10), value: Math.round(o.avgCPL || 0), color: dv[i % dv.length] }))} valueFmt={(v) => brl(v)} />
+                </Card>
+              )}
+              {placements.length > 0 && (
+                <Card>
+                  <SectionHead title="Posicionamentos" subtitle="Distribuição de entrega" icon={<Icon name="layers" size={17} />} action={<SourceBadge source="real" />} />
+                  <div className="flex gap-4 items-center">
+                    <Donut data={placements.map((p, i) => ({ label: p.platform, value: p.spend, color: dv[i % dv.length] }))} centerLabel={placements[0]?.platform || ''} centerSub="top" />
+                    <div className="flex-1 space-y-2">
+                      {placements.map((p, i) => (
+                        <div key={i} className="flex items-center gap-2 text-[12.5px]">
+                          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: dv[i % dv.length] }} />
+                          <span className="flex-1 text-ink capitalize truncate">{p.platform}{p.position ? ` · ${p.position}` : ''}</span>
+                          <span className="font-mono text-ink-2">{Math.round((p.spend / placeTotal) * 100)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            {adsets.length > 0 && (
+              <Card>
+                <SectionHead title="Conjuntos de anúncios (ad sets)" subtitle={`${adsets.length} ad sets`} icon={<Icon name="grid" size={17} />} action={<SourceBadge source="real" />} />
+                <div className="overflow-x-auto no-sb">
+                  <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse' }}>
+                    <thead><tr className="text-[10.5px] font-mono uppercase tracking-[0.06em] text-ink-3">
+                      <th className="text-left py-2.5 px-3 font-semibold border-b border-line">Ad set</th>
+                      <th className="text-right py-2.5 px-3 font-semibold border-b border-line">Investido</th>
+                      <th className="text-right py-2.5 px-3 font-semibold border-b border-line">Leads</th>
+                      <th className="text-right py-2.5 px-3 font-semibold border-b border-line">CPL</th>
+                      <th className="text-center py-2.5 px-3 font-semibold border-b border-line">Sinais</th>
+                    </tr></thead>
+                    <tbody>
+                      {adsets.slice(0, 12).map((a, i) => (
+                        <tr key={a.id || i} className="hover:bg-canvas">
+                          <td className="py-[11px] px-3 border-b border-line-2 max-w-[280px]"><span className="text-ink font-medium truncate block">{a.name}</span></td>
+                          <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{brl(a.spend || 0)}</td>
+                          <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{int(a.leads || 0)}</td>
+                          <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{a.cpl > 0 ? brl(a.cpl) : '—'}</td>
+                          <td className="py-[11px] px-3 border-b border-line-2 text-center">{a.issues?.length ? <Badge tone="warn" dot>{a.issues.length}</Badge> : <Badge tone="good" dot>ok</Badge>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {geo.length > 0 && (
+                <Card>
+                  <SectionHead title="Geografia" subtitle="Top regiões por investimento" icon={<Icon name="globe" size={17} />} action={<SourceBadge source="real" />} />
+                  <div className="space-y-2.5">
+                    {geo.slice(0, 8).map((g, i) => (
+                      <div key={i} className="flex items-center gap-2.5">
+                        <span className="font-mono text-[12px] font-semibold text-ink w-[90px] shrink-0 truncate">{g.region}</span>
+                        <div className="flex-1"><HBar value={(g.spend / geoTotal) * 100} color={CHART_COLORS.blue} h={7} /></div>
+                        <span className="font-mono text-[11.5px] text-ink-3 w-9 text-right">{Math.round((g.spend / geoTotal) * 100)}%</span>
+                        <span className="font-mono text-[11.5px] text-ink-2 w-14 text-right">{g.cpl > 0 ? brl(g.cpl) : '—'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+              <Card>
+                <SectionHead title="Saúde do pixel & tracking" icon={<Icon name="pulse" size={17} />} action={<SourceBadge source="real" />} />
+                {pixel ? (
+                  <div className="space-y-3">
+                    {[['Pixel', pixel.name || 'Meta Pixel'], ['Status', pixel.isActive ? 'Ativo (disparou < 48h)' : 'Inativo'], ['Último disparo', pixel.lastFiredTime ? new Date(pixel.lastFiredTime).toLocaleString('pt-BR') : '—']].map(([k, v]) => (
+                      <div key={k} className="flex items-center justify-between text-[13px]"><span className="text-ink-2">{k}</span><span className="font-mono font-semibold text-ink">{v}</span></div>
+                    ))}
+                    <div className="h-px bg-line-2" />
+                    <div className={`flex items-center gap-2 text-[12.5px] ${pixel.isActive ? 'text-green-600' : 'text-amber'}`}><Icon name={pixel.isActive ? 'check' : 'alert'} size={15} /> {pixel.isActive ? 'Tracking saudável — dados confiáveis' : 'Pixel sem disparo recente — verifique a instalação'}</div>
+                  </div>
+                ) : <p className="text-center py-6 text-ink-3 text-sm">Sem pixel detectado nesta conta.</p>}
+              </Card>
+            </div>
+          </>
+        )}
+        {!intelLoading && !hasMeta && <Card><div className="text-center py-6 text-ink-3 text-sm">Conecte o Meta Ads para ver os detalhes da conta.</div></Card>}
       </div>
     )
   }
@@ -241,7 +345,7 @@ export default function DesempenhoPage() {
 
       <div className="mb-5 flex gap-1 border-b border-line overflow-x-auto no-sb">
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
+          <button key={t.key} onClick={() => { setTab(t.key); setDetailCamp(null) }}
             className={`px-3.5 py-2.5 text-[13.5px] font-medium border-b-2 -mb-px whitespace-nowrap transition-colors inline-flex items-center gap-1.5 ${tab === t.key ? 'text-ink border-blue font-semibold' : 'text-ink-3 border-transparent hover:text-ink'}`}>
             <Icon name={t.icon} size={15} />{t.label}
           </button>
@@ -294,7 +398,8 @@ export default function DesempenhoPage() {
         </div>
       )}
 
-      {tab === 'campanhas' && (() => {
+      {tab === 'campanhas' && detailCamp && <CampanhaDetalhe c={detailCamp} />}
+      {tab === 'campanhas' && !detailCamp && (() => {
         const channels = Array.from(new Set(camps.map((c: any) => platformName(c.platform))))
         const filtered = camps.filter((c: any) =>
           (channelFilter === 'all' || platformName(c.platform) === channelFilter) &&
