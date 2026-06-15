@@ -3,7 +3,7 @@
 
 import { Fragment, useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Donut, BarChart, Funnel, LineChart, LegendDot, HBar, ChannelMark, platformName, Modal, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Delta, Sparkline, Donut, BarChart, Funnel, LineChart, LegendDot, HBar, ChannelMark, platformName, Modal, CHART_COLORS } from '@/components/dashboard/v2'
 import { useDailySeries } from '@/lib/useDailySeries'
 
 const CHANNEL_META: Record<string, { label: string; color: string }> = {
@@ -113,12 +113,20 @@ export default function DesempenhoPage() {
   const hasChannelSplit = channels.length >= 2 && !(channels.length === 1)
   const channelDonut = channels.map(c => ({ label: c.label, value: c.spend, color: c.color }))
 
-  const kpis = [
-    { label: 'Investido', value: rm ? brl(rm.totalSpend) : '—' },
-    { label: 'Leads', value: rm ? int(rm.totalLeads) : '—' },
-    { label: 'ROAS', value: rm?.avgROAS ? `${rm.avgROAS}x` : '—' },
-    { label: 'CPL médio', value: rm?.avgCPL ? brl(rm.avgCPL) : '—' },
-  ]
+  // KPIs (6 rótulos exatos do prototype) com mini-sparkline derivada do delta real.
+  const prev = audit?._previousTotals
+  const spark = (cur: number, deltaPct: number | null | undefined): number[] | null => {
+    if (cur == null || deltaPct == null || deltaPct === 0) return null
+    return [cur / (1 + deltaPct / 100), cur]
+  }
+  const kpis = rm ? [
+    { label: 'Investimento', value: brl(rm.totalSpend), trend: prev?.spendDelta ?? null, inverse: false, series: spark(rm.totalSpend, prev?.spendDelta), up: (prev?.spendDelta ?? 0) >= 0 },
+    { label: 'Receita', value: rm.totalRevenue > 0 ? brl(rm.totalRevenue) : '—', trend: prev?.revenueDelta ?? null, inverse: false, series: rm.totalRevenue > 0 ? spark(rm.totalRevenue, prev?.revenueDelta) : null, up: (prev?.revenueDelta ?? 0) >= 0 },
+    { label: 'ROAS', value: rm.avgROAS ? `${rm.avgROAS}x` : '—', trend: null, inverse: false, series: null, up: true },
+    { label: 'Conversões', value: int(rm.totalLeads), trend: prev?.leadsDelta ?? null, inverse: false, series: spark(rm.totalLeads, prev?.leadsDelta), up: (prev?.leadsDelta ?? 0) >= 0 },
+    { label: 'CPA médio', value: rm.avgCPL ? brl(rm.avgCPL) : '—', trend: prev?.cplDelta ?? null, inverse: true, series: spark(rm.avgCPL, prev?.cplDelta), up: (prev?.cplDelta ?? 0) <= 0 },
+    { label: 'CTR médio', value: rm.avgCTR ? `${rm.avgCTR}%` : '—', trend: null, inverse: false, series: null, up: true },
+  ] : []
 
   const tabs: { key: SubTab; label: string; icon: string }[] = [
     { key: 'visao', label: 'Visão geral', icon: 'chart' }, { key: 'campanhas', label: 'Campanhas', icon: 'megaphone' },
@@ -225,11 +233,15 @@ export default function DesempenhoPage() {
 
       {tab === 'visao' && (
         <div className="space-y-4 animate-fade-up">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
             {kpis.map(k => (
               <Card key={k.label} padding="sm" hover>
-                <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">{k.label}</div>
-                <div className="text-[20px] font-bold font-mono text-ink" style={{ letterSpacing: '-0.02em' }}>{k.value}</div>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">{k.label}</span>
+                  {k.trend != null && k.trend !== 0 && <Delta value={k.trend} inverse={k.inverse} />}
+                </div>
+                <span className="text-[20px] font-bold font-mono text-ink block" style={{ letterSpacing: '-0.02em' }}>{k.value}</span>
+                {k.series && <div className="mt-2"><Sparkline data={k.series} h={26} color={k.up ? CHART_COLORS.green : CHART_COLORS.red} /></div>}
               </Card>
             ))}
           </div>

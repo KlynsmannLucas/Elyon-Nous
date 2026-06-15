@@ -6,7 +6,7 @@ import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Radar, AdAccountPicker, CHART_COLORS } from '@/components/dashboard/v2'
 import CrossCheckPanel from '@/components/dashboard/CrossCheckPanel'
 import { getBenchmark } from '@/lib/niche_benchmarks'
-import { deriveMaturity } from '@/lib/maturity'
+import { deriveMaturity, deriveDimensions } from '@/lib/maturity'
 
 // SWOT derivada dos pilares (maturidade real) + oportunidades/riscos do audit.
 function deriveSWOT(audit: any, maturity: { axes: string[]; you: number[]; sector: number[] }) {
@@ -262,16 +262,16 @@ export default function DiagnosticoPage() {
           {/* Nota + dimensões derivadas */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card className="lg:col-span-2">
-              <SectionHead title="Notas por dimensão" subtitle="Derivado dos sinais reais da conta" icon={<Icon name="grid" size={17} />} action={<SourceBadge source={rm ? 'real' : 'ai'} />} />
+              <SectionHead title="Auditoria profunda · 11 dimensões" subtitle="Derivado dos sinais reais da conta" icon={<Icon name="grid" size={17} />} action={<SourceBadge source={rm ? 'real' : 'ai'} />} />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-                {maturity.axes.map((a, i) => {
-                  const v = maturity.you[i]
+                {deriveDimensions(maturity, audit, rm).map((d) => {
+                  const v = d.v
                   const tone = v >= 75 ? CHART_COLORS.green : v >= 55 ? CHART_COLORS.amber : CHART_COLORS.red
                   const bg = v >= 75 ? '#E4F6EE' : v >= 55 ? '#FCF1DC' : '#FCEBEA'
                   return (
-                    <div key={a} className="p-3 rounded-sm" style={{ background: bg }}>
+                    <div key={d.k} className="p-3 rounded-sm" style={{ background: bg }}>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-ink truncate">{a}</span>
+                        <span className="text-xs font-medium text-ink truncate">{d.k}</span>
                         <span className="text-sm font-bold font-mono" style={{ color: tone }}>{v}</span>
                       </div>
                       <div className="mt-1.5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,.06)' }}>

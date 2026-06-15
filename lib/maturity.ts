@@ -3,6 +3,31 @@
 
 export interface Maturity { axes: string[]; you: number[]; sector: number[] }
 
+// 11 dimensões da auditoria profunda (ordem do prototype), derivadas dos sinais reais.
+export function deriveDimensions(maturity: Maturity, audit: any, rm: any): { k: string; v: number }[] {
+  const clamp = (n: number) => Math.max(35, Math.min(96, Math.round(n)))
+  const ax = (name: string) => { const i = maturity.axes.indexOf(name); return i >= 0 ? maturity.you[i] : 60 }
+  const wastePct = audit?._wastePercent ?? 0
+  const tArr: any[] = audit?._trackingChecklist || []
+  const tRatio = tArr.length ? tArr.filter(t => t.status === 'verificado').length / tArr.length : null
+  const track = tRatio != null ? clamp(40 + tRatio * 58) : 62
+  const wasteScore = clamp(94 - wastePct * 1.8)
+  const campN = rm?.campaignCount || 0
+  return [
+    { k: 'Estrutura de conta', v: clamp(campN >= 8 ? 84 : campN >= 3 ? 72 : 58) },
+    { k: 'Segmentação', v: ax('Conversão') },
+    { k: 'Criativos', v: ax('Criativos') },
+    { k: 'Lances & orçamento', v: wasteScore },
+    { k: 'Conversão / CRO', v: clamp(ax('Conversão') - 4) },
+    { k: 'Tracking & pixel', v: track },
+    { k: 'Palavras-chave', v: ax('Aquisição') },
+    { k: 'Públicos', v: ax('Aquisição') },
+    { k: 'Landing pages', v: clamp(ax('Conversão') - 8) },
+    { k: 'Frequência & fadiga', v: ax('Criativos') },
+    { k: 'Atribuição', v: clamp((track + ax('Eficiência')) / 2) },
+  ]
+}
+
 export function deriveMaturity(rm: any, bench: any, trackOkRatio: number | null, health: number | null): Maturity {
   const clamp = (n: number) => Math.max(20, Math.min(98, Math.round(n)))
   const ctr = rm?.avgCTR ? Number(rm.avgCTR) : null
