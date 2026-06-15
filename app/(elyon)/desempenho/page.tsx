@@ -69,6 +69,8 @@ export default function DesempenhoPage() {
   const savedClients = useAppStore(s => s.savedClients)
   const auditCache = useAppStore(s => s.auditCache)
   const strategyData = useAppStore(s => s.strategyData)
+  const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
   const [mounted, setMounted] = useState(false)
   const [tab, setTab] = useState<SubTab>('visao')
   const [openRow, setOpenRow] = useState<string | null>(null)
@@ -76,7 +78,22 @@ export default function DesempenhoPage() {
   const [exportOpen, setExportOpen] = useState(false)
   const [channelFilter, setChannelFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [creatives, setCreatives] = useState<any[] | null>(null)
+  const [creLoading, setCreLoading] = useState(false)
   useEffect(() => { setMounted(true) }, [])
+
+  const hasMeta = connectedAccounts.some(a => a.platform === 'meta')
+  const acctKey = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
+  const metaAcctId = selectedMetaAccountByClient[acctKey] || connectedAccounts.find(a => a.platform === 'meta')?.accountId
+  // Busca criativos reais (por anúncio) sob demanda ao abrir a aba Criativos.
+  useEffect(() => {
+    if (tab !== 'criativos' || creatives !== null || creLoading || !hasMeta) return
+    setCreLoading(true)
+    fetch(`/api/ads-data/meta-intelligence${metaAcctId ? `?accountId=${encodeURIComponent(metaAcctId)}` : ''}`, { signal: AbortSignal.timeout(45000) })
+      .then(r => r.json()).then(d => setCreatives(d?.success && Array.isArray(d.ads) ? d.ads : []))
+      .catch(() => setCreatives([])).finally(() => setCreLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const daily = useDailySeries(auditCache[key]?.[0]?.audit?._realMetrics?.avgROAS ?? null)
@@ -436,6 +453,46 @@ export default function DesempenhoPage() {
 
       {tab === 'criativos' && (
         <div className="space-y-4 animate-fade-up">
+          {/* Top criativos — métricas reais por anúncio (Meta) */}
+          {creLoading && <Card><div className="text-center py-10 text-ink-3 text-sm">Carregando criativos da Meta…</div></Card>}
+          {creatives && creatives.length > 0 && (() => {
+            const FT: Record<string, { label: string; tone: 'good' | 'warn' | 'bad' }> = {
+              winner: { label: 'saudável', tone: 'good' }, ok: { label: 'saudável', tone: 'good' },
+              learning: { label: 'monitorar', tone: 'warn' }, waste: { label: 'fadiga', tone: 'bad' },
+            }
+            const top = [...creatives].sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8)
+            return (
+              <Card>
+                <SectionHead title="Top criativos" subtitle="O que está funcionando agora · dados reais" icon={<Icon name="image" size={17} />} action={<SourceBadge source="real" />} />
+                <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
+                  {top.map((c, i) => {
+                    const ft = FT[c.tag] || FT.ok
+                    const hook = (c.title || c.body || c.name || `Criativo ${i + 1}`).slice(0, 80)
+                    return (
+                      <div key={c.id || i} className="rounded-md border border-line overflow-hidden bg-paper">
+                        <div className="h-[120px] relative border-b border-line flex items-center justify-center"
+                          style={c.imageUrl ? { backgroundImage: `url(${c.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'repeating-linear-gradient(135deg, var(--canvas) 0 10px, var(--canvas-2) 10px 20px)' }}>
+                          {!c.imageUrl && <span className="font-mono text-[10.5px] text-ink-4">criativo #{i + 1}</span>}
+                          <span className="absolute top-2 right-2"><Badge tone={ft.tone}>{ft.label}</Badge></span>
+                        </div>
+                        <div className="p-3">
+                          <div className="text-[12.5px] font-semibold leading-snug mb-2.5 line-clamp-2 min-h-[34px] text-ink">"{hook}"</div>
+                          <div className="flex justify-between text-[11.5px]">
+                            <div><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CTR</div><div className="font-mono font-bold text-[14px] text-ink">{c.ctr ? `${Number(c.ctr).toFixed(2)}%` : '—'}</div></div>
+                            <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPL</div><div className="font-mono font-bold text-[14px] text-green-600">{c.cpl > 0 ? brl(c.cpl) : '—'}</div></div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </Card>
+            )
+          })()}
+          {creatives && creatives.length === 0 && !creLoading && hasMeta && (
+            <Card><div className="text-center py-6 text-ink-3 text-sm">Nenhum criativo ativo retornado pela Meta nesta conta/período.</div></Card>
+          )}
+
           {criativos ? (
             <>
               <Card>
