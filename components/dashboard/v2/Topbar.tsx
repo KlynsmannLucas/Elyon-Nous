@@ -45,6 +45,7 @@ const TONE_BG: Record<string, { bg: string; c: string; icon: string }> = {
 
 export function TopbarV2({
   title,
+  subtitle,
   mode,
   onModeChange,
   period,
@@ -71,11 +72,12 @@ export function TopbarV2({
   return (
     <header className="sticky top-0 z-40 h-16 glass border-b border-line flex items-center px-4 gap-4">
       {/* Title */}
-      <div className="flex flex-col">
-        <h1 className="text-lg font-semibold text-ink">{title}</h1>
+      <div className="flex flex-col min-w-0 overflow-hidden">
+        <h1 className="text-[17px] font-bold text-ink leading-tight truncate" style={{ letterSpacing: '-0.02em' }}>{title}</h1>
+        {subtitle && <p className="text-xs text-ink-3 truncate">{subtitle}</p>}
       </div>
 
-      <div className="flex-1" />
+      <div className="flex-1 min-w-3" />
 
 
       {/* Mode Toggle */}
@@ -171,13 +173,14 @@ export function TopbarV2({
         </button>
       )}
 
-      {/* NOUS Button */}
+      {/* NOUS Button (dark, como no prototype) */}
       <button
         onClick={onOpenNous}
-        className="flex items-center gap-2 px-4 py-2 bg-blue text-white rounded-sm text-sm font-medium hover:bg-blue-600"
+        className="flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
+        style={{ background: '#161B26' }}
       >
-        <span>◎</span>
-        <span> Perguntar ao NOUS</span>
+        <Icon name="sparkle2" size={16} />
+        <span>Perguntar ao NOUS</span>
       </button>
 
       {/* Notifications */}

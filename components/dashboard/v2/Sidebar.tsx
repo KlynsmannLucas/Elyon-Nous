@@ -52,12 +52,18 @@ export function SidebarV2({
       ${collapsed ? 'w-[66px]' : 'w-[232px]'}
     `.trim()}>
       {/* Logo */}
-      <div className="h-16 flex items-center px-4 border-b border-line">
-        <div className="w-8 h-8 rounded-lg bg-blue-gradient flex items-center justify-center">
-          <span className="text-white font-bold text-sm">E</span>
-        </div>
+      <div className={`h-16 flex items-center border-b border-line gap-2.5 ${collapsed ? 'justify-center px-0' : 'px-4'}`}>
+        <svg width="30" height="30" viewBox="0 0 32 32" className="shrink-0">
+          <defs><linearGradient id="lgmk" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#2C5FE0" /><stop offset="100%" stopColor="#0E9CB0" /></linearGradient></defs>
+          <rect x="1" y="1" width="30" height="30" rx="9" fill="url(#lgmk)" />
+          <path d="M11 9h10M11 16h7M11 23h10" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+          <circle cx="22" cy="16" r="1.8" fill="#fff" />
+        </svg>
         {!collapsed && (
-          <span className="ml-2 font-semibold text-ink">Elyon</span>
+          <div className="leading-none">
+            <div className="text-base font-bold text-ink" style={{ letterSpacing: '-0.01em' }}>Elyon</div>
+            <div className="font-mono text-[9.5px] tracking-[0.28em] text-ink-3 mt-0.5">NOUS</div>
+          </div>
         )}
       </div>
 

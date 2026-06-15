@@ -13,6 +13,12 @@ const TITLES: Record<AreaKey, string> = {
   hoje: 'Hoje', desempenho: 'Desempenho', diagnostico: 'Diagnóstico', mercado: 'Mercado',
   plano: 'Plano de Ação', relatorios: 'Relatórios', integracoes: 'Integrações', config: 'Configurações',
 }
+const SUBTITLES: Record<AreaKey, string> = {
+  hoje: 'Seu resumo diário e próximas ações', desempenho: 'Campanhas, canais, criativos e funil',
+  diagnostico: 'Saúde do negócio, gargalos e causas', mercado: 'Concorrência, benchmarks e oportunidades',
+  plano: 'Execução priorizada por impacto', relatorios: 'Gere e compartilhe resultados',
+  integracoes: 'Suas fontes de dados conectadas', config: 'Workspace e preferências',
+}
 
 export default function ElyonShellLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -103,6 +109,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
         <div className="flex-1 flex flex-col min-w-0">
           <TopbarV2
             title={TITLES[activeArea]}
+            subtitle={`${SUBTITLES[activeArea]} · ${globalPeriod.label}`}
             mode={mode}
             onModeChange={(m) => { setDashboardMode(m === 'advanced' ? 'pro' : 'simple'); if (typeof window !== 'undefined') window.toast?.({ tone: 'blue', title: m === 'advanced' ? 'Modo Avançado' : 'Modo Simplificado' }) }}
             period={globalPeriod.label}
@@ -118,7 +125,9 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
             notifications={notifications}
             onNavigate={(a) => router.push(`/${a}`)}
           />
-          <main className="flex-1 overflow-y-auto bg-canvas">{children}</main>
+          <main className="flex-1 overflow-y-auto bg-canvas">
+          <div className="mx-auto" style={{ maxWidth: 1240 }}>{children}</div>
+        </main>
         </div>
 
         <NousRail open={nousOpen} onClose={() => setNousOpen(false)} docked={wide} />
