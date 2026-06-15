@@ -3,7 +3,7 @@
 
 import { Fragment, useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Donut, BarChart, Funnel, LineChart, LegendDot, HBar, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Donut, BarChart, Funnel, LineChart, LegendDot, HBar, ChannelMark, platformName, Modal, CHART_COLORS } from '@/components/dashboard/v2'
 import { useDailySeries } from '@/lib/useDailySeries'
 
 const CHANNEL_META: Record<string, { label: string; color: string }> = {
@@ -26,6 +26,24 @@ const roiOk = (range: any) => { const m = String(range || '').match(/(\d+)/g); r
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
 const campCPL = (c: any) => (c.leads > 0 ? Math.round(c.spend / c.leads) : null)
+
+// Exporta as campanhas filtradas como CSV real (download no navegador).
+function exportCsv(rows: any[]) {
+  const head = ['Campanha', 'Canal', 'Investimento', 'Receita', 'Conversoes', 'ROAS', 'CPA', 'CTR', 'Status']
+  const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const lines = rows.map(c => [
+    c.name || '', String(c.platform || ''), Math.round(c.spend || 0), Math.round(c.revenue || 0),
+    Math.round(c.leads || 0), c.roas ? Number(c.roas).toFixed(2) : '', campCPL(c) ?? '',
+    c.ctr ? Number(c.ctr).toFixed(2) : '', STATUS_LABEL[c._s] || '',
+  ].map(esc).join(','))
+  const csv = [head.map(esc).join(','), ...lines].join('\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = `campanhas_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click(); URL.revokeObjectURL(url)
+  if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'CSV exportado', body: `${rows.length} campanhas baixadas.` })
+}
 
 type SubTab = 'visao' | 'campanhas' | 'audiencias' | 'canais' | 'criativos' | 'funil' | 'alocador'
 const STATUS_TONE: Record<string, 'good' | 'warn' | 'bad'> = { vencedora: 'good', atencao: 'warn', critica: 'bad' }
@@ -54,6 +72,10 @@ export default function DesempenhoPage() {
   const [mounted, setMounted] = useState(false)
   const [tab, setTab] = useState<SubTab>('visao')
   const [openRow, setOpenRow] = useState<string | null>(null)
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [channelFilter, setChannelFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
@@ -107,64 +129,83 @@ export default function DesempenhoPage() {
   const ta: any = strategyData?.strategy?.target_audience
   const criativos: any = audit?.criativos_meta
 
-  const CampTable = ({ rows }: { rows: any[] }) => (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-line text-[10.5px] font-mono uppercase tracking-wider text-ink-3">
-            <th className="text-left py-2.5 px-3 font-semibold">Campanha</th>
-            <th className="text-right py-2.5 px-3 font-semibold">Investido</th>
-            <th className="text-right py-2.5 px-3 font-semibold">Leads</th>
-            <th className="text-right py-2.5 px-3 font-semibold">CPL</th>
-            <th className="text-center py-2.5 px-3 font-semibold">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((c, i) => {
-            const id = `${c.name}-${i}`
-            const open = openRow === id
-            const hasDetail = !!(c.evidence || c.recommended_action)
-            return (
-              <Fragment key={id}>
-                <tr className={`border-b border-line-2 hover:bg-canvas ${hasDetail ? 'cursor-pointer' : ''}`} onClick={() => hasDetail && setOpenRow(open ? null : id)}>
-                  <td className="py-2.5 px-3 text-ink font-medium max-w-[280px] truncate">
-                    <span className="inline-flex items-center gap-1.5">
-                      {hasDetail && <span className={`text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`}><Icon name="chevR" size={13} /></span>}
-                      {c.name || 'Sem nome'}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-ink">{brl(c.spend || 0)}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-ink">{int(c.leads || 0)}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-ink">{campCPL(c) != null ? brl(campCPL(c)!) : '—'}</td>
-                  <td className="py-2.5 px-3 text-center"><Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge></td>
-                </tr>
-                {open && hasDetail && (
-                  <tr className="bg-canvas-2/60">
-                    <td colSpan={5} className="px-3 pb-3 pt-1">
-                      <div className="grid md:grid-cols-2 gap-3">
-                        {c.evidence && (
-                          <div className="p-3 rounded-sm bg-paper border border-line">
-                            <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3 mb-1">Evidência</div>
-                            <p className="text-xs text-ink-2 leading-relaxed">{c.evidence}</p>
-                          </div>
-                        )}
-                        {c.recommended_action && (
-                          <div className="p-3 rounded-sm bg-blue-soft border border-blue-line">
-                            <div className="text-[10px] font-mono uppercase tracking-wider text-blue mb-1">Recomendação do NOUS</div>
-                            <p className="text-xs text-ink-2 leading-relaxed">{c.recommended_action}</p>
-                          </div>
-                        )}
+  const CampTable = ({ rows }: { rows: any[] }) => {
+    // Omite colunas sem dado real (Receita/ROAS/CTR ausentes em contas de leads).
+    const hasRev = rows.some(r => (r.revenue || 0) > 0)
+    const hasRoas = rows.some(r => (r.roas || 0) > 0)
+    const hasCtr = rows.some(r => (r.ctr || 0) > 0)
+    const colCount = 5 + (hasRev ? 1 : 0) + (hasRoas ? 1 : 0) + (hasCtr ? 1 : 0)
+    const th = 'py-2.5 px-3 font-semibold border-b border-line whitespace-nowrap'
+    return (
+      <div className="overflow-x-auto no-sb">
+        <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse' }}>
+          <thead>
+            <tr className="text-[10.5px] font-mono uppercase tracking-[0.06em] text-ink-3">
+              <th className={`text-left ${th}`}>Campanha</th>
+              <th className={`text-right ${th}`}>Investimento</th>
+              {hasRev && <th className={`text-right ${th}`}>Receita</th>}
+              <th className={`text-right ${th}`}>Conv.</th>
+              {hasRoas && <th className={`text-right ${th}`}>ROAS</th>}
+              <th className={`text-right ${th}`}>CPA</th>
+              {hasCtr && <th className={`text-right ${th}`}>CTR</th>}
+              <th className={`text-center ${th}`}>Status</th>
+              <th className={`border-b border-line w-8`}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((c, i) => {
+              const id = `${c.name}-${i}`
+              const open = openRow === id
+              const hasDetail = !!(c.evidence || c.recommended_action)
+              const cpa = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+              const roas = Number(c.roas || 0)
+              const td = 'py-[11px] px-3 border-b border-line-2 whitespace-nowrap font-mono'
+              return (
+                <Fragment key={id}>
+                  <tr className={`hover:bg-canvas transition-colors ${hasDetail ? 'cursor-pointer' : ''}`} onClick={() => hasDetail && setOpenRow(open ? null : id)}>
+                    <td className="py-[11px] px-3 border-b border-line-2 max-w-[300px]">
+                      <div className="flex items-center gap-2.5">
+                        <ChannelMark name={platformName(c.platform)} size={20} />
+                        <span className="text-ink font-medium truncate">{c.name || 'Sem nome'}</span>
                       </div>
                     </td>
+                    <td className={`text-right text-ink ${td}`}>{brl(c.spend || 0)}</td>
+                    {hasRev && <td className={`text-right text-ink ${td}`}>{(c.revenue || 0) > 0 ? brl(c.revenue) : '—'}</td>}
+                    <td className={`text-right text-ink ${td}`}>{int(c.leads || 0)}</td>
+                    {hasRoas && <td className={`text-right ${td} font-semibold`} style={{ color: roas >= 3 ? '#0B855D' : '#E08B0B' }}>{roas > 0 ? `${roas.toFixed(2)}x` : '—'}</td>}
+                    <td className={`text-right text-ink ${td}`}>{cpa != null ? brl(cpa) : '—'}</td>
+                    {hasCtr && <td className={`text-right text-ink-2 ${td}`}>{(c.ctr || 0) > 0 ? `${Number(c.ctr).toFixed(2)}%` : '—'}</td>}
+                    <td className="py-[11px] px-3 border-b border-line-2 text-center"><Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge></td>
+                    <td className="py-[11px] px-3 border-b border-line-2 text-right text-ink-4">{hasDetail && <Icon name="chevR" size={15} className={`inline transition-transform ${open ? 'rotate-90' : ''}`} />}</td>
                   </tr>
-                )}
-              </Fragment>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
-  )
+                  {open && hasDetail && (
+                    <tr className="bg-canvas-2/50">
+                      <td colSpan={colCount} className="px-3 pb-3 pt-1">
+                        <div className="grid md:grid-cols-2 gap-3">
+                          {c.evidence && (
+                            <div className="p-3 rounded-sm bg-paper border border-line">
+                              <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3 mb-1">Evidência</div>
+                              <p className="text-xs text-ink-2 leading-relaxed">{c.evidence}</p>
+                            </div>
+                          )}
+                          {c.recommended_action && (
+                            <div className="p-3 rounded-sm bg-blue-soft border border-blue-line">
+                              <div className="text-[10px] font-mono uppercase tracking-wider text-blue mb-1">Recomendação do NOUS</div>
+                              <p className="text-xs text-ink-2 leading-relaxed">{c.recommended_action}</p>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -224,18 +265,53 @@ export default function DesempenhoPage() {
         </div>
       )}
 
-      {tab === 'campanhas' && (
-        <Card className="animate-fade-up">
-          <SectionHead title="Todas as campanhas" subtitle={camps.length ? `${camps.length} campanhas · clique numa linha para detalhes` : undefined} icon={<Icon name="megaphone" size={17} />}
-            action={camps.length ? (
-              <div className="flex gap-2">
-                <Button size="sm" variant="ghost" onClick={() => window.toast?.({ tone: 'blue', title: 'Filtros', body: 'Painel de filtros em breve.' })}>Filtros</Button>
-                <Button size="sm" variant="soft" onClick={() => window.toast?.({ tone: 'good', title: 'Exportação iniciada', body: 'O CSV das campanhas será baixado.' })}>Exportar</Button>
+      {tab === 'campanhas' && (() => {
+        const channels = Array.from(new Set(camps.map((c: any) => platformName(c.platform))))
+        const filtered = camps.filter((c: any) =>
+          (channelFilter === 'all' || platformName(c.platform) === channelFilter) &&
+          (statusFilter === 'all' || c._s === statusFilter))
+        const activeFilters = (channelFilter !== 'all' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0)
+        const pill = (active: boolean) => `px-3 py-1.5 text-[12.5px] font-semibold rounded-pill border-[1.5px] ${active ? 'border-blue bg-blue-soft text-blue-600' : 'border-line bg-paper text-ink-2 hover:border-line-strong'}`
+        return (
+          <div className="animate-fade-up">
+            <Card>
+              <SectionHead title="Desempenho por campanha" subtitle={`${filtered.length} de ${camps.length} campanhas · clique numa linha para detalhes`} icon={<Icon name="megaphone" size={17} />}
+                action={camps.length ? (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" icon="filter" onClick={() => setFilterOpen(true)}>Filtros{activeFilters ? ` · ${activeFilters}` : ''}</Button>
+                    <Button size="sm" variant="ghost" icon="download" onClick={() => setExportOpen(true)}>Exportar</Button>
+                  </div>
+                ) : undefined} />
+              {filtered.length > 0 ? <CampTable rows={filtered} /> : <p className="text-center py-8 text-ink-3 text-sm">Nenhuma campanha{activeFilters ? ' com esses filtros' : ''}.</p>}
+            </Card>
+
+            <Modal open={filterOpen} onClose={() => setFilterOpen(false)} icon="filter" title="Filtrar campanhas" sub="Refine a lista por canal e status"
+              footer={<><Button variant="ghost" onClick={() => { setChannelFilter('all'); setStatusFilter('all') }}>Limpar</Button><Button onClick={() => setFilterOpen(false)}>Aplicar</Button></>}>
+              <div className="text-xs font-semibold text-ink-2 mb-2">Canal</div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {['all', ...channels].map(c => <button key={c} onClick={() => setChannelFilter(c)} className={pill(channelFilter === c)}>{c === 'all' ? 'Todos' : c}</button>)}
               </div>
-            ) : undefined} />
-          {camps.length > 0 ? <CampTable rows={camps} /> : <p className="text-center py-8 text-ink-3 text-sm">Nenhuma campanha.</p>}
-        </Card>
-      )}
+              <div className="text-xs font-semibold text-ink-2 mb-2">Status</div>
+              <div className="flex flex-wrap gap-2">
+                {[['all', 'Todos'], ['vencedora', 'Escalar'], ['atencao', 'Otimizar'], ['critica', 'Revisar']].map(([k, l]) => <button key={k} onClick={() => setStatusFilter(k)} className={pill(statusFilter === k)}>{l}</button>)}
+              </div>
+            </Modal>
+
+            <Modal open={exportOpen} onClose={() => setExportOpen(false)} icon="download" title="Exportar campanhas" sub="Escolha o formato">
+              <div className="grid gap-2.5">
+                {[['CSV detalhado', 'layers'], ['PDF executivo', 'doc'], ['Slides para diretoria', 'image']].map(([l, ic]) => (
+                  <button key={l} onClick={() => { setExportOpen(false); if (l === 'CSV detalhado') exportCsv(filtered); else window.toast?.({ tone: 'good', title: 'Gerando', body: `${l}…` }) }}
+                    className="flex items-center gap-3 p-3.5 rounded-sm border border-line bg-paper hover:border-blue-line transition-colors text-left">
+                    <span className="text-blue"><Icon name={ic} size={17} /></span>
+                    <span className="flex-1 text-[13.5px] font-semibold text-ink">{l}</span>
+                    <Icon name="chevR" size={15} className="text-ink-3" />
+                  </button>
+                ))}
+              </div>
+            </Modal>
+          </div>
+        )
+      })()}
 
       {tab === 'canais' && (
         <div className="space-y-4 animate-fade-up">

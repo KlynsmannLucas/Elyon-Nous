@@ -14,3 +14,4 @@ export { Sparkline, LineChart, Donut, BarChart, Funnel, Gauge, Radar, HBar, Lege
 export { ToastProvider, useToast, type ToastTone } from './Toast'
 export { Modal, DropdownMenu, MenuItem, MenuLabel, MenuDivider } from './Overlay'
 export { AdAccountPicker } from './AdAccountPicker'
+export { ChannelMark, platformName } from './ChannelMark'
