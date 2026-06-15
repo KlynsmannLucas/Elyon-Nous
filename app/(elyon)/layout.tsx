@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useUser, useClerk } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
 import { SidebarV2, TopbarV2, NousRail, NousOrb, ToastProvider, type AreaKey } from '@/components/dashboard/v2'
 
@@ -39,15 +40,21 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const area = (pathname?.split('/')[1] || 'hoje') as AreaKey
   const activeArea: AreaKey = TITLES[area] ? area : 'hoje'
 
+  const { user } = useUser()
+  const { signOut } = useClerk()
   const [collapsed, setCollapsed] = useState(false)
   const [nousOpen, setNousOpen] = useState(false)
   const [wide, setWide] = useState(true)
   const [credits, setCredits] = useState<number | undefined>(undefined)
+  const [plan, setPlan] = useState<string | undefined>(undefined)
+
+  const userName = user?.fullName || user?.firstName || user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 'Você'
 
   // Créditos de IA restantes (topbar)
   useEffect(() => {
     fetch('/api/credits').then(r => (r.ok ? r.json() : null)).then(d => {
       if (d && typeof d.remaining === 'number') setCredits(d.remaining)
+      if (d?.plan) setPlan(String(d.plan))
     }).catch(() => {})
   }, [])
 
@@ -103,7 +110,13 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
           onChangeArea={(a) => router.push(`/${a}`)}
           collapsed={collapsed}
           onToggleCollapse={() => setCollapsed(v => !v)}
-          activeClient={clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''}
+          clients={clients}
+          activeClientId={activeId}
+          onClientChange={(id) => loadSavedClient(id)}
+          onNewClient={() => router.push('/novo')}
+          userName={userName}
+          userPlan={plan}
+          onLogout={() => signOut(() => router.push('/'))}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -115,10 +128,6 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
             period={globalPeriod.label}
             onPeriodChange={() => {}}
             onSelectPeriod={(p) => { setGlobalPeriod(p); if (typeof window !== 'undefined') window.toast?.({ tone: 'blue', title: 'Período atualizado', body: p.label }) }}
-            clients={clients}
-            activeClient={activeId}
-            onClientChange={(id) => loadSavedClient(id)}
-            onNewClient={() => router.push('/novo')}
             credits={credits}
             onOpenCredits={() => router.push('/config')}
             onOpenNous={() => setNousOpen(true)}
