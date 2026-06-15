@@ -1,19 +1,49 @@
 // components/dashboard/v2/NousRail.tsx
-// NOUS copiloto — rail (>=1280px) ou drawer (<1280px). Ligado ao /api/nous real.
+// NOUS copiloto — rail (>=1280px) ou drawer (<1280px). Abas Insights/Perguntas (fiel ao prototype).
+// Chat ligado ao /api/nous real; Insights derivado dos dados reais do cliente.
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAppStore } from '@/lib/store'
+import { Icon } from './Icon'
 
 interface Message { role: 'user' | 'assistant'; content: string }
 interface NousRailProps { open: boolean; onClose: () => void; docked?: boolean }
 
 const SUGGESTIONS = ['Como estão meus KPIs?', 'Qual campanha tem melhor ROAS?', 'O que eu faço esta semana?']
 
-function NousOrb({ className = '' }: { className?: string }) {
+export function NousOrb({ size = 40, thinking = false }: { size?: number; thinking?: boolean }) {
+  const id = useMemo(() => 'orb' + Math.random().toString(36).slice(2, 6), [])
   return (
-    <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-blue to-teal flex items-center justify-center animate-pulse-dot ${className}`}>
-      <span className="text-white text-xl">◎</span>
+    <svg width={size} height={size} viewBox="0 0 48 48" className="block shrink-0">
+      <defs>
+        <radialGradient id={id} cx="50%" cy="42%" r="60%">
+          <stop offset="0%" stopColor="#5B9BFF" /><stop offset="55%" stopColor="#2C5FE0" /><stop offset="100%" stopColor="#0E9CB0" />
+        </radialGradient>
+      </defs>
+      <circle cx="24" cy="24" r="22" fill="none" stroke="#2C5FE0" strokeOpacity="0.18" strokeWidth="1" />
+      <circle cx="24" cy="24" r="22" fill="none" stroke="#0E9CB0" strokeOpacity="0.25" strokeWidth="1.4" strokeDasharray="34 100" strokeLinecap="round"
+        style={{ transformOrigin: '24px 24px', animation: `spin ${thinking ? '1.4s' : '9s'} linear infinite` }} />
+      <circle cx="24" cy="24" r="13" fill={`url(#${id})`} style={{ animation: 'orbPulse 2.6s ease-in-out infinite' }} />
+      <circle cx="20" cy="20" r="3.6" fill="#fff" fillOpacity="0.9" />
+      <circle cx="28" cy="27" r="1.8" fill="#fff" fillOpacity="0.55" />
+    </svg>
+  )
+}
+
+function InsightCard({ tone, title, tag, body, onAct }: { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string; onAct?: () => void }) {
+  const C: Record<string, string> = { bad: '#E1483F', warn: '#E08B0B', good: '#0E9E6E', blue: '#2C5FE0' }
+  const icon = tone === 'bad' ? 'alert' : tone === 'warn' ? 'flag' : 'spark'
+  const c = C[tone]
+  return (
+    <div className="bg-paper border border-line rounded-sm p-3 hover:shadow-card-hover transition-shadow" style={{ borderLeft: `3px solid ${c}` }}>
+      <div className="flex items-center gap-2 mb-1.5">
+        <span style={{ color: c }} className="flex"><Icon name={icon} size={14} /></span>
+        <span className="text-[13px] font-semibold flex-1 text-ink" style={{ letterSpacing: '-0.01em' }}>{title}</span>
+        {tag && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-pill" style={{ color: c, background: `${c}14` }}>{tag}</span>}
+      </div>
+      {body && <div className="text-xs text-ink-2 leading-relaxed">{body}</div>}
+      {onAct && <button onClick={onAct} className="mt-2 text-xs font-semibold text-blue inline-flex items-center gap-1 hover:gap-1.5 transition-all">Ver detalhes <Icon name="chevR" size={13} /></button>}
     </div>
   )
 }
@@ -21,13 +51,12 @@ function NousOrb({ className = '' }: { className?: string }) {
 export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   const clientData = useAppStore(s => s.clientData)
   const auditCache = useAppStore(s => s.auditCache)
-  const campaignHistory = useAppStore(s => s.campaignHistory)
+  const strategyData = useAppStore(s => s.strategyData)
   const dashboardMode = useAppStore(s => s.dashboardMode)
 
+  const [tab, setTab] = useState<'insights' | 'perguntas'>('insights')
   const [input, setInput] = useState('')
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Olá! Sou o NOUS, seu copiloto de marketing. Pergunte sobre seus KPIs, campanhas, CPL, próximos passos…' },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [isTyping, setIsTyping] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, isTyping])
@@ -37,17 +66,21 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   const rm = latestAudit?._realMetrics
   const hasRealData = !!(rm && (rm.totalSpend > 0 || rm.totalLeads > 0))
 
+  // Insights reais (briefing + alertas/ações)
+  const briefing = latestAudit?.executive_summary || strategyData?.strategy?.growth_thesis
+    || (rm ? `Conta com ${Number(rm.totalSpend).toLocaleString('pt-BR')} investidos e ${rm.totalLeads} leads.` : 'Rode a Análise Profunda para um briefing com os dados reais da conta.')
+  const insights: { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string }[] =
+    (latestAudit?.o_que_eu_faria_agora || []).filter((a: any) => a?.titulo).slice(0, 4)
+      .map((a: any) => ({ tone: a.prioridade === 'P1' ? 'bad' as const : a.prioridade === 'P2' ? 'warn' as const : 'blue' as const, title: a.titulo, tag: a.prioridade, body: a.motivo || a.evidencia }))
+
   const buildContext = () => {
     const l: string[] = ['=== STATUS DOS DADOS — LEIA PRIMEIRO ===']
     l.push(`Dados reais de campanha: ${hasRealData ? `SIM — ${rm.campaignCount || '?'} campanhas, R$${Number(rm.totalSpend).toLocaleString('pt-BR')} investidos, ${rm.totalLeads} leads, CPL R$${rm.avgCPL ?? '—'}` : 'NÃO'}`)
     l.push(`Análise Profunda: ${latestAudit ? 'SIM' : 'NÃO'}`)
     if (latestAudit?.health_score) l.push(`Score de saúde: ${latestAudit.health_score}/100 (${latestAudit.grade || '—'})`)
     if (clientData) {
-      l.push('\n=== CLIENTE ===')
-      l.push(`Cliente: ${clientData.clientName}`)
-      l.push(`Nicho: ${clientData.niche}`)
-      l.push(`Budget mensal: R$${(clientData.budget || 0).toLocaleString('pt-BR')}`)
-      l.push(`Objetivo: ${clientData.objective || '—'}`)
+      l.push('\n=== CLIENTE ==='); l.push(`Cliente: ${clientData.clientName}`); l.push(`Nicho: ${clientData.niche}`)
+      l.push(`Budget mensal: R$${(clientData.budget || 0).toLocaleString('pt-BR')}`); l.push(`Objetivo: ${clientData.objective || '—'}`)
       if (clientData.city) l.push(`Cidade: ${clientData.city}`)
     }
     const gargalos = latestAudit?.gargalos
@@ -58,31 +91,20 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   const send = async (text: string) => {
     const msg = text.trim()
     if (!msg || isTyping) return
+    setTab('perguntas')
     const history = messages.slice(-6)
     setMessages(m => [...m, { role: 'user', content: msg }])
     setInput(''); setIsTyping(true)
     try {
       const res = await fetch('/api/nous', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: msg,
-          context: buildContext(),
-          niche: clientData?.niche,
-          city: clientData?.city,
-          hasRealData,
-          viewMode: dashboardMode,
-          history,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, context: buildContext(), niche: clientData?.niche, city: clientData?.city, hasRealData, viewMode: dashboardMode, history }),
       })
       const data = await res.json()
-      const reply = data?.reply || data?.error || 'Não consegui responder agora. Tente de novo.'
-      setMessages(m => [...m, { role: 'assistant', content: reply }])
+      setMessages(m => [...m, { role: 'assistant', content: data?.reply || data?.error || 'Não consegui responder agora.' }])
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'Falha de conexão. Tente novamente.' }])
-    } finally {
-      setIsTyping(false)
-    }
+    } finally { setIsTyping(false) }
   }
 
   if (!open) return null
@@ -91,43 +113,73 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
     <>
       {!docked && <div className="fixed inset-0 bg-ink/20 z-40" onClick={onClose} />}
       <aside className={`${docked ? 'w-[340px] border-l border-line' : 'fixed right-0 top-0 bottom-0 w-[340px] z-50 shadow-card-hover'} h-screen bg-paper flex flex-col`.trim()}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-line shrink-0">
+        {/* Header */}
+        <div className="px-4 pt-4 pb-3 border-b border-line shrink-0">
           <div className="flex items-center gap-3">
-            <NousOrb />
-            <div>
-              <h2 className="text-sm font-semibold text-ink">NOUS</h2>
-              <p className="text-xs text-green">● {clientData?.niche ? clientData.niche : 'online'}</p>
+            <NousOrb size={40} thinking={isTyping} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[15px] font-bold tracking-wide text-ink">NOUS</span>
+                <span className="inline-flex items-center gap-1 text-[10.5px] font-mono"><span className="pulse-dot" /><span className="text-green-600">online</span></span>
+              </div>
+              <div className="text-[11.5px] text-ink-3">Inteligência que decide</div>
             </div>
+            <button onClick={onClose} title="Recolher" className="p-1 text-ink-3 hover:text-ink"><Icon name="chevR" size={18} /></button>
           </div>
-          <button onClick={onClose} className="p-1.5 text-ink-3 hover:text-ink rounded-sm" title="Fechar">✕</button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] px-3 py-2 rounded-md text-sm leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'bg-blue text-white' : 'bg-canvas-2 text-ink'}`.trim()}>{m.content}</div>
-            </div>
-          ))}
-          {isTyping && <div className="flex gap-2 text-ink-3 text-sm animate-pulse"><span>◎</span> Pensando…</div>}
-          <div ref={endRef} />
-        </div>
-
-        <div className="px-4 py-2 border-t border-line shrink-0">
-          <div className="flex flex-wrap gap-2">
-            {SUGGESTIONS.map((s, i) => (
-              <button key={i} onClick={() => send(s)} disabled={isTyping}
-                className="px-2.5 py-1 text-xs bg-canvas-2 text-ink-2 rounded-full hover:bg-canvas hover:text-ink disabled:opacity-50">{s}</button>
+          <div className="flex gap-0.5 mt-3 bg-canvas-2 rounded-sm p-0.5">
+            {(['insights', 'perguntas'] as const).map(k => (
+              <button key={k} onClick={() => setTab(k)}
+                className={`flex-1 py-1.5 text-[12.5px] rounded-[6px] transition-all ${tab === k ? 'bg-paper text-ink font-semibold shadow-sm' : 'text-ink-3 font-medium'}`}>
+                {k === 'insights' ? 'Insights' : 'Perguntas'}
+              </button>
             ))}
           </div>
         </div>
 
-        <div className="p-4 border-t border-line shrink-0">
-          <div className="flex gap-2">
-            <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send(input)}
-              placeholder="Pergunte ao NOUS…"
-              className="flex-1 px-3 py-2 bg-canvas-2 border border-line rounded-sm text-sm text-ink placeholder:text-ink-3 focus:border-blue focus:outline-none" />
+        {/* Body */}
+        {tab === 'insights' ? (
+          <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 no-sb">
+            <div className="rounded-md p-3.5 border border-blue-line" style={{ background: 'linear-gradient(135deg, var(--blue-soft), var(--green-soft))' }}>
+              <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-blue-600 mb-1.5">Briefing de hoje</div>
+              <div className="text-[13px] leading-relaxed text-ink line-clamp-5">{briefing}</div>
+            </div>
+            <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3 mt-1">Insights em destaque</div>
+            {insights.length > 0 ? insights.map((a, i) => <InsightCard key={i} {...a} onAct={() => (window.location.href = '/diagnostico')} />)
+              : <p className="text-xs text-ink-3 text-center py-6">Rode a Análise Profunda para ver insights.</p>}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-3.5 no-sb">
+            {messages.length === 0 && (
+              <div className="text-center text-ink-3 text-[12.5px] py-6">
+                <div className="flex justify-center"><NousOrb size={48} /></div>
+                <div className="mt-2.5">Pergunte qualquer coisa sobre seus dados.</div>
+              </div>
+            )}
+            <div className="space-y-2.5">
+              {messages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'bg-blue text-white rounded-xl rounded-br-[3px]' : 'bg-paper border border-line text-ink rounded-xl rounded-bl-[3px]'}`}>{m.content}</div>
+                </div>
+              ))}
+              {isTyping && <div className="flex gap-1 text-ink-4 px-1"><span className="pulse-dot" /><span className="pulse-dot" style={{ animationDelay: '.15s' }} /><span className="pulse-dot" style={{ animationDelay: '.3s' }} /></div>}
+              <div ref={endRef} />
+            </div>
+          </div>
+        )}
+
+        {/* Suggestions + input */}
+        <div className="border-t border-line p-3 bg-paper-2 shrink-0">
+          <div className="flex flex-wrap gap-1.5 mb-2.5">
+            {SUGGESTIONS.map((s, i) => (
+              <button key={i} onClick={() => send(s)} disabled={isTyping}
+                className="text-[11.5px] text-ink-2 bg-paper border border-line rounded-pill px-2.5 py-1 hover:border-blue-line hover:text-blue-600 disabled:opacity-50 transition-colors">{s}</button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 bg-paper border border-line rounded-pill pl-3.5 pr-1 py-1">
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send(input)}
+              placeholder="Pergunte ao NOUS…" className="flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-3 outline-none border-none" />
             <button onClick={() => send(input)} disabled={!input.trim() || isTyping}
-              className="px-4 py-2 bg-blue text-white rounded-sm text-sm font-medium hover:bg-blue-600 disabled:opacity-50">→</button>
+              className="w-8 h-8 rounded-full bg-blue text-white flex items-center justify-center shrink-0 disabled:opacity-50"><Icon name="send" size={15} /></button>
           </div>
         </div>
       </aside>

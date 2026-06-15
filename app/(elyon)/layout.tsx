@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
-import { SidebarV2, TopbarV2, NousRail, ToastProvider, type AreaKey } from '@/components/dashboard/v2'
+import { SidebarV2, TopbarV2, NousRail, NousOrb, ToastProvider, type AreaKey } from '@/components/dashboard/v2'
 
 const TITLES: Record<AreaKey, string> = {
   hoje: 'Hoje', desempenho: 'Desempenho', diagnostico: 'Diagnóstico', mercado: 'Mercado',
@@ -135,9 +135,9 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
         {/* Orb flutuante — reabre o NOUS quando recolhido */}
         {!nousOpen && (
           <button onClick={() => setNousOpen(true)} title="Perguntar ao NOUS"
-            className="fixed right-5 bottom-5 z-[120] flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-pill bg-paper border border-line shadow-pop hover:shadow-highlight transition-shadow">
-            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-blue to-teal flex items-center justify-center animate-pulse-dot"><span className="text-white text-base">◎</span></span>
-            <span className="text-sm font-medium text-ink">Perguntar ao NOUS</span>
+            className="fixed right-5 bottom-5 z-[120] flex items-center gap-2.5 pl-3.5 pr-2 py-2 rounded-pill bg-paper border border-line shadow-pop hover:shadow-highlight transition-shadow scale-in">
+            <span className="text-[13px] font-semibold text-ink">Perguntar ao NOUS</span>
+            <NousOrb size={34} />
           </button>
         )}
       </div>
