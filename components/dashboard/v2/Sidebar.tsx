@@ -7,6 +7,7 @@ import { Icon } from './Icon'
 
 export type AreaKey =
   | 'hoje' | 'desempenho' | 'diagnostico' | 'mercado' | 'plano' | 'relatorios'
+  | 'criar' | 'biblioteca' | 'conteudo' | 'abtest' | 'cro'
   | 'integracoes' | 'config'
 
 const AREAS = {
@@ -16,6 +17,13 @@ const AREAS = {
   mercado:    { label: 'Mercado',      icon: 'globe' },
   plano:      { label: 'Plano de Ação', icon: 'check' },
   relatorios: { label: 'Relatórios',   icon: 'doc' },
+}
+const STUDIO_AREAS = {
+  criar:      { label: 'Criar campanha', icon: 'rocket', badge: 'IA' },
+  biblioteca: { label: 'Biblioteca',     icon: 'image' },
+  conteudo:   { label: 'Conteúdo',       icon: 'megaphone' },
+  abtest:     { label: 'Teste A/B',      icon: 'scale' },
+  cro:        { label: 'Otimização (CRO)', icon: 'target' },
 }
 const SYSTEM_AREAS = {
   integracoes:{ label: 'Integrações',  icon: 'plug' },
@@ -95,7 +103,7 @@ export function SidebarV2({
   activeArea, onChangeArea, collapsed = false, onToggleCollapse,
   clients = [], activeClientId, onClientChange, onNewClient, userName, userPlan, onLogout,
 }: SidebarProps) {
-  const NavBtn = ({ area, item, sys }: { area: string; item: { label: string; icon: string }; sys?: boolean }) => {
+  const NavBtn = ({ area, item, sys }: { area: string; item: { label: string; icon: string; badge?: string }; sys?: boolean }) => {
     const isActive = activeArea === area
     return (
       <button onClick={() => onChangeArea(area as AreaKey)} title={collapsed ? item.label : undefined}
@@ -104,6 +112,8 @@ export function SidebarV2({
         {isActive && !collapsed && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-blue" />}
         <Icon name={item.icon} size={18} w={isActive ? 2 : 1.8} className={`shrink-0 ${sys && !isActive ? 'opacity-70' : ''}`} />
         {!collapsed && <span className={`text-[13.5px] flex-1 ${sys && !isActive ? 'opacity-80' : ''}`}>{item.label}</span>}
+        {!collapsed && item.badge && <span className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded-pill ${isActive ? 'bg-blue text-white' : 'bg-blue-soft text-blue-600'}`}>{item.badge}</span>}
+        {collapsed && item.badge && <span className="absolute top-1.5 right-2 w-1.5 h-1.5 rounded-full bg-blue" />}
       </button>
     )
   }
@@ -139,6 +149,11 @@ export function SidebarV2({
         {!collapsed && <div className="px-1 pb-2 text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Operação</div>}
         <div className="space-y-0.5">
           {(Object.keys(AREAS) as (keyof typeof AREAS)[]).map(area => <NavBtn key={area} area={area} item={AREAS[area]} />)}
+        </div>
+        <div className="h-px bg-line mx-1 my-3.5" />
+        {!collapsed && <div className="px-1 pb-2 text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Criação</div>}
+        <div className="space-y-0.5">
+          {(Object.keys(STUDIO_AREAS) as (keyof typeof STUDIO_AREAS)[]).map(area => <NavBtn key={area} area={area} item={STUDIO_AREAS[area]} />)}
         </div>
         <div className="h-px bg-line mx-1 my-3.5" />
         {!collapsed && <div className="px-1 pb-2 text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Sistema</div>}

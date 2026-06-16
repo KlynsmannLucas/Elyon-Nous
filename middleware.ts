@@ -7,6 +7,7 @@ const isProtectedRoute = createRouteMatcher([
   // Redesign v2 — áreas autenticadas
   '/hoje(.*)', '/desempenho(.*)', '/diagnostico(.*)', '/mercado(.*)',
   '/plano(.*)', '/relatorios(.*)', '/integracoes(.*)', '/config(.*)', '/novo(.*)',
+  '/criar(.*)', '/biblioteca(.*)', '/conteudo(.*)', '/abtest(.*)', '/cro(.*)',
 ])
 
 export default clerkMiddleware((auth, req) => {

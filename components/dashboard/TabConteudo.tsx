@@ -53,8 +53,8 @@ function CopyButton({ text }: { text: string }) {
         flexShrink: 0,
         cursor: 'pointer',
         transition: 'all 0.15s',
-        background: copied ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
-        border: copied ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+        background: copied ? 'rgba(34,197,94,0.12)' : '#F1F1EE',
+        border: copied ? '1px solid rgba(34,197,94,0.3)' : '1px solid #E6E5E0',
         color: copied ? '#0E9E6E' : '#8A93A3',
       }}
     >
@@ -72,7 +72,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
     <div
       style={{
         background: '#FFFFFF',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid #E6E5E0',
         borderRadius: '14px',
         overflow: 'hidden',
       }}
@@ -85,7 +85,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
           alignItems: 'center',
           justifyContent: 'space-between',
           background: `${color}10`,
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: '1px solid #E6E5E0',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -176,7 +176,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
               lineHeight: 1.6,
               whiteSpace: 'pre-wrap',
               background: '#F4F5F7',
-              border: '1px solid rgba(255,255,255,0.06)',
+              border: '1px solid #E6E5E0',
             }}
           >
             {post.legenda}
@@ -235,8 +235,8 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
                     fontSize: '10px',
                     padding: '2px 6px',
                     borderRadius: '6px',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    background: '#F1F1EE',
+                    border: '1px solid #E6E5E0',
                     color: '#5A6473',
                   }}
                 >
@@ -335,8 +335,8 @@ export function TabConteudo({ clientData }: Props) {
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            background: 'rgba(124,58,237,0.10)',
-            border: '1px solid rgba(124,58,237,0.22)',
+            background: 'rgba(43,91,227,0.10)',
+            border: '1px solid rgba(43,91,227,0.22)',
           }}
         >
           <span style={{ fontSize: '16px' }}>👤</span>
@@ -356,8 +356,8 @@ export function TabConteudo({ clientData }: Props) {
             marginBottom: '20px',
             fontSize: '11px',
             color: '#8A93A3',
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: '#F1F1EE',
+            border: '1px solid #E6E5E0',
           }}
         >
           💡 Gere uma persona na aba{' '}
@@ -373,7 +373,7 @@ export function TabConteudo({ clientData }: Props) {
           padding: '20px',
           marginBottom: '20px',
           background: '#FFFFFF',
-          border: '1px solid rgba(255,255,255,0.06)',
+          border: '1px solid #E6E5E0',
         }}
       >
         <div
@@ -409,7 +409,7 @@ export function TabConteudo({ clientData }: Props) {
                 cursor: 'pointer',
                 transition: 'all 0.15s',
                 background: platform === pl.key ? `${pl.color}12` : 'transparent',
-                border: platform === pl.key ? `1px solid ${pl.color}40` : '1px solid rgba(255,255,255,0.06)',
+                border: platform === pl.key ? `1px solid ${pl.color}40` : '1px solid #E6E5E0',
               }}
             >
               <span style={{ fontSize: '16px' }}>{pl.icon}</span>
@@ -434,7 +434,7 @@ export function TabConteudo({ clientData }: Props) {
           padding: '20px',
           marginBottom: '20px',
           background: '#FFFFFF',
-          border: '1px solid rgba(255,255,255,0.06)',
+          border: '1px solid #E6E5E0',
         }}
       >
         <div
@@ -455,7 +455,7 @@ export function TabConteudo({ clientData }: Props) {
           placeholder="Ex: Como perder 5kg em 30 dias sem dieta radical"
           style={{
             background: '#FBFCFD',
-            border: '1px solid rgba(255,255,255,0.06)',
+            border: '1px solid #E6E5E0',
             borderRadius: '10px',
             color: '#161B26',
             fontSize: '13px',
@@ -482,11 +482,11 @@ export function TabConteudo({ clientData }: Props) {
               key={s}
               onClick={() => setTheme(s)}
               onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
+                e.currentTarget.style.borderColor = '#565862'
                 e.currentTarget.style.color = '#161B26'
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
+                e.currentTarget.style.borderColor = '#E6E5E0'
                 e.currentTarget.style.color = '#5A6473'
               }}
               style={{
@@ -495,8 +495,8 @@ export function TabConteudo({ clientData }: Props) {
                 borderRadius: '999px',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: '#F1F1EE',
+                border: '1px solid #E6E5E0',
                 color: '#5A6473',
               }}
             >

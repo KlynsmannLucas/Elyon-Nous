@@ -240,14 +240,14 @@ export function TabAssets({ clientData }: Props) {
     bg:       '#050B1A',
     surface:  '#0C1426',
     elevated: '#111D33',
-    border:   'rgba(255,255,255,0.06)',
-    borderHi: 'rgba(124,58,237,0.35)',
+    border:   '#E6E5E0',
+    borderHi: 'rgba(43,91,227,0.35)',
     purple:   '#2C5FE0',
     purpleHi: '#2C5FE0',
-    purpleBg: 'rgba(124,58,237,0.08)',
+    purpleBg: 'rgba(43,91,227,0.08)',
     text1:    '#161B26',
     text2:    '#5A6473',
-    text3:    'rgba(255,255,255,0.32)',
+    text3:    '#565862',
     amber:    '#E08B0B',
     green:    '#0E9E6E',
     red:      '#E1483F',
@@ -314,7 +314,7 @@ export function TabAssets({ clientData }: Props) {
           <svg style={{ flexShrink: 0, marginTop: '1px', color: S.amber }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+          <div style={{ fontSize: '12px', color: '#565862', lineHeight: 1.6 }}>
             <strong style={{ color: 'rgba(245,158,11,0.9)' }}>Assets salvos no banco de dados.</strong>
             {' '}Imagens são armazenadas de forma segura no Supabase Storage e ficam disponíveis em qualquer dispositivo. Faça backup dos arquivos originais fora do painel.
           </div>
@@ -399,7 +399,7 @@ export function TabAssets({ clientData }: Props) {
             onClick={() => !uploading && fileRef.current?.click()}
             style={{
               borderRadius: '12px',
-              border: `2px dashed ${dragOver ? S.purple : 'rgba(255,255,255,0.10)'}`,
+              border: `2px dashed ${dragOver ? S.purple : '#565862'}`,
               padding: '48px 24px',
               textAlign: 'center',
               cursor: uploading ? 'not-allowed' : 'pointer',
@@ -490,7 +490,7 @@ export function TabAssets({ clientData }: Props) {
                       transition: 'all 0.15s',
                       opacity: isDeleting ? 0.5 : 1,
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.border = `1px solid rgba(255,255,255,0.12)` }}
+                    onMouseEnter={e => { e.currentTarget.style.border = `1px solid #565862` }}
                     onMouseLeave={e => { e.currentTarget.style.border = `1px solid ${activeAssetId === asset.id ? S.borderHi : S.border}` }}
                   >
                     {/* Thumbnail */}
@@ -629,16 +629,16 @@ export function TabAssets({ clientData }: Props) {
                               </div>
                               <button
                                 onClick={() => copyToClipboard(field.value, field.key)}
-                                style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '6px', flexShrink: 0, cursor: 'pointer', transition: 'all 0.15s', background: copied === field.key ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.04)', border: `1px solid ${copied === field.key ? 'rgba(34,197,94,0.25)' : S.border}`, color: copied === field.key ? S.green : S.text3 }}
+                                style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '6px', flexShrink: 0, cursor: 'pointer', transition: 'all 0.15s', background: copied === field.key ? 'rgba(34,197,94,0.10)' : '#F1F1EE', border: `1px solid ${copied === field.key ? 'rgba(34,197,94,0.25)' : S.border}`, color: copied === field.key ? S.green : S.text3 }}
                               >{copied === field.key ? '✓' : 'Copiar'}</button>
                             </div>
                           ))}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '4px' }}>
                             <span style={{ fontSize: '9px', color: S.text3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>CTA:</span>
-                            <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '999px', background: S.purpleBg, color: S.purpleHi, border: `1px solid rgba(124,58,237,0.22)` }}>{v.cta}</span>
+                            <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '999px', background: S.purpleBg, color: S.purpleHi, border: `1px solid rgba(43,91,227,0.22)` }}>{v.cta}</span>
                             <button
                               onClick={() => copyToClipboard(`${v.headline}\n\n${v.primaryText}\n\nCTA: ${v.cta}`, `all-${i}`)}
-                              style={{ marginLeft: 'auto', fontSize: '10px', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.15s', background: copied === `all-${i}` ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.04)', border: `1px solid ${copied === `all-${i}` ? 'rgba(34,197,94,0.25)' : S.border}`, color: copied === `all-${i}` ? S.green : S.text3 }}
+                              style={{ marginLeft: 'auto', fontSize: '10px', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.15s', background: copied === `all-${i}` ? 'rgba(34,197,94,0.10)' : '#F1F1EE', border: `1px solid ${copied === `all-${i}` ? 'rgba(34,197,94,0.25)' : S.border}`, color: copied === `all-${i}` ? S.green : S.text3 }}
                             >{copied === `all-${i}` ? '✓ Copiado!' : 'Copiar tudo'}</button>
                           </div>
                         </div>
@@ -673,7 +673,7 @@ export function TabAssets({ clientData }: Props) {
         )}
 
         {/* ── Footer informativo ───────────────────────────────────────────────── */}
-        <div style={{ borderRadius: '10px', padding: '10px 16px', fontSize: '12px', color: S.text2, background: S.purpleBg, border: `1px solid rgba(124,58,237,0.15)` }}>
+        <div style={{ borderRadius: '10px', padding: '10px 16px', fontSize: '12px', color: S.text2, background: S.purpleBg, border: `1px solid rgba(43,91,227,0.15)` }}>
           <span style={{ color: S.purpleHi, fontWeight: 600 }}>⚡ Como funciona:</span>{' '}
           Clique em "Gerar Copy com IA" em qualquer imagem. A IA cria 3 variações de headline + texto + CTA específicas para o nicho{clientData?.niche ? ` ${clientData.niche}` : ''} — prontas para colar no Meta Ads.
         </div>

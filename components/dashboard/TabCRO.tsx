@@ -29,7 +29,7 @@ interface CROAnalysis {
 
 const PRIORITY_CONFIG = {
   urgent: { color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.2)', label: 'Urgente', emoji: '🔴' },
-  high:   { color: '#F0B429', bg: 'rgba(240,180,41,0.08)', border: 'rgba(240,180,41,0.2)', label: 'Alta',   emoji: '🟡' },
+  high:   { color: '#2B5BE3', bg: 'rgba(43,91,227,0.08)', border: 'rgba(43,91,227,0.2)', label: 'Alta',   emoji: '🟡' },
   medium: { color: '#2C5FE0', bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.2)', label: 'Média',  emoji: '🔵' },
   low:    { color: '#5A6473', bg: 'rgba(148,163,184,0.05)', border: 'rgba(148,163,184,0.1)', label: 'Baixa', emoji: '⚪' },
 }
@@ -46,7 +46,7 @@ const AREA_LABELS: Record<string, { label: string; icon: string }> = {
 
 const EFFORT_CONFIG = {
   baixo: { color: '#0E9E6E', label: 'Esforço baixo' },
-  médio: { color: '#F0B429', label: 'Esforço médio' },
+  médio: { color: '#2B5BE3', label: 'Esforço médio' },
   alto:  { color: '#FF4D4D', label: 'Esforço alto' },
 }
 
@@ -99,7 +99,7 @@ export function TabCRO() {
 
   const scoreColor = !cro ? '#8A93A3'
     : cro.score >= 80 ? '#0E9E6E'
-    : cro.score >= 60 ? '#F0B429'
+    : cro.score >= 60 ? '#2B5BE3'
     : '#FF4D4D'
 
   return (
@@ -113,12 +113,12 @@ export function TabCRO() {
               {useViewMode().mode === 'simple' ? TAB_HEADINGS_SIMPLE.cro.title : 'Otimização de Conversão'}
             </h2>
             <span style={{
-              fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#F0B429',
-              background: 'rgba(240,180,41,0.1)', border: '1px solid rgba(240,180,41,0.2)',
+              fontSize: '9px', fontFamily: 'var(--font-mono)', color: '#2B5BE3',
+              background: 'rgba(43,91,227,0.1)', border: '1px solid rgba(43,91,227,0.2)',
               borderRadius: '4px', padding: '2px 6px', letterSpacing: '0.06em',
             }}>IA</span>
           </div>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0, maxWidth: '500px' }}>
+          <p style={{ fontSize: '13px', color: '#565862', margin: 0, maxWidth: '500px' }}>
             Análise automatizada de otimização de conversão — identifica gargalos e sugere ações com impacto estimado no CPL.
           </p>
         </div>
@@ -127,8 +127,8 @@ export function TabCRO() {
           disabled={loading || !clientData}
           style={{
             padding: '9px 20px', borderRadius: '9px', flexShrink: 0,
-            background: loading ? 'rgba(240,180,41,0.1)' : 'rgba(240,180,41,0.12)',
-            border: '1px solid rgba(240,180,41,0.3)', color: loading ? 'rgba(240,180,41,0.5)' : '#F0B429',
+            background: loading ? 'rgba(43,91,227,0.1)' : 'rgba(43,91,227,0.12)',
+            border: '1px solid rgba(43,91,227,0.3)', color: loading ? 'rgba(43,91,227,0.5)' : '#2B5BE3',
             fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
             transition: 'all 0.15s',
           }}
@@ -141,10 +141,10 @@ export function TabCRO() {
       {!clientData && (
         <div style={{
           padding: '40px 24px', textAlign: 'center',
-          background: '#111114', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px',
+          background: '#FFFFFF', border: '1px solid #E6E5E0', borderRadius: '12px',
         }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>📊</div>
-          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>
+          <div style={{ fontSize: '14px', color: '#565862' }}>
             Selecione um cliente para rodar a análise CRO.
           </div>
         </div>
@@ -154,13 +154,13 @@ export function TabCRO() {
       {loading && (
         <div style={{
           padding: '40px 24px', textAlign: 'center',
-          background: '#111114', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px',
+          background: '#FFFFFF', border: '1px solid #E6E5E0', borderRadius: '12px',
         }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚙️</div>
-          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '14px', color: '#E6E5E0', marginBottom: '8px' }}>
             Analisando funil de conversão...
           </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
+          <div style={{ fontSize: '12px', color: '#565862' }}>
             {auditCache[clientData?.clientName ?? '']
               ? 'Usando dados reais da auditoria Meta Ads'
               : 'Análise baseada nos dados cadastrados'}
@@ -174,7 +174,7 @@ export function TabCRO() {
           {/* Score card */}
           <div style={{
             display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '20px', alignItems: 'center',
-            background: '#111114', border: '1px solid rgba(255,255,255,0.06)',
+            background: '#FFFFFF', border: '1px solid #E6E5E0',
             borderRadius: '12px', padding: '20px 24px',
           }}>
             {/* Score circle */}
@@ -185,7 +185,7 @@ export function TabCRO() {
               background: `${scoreColor}10`,
             }}>
               <span style={{ fontSize: '22px', fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{cro.score}</span>
-              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>/100</span>
+              <span style={{ fontSize: '10px', color: '#565862' }}>/100</span>
             </div>
 
             {/* Summary */}
@@ -197,12 +197,12 @@ export function TabCRO() {
                 }}>
                   {cro.grade}
                 </span>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+                <span style={{ fontSize: '12px', color: '#E6E5E0' }}>
                   {cro.summary}
                 </span>
               </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-                🎯 Gargalo principal: <span style={{ color: '#F0B429' }}>{cro.bottleneck}</span>
+              <div style={{ fontSize: '12px', color: '#565862' }}>
+                🎯 Gargalo principal: <span style={{ color: '#2B5BE3' }}>{cro.bottleneck}</span>
               </div>
               {source === 'ai' && (
                 <div style={{ fontSize: '10px', color: '#0E9E6E', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
@@ -218,11 +218,11 @@ export function TabCRO() {
                 background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)',
                 borderRadius: '10px',
               }}>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>CPL após otimização</div>
+                <div style={{ fontSize: '10px', color: '#565862', marginBottom: '4px' }}>CPL após otimização</div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: '#0E9E6E' }}>
                   R${cro.estimatedCPLWithOptimization}
                 </div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
+                <div style={{ fontSize: '10px', color: '#565862' }}>
                   vs R${clientData.currentCPL} atual
                 </div>
               </div>
@@ -242,7 +242,7 @@ export function TabCRO() {
                 {cro.quickWins.map((win, i) => (
                   <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: '11px', color: '#0E9E6E', flexShrink: 0, marginTop: '1px' }}>→</span>
-                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.65)' }}>{win}</span>
+                    <span style={{ fontSize: '12px', color: '#565862' }}>{win}</span>
                   </div>
                 ))}
               </div>
@@ -252,7 +252,7 @@ export function TabCRO() {
           {/* Filter */}
           {cro.recommendations.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Filtrar:</span>
+              <span style={{ fontSize: '12px', color: '#565862' }}>Filtrar:</span>
               {(['all', 'urgent', 'high', 'medium', 'low'] as const).map(f => {
                 const count = f === 'all' ? cro.recommendations.length : cro.recommendations.filter(r => r.priority === f).length
                 if (count === 0 && f !== 'all') return null
@@ -262,14 +262,14 @@ export function TabCRO() {
                     fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '6px',
                     cursor: 'pointer', transition: 'all 0.15s',
                     border: filter === f
-                      ? `1px solid ${cfg?.border ?? 'rgba(240,180,41,0.4)'}`
-                      : '1px solid rgba(255,255,255,0.06)',
+                      ? `1px solid ${cfg?.border ?? 'rgba(43,91,227,0.4)'}`
+                      : '1px solid #E6E5E0',
                     background: filter === f
-                      ? (cfg?.bg ?? 'rgba(240,180,41,0.08)')
+                      ? (cfg?.bg ?? 'rgba(43,91,227,0.08)')
                       : 'transparent',
                     color: filter === f
-                      ? (cfg?.color ?? '#F0B429')
-                      : 'rgba(255,255,255,0.35)',
+                      ? (cfg?.color ?? '#2B5BE3')
+                      : '#565862',
                   }}>
                     {f === 'all' ? `Todos (${count})` : `${cfg?.emoji} ${cfg?.label} (${count})`}
                   </button>
@@ -289,7 +289,7 @@ export function TabCRO() {
 
               return (
                 <div key={key} style={{
-                  background: '#111114', border: `1px solid ${isOpen ? cfg.border : 'rgba(255,255,255,0.06)'}`,
+                  background: '#FFFFFF', border: `1px solid ${isOpen ? cfg.border : '#E6E5E0'}`,
                   borderRadius: '10px', overflow: 'hidden',
                   transition: 'border-color 0.15s',
                 }}>
@@ -317,9 +317,9 @@ export function TabCRO() {
                           {cfg.label}
                         </span>
                         <span style={{
-                          fontSize: '10px', color: 'rgba(255,255,255,0.5)',
-                          background: 'rgba(255,255,255,0.04)', borderRadius: '4px', padding: '1px 6px',
-                          border: '1px solid rgba(255,255,255,0.06)',
+                          fontSize: '10px', color: '#565862',
+                          background: '#F1F1EE', borderRadius: '4px', padding: '1px 6px',
+                          border: '1px solid #E6E5E0',
                         }}>
                           {areaCfg.icon} {areaCfg.label}
                         </span>
@@ -340,7 +340,7 @@ export function TabCRO() {
                           {effortCfg.label}
                         </span>
                         <span style={{
-                          fontSize: '10px', color: 'rgba(255,255,255,0.3)',
+                          fontSize: '10px', color: '#565862',
                           padding: '1px 4px',
                         }}>
                           ⏱ {rec.timeframe}
@@ -348,7 +348,7 @@ export function TabCRO() {
                       </div>
                     </div>
                     <span style={{
-                      fontSize: '10px', color: 'rgba(255,255,255,0.3)',
+                      fontSize: '10px', color: '#565862',
                       transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                       transition: 'transform 0.2s', flexShrink: 0,
                     }}>▾</span>
@@ -358,24 +358,24 @@ export function TabCRO() {
                   {isOpen && (
                     <div style={{
                       padding: '0 16px 16px',
-                      borderTop: '1px solid rgba(255,255,255,0.04)',
+                      borderTop: '1px solid #F1F1EE',
                     }}>
                       <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: 700, color: '#FF4D4D', marginBottom: '4px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>PROBLEMA</div>
-                          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>{rec.problem}</div>
+                          <div style={{ fontSize: '12px', color: '#E6E5E0', lineHeight: '1.5' }}>{rec.problem}</div>
                         </div>
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: 700, color: '#0E9E6E', marginBottom: '4px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>SOLUÇÃO</div>
-                          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5' }}>{rec.solution}</div>
+                          <div style={{ fontSize: '12px', color: '#565862', lineHeight: '1.5' }}>{rec.solution}</div>
                         </div>
                         <div style={{
                           padding: '10px 12px',
-                          background: 'rgba(240,180,41,0.05)', border: '1px solid rgba(240,180,41,0.15)',
+                          background: 'rgba(43,91,227,0.05)', border: '1px solid rgba(43,91,227,0.15)',
                           borderRadius: '8px',
                         }}>
-                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#F0B429', marginBottom: '3px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>IMPACTO ESPERADO</div>
-                          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.65)' }}>{rec.expectedImpact}</div>
+                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#2B5BE3', marginBottom: '3px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>IMPACTO ESPERADO</div>
+                          <div style={{ fontSize: '12px', color: '#565862' }}>{rec.expectedImpact}</div>
                         </div>
                       </div>
                     </div>
@@ -386,7 +386,7 @@ export function TabCRO() {
           </div>
 
           {filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
+            <div style={{ textAlign: 'center', padding: '24px', color: '#565862', fontSize: '13px' }}>
               Nenhuma recomendação nesta categoria.
             </div>
           )}

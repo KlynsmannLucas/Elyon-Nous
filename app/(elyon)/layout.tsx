@@ -12,12 +12,16 @@ import { SidebarV2, TopbarV2, NousRail, NousOrb, ToastProvider, type AreaKey } f
 
 const TITLES: Record<AreaKey, string> = {
   hoje: 'Hoje', desempenho: 'Desempenho', diagnostico: 'Diagnóstico', mercado: 'Mercado',
-  plano: 'Plano de Ação', relatorios: 'Relatórios', integracoes: 'Integrações', config: 'Configurações',
+  plano: 'Plano de Ação', relatorios: 'Relatórios',
+  criar: 'Criar campanha', biblioteca: 'Biblioteca', conteudo: 'Conteúdo', abtest: 'Teste A/B', cro: 'Otimização (CRO)',
+  integracoes: 'Integrações', config: 'Configurações',
 }
 const SUBTITLES: Record<AreaKey, string> = {
   hoje: 'Seu resumo diário e próximas ações', desempenho: 'Campanhas, canais, criativos e funil',
   diagnostico: 'Saúde do negócio, gargalos e causas', mercado: 'Concorrência, benchmarks e oportunidades',
   plano: 'Execução priorizada por impacto', relatorios: 'Gere e compartilhe resultados',
+  criar: 'Descreva e o NOUS monta sua campanha', biblioteca: 'Criativos, assets e geração de copy com IA',
+  conteudo: 'Ideias de posts geradas por IA', abtest: 'Compare variações e ache o vencedor', cro: 'Gargalos de conversão e ações com impacto no CPL',
   integracoes: 'Suas fontes de dados conectadas', config: 'Workspace e preferências',
 }
 

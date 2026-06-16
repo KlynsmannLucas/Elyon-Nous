@@ -48,8 +48,8 @@ function detectWinner(test: CreativeTest): 'a' | 'b' | null {
 const CREATIVE_TYPES = ['image', 'video', 'carousel', 'outro'] as const
 const CHANNELS = ['Meta Ads', 'Google Ads'] as const
 
-const inputCls = 'w-full bg-[#0D0D10] border border-[#2A2A30] rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-slate-700 focus:outline-none focus:border-[#F0B429] transition-colors'
-const inputSmCls = 'w-full bg-[#0D0D10] border border-[#2A2A30] rounded-lg px-2.5 py-2 text-white text-xs placeholder:text-slate-700 focus:outline-none focus:border-[#F0B429] transition-colors'
+const inputCls = 'w-full bg-[#0D0D10] border border-[#E6E5E0] rounded-xl px-3 py-2.5 text-ink text-sm placeholder:text-slate-700 focus:outline-none focus:border-[#2B5BE3] transition-colors'
+const inputSmCls = 'w-full bg-[#0D0D10] border border-[#E6E5E0] rounded-lg px-2.5 py-2 text-ink text-xs placeholder:text-slate-700 focus:outline-none focus:border-[#2B5BE3] transition-colors'
 
 // ── Formulário de variante ───────────────────────────────────────────────────
 function VariantForm({ label, variant, onChange }: {
@@ -67,33 +67,33 @@ function VariantForm({ label, variant, onChange }: {
           style={{ background: `${color}20`, color, border: `1px solid ${color}40` }}>
           {label}
         </span>
-        <span className="text-xs font-semibold text-slate-400">Variante {label}</span>
+        <span className="text-xs font-semibold text-ink-2">Variante {label}</span>
       </div>
 
       <div>
-        <label className="text-[10px] text-slate-600 uppercase tracking-wider block mb-1">Headline / Título</label>
+        <label className="text-[10px] text-ink-2 uppercase tracking-wider block mb-1">Headline / Título</label>
         <input className={inputSmCls} placeholder="Ex: Transforme seu sorriso em 1 visita"
           value={variant.headline} onChange={e => u('headline', e.target.value)} />
       </div>
       <div>
-        <label className="text-[10px] text-slate-600 uppercase tracking-wider block mb-1">Hook de abertura</label>
+        <label className="text-[10px] text-ink-2 uppercase tracking-wider block mb-1">Hook de abertura</label>
         <input className={inputSmCls} placeholder="Ex: Você sabia que 87% das pessoas..."
           value={variant.hook} onChange={e => u('hook', e.target.value)} />
       </div>
       <div>
-        <label className="text-[10px] text-slate-600 uppercase tracking-wider block mb-1">Texto principal</label>
+        <label className="text-[10px] text-ink-2 uppercase tracking-wider block mb-1">Texto principal</label>
         <textarea className={inputSmCls} rows={3} style={{ resize: 'none' }}
           placeholder="Corpo do anúncio..."
           value={variant.primaryText} onChange={e => u('primaryText', e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-[10px] text-slate-600 uppercase tracking-wider block mb-1">CTA</label>
+          <label className="text-[10px] text-ink-2 uppercase tracking-wider block mb-1">CTA</label>
           <input className={inputSmCls} placeholder="Ex: Agende agora"
             value={variant.cta} onChange={e => u('cta', e.target.value)} />
         </div>
         <div>
-          <label className="text-[10px] text-slate-600 uppercase tracking-wider block mb-1">Formato</label>
+          <label className="text-[10px] text-ink-2 uppercase tracking-wider block mb-1">Formato</label>
           <select className={inputSmCls} value={variant.creativeType} onChange={e => u('creativeType', e.target.value)}>
             {CREATIVE_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
           </select>
@@ -118,8 +118,8 @@ function VariantMetrics({ label, variant, isWinner, isLoser }: {
   return (
     <div className="rounded-xl p-4 relative"
       style={{
-        background: isWinner ? 'rgba(34,197,94,0.04)' : isLoser ? 'rgba(255,77,77,0.03)' : '#111114',
-        border: isWinner ? '1px solid rgba(34,197,94,0.25)' : isLoser ? '1px solid rgba(255,77,77,0.15)' : '1px solid #2A2A30',
+        background: isWinner ? 'rgba(34,197,94,0.04)' : isLoser ? 'rgba(255,77,77,0.03)' : '#FFFFFF',
+        border: isWinner ? '1px solid rgba(34,197,94,0.25)' : isLoser ? '1px solid rgba(255,77,77,0.15)' : '1px solid #E6E5E0',
       }}>
       {isWinner && (
         <div className="absolute -top-2 left-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
@@ -132,29 +132,29 @@ function VariantMetrics({ label, variant, isWinner, isLoser }: {
           style={{ background: `${color}20`, color, border: `1px solid ${color}40` }}>
           {label}
         </span>
-        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Variante {label}</span>
+        <span className="text-[10px] font-semibold text-ink-2 uppercase tracking-wider">Variante {label}</span>
       </div>
       {variant.headline && (
-        <p className="text-xs font-semibold text-white mb-3 leading-relaxed line-clamp-2">{variant.headline}</p>
+        <p className="text-xs font-semibold text-ink mb-3 leading-relaxed line-clamp-2">{variant.headline}</p>
       )}
       <div className="grid grid-cols-2 gap-2">
         {[
           { label: 'Impressões', value: variant.impressions > 0 ? variant.impressions.toLocaleString('pt-BR') : '—', color: '#8A93A3' },
           { label: 'Cliques', value: variant.clicks > 0 ? variant.clicks.toLocaleString('pt-BR') : '—', color: '#8A93A3' },
-          { label: 'CTR', value: variant.impressions > 0 ? `${ctr.toFixed(2)}%` : '—', color: ctr > 3 ? '#0E9E6E' : ctr > 1 ? '#F0B429' : '#FF4D4D' },
-          { label: 'CPL', value: cpl > 0 ? `R$${cpl}` : '—', color: '#F0B429' },
+          { label: 'CTR', value: variant.impressions > 0 ? `${ctr.toFixed(2)}%` : '—', color: ctr > 3 ? '#0E9E6E' : ctr > 1 ? '#2B5BE3' : '#FF4D4D' },
+          { label: 'CPL', value: cpl > 0 ? `R$${cpl}` : '—', color: '#2B5BE3' },
           { label: 'Conversões', value: variant.conversions > 0 ? String(variant.conversions) : '—', color: '#0E9E6E' },
           { label: 'Conv. Rate', value: variant.clicks > 0 ? `${cvr.toFixed(1)}%` : '—', color: '#2C5FE0' },
         ].map(m => (
-          <div key={m.label} className="bg-[#0A0A0B] rounded-lg p-2 text-center">
+          <div key={m.label} className="bg-[#F4F4F2] rounded-lg p-2 text-center">
             <div className="text-xs font-bold" style={{ color: m.color }}>{m.value}</div>
-            <div className="text-[9px] text-slate-600 mt-0.5">{m.label}</div>
+            <div className="text-[9px] text-ink-2 mt-0.5">{m.label}</div>
           </div>
         ))}
       </div>
       {variant.spend > 0 && (
-        <div className="mt-2 text-center text-[10px] text-slate-600">
-          Gasto: <span className="text-slate-400 font-semibold">R${variant.spend.toLocaleString('pt-BR')}</span>
+        <div className="mt-2 text-center text-[10px] text-ink-2">
+          Gasto: <span className="text-ink-2 font-semibold">R${variant.spend.toLocaleString('pt-BR')}</span>
         </div>
       )}
     </div>
@@ -173,10 +173,10 @@ function MetricsForm({ test, onSave, onClose }: {
   const ub = (k: keyof CreativeVariant, v: any) => setB(x => ({ ...x, [k]: Number(v) || 0 }))
 
   return (
-    <div className="mt-4 p-4 rounded-xl animate-fade-up" style={{ background: '#0D0D10', border: '1px solid #2A2A30' }}>
+    <div className="mt-4 p-4 rounded-xl animate-fade-up" style={{ background: '#0D0D10', border: '1px solid #E6E5E0' }}>
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-semibold text-white">Atualizar Métricas</span>
-        <button onClick={onClose} className="text-slate-600 hover:text-slate-400 text-base">×</button>
+        <span className="text-xs font-semibold text-ink">Atualizar Métricas</span>
+        <button onClick={onClose} className="text-ink-2 hover:text-ink text-base">×</button>
       </div>
       <div className="grid grid-cols-2 gap-4">
         {(['A', 'B'] as const).map((lbl) => {
@@ -194,7 +194,7 @@ function MetricsForm({ test, onSave, onClose }: {
                   { k: 'spend', label: 'Gasto (R$)' },
                 ].map(f => (
                   <div key={f.k}>
-                    <label className="text-[9px] text-slate-600 block mb-0.5">{f.label}</label>
+                    <label className="text-[9px] text-ink-2 block mb-0.5">{f.label}</label>
                     <input type="number" className={inputSmCls}
                       value={(vals as any)[f.k] || ''}
                       onChange={e => upd(f.k as keyof CreativeVariant, e.target.value)} />
@@ -206,8 +206,8 @@ function MetricsForm({ test, onSave, onClose }: {
         })}
       </div>
       <button onClick={() => { onSave(a, b); onClose() }}
-        className="mt-4 w-full py-2 rounded-xl text-xs font-bold text-black"
-        style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}>
+        className="mt-4 w-full py-2 rounded-xl text-xs font-bold text-white"
+        style={{ background: 'linear-gradient(135deg, #2B5BE3, #1E47C4)' }}>
         Salvar métricas
       </button>
     </div>
@@ -271,19 +271,19 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
   }
 
   return (
-    <div className="bg-[#111114] border border-[#2A2A30] rounded-2xl overflow-hidden">
+    <div className="bg-[#FFFFFF] border border-[#E6E5E0] rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 border-b border-[#1E1E24] flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-white text-sm truncate">{test.name}</span>
+            <span className="font-semibold text-ink text-sm truncate">{test.name}</span>
             <span className="text-[10px] px-2 py-0.5 rounded-full font-mono"
-              style={{ background: 'rgba(240,180,41,0.1)', color: '#F0B429', border: '1px solid rgba(240,180,41,0.2)' }}>
+              style={{ background: 'rgba(43,91,227,0.1)', color: '#2B5BE3', border: '1px solid rgba(43,91,227,0.2)' }}>
               {test.channel}
             </span>
             <span className="text-[10px] font-semibold" style={{ color: st.color }}>{st.label}</span>
           </div>
-          <div className="text-[10px] text-slate-600 mt-0.5">
+          <div className="text-[10px] text-ink-2 mt-0.5">
             {new Date(test.createdAt).toLocaleDateString('pt-BR')}
           </div>
         </div>
@@ -292,7 +292,7 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
         <select
           value={test.status}
           onChange={e => updateCreativeTest(test.id, { status: e.target.value as CreativeTest['status'] })}
-          className="text-[10px] bg-[#0D0D10] border border-[#2A2A30] rounded-lg px-2 py-1 text-slate-400 focus:outline-none focus:border-[#F0B429]"
+          className="text-[10px] bg-[#0D0D10] border border-[#E6E5E0] rounded-lg px-2 py-1 text-ink-2 focus:outline-none focus:border-[#2B5BE3]"
         >
           <option value="running">Rodando</option>
           <option value="winner_a">A Venceu</option>
@@ -306,20 +306,20 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
               className="text-[10px] text-red-400 hover:text-red-300 px-2 py-1 rounded-lg border border-red-500/30">
               Confirmar
             </button>
-            <button onClick={() => setConfirmDel(false)} className="text-[10px] text-slate-600 hover:text-slate-400 px-1">×</button>
+            <button onClick={() => setConfirmDel(false)} className="text-[10px] text-ink-2 hover:text-ink px-1">×</button>
           </div>
         ) : (
-          <button onClick={() => setConfirmDel(true)} className="text-slate-700 hover:text-slate-500 text-lg flex-shrink-0">🗑</button>
+          <button onClick={() => setConfirmDel(true)} className="text-slate-700 hover:text-ink text-lg flex-shrink-0">🗑</button>
         )}
       </div>
 
       {/* Variantes */}
       <div className="grid grid-cols-2 gap-px bg-[#1E1E24]">
-        <div className="bg-[#111114] p-4">
+        <div className="bg-[#FFFFFF] p-4">
           <VariantMetrics label="A" variant={test.variantA}
             isWinner={displayWinner === 'a'} isLoser={displayWinner === 'b'} />
         </div>
-        <div className="bg-[#111114] p-4">
+        <div className="bg-[#FFFFFF] p-4">
           <VariantMetrics label="B" variant={test.variantB}
             isWinner={displayWinner === 'b'} isLoser={displayWinner === 'a'} />
         </div>
@@ -351,12 +351,12 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
               const bWins = m.higherBetter ? m.b > m.a : (m.a > 0 && (m.b < m.a || m.b === 0))
               return (
                 <div key={m.label}>
-                  <div className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">{m.label}</div>
+                  <div className="text-[10px] text-ink-2 uppercase tracking-wider mb-2">{m.label}</div>
                   <div className="flex h-1.5 rounded-full overflow-hidden mb-2">
                     <div className="transition-all duration-500"
-                      style={{ width: `${pctA}%`, background: aWins ? '#2C5FE0' : '#2A2A30' }} />
+                      style={{ width: `${pctA}%`, background: aWins ? '#2C5FE0' : '#E6E5E0' }} />
                     <div className="transition-all duration-500"
-                      style={{ width: `${100 - pctA}%`, background: bWins ? '#2C5FE0' : '#2A2A30' }} />
+                      style={{ width: `${100 - pctA}%`, background: bWins ? '#2C5FE0' : '#E6E5E0' }} />
                   </div>
                   <div className="flex justify-between text-[10px]">
                     <span style={{ color: aWins ? '#2C5FE0' : '#475569' }}>{m.fmt(m.a)}</span>
@@ -374,7 +374,7 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
         <button
           onClick={() => setShowMetrics((x) => !x)}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
-          style={{ background: '#16161A', border: '1px solid #2A2A30', color: '#5A6473' }}
+          style={{ background: '#FFFFFF', border: '1px solid #E6E5E0', color: '#5A6473' }}
         >
           📊 Atualizar métricas
         </button>
@@ -382,7 +382,7 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
           onClick={generateVariantB}
           disabled={generating || !clientData}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-40"
-          style={{ background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.25)', color: '#F0B429' }}
+          style={{ background: 'rgba(43,91,227,0.08)', border: '1px solid rgba(43,91,227,0.25)', color: '#2B5BE3' }}
         >
           {generating ? '⏳ Gerando...' : '🤖 Gerar B com IA'}
         </button>
@@ -418,28 +418,28 @@ function CreateForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="bg-[#111114] border border-[#F0B42930] rounded-2xl p-5 mb-6 animate-fade-up">
+    <div className="bg-[#FFFFFF] border border-[#2B5BE330] rounded-2xl p-5 mb-6 animate-fade-up">
       <div className="flex items-center justify-between mb-5">
-        <div className="font-display font-bold text-white text-sm">Novo Teste A/B</div>
-        <button onClick={onClose} className="text-slate-600 hover:text-slate-400 text-lg">×</button>
+        <div className="font-display font-bold text-ink text-sm">Novo Teste A/B</div>
+        <button onClick={onClose} className="text-ink-2 hover:text-ink text-lg">×</button>
       </div>
 
       <div className="space-y-4 mb-5">
         <div>
-          <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Nome do teste *</label>
+          <label className="text-[10px] text-ink-2 uppercase tracking-wider block mb-1.5">Nome do teste *</label>
           <input className={inputCls} placeholder="Ex: Headline emocional vs racional"
             value={name} onChange={e => setName(e.target.value)} autoFocus />
         </div>
         <div>
-          <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Canal</label>
+          <label className="text-[10px] text-ink-2 uppercase tracking-wider block mb-1.5">Canal</label>
           <div className="flex gap-2">
             {CHANNELS.map(c => (
               <button key={c} onClick={() => setChannel(c)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                 style={{
-                  background: channel === c ? 'rgba(240,180,41,0.12)' : '#16161A',
-                  border: channel === c ? '1px solid rgba(240,180,41,0.4)' : '1px solid #2A2A30',
-                  color: channel === c ? '#F0B429' : '#8A93A3',
+                  background: channel === c ? 'rgba(43,91,227,0.12)' : '#FFFFFF',
+                  border: channel === c ? '1px solid rgba(43,91,227,0.4)' : '1px solid #E6E5E0',
+                  color: channel === c ? '#2B5BE3' : '#8A93A3',
                 }}>{c}</button>
             ))}
           </div>
@@ -458,8 +458,8 @@ function CreateForm({ onClose }: { onClose: () => void }) {
       <button
         onClick={handleSave}
         disabled={!canSave}
-        className="w-full py-3 rounded-xl text-sm font-bold text-black disabled:opacity-40 transition-opacity"
-        style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
+        className="w-full py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-opacity"
+        style={{ background: 'linear-gradient(135deg, #2B5BE3, #1E47C4)' }}
       >
         🧪 Criar teste A/B
       </button>
@@ -480,16 +480,16 @@ export function TabABTest({ clientData }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="font-display text-lg font-bold text-white">Testes A/B de Criativos</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Compare copy, hooks e CTAs. Deixe os dados escolherem o vencedor.</p>
+          <h2 className="font-display text-lg font-bold text-ink">Testes A/B de Criativos</h2>
+          <p className="text-xs text-ink-2 mt-0.5">Compare copy, hooks e CTAs. Deixe os dados escolherem o vencedor.</p>
         </div>
         <button
           onClick={() => setCreating((x) => !x)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
           style={{
-            background: creating ? '#111114' : 'linear-gradient(135deg, #F0B429, #FFD166)',
-            color: creating ? '#F0B429' : '#000',
-            border: creating ? '1px solid rgba(240,180,41,0.3)' : 'none',
+            background: creating ? '#FFFFFF' : 'linear-gradient(135deg, #2B5BE3, #1E47C4)',
+            color: creating ? '#2B5BE3' : '#000',
+            border: creating ? '1px solid rgba(43,91,227,0.3)' : 'none',
           }}
         >
           {creating ? '× Cancelar' : '+ Novo Teste'}
@@ -501,14 +501,14 @@ export function TabABTest({ clientData }: Props) {
       {creativeTests.length === 0 && !creating && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="text-5xl mb-4 opacity-30">🧪</div>
-          <h3 className="font-display text-lg font-bold text-white mb-2">Nenhum teste ativo</h3>
-          <p className="text-slate-500 text-sm max-w-xs mb-6">
+          <h3 className="font-display text-lg font-bold text-ink mb-2">Nenhum teste ativo</h3>
+          <p className="text-ink-2 text-sm max-w-xs mb-6">
             Crie seu primeiro teste A/B para descobrir qual criativo performa melhor no seu nicho.
           </p>
           <button
             onClick={() => setCreating(true)}
-            className="px-5 py-2.5 rounded-xl text-sm font-bold text-black"
-            style={{ background: 'linear-gradient(135deg, #F0B429, #FFD166)' }}
+            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+            style={{ background: 'linear-gradient(135deg, #2B5BE3, #1E47C4)' }}
           >
             + Criar primeiro teste
           </button>
@@ -517,14 +517,14 @@ export function TabABTest({ clientData }: Props) {
 
       {active.length > 0 && (
         <div className="space-y-4 mb-6">
-          <div className="text-[10px] text-slate-600 uppercase tracking-wider">Ativos ({active.length})</div>
+          <div className="text-[10px] text-ink-2 uppercase tracking-wider">Ativos ({active.length})</div>
           {active.map(t => <TestCard key={t.id} test={t} clientData={clientData} />)}
         </div>
       )}
 
       {archived.length > 0 && (
         <div className="space-y-4">
-          <div className="text-[10px] text-slate-600 uppercase tracking-wider">Encerrados / Pausados ({archived.length})</div>
+          <div className="text-[10px] text-ink-2 uppercase tracking-wider">Encerrados / Pausados ({archived.length})</div>
           {archived.map(t => <TestCard key={t.id} test={t} clientData={clientData} />)}
         </div>
       )}

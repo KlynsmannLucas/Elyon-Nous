@@ -191,12 +191,12 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
   // ── Renders ──────────────────────────────────────────────────────────────────
   const S: Record<string, React.CSSProperties> = {
     wrap:    { maxWidth: 720, margin: '0 auto', padding: '0 0 40px' },
-    card:    { background: '#111114', border: '1px solid #2A2A30', borderRadius: 16, padding: 28 },
+    card:    { background: '#FFFFFF', border: '1px solid #E6E5E0', borderRadius: 16, padding: 28 },
     label:   { fontSize: 11, fontFamily: 'var(--font-mono)', color: '#8A93A3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6, display: 'block' },
-    input:   { width: '100%', background: '#0C0C12', border: '1px solid #2A2A30', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, outline: 'none', resize: 'vertical' as const, fontFamily: 'inherit' },
+    input:   { width: '100%', background: '#0C0C12', border: '1px solid #E6E5E0', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, outline: 'none', resize: 'vertical' as const, fontFamily: 'inherit' },
     btn:     { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', border: 'none', transition: 'opacity 0.15s' },
     btnPrim: { background: 'linear-gradient(135deg, #1877F2, #0866FF)', color: '#fff' },
-    btnSec:  { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' },
+    btnSec:  { background: '#E6E5E0', border: '1px solid #565862', color: '#fff' },
     row:     { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: '1px solid #1E1E24' },
     rowKey:  { fontSize: 12, color: '#8A93A3', width: 140, flexShrink: 0, paddingTop: 2 },
     rowVal:  { fontSize: 14, color: '#E2E8F0', flex: 1 },
@@ -270,7 +270,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
 
       {/* Campanha */}
       <div style={{ ...S.card, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#F0B429', letterSpacing: '0.1em', marginBottom: 14 }}>CAMPANHA</div>
+        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#2B5BE3', letterSpacing: '0.1em', marginBottom: 14 }}>CAMPANHA</div>
         <div style={S.row}><span style={S.rowKey}>Nome</span><span style={S.rowVal}>{plan.campaign.name}</span></div>
         <div style={S.row}><span style={S.rowKey}>Objetivo</span><span style={S.rowVal}>{OBJECTIVE_LABELS[plan.campaign.objective] || plan.campaign.objective}</span></div>
         <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#5A6473', fontSize: 13 }}>{plan.campaign.reasoning}</span></div>
@@ -322,7 +322,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
 
       {pages.length === 0 && (
         <div style={{ ...S.card, marginBottom: 20, background: 'rgba(245,165,0,0.06)', borderColor: 'rgba(245,165,0,0.2)' }}>
-          <p style={{ color: '#F0B429', fontSize: 13, margin: 0 }}>
+          <p style={{ color: '#2B5BE3', fontSize: 13, margin: 0 }}>
             ⚠️ Nenhuma Página do Facebook encontrada. Verifique se o token tem permissão <code>pages_read_engagement</code> e reconecte o Meta Ads.
           </p>
         </div>
@@ -364,7 +364,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
                   <div style={{ color: '#E2E8F0', fontSize: 13, fontWeight: 600 }}>{info.label}</div>
                   <div style={{ color: '#475569', fontSize: 11, fontFamily: 'var(--font-mono)', marginTop: 2 }}>{e.tool}</div>
                 </div>
-                <div style={{ marginLeft: 'auto', width: 16, height: 16, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#F0B429', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+                <div style={{ marginLeft: 'auto', width: 16, height: 16, border: '2px solid #565862', borderTopColor: '#2B5BE3', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
               </div>
             )
           }
@@ -404,7 +404,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         </p>
 
         {/* IDs criados */}
-        <div style={{ background: '#0C0C12', border: '1px solid #2A2A30', borderRadius: 10, padding: '16px 20px', marginBottom: 24, textAlign: 'left', maxWidth: 400, margin: '0 auto 24px' }}>
+        <div style={{ background: '#0C0C12', border: '1px solid #E6E5E0', borderRadius: 10, padding: '16px 20px', marginBottom: 24, textAlign: 'left', maxWidth: 400, margin: '0 auto 24px' }}>
           {events.filter(e => e.type === 'tool_result' && !e.result?.error).map((e, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 12, color: '#5A6473' }}>
               <span>{TOOL_DONE_LABELS[e.tool || ''] || e.tool}</span>
