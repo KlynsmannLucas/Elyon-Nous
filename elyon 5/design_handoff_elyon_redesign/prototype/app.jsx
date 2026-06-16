@@ -11,6 +11,12 @@ const AREA_META = {
   integracoes: { title: 'Integrações', sub: 'Suas fontes de dados conectadas' },
   config:      { title: 'Configurações', sub: 'Workspace e preferências' },
   planos:      { title: 'Planos', sub: 'Diagnóstico → Acompanhamento → Operação' },
+  criar:       { title: 'Criar campanha', sub: 'Descreva e o NOUS monta sua campanha' },
+  biblioteca:  { title: 'Biblioteca', sub: 'Criativos, assets e geração de copy com IA' },
+  conteudo:    { title: 'Conteúdo', sub: 'Ideias de posts geradas por IA, por plataforma' },
+  abtest:      { title: 'Teste A/B', sub: 'Compare criativos e deixe os dados decidirem' },
+  cro:         { title: 'Otimização (CRO)', sub: 'Gargalos de conversão e ações com impacto no CPL' },
+  financeiro:  { title: 'Financeiro', sub: 'Receita da agência e honorários' },
 };
 
 function App() {
@@ -83,6 +89,12 @@ function App() {
               {area === 'integracoes' && <Integracoes mode={mode} />}
               {area === 'config' && <Config mode={mode} onNav={navigate} />}
               {area === 'planos' && <Planos mode={mode} />}
+              {area === 'criar' && <CriarCampanha mode={mode} onNav={navigate} />}
+              {area === 'biblioteca' && <Biblioteca mode={mode} />}
+              {area === 'conteudo' && <Conteudo mode={mode} />}
+              {area === 'abtest' && <ABTest mode={mode} />}
+              {area === 'cro' && <CRO mode={mode} />}
+              {area === 'financeiro' && <Financeiro mode={mode} />}
             </div>
           </main>
         </div>

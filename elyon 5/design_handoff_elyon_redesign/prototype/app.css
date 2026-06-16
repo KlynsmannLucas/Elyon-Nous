@@ -1,70 +1,81 @@
 @import url('https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* ─────────────────────────────────────────────────────────────────────────
-   ELYON NOUS — Redesign · "Terminal de dados premium" (light, editorial)
-   Sem roxo. Acentos: azul + verde. Tipo: Schibsted Grotesk + JetBrains Mono
+   ELYON NOUS — Redesign "CLARITY" · light editorial command-center
+   Mantém a marca (Schibsted Grotesk + JetBrains Mono · azul + verde),
+   eleva: neutros mais quentes, superfície escura "ink" para ação,
+   raios precisos, sombras difusas, sinais "ao vivo".
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Canvas / surfaces ---------------------------------------------------- */
-  --canvas:      #F4F5F7;   /* app background, cool off-white          */
-  --canvas-2:    #EEF0F3;   /* recessed wells                           */
+  /* Canvas / surfaces — warm-neutral, premium ---------------------------- */
+  --canvas:      #F4F4F2;   /* app background, warm off-white          */
+  --canvas-2:    #ECECE8;   /* recessed wells                           */
   --paper:       #FFFFFF;   /* cards                                    */
-  --paper-2:     #FBFCFD;   /* subtle card variant                      */
+  --paper-2:     #FAFAF8;   /* subtle card variant                      */
+
+  /* Ink surface — dark premium surface for hero / action moments --------- */
+  --ink-surface:   #181A20;
+  --ink-surface-2: #20232B;
+  --ink-line:      #2C2F38;
+  --on-ink:        #F4F5F7;
+  --on-ink-2:      #A6ABB8;
+  --on-ink-3:      #6E7480;
 
   /* Ink / text ----------------------------------------------------------- */
-  --ink:         #161B26;   /* primary text                             */
-  --ink-2:       #5A6473;   /* secondary                                */
-  --ink-3:       #8A93A3;   /* tertiary / captions                      */
-  --ink-4:       #AAB2BF;   /* faint                                    */
+  --ink:         #18191D;   /* primary text                             */
+  --ink-2:       #565862;   /* secondary                                */
+  --ink-3:       #898C97;   /* tertiary / captions                      */
+  --ink-4:       #B0B3BC;   /* faint                                    */
 
   /* Lines ---------------------------------------------------------------- */
-  --line:        #E6E8EC;   /* hairline border                          */
-  --line-2:      #EEF0F3;   /* faint divider                            */
-  --line-strong: #D7DAE0;
+  --line:        #E6E5E0;   /* hairline border                          */
+  --line-2:      #EFEFEB;   /* faint divider                            */
+  --line-strong: #D5D4CD;
 
   /* Accents -------------------------------------------------------------- */
-  --blue:        #2C5FE0;   /* primary action / data                    */
-  --blue-600:    #1E4FD0;
-  --blue-500:    #3B82F6;
-  --blue-soft:   #EAF0FE;   /* tint bg                                   */
-  --blue-line:   #CBDBFB;
+  --blue:        #2B5BE3;   /* primary action / data                    */
+  --blue-600:    #1E47C4;
+  --blue-500:    #5485FF;
+  --blue-soft:   #EBF0FE;   /* tint bg                                   */
+  --blue-line:   #CCDAFB;
 
   --green:       #0E9E6E;   /* positive / growth                        */
   --green-600:   #0B855D;
   --green-500:   #16B981;
-  --green-soft:  #E4F6EE;
-  --green-line:  #BBE7D3;
+  --green-soft:  #E3F6EE;
+  --green-line:  #B7E6D1;
 
   /* Status --------------------------------------------------------------- */
   --red:         #E1483F;
-  --red-soft:    #FCEBEA;
-  --amber:       #E08B0B;
-  --amber-soft:  #FCF1DC;
+  --red-soft:    #FCEBE9;
+  --amber:       #D9870B;
+  --amber-soft:  #FBF0D9;
   --teal:        #0E9CB0;
   --slate:       #64748B;
 
   /* Data-viz categorical (no purple) ------------------------------------ */
-  --dv-1: #2C5FE0;  /* blue   */
+  --dv-1: #2B5BE3;  /* blue   */
   --dv-2: #0E9E6E;  /* green  */
   --dv-3: #0E9CB0;  /* teal   */
-  --dv-4: #E08B0B;  /* amber  */
+  --dv-4: #D9870B;  /* amber  */
   --dv-5: #E1483F;  /* red    */
-  --dv-6: #64748B;  /* slate  */
+  --dv-6: #6E7480;  /* slate  */
 
-  /* Radius --------------------------------------------------------------- */
+  /* Radius — precise, editorial ------------------------------------------ */
   --r-xs: 6px;
-  --r-sm: 9px;
-  --r-md: 13px;
-  --r-lg: 18px;
-  --r-xl: 24px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
   --r-pill: 999px;
 
-  /* Shadow --------------------------------------------------------------- */
-  --sh-1: 0 1px 2px rgba(20,28,46,.04), 0 1px 3px rgba(20,28,46,.05);
-  --sh-2: 0 2px 6px rgba(20,28,46,.05), 0 6px 18px rgba(20,28,46,.06);
-  --sh-3: 0 8px 24px rgba(20,28,46,.10), 0 24px 56px rgba(20,28,46,.10);
-  --sh-pop: 0 12px 40px rgba(20,28,46,.16);
+  /* Shadow — soft, diffuse, low-contrast --------------------------------- */
+  --sh-1: 0 1px 2px rgba(24,25,29,.04), 0 1px 2px rgba(24,25,29,.04);
+  --sh-2: 0 1px 3px rgba(24,25,29,.05), 0 8px 20px -8px rgba(24,25,29,.10);
+  --sh-3: 0 6px 20px -8px rgba(24,25,29,.14), 0 24px 56px -20px rgba(24,25,29,.16);
+  --sh-pop: 0 8px 36px -8px rgba(24,25,29,.20);
+  --sh-ink: 0 8px 28px -10px rgba(24,26,32,.45), 0 2px 8px rgba(24,26,32,.20);
 
   /* Fonts ---------------------------------------------------------------- */
   --sans: "Schibsted Grotesk", system-ui, -apple-system, sans-serif; /* @kind font */
@@ -86,13 +97,13 @@ body {
 
 #root { height: 100vh; overflow: hidden; }
 
-::selection { background: rgba(44,95,224,.16); }
+::selection { background: rgba(43,91,227,.16); }
 
 /* Scrollbars — slim, light ------------------------------------------------ */
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D3D7DE; border: 2px solid var(--canvas); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #BCC2CC; }
+::-webkit-scrollbar-thumb { background: #D2D2CC; border: 2px solid var(--canvas); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #BBBBB4; }
 
 /* Numeric / mono helper --------------------------------------------------- */
 .mono { font-family: var(--mono); font-feature-settings: "tnum" 1; letter-spacing: -.01em; }
@@ -100,11 +111,12 @@ body {
 .eyebrow {
   font-family: var(--mono);
   font-size: 10.5px;
-  letter-spacing: .14em;
+  letter-spacing: .15em;
   text-transform: uppercase;
   color: var(--ink-3);
   font-weight: 500;
 }
+.display { letter-spacing: -.03em; font-weight: 700; }
 
 /* Focus ------------------------------------------------------------------- */
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
@@ -117,17 +129,20 @@ input, textarea { font-family: inherit; }
 @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scaleIn  { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
 @keyframes slideInR { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
-@keyframes pulseDot { 0%,100% { opacity: 1; transform: scale(1);} 50% { opacity:.5; transform: scale(.8);} }
+@keyframes pulseDot { 0%,100% { opacity: 1; transform: scale(1);} 50% { opacity:.45; transform: scale(.78);} }
 @keyframes drawLine { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
 @keyframes shimmer  { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes spin     { to { transform: rotate(360deg); } }
-@keyframes orbPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(44,95,224,.32);} 70% { box-shadow: 0 0 0 12px rgba(44,95,224,0);} }
-@keyframes countUp  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes orbPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(43,91,227,.30);} 70% { box-shadow: 0 0 0 11px rgba(43,91,227,0);} }
+@keyframes countUp  { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+@keyframes liveRing { 0% { transform: scale(.7); opacity: .85; } 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes sheen    { 0% { transform: translateX(-120%); } 60%,100% { transform: translateX(260%); } }
 
 .fade-up   { animation: fadeUp .5s cubic-bezier(.22,1,.36,1) both; }
 .fade-in   { animation: fadeIn .45s ease both; }
 .scale-in  { animation: scaleIn .3s cubic-bezier(.22,1,.36,1) both; }
 .slide-in  { animation: slideInR .4s cubic-bezier(.22,1,.36,1) both; }
+.count-up  { animation: countUp .55s cubic-bezier(.22,1,.36,1) both; }
 .d1 { animation-delay: .05s; } .d2 { animation-delay: .1s; } .d3 { animation-delay: .15s; }
 .d4 { animation-delay: .2s; } .d5 { animation-delay: .25s; } .d6 { animation-delay: .3s; }
 .d7 { animation-delay: .35s; } .d8 { animation-delay: .4s; }
@@ -137,6 +152,18 @@ input, textarea { font-family: inherit; }
 }
 
 .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-500); display: inline-block; animation: pulseDot 2s ease-in-out infinite; }
+
+/* Live indicator — animated ring to signal "data is fresh / streaming" --- */
+.live-dot { position: relative; width: 8px; height: 8px; flex-shrink: 0; }
+.live-dot::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--green-500); }
+.live-dot::after  { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--green-500);
+  animation: liveRing 2.2s cubic-bezier(.4,0,.2,1) infinite; }
+
+/* Sheen sweep for "freshly updated" surfaces ------------------------------ */
+.sheen { position: relative; overflow: hidden; }
+.sheen::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.18), transparent);
+  transform: translateX(-120%); animation: sheen 4.5s ease-in-out infinite; pointer-events: none; }
 
 /* Live status indicator --------------------------------------------------- */
 .glow-ok { box-shadow: 0 0 0 3px var(--green-soft); }
@@ -152,32 +179,32 @@ input, textarea { font-family: inherit; }
 
 /* Responsive layout grids ------------------------------------------------- */
 .auto-kpi   { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-.auto-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); }
-.split        { display: grid; gap: 16px; grid-template-columns: 1fr 1fr;       align-items: start; }
-.split-wide   { display: grid; gap: 16px; grid-template-columns: 1.5fr 1fr;     align-items: start; }
-.split-narrow { display: grid; gap: 16px; grid-template-columns: 1fr 1.35fr;    align-items: start; }
-.cols-3       { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0,1fr)); }
+.auto-cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); }
+.split        { display: grid; gap: 18px; grid-template-columns: 1fr 1fr;       align-items: start; }
+.split-wide   { display: grid; gap: 18px; grid-template-columns: 1.5fr 1fr;     align-items: start; }
+.split-narrow { display: grid; gap: 18px; grid-template-columns: 1fr 1.35fr;    align-items: start; }
+.cols-3       { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0,1fr)); }
 @media (max-width: 920px) {
   .split, .split-wide, .split-narrow { grid-template-columns: 1fr; }
   .cols-3 { grid-template-columns: 1fr; }
 }
 
 /* Topbar responsive: drop secondary controls when tight ------------------- */
-@media (max-width: 1120px) { .tb-md { display: none !important; } }
+@media (max-width: 1200px) { .tb-md { display: none !important; } }
 
 /* NOUS overlay drawer (narrow viewports) ---------------------------------- */
 .nous-backdrop {
-  position: fixed; inset: 0; z-index: 190; background: rgba(20,28,46,.28);
+  position: fixed; inset: 0; z-index: 190; background: rgba(24,25,29,.30);
   backdrop-filter: blur(2px); animation: fadeIn .2s ease both;
 }
 .nous-overlay {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 195;
-  box-shadow: -12px 0 48px rgba(20,28,46,.18);
+  box-shadow: -16px 0 56px rgba(24,25,29,.20);
   animation: slideInR .28s cubic-bezier(.22,1,.36,1) both;
 }
 
 /* Skeleton ---------------------------------------------------------------- */
 .skeleton {
-  background: linear-gradient(90deg, #EEF0F3 25%, #F6F7F9 50%, #EEF0F3 75%);
+  background: linear-gradient(90deg, #EEEEEA 25%, #F6F6F3 50%, #EEEEEA 75%);
   background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px;
 }

@@ -32,6 +32,9 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const setGlobalPeriod = useAppStore(s => s.setGlobalPeriod)
   const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
   const auditCache = useAppStore(s => s.auditCache)
+  const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta Ads', google: 'Google Ads' }
+  const syncPlatforms = Array.from(new Set(connectedAccounts.map(a => PLATFORM_LABEL[a.platform] || a.platform)))
   // Modo compartilhado com o app (persistido no store): pro↔avançado, simple↔simplificado
   const dashboardMode = useAppStore(s => s.dashboardMode)
   const setDashboardMode = useAppStore(s => s.setDashboardMode)
@@ -133,6 +136,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
             onOpenNous={() => setNousOpen(true)}
             notifications={notifications}
             onNavigate={(a) => router.push(`/${a}`)}
+            syncPlatforms={syncPlatforms}
           />
           <main className="flex-1 overflow-y-auto bg-canvas">
           <div className="mx-auto" style={{ maxWidth: 1240 }}>{children}</div>

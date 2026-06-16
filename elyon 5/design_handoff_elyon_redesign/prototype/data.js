@@ -340,6 +340,120 @@
         features: ['Até 15 clientes', 'Regras de alerta', 'Histórico de aprendizado', 'Inteligência contínua por cliente', 'Múltiplas contas por plataforma', 'Acesso à API'] },
     ],
 
+    // ── Estúdio: Biblioteca de assets ──────────────────────────────────
+    assetTypes: [
+      { k: 'logo',      label: 'Logo',     color: 'var(--dv-1)' },
+      { k: 'product',   label: 'Produto',  color: 'var(--dv-3)' },
+      { k: 'lifestyle', label: 'Lifestyle',color: 'var(--dv-2)' },
+      { k: 'banner',    label: 'Banner',   color: 'var(--dv-4)' },
+      { k: 'other',     label: 'Outros',   color: 'var(--dv-6)' },
+    ],
+    assets: [
+      { id: 1, type: 'logo',      name: 'Logo Aurora · primária',      size: 48,  date: '12 jun', tag: 'real' },
+      { id: 2, type: 'logo',      name: 'Logo Aurora · monocromática',  size: 36,  date: '12 jun', tag: 'real' },
+      { id: 3, type: 'product',   name: 'Cartão crédito · frente',       size: 420, date: '11 jun', tag: 'real' },
+      { id: 4, type: 'product',   name: 'App mockup · dashboard',        size: 680, date: '10 jun', tag: 'real' },
+      { id: 5, type: 'lifestyle', name: 'Cliente sorrindo · escritório', size: 1240,date: '09 jun', tag: 'real' },
+      { id: 6, type: 'lifestyle', name: 'Família · planejamento',        size: 1100,date: '09 jun', tag: 'real' },
+      { id: 7, type: 'banner',    name: 'Criativo Meta · oferta 0%',     size: 520, date: '08 jun', tag: 'real', fatigue: 'fadiga' },
+      { id: 8, type: 'banner',    name: 'Criativo TikTok · UGC',         size: 640, date: '08 jun', tag: 'real', fatigue: 'saudável' },
+      { id: 9, type: 'other',     name: 'Tabela de juros · PDF',         size: 92,  date: '05 jun', tag: 'real' },
+    ],
+    // Variantes de copy geradas pelo NOUS (mock)
+    copyVariants: [
+      { angle: 'Urgência', headline: 'Crédito aprovado em minutos — sem burocracia', primary: 'Precisa de crédito agora? A Aurora analisa seu perfil em minutos e libera com as menores taxas do mercado. Simule sem compromisso.', cta: 'Simular agora' },
+      { angle: 'Prova social', headline: 'Mais de 50 mil clientes já organizaram as contas', primary: 'Junte-se a quem saiu do vermelho com a Aurora. Crédito consciente, parcelas que cabem no bolso e zero letra miúda.', cta: 'Quero começar' },
+      { angle: 'Benefício claro', headline: 'Taxas a partir de 1,9% ao mês', primary: 'Compare e comprove: crédito pessoal Aurora com taxa transparente, sem tarifa escondida e aprovação 100% online.', cta: 'Ver minha taxa' },
+    ],
+    // Análise visual com IA (CreativeVisionPanel)
+    creativeVision: {
+      analyzed: 8,
+      findings: [
+        { tone: 'good', text: 'Criativos com rosto humano têm CTR 38% maior na sua conta.' },
+        { tone: 'warn', text: '2 banners usam texto acima de 20% da área — risco de menor entrega na Meta.' },
+        { tone: 'blue', text: 'Paleta azul/verde reforça confiança — alinhada ao nicho de crédito.' },
+      ],
+    },
+
+    // ── Estúdio: Criar campanha com IA (plano gerado) ──────────────────
+    campaignBuilder: {
+      examples: [
+        'Quero gerar leads de crédito pessoal em SP com R$ 150/dia',
+        'Campanha de remarketing para quem abandonou a simulação',
+        'Reconhecimento de marca para o novo cartão, público 25-45',
+      ],
+      plan: {
+        campaign: { name: 'Crédito Pessoal · Leads · SP', objective: 'Geração de Leads', status: 'Pausada (revisar antes de publicar)',
+          reasoning: 'Objetivo de Leads é o melhor para captar simulações com formulário nativo, reduzindo atrito e CPL.' },
+        adset: { name: 'LAL 1% Compradores · SP', budget: 150, optimization: 'Leads', age: '25–45', genders: 'Todos', geo: 'São Paulo (capital + RMSP)',
+          reasoning: 'Lookalike de compradores tende a render o menor CPL; SP concentra 38% da sua receita histórica.' },
+        creative: { headline: 'Crédito aprovado em minutos', primary: 'Simule seu crédito pessoal com as menores taxas e sem burocracia. Resposta na hora, 100% online.', description: 'Aurora Capital · crédito consciente', cta: 'Simular agora', url: 'auroracapital.com.br/credito' },
+      },
+      pages: ['Aurora Capital (oficial)', 'Aurora Crédito'],
+      steps: [
+        { k: 'campaign', label: 'Criando campanha', done: 'Campanha criada' },
+        { k: 'adset',    label: 'Configurando público e orçamento', done: 'Público e orçamento configurados' },
+        { k: 'creative', label: 'Montando criativo', done: 'Criativo montado' },
+        { k: 'ad',       label: 'Publicando anúncio', done: 'Anúncio publicado' },
+      ],
+    },
+
+    // ── Estúdio: Teste A/B ─────────────────────────────────────────────
+    abTests: [
+      { id: 2, name: 'Vídeo UGC vs. estático', channel: 'Meta Ads', status: 'winner_a', date: '10 jun',
+        a: { headline: 'A virada que faltava nas suas contas', hook: 'Depoimento real de cliente', format: 'video', cta: 'Simular agora', impressions: 24100, clicks: 1042, conv: 96, spend: 6800 },
+        b: { headline: 'Organize suas finanças hoje', hook: '', format: 'image', cta: 'Saiba mais', impressions: 22300, clicks: 489, conv: 34, spend: 6500 } },
+      { id: 1, name: 'Headline emocional vs. racional', channel: 'Meta Ads', status: 'running', date: '12 jun',
+        a: { headline: 'Saia do vermelho ainda este mês', hook: 'Você merece dormir tranquilo', format: 'image', cta: 'Quero começar', impressions: 18420, clicks: 642, conv: 48, spend: 5400 },
+        b: { headline: 'Crédito com taxa a partir de 1,9% a.m.', hook: 'Compare e comprove', format: 'image', cta: 'Ver minha taxa', impressions: 17980, clicks: 518, conv: 31, spend: 5260 } },
+      { id: 3, name: 'CTA "Simular" vs. "Contratar"', channel: 'Google Ads', status: 'paused', date: '06 jun',
+        a: { headline: 'Crédito pessoal rápido', hook: '', format: 'image', cta: 'Simular agora', impressions: 0, clicks: 0, conv: 0, spend: 0 },
+        b: { headline: 'Crédito pessoal rápido', hook: '', format: 'image', cta: 'Contratar', impressions: 0, clicks: 0, conv: 0, spend: 0 } },
+    ],
+
+    // ── Estúdio: CRO (otimização de conversão) ─────────────────────────
+    cro: {
+      score: 64, grade: 'C+', summary: 'Boa aquisição, mas a conversão de fundo de funil derruba o CPL.',
+      bottleneck: 'Landing do Produto A converte 20% abaixo do ideal',
+      cplCurrent: 38, cplOptimized: 29,
+      quickWins: [
+        'Adicionar prova social acima da dobra na landing do Produto A',
+        'Reduzir o formulário de 7 para 4 campos',
+        'Negativar 14 termos genéricos no Google Search',
+      ],
+      recs: [
+        { priority: 'urgent', area: 'landing_page', title: 'Reescrever a landing do Produto A', problem: 'Conversão 20% abaixo do benchmark; a headline não comunica a oferta em 5s e o formulário é longo.', solution: 'Nova headline orientada a benefício, prova social acima da dobra e formulário curto (4 campos).', impact: 'CPL pode cair de R$ 38 para ~R$ 30.', cpl: 21, effort: 'médio', time: '3–5 dias' },
+        { priority: 'high', area: 'funnel', title: 'Nutrir leads no meio do funil', problem: '59,6% dos leads não avançam para qualificados — falta nutrição.', solution: 'Sequência de WhatsApp/e-mail de 3 toques com oferta progressiva.', impact: '+R$ 48,7 mil em 30 dias.', cpl: 12, effort: 'médio', time: '1 semana' },
+        { priority: 'high', area: 'creative', title: 'Renovar 3 criativos em fadiga', problem: 'CTR caindo há 3 dias e frequência acima de 7.', solution: 'Subir 3 variações UGC e pausar os saturados.', impact: 'CTR +0,4 p.p. e queda de CPA.', cpl: 8, effort: 'baixo', time: '2 dias' },
+        { priority: 'medium', area: 'bid', title: 'Ajustar lances no Google Search', problem: 'Termos genéricos consomem verba sem converter.', solution: 'Negativar 14 termos e migrar para CPA-alvo.', impact: '−9% no CPA médio.', cpl: 9, effort: 'baixo', time: '1 dia' },
+        { priority: 'low', area: 'audience', title: 'Testar Lookalike 1% de leads', problem: 'O topo de funil depende de poucos públicos.', solution: 'Criar público LAL 1% a partir dos leads qualificados.', impact: 'Nova fonte de volume.', cpl: 0, effort: 'baixo', time: '2 dias' },
+      ],
+    },
+
+    // ── Estúdio: Conteúdo ──────────────────────────────────────────────
+    contentPlatforms: [
+      { k: 'instagram', label: 'Instagram', color: '#E1306C' }, { k: 'tiktok', label: 'TikTok', color: '#0E9CB0' },
+      { k: 'facebook', label: 'Facebook', color: '#1877F2' }, { k: 'linkedin', label: 'LinkedIn', color: '#0A66C2' },
+      { k: 'youtube', label: 'YouTube', color: '#E1483F' }, { k: 'email', label: 'E-mail', color: 'var(--blue)' },
+    ],
+    contentThemes: ['Transformação de cliente real', 'Bastidores do negócio', 'Mito vs. Verdade', 'Dica rápida e prática', 'Prova social', 'Oferta com urgência', 'Educativo: "Você sabia que…"', 'Objeção mais comum respondida'],
+    contentPosts: [
+      { tipo: 'Educativo', gancho: 'Você sabia que 7 em cada 10 brasileiros pagam juros sem precisar?', estrutura: 'Hook (dado) → erro comum → como evitar → CTA', legenda: 'A maioria das pessoas aceita a primeira taxa que aparece — e paga caro por isso.\n\nNa Aurora você compara em minutos e descobre se está pagando juros a mais. Sem compromisso, 100% online.', cta: 'Simule sua taxa no link da bio', hashtags: ['credito', 'financas', 'educacaofinanceira', 'dinheiro'] },
+      { tipo: 'Prova social', gancho: '"Saí de 4 dívidas para 1 parcela que cabe no bolso."', estrutura: 'Depoimento → antes/depois → como fez → CTA', legenda: 'A Marina chegou com 4 dívidas em bancos diferentes. Em 1 simulação, organizou tudo em uma só parcela — e ainda sobrou no fim do mês.\n\nSua história pode ser a próxima.', cta: 'Quero organizar minhas contas', hashtags: ['depoimento', 'credito', 'aurora', 'financas'] },
+      { tipo: 'Oferta', gancho: 'Taxa a partir de 1,9% ao mês — só esta semana.', estrutura: 'Oferta → urgência → prova → CTA', legenda: 'Condição especial de junho: crédito pessoal Aurora com taxa a partir de 1,9% a.m., aprovação na hora e sem tarifa escondida.\n\nVagas limitadas para esta semana.', cta: 'Aproveitar agora', hashtags: ['oferta', 'credito', 'taxabaixa', 'aurora'] },
+    ],
+
+    // ── Estúdio: Financeiro (agência) ──────────────────────────────────
+    finance: {
+      mrrSeries: [{ l: 'Jan', v: 5200 }, { l: 'Fev', v: 5900 }, { l: 'Mar', v: 6400 }, { l: 'Abr', v: 7100 }, { l: 'Mai', v: 7600 }, { l: 'Jun', v: 8240 }],
+      clients: [
+        { name: 'Aurora Capital', niche: 'Crédito & Fintech', budget: 124560, feeType: 'percent', fee: 8, active: true },
+        { name: 'NovaLar Imóveis', niche: 'Imóveis', budget: 86000, feeType: 'percent', fee: 10, active: true },
+        { name: 'Vitalis Saúde', niche: 'Saúde', budget: 54000, feeType: 'fixed', fee: 2200, active: true },
+        { name: 'EduMais', niche: 'Educação', budget: 21440, feeType: 'percent', fee: 12, active: false },
+      ],
+    },
+
     nav: [
       { k: 'hoje',       label: 'Hoje',        icon: 'home',   group: 'main' },
       { k: 'desempenho', label: 'Desempenho',  icon: 'chart',  group: 'main' },
@@ -347,6 +461,12 @@
       { k: 'mercado',    label: 'Mercado',     icon: 'globe',  group: 'main' },
       { k: 'plano',      label: 'Plano de Ação',icon: 'check', group: 'main', badge: 5 },
       { k: 'relatorios', label: 'Relatórios',  icon: 'doc',    group: 'main' },
+      { k: 'criar',      label: 'Criar campanha', icon: 'rocket', group: 'studio', badge: 'IA' },
+      { k: 'biblioteca', label: 'Biblioteca',  icon: 'image',  group: 'studio' },
+      { k: 'conteudo',   label: 'Conteúdo',    icon: 'megaphone', group: 'studio' },
+      { k: 'abtest',     label: 'Teste A/B',   icon: 'scale',  group: 'studio' },
+      { k: 'cro',        label: 'Otimização (CRO)', icon: 'target', group: 'studio' },
+      { k: 'financeiro', label: 'Financeiro',  icon: 'money',  group: 'sys' },
       { k: 'integracoes',label: 'Integrações', icon: 'plug',   group: 'sys' },
       { k: 'config',     label: 'Configurações',icon: 'gear',  group: 'sys' },
     ],

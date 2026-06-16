@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, HBar, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, HBar, NousOrb, CHART_COLORS } from '@/components/dashboard/v2'
 import { deriveMaturity } from '@/lib/maturity'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 
@@ -132,6 +132,15 @@ export default function HojePage() {
   ]) : []
   const goalFmt = (v: number, f: 'brl' | 'int' | 'x') => f === 'brl' ? brl(v) : f === 'x' ? `${v}x` : int(v)
 
+  // Headline do briefing + ganhos rápidos (soma do impacto das ações pendentes).
+  const firstName = key ? key.split(' ')[0] : ''
+  const headline = ev?.scoreDelta && ev.scoreDelta > 0
+    ? `${greeting()}, ${firstName}. Sua operação subiu ${ev.scoreDelta} pontos.`
+    : rm ? `${greeting()}, ${firstName}. Aqui está o resumo de hoje.`
+    : `${greeting()}, ${firstName}. Vamos começar.`
+  const parseImpact = (s: any) => { const n = Number(String(s || '').replace(/[^\d]/g, '')); return Number.isFinite(n) ? n : 0 }
+  const quickGain = (pendingActionsCache[key] || []).filter((a: any) => a.status === 'pendente').reduce((t: number, a: any) => t + parseImpact(a.impact), 0)
+
   const changes: { text: string; sub: string; tone: 'good' | 'bad' | 'warn'; icon: 'up' | 'down' | 'flag' }[] = []
   if (pro) {
     if (ev?.scoreDelta) changes.push({ text: `Score ${ev.scoreDelta > 0 ? 'subiu' : 'caiu'} ${Math.abs(ev.scoreDelta)} pts`, sub: 'vs última auditoria', tone: ev.scoreDelta > 0 ? 'good' : 'bad', icon: ev.scoreDelta > 0 ? 'up' : 'down' })
@@ -154,38 +163,59 @@ export default function HojePage() {
         )}
       </header>
 
-      {/* Briefing Hero */}
-      <section className="mb-4 animate-fade-up">
-        <Card padding="none" className="overflow-hidden">
-          <div className="flex items-start gap-[18px] p-5" style={{ background: 'linear-gradient(110deg, var(--blue-soft) 0%, transparent 42%, var(--green-soft) 100%)' }}>
-            <span className="w-12 h-12 rounded-full bg-gradient-to-br from-blue to-teal flex items-center justify-center shrink-0 animate-pulse-dot"><span className="text-white text-xl">◎</span></span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-blue-600">Briefing do NOUS · hoje</span>
-                <SourceBadge source={rm ? 'real' : 'benchmark'} />
-              </div>
-              <p className="text-sm text-ink-2 leading-relaxed max-w-[720px]">{briefing}</p>
-              <div className="flex flex-wrap gap-2.5 mt-4">
-                <Button onClick={() => (window.location.href = '/plano')}>Ver meu plano de hoje</Button>
-                <Button variant="ghost" onClick={() => (window.location.href = '/diagnostico')}>{rm ? 'Perguntar ao NOUS' : 'Rodar Análise Profunda'}</Button>
-              </div>
+      {/* Briefing Hero — command center escuro (CLARITY) */}
+      <section className="mb-4 animate-fade-up sheen rounded-lg overflow-hidden" style={{ boxShadow: 'var(--sh-ink)', border: '1px solid var(--ink-line)', background: 'radial-gradient(135% 130% at 6% -10%, rgba(43,91,227,.34), transparent 46%), radial-gradient(120% 130% at 102% 120%, rgba(14,156,176,.20), transparent 52%), var(--ink-surface)' }}>
+        <div className="flex items-start gap-[22px] flex-wrap" style={{ padding: '24px 26px' }}>
+          <NousOrb size={50} />
+          <div className="flex-1" style={{ minWidth: 280 }}>
+            <div className="flex items-center gap-2.5 mb-2.5 flex-wrap">
+              <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] font-medium" style={{ color: 'var(--blue-500)' }}>Briefing do NOUS</span>
+              <span className="text-[10.5px] font-mono tracking-[0.12em]" style={{ color: 'var(--on-ink-3)' }}>{today().toUpperCase()}</span>
+              <span className="inline-flex items-center gap-1.5"><span className="live-dot" /><span className="text-[10px] font-mono tracking-[0.06em]" style={{ color: 'var(--green-500)' }}>ATUALIZADO AGORA</span></span>
+            </div>
+            <div className="font-bold leading-[1.22]" style={{ fontSize: pro ? 21 : 24, letterSpacing: '-0.025em', color: 'var(--on-ink)' }}>{headline}</div>
+            <p className="text-sm leading-relaxed mt-3 max-w-[680px]" style={{ color: 'var(--on-ink-2)' }}>{briefing}</p>
+            <div className="flex flex-wrap gap-2.5 mt-[18px]">
+              <Button onClick={() => (window.location.href = '/plano')}>Ver meu plano de hoje</Button>
+              <button onClick={() => (window.location.href = rm ? '/diagnostico' : '/diagnostico')}
+                className="inline-flex items-center gap-1.5 px-[15px] py-[9px] text-[13.5px] font-semibold rounded-sm transition-colors"
+                style={{ background: 'rgba(255,255,255,.06)', color: 'var(--on-ink)', border: '1px solid var(--ink-line)' }}>
+                <Icon name="sparkle2" size={15} /> {rm ? 'Perguntar ao NOUS' : 'Rodar Análise Profunda'}
+              </button>
             </div>
           </div>
-          {pro && changes.length > 0 && (
-            <div className="flex gap-2.5 p-[14px_20px] px-5 py-3.5 border-t border-line bg-paper-2 flex-wrap">
-              {changes.map((c, i) => {
-                const col = c.tone === 'good' ? { c: '#0E9E6E', bg: '#E4F6EE' } : c.tone === 'bad' ? { c: '#E1483F', bg: '#FCEBEA' } : { c: '#E08B0B', bg: '#FCF1DC' }
-                return (
-                  <div key={i} className="flex items-center gap-2.5 px-3 py-2.5 bg-paper border border-line rounded-sm flex-1 min-w-[160px]">
-                    <span className="w-[30px] h-[30px] rounded-lg shrink-0 flex items-center justify-center" style={{ background: col.bg, color: col.c }}><Icon name={c.icon === 'up' ? 'rocket' : c.icon === 'down' ? 'pulse' : 'flag'} size={16} /></span>
-                    <div className="min-w-0"><div className="text-[12.5px] font-semibold text-ink truncate">{c.text}</div><div className="text-[11px] text-ink-3">{c.sub}</div></div>
-                  </div>
-                )
-              })}
+          {/* Ganhos rápidos — dado virando ação em R$ */}
+          {quickGain > 0 && (
+            <div className="flex flex-col gap-1" style={{ minWidth: 188, flex: '0 1 220px', alignSelf: 'stretch', padding: '15px 16px', borderRadius: 'var(--r-md)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--ink-line)' }}>
+              <span className="text-[10.5px] font-mono uppercase tracking-[0.14em]" style={{ color: 'var(--on-ink-3)' }}>Ganhos rápidos</span>
+              <span className="font-mono font-bold count-up whitespace-nowrap" style={{ fontSize: 25, letterSpacing: '-0.03em', color: 'var(--green-500)' }}>+{brl(quickGain)}</span>
+              <span className="text-[11.5px] leading-snug" style={{ color: 'var(--on-ink-2)' }}>esperando sua aprovação no plano de hoje</span>
+              <button onClick={() => (window.location.href = '/plano')} className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[12.5px] font-semibold rounded-sm transition-colors"
+                style={{ border: '1px solid var(--ink-line)', background: 'rgba(255,255,255,.06)', color: 'var(--on-ink)' }}>
+                Revisar e aprovar <Icon name="arrowR" size={14} />
+              </button>
             </div>
           )}
-        </Card>
+        </div>
       </section>
+
+      {/* O que mudou desde ontem — texto completo (CLARITY) */}
+      {pro && changes.length > 0 && (
+        <section className="mb-4 animate-fade-up">
+          <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3 mb-2">O que mudou desde ontem</div>
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            {changes.map((c, i) => {
+              const col = c.tone === 'good' ? { c: '#0E9E6E', bg: '#E3F6EE' } : c.tone === 'bad' ? { c: '#E1483F', bg: '#FCEBE9' } : { c: '#D9870B', bg: '#FBF0D9' }
+              return (
+                <div key={i} className="flex items-center gap-2.5 px-3.5 py-3 bg-paper border border-line rounded-md">
+                  <span className="w-[30px] h-[30px] rounded-lg shrink-0 flex items-center justify-center" style={{ background: col.bg, color: col.c }}><Icon name={c.icon === 'up' ? 'arrowUp' : c.icon === 'down' ? 'arrowDown' : 'flag'} size={16} w={2.2} /></span>
+                  <div className="min-w-0"><div className="text-[12.5px] font-semibold text-ink">{c.text}</div><div className="text-[11px] text-ink-3">{c.sub}</div></div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* KPIs */}
       {kpis.length > 0 && (

@@ -12,48 +12,89 @@ function Streak({ days }) {
   );
 }
 
-/* What-changed chip */
+/* What-changed card (texto completo, sem corte) */
 function ChangeChip({ c }) {
   const tone = c.tone === 'good' ? TONES.good : c.tone === 'bad' ? TONES.bad : TONES.warn;
   const icon = c.icon === 'up' ? 'arrowUp' : c.icon === 'down' ? 'arrowDown' : 'flag';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', background: 'var(--paper)',
-      border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', flex: 1, minWidth: 0 }}>
-      <span style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: tone.bg, color: tone.c, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '13px 14px', background: 'var(--paper)',
+      border: '1px solid var(--line)', borderRadius: 'var(--r-md)', flex: '1 1 240px', minWidth: 0, transition: 'border-color .18s, box-shadow .18s' }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--blue-line)'; e.currentTarget.style.boxShadow = 'var(--sh-2)'; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.boxShadow = 'none'; }}>
+      <span style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, background: tone.bg, color: tone.c, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Icon name={icon} size={16} w={2.2} />
       </span>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.text}</div>
-        <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{c.sub}</div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.35 }}>{c.text}</div>
+        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.4 }}>{c.sub}</div>
       </div>
     </div>
   );
 }
 
-/* Briefing hero */
+/* Briefing hero — superfície escura "command center": insight → ação */
 function BriefingHero({ mode, onNav }) {
   const D = window.DATA;
+  const ghostBtn = {
+    display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 15px', fontSize: 13.5, fontWeight: 600,
+    borderRadius: 'var(--r-sm)', background: 'rgba(255,255,255,.06)', color: 'var(--on-ink)',
+    border: '1px solid var(--ink-line)', transition: 'background .15s',
+  };
   return (
-    <Card pad={0} style={{ overflow: 'hidden' }} className="fade-up">
-      <div style={{ display: 'flex', gap: 18, padding: 20, alignItems: 'flex-start',
-        background: 'linear-gradient(110deg, var(--blue-soft) 0%, transparent 42%, var(--green-soft) 100%)' }}>
-        <NousOrb size={48} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="eyebrow" style={{ color: 'var(--blue-600)', marginBottom: 5 }}>Briefing do NOUS · hoje, 12 jun</div>
-          <div style={{ fontSize: mode === 'simple' ? 21 : 18, fontWeight: 700, letterSpacing: '-.02em', lineHeight: 1.25 }}>{D.briefing.headline}</div>
-          <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6, margin: '9px 0 0', maxWidth: 720 }}>{D.briefing.summary}</p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
+    <div className="fade-up sheen" style={{ borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: 'var(--sh-ink)', border: '1px solid var(--ink-line)',
+      background: 'radial-gradient(135% 130% at 6% -10%, rgba(43,91,227,.34), transparent 46%), radial-gradient(120% 130% at 102% 120%, rgba(14,156,176,.20), transparent 52%), var(--ink-surface)' }}>
+      <div style={{ padding: '24px 26px', display: 'flex', gap: 22, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <NousOrb size={50} />
+        <div style={{ flex: 1, minWidth: 280 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 9, flexWrap: 'wrap' }}>
+            <span className="eyebrow" style={{ color: 'var(--blue-500)' }}>Briefing do NOUS</span>
+            <span className="mono" style={{ fontSize: 10.5, letterSpacing: '.12em', color: 'var(--on-ink-3)' }}>HOJE, 12 JUN</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 2 }}>
+              <span className="live-dot" /><span className="mono" style={{ fontSize: 10, color: 'var(--green-500)', letterSpacing: '.06em' }}>ATUALIZADO AGORA</span>
+            </span>
+          </div>
+          <div style={{ fontSize: mode === 'simple' ? 24 : 21, fontWeight: 700, letterSpacing: '-.025em', lineHeight: 1.22, color: 'var(--on-ink)' }}>{D.briefing.headline}</div>
+          <p style={{ fontSize: 14, color: 'var(--on-ink-2)', lineHeight: 1.65, margin: '11px 0 0', maxWidth: 680 }}>{D.briefing.summary}</p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
             <Button variant="primary" icon="bolt" onClick={() => onNav('plano')}>Ver meu plano de hoje</Button>
-            <Button variant="ghost" icon="sparkle2" onClick={() => onNav('__nous__')}>Perguntar ao NOUS</Button>
+            <button style={ghostBtn} onClick={() => onNav('__nous__')}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.12)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.06)'}>
+              <Icon name="sparkle2" size={15} /> Perguntar ao NOUS
+            </button>
           </div>
         </div>
-      </div>
-      {mode === 'pro' && (
-        <div style={{ display: 'flex', gap: 10, padding: '14px 20px', borderTop: '1px solid var(--line)', background: 'var(--paper-2)' }}>
-          {D.briefing.changed.map((c, i) => <ChangeChip key={i} c={c} />)}
+        {/* Destaque: ganho rápido — dados virando ação em R$ */}
+        <div style={{ minWidth: 188, flex: '0 1 220px', alignSelf: 'stretch', padding: '15px 16px', borderRadius: 'var(--r-md)',
+          background: 'rgba(255,255,255,.05)', border: '1px solid var(--ink-line)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span className="eyebrow" style={{ color: 'var(--on-ink-3)' }}>Ganhos rápidos</span>
+          <span className="mono count-up" style={{ fontSize: 25, fontWeight: 700, letterSpacing: '-.03em', color: 'var(--green-500)', whiteSpace: 'nowrap' }}>+R$ 41,8 mil</span>
+          <span style={{ fontSize: 11.5, color: 'var(--on-ink-2)', lineHeight: 1.4 }}>esperando sua aprovação no plano de hoje</span>
+          <button onClick={() => onNav('plano')} style={{ marginTop: 'auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '8px 12px', borderRadius: 'var(--r-sm)', border: '1px solid var(--ink-line)', background: 'rgba(255,255,255,.06)', color: 'var(--on-ink)',
+            fontSize: 12.5, fontWeight: 600, transition: 'background .15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.12)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.06)'}>
+            Revisar e aprovar <Icon name="arrowR" size={14} />
+          </button>
         </div>
-      )}
-    </Card>
+      </div>
+    </div>
+  );
+}
+
+/* O que mudou — linha de cards (texto completo, sem corte) */
+function WhatChanged() {
+  const D = window.DATA;
+  return (
+    <div>
+      <div className="eyebrow" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span className="live-dot" /> O que mudou desde ontem
+      </div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {D.briefing.changed.map((c, i) => <ChangeChip key={i} c={c} />)}
+      </div>
+    </div>
   );
 }
 
@@ -208,6 +249,8 @@ function Hoje({ mode, onNav }) {
 
       <BriefingHero mode={mode} onNav={onNav} />
 
+      {mode === 'pro' && <WhatChanged />}
+
       {/* KPI strip */}
       <div className="auto-kpi">
         {(mode === 'simple' ? D.kpis.slice(0, 4) : D.kpis).map((k, i) => (
@@ -230,4 +273,4 @@ function Hoje({ mode, onNav }) {
   );
 }
 
-Object.assign(window, { Hoje, BriefingHero, HealthCard, PriorityActions, Goals, AlertsList, Streak });
+Object.assign(window, { Hoje, BriefingHero, WhatChanged, HealthCard, PriorityActions, Goals, AlertsList, Streak });

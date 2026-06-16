@@ -4,63 +4,74 @@
 
 /* ── Design tokens: Redesign v2 — "terminal de dados premium" (light) ───── */
 :root {
-  /* Colors — surfaces */
-  --canvas: #F4F5F7;
-  --canvas-2: #EEF0F3;
+  /* Colors — surfaces (CLARITY: warm-neutral, premium) */
+  --canvas: #F4F4F2;
+  --canvas-2: #ECECE8;
   --paper: #FFFFFF;
-  --paper-2: #FBFCFD;
+  --paper-2: #FAFAF8;
+
+  /* Ink surface — dark premium surface for hero / action moments */
+  --ink-surface: #181A20;
+  --ink-surface-2: #20232B;
+  --ink-line: #2C2F38;
+  --on-ink: #F4F5F7;
+  --on-ink-2: #A6ABB8;
+  --on-ink-3: #6E7480;
 
   /* Colors — text (ink) */
-  --ink: #161B26;
-  --ink-2: #5A6473;
-  --ink-3: #8A93A3;
-  --ink-4: #AAB2BF;
+  --ink: #18191D;
+  --ink-2: #565862;
+  --ink-3: #898C97;
+  --ink-4: #B0B3BC;
 
   /* Colors — lines */
-  --line: #E6E8EC;
-  --line-2: #EEF0F3;
-  --line-strong: #D7DAE0;
+  --line: #E6E5E0;
+  --line-2: #EFEFEB;
+  --line-strong: #D5D4CD;
 
   /* Colors — accents (NO PURPLE) */
-  --blue: #2C5FE0;
-  --blue-600: #1E4FD0;
-  --blue-soft: #EAF0FE;
-  --blue-line: #CBDBFB;
+  --blue: #2B5BE3;
+  --blue-600: #1E47C4;
+  --blue-500: #5485FF;
+  --blue-soft: #EBF0FE;
+  --blue-line: #CCDAFB;
 
   --green: #0E9E6E;
   --green-600: #0B855D;
-  --green-soft: #E4F6EE;
-  --green-line: #BBE7D3;
+  --green-500: #16B981;
+  --green-soft: #E3F6EE;
+  --green-line: #B7E6D1;
 
   /* Colors — status */
   --red: #E1483F;
-  --red-soft: #FCEBEA;
-  --amber: #E08B0B;
-  --amber-soft: #FCF1DC;
+  --red-soft: #FCEBE9;
+  --amber: #D9870B;
+  --amber-soft: #FBF0D9;
   --teal: #0E9CB0;
   --slate: #64748B;
 
   /* Colors — data viz categorical palette */
-  --dv-1: #2C5FE0;
+  --dv-1: #2B5BE3;
   --dv-2: #0E9E6E;
   --dv-3: #0E9CB0;
-  --dv-4: #E08B0B;
+  --dv-4: #D9870B;
   --dv-5: #E1483F;
-  --dv-6: #64748B;
+  --dv-6: #6E7480;
 
-  /* Border-radius scale */
+  /* Border-radius scale (CLARITY: precise, editorial) */
   --r-xs: 6px;
-  --r-sm: 9px;
-  --r-md: 13px;
-  --r-lg: 18px;
-  --r-xl: 24px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
   --r-pill: 999px;
 
-  /* Shadows */
-  --sh-1: 0 1px 2px rgba(20,28,46,.04), 0 1px 3px rgba(20,28,46,.05);
-  --sh-2: 0 2px 6px rgba(20,28,46,.05), 0 6px 18px rgba(20,28,46,.06);
-  --sh-3: 0 8px 24px rgba(20,28,46,.10), 0 24px 56px rgba(20,28,46,.10);
-  --sh-pop: 0 12px 40px rgba(20,28,46,.16);
+  /* Shadows (CLARITY: soft, diffuse, low-contrast) */
+  --sh-1: 0 1px 2px rgba(24,25,29,.04), 0 1px 2px rgba(24,25,29,.04);
+  --sh-2: 0 1px 3px rgba(24,25,29,.05), 0 8px 20px -8px rgba(24,25,29,.10);
+  --sh-3: 0 6px 20px -8px rgba(24,25,29,.14), 0 24px 56px -20px rgba(24,25,29,.16);
+  --sh-pop: 0 8px 36px -8px rgba(24,25,29,.20);
+  --sh-ink: 0 8px 28px -10px rgba(24,26,32,.45), 0 2px 8px rgba(24,26,32,.20);
 
   /* Typography scale */
   --t-10: 10.5px;
@@ -140,6 +151,10 @@ body {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
 }
+/* CLARITY — live ring, sheen sweep, count-up */
+@keyframes countUp  { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+@keyframes liveRing { 0% { transform: scale(.7); opacity: .85; } 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes sheen    { 0% { transform: translateX(-120%); } 60%,100% { transform: translateX(260%); } }
 
 /* ── Animation classes ───────────────────────────────────────────────────── */
 .animate-fade-in    { animation: fadeIn      0.4s ease forwards; }
@@ -147,6 +162,16 @@ body {
 .animate-slide-in   { animation: slideInLeft 0.22s ease forwards; }
 .animate-scale-in   { animation: scaleIn     0.18s ease forwards; }
 .animate-spin-slow  { animation: spinSlow    2s linear infinite; }
+.count-up           { animation: countUp     0.55s cubic-bezier(.22,1,.36,1) both; }
+
+/* Live status dot (pulsing ring) */
+.live-dot { position: relative; width: 8px; height: 8px; flex-shrink: 0; display: inline-block; }
+.live-dot::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--green-500); }
+.live-dot::after  { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--green-500); animation: liveRing 2.2s cubic-bezier(.4,0,.2,1) infinite; }
+
+/* Sheen sweep for "freshly updated" surfaces */
+.sheen { position: relative; overflow: hidden; }
+.sheen::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.18), transparent); transform: translateX(-120%); animation: sheen 4.5s ease-in-out infinite; pointer-events: none; }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {

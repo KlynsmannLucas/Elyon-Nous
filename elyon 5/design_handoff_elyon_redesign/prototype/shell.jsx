@@ -164,35 +164,110 @@ function Sidebar({ active, onChange, collapsed, onToggle, onLogout }) {
   );
 }
 
+/* ── Live sync indicator (mostra que o produto está atualizado, ao vivo) ── */
+function LiveSync() {
+  const [open, setOpen] = useStateS(false);
+  return (
+    <div className="tb-md" style={{ position: 'relative' }}
+      onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 11px 6px 10px',
+        background: 'var(--green-soft)', border: '1px solid var(--green-line)', borderRadius: 'var(--r-pill)', cursor: 'default' }}>
+        <span className="live-dot" />
+        <span className="mono" style={{ fontSize: 11, fontWeight: 600, color: 'var(--green-600)', letterSpacing: '.02em' }}>AO VIVO</span>
+      </div>
+      {open && (
+        <div className="scale-in" style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 232, background: 'var(--paper)',
+          border: '1px solid var(--line)', borderRadius: 'var(--r-md)', boxShadow: 'var(--sh-pop)', padding: 12, zIndex: 150 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span className="live-dot" /><span style={{ fontSize: 12.5, fontWeight: 700 }}>Dados sincronizados</span>
+          </div>
+          {[['Meta Ads', 'há 3 min'], ['Google Ads', 'há 5 min'], ['TikTok · LinkedIn', 'há 8 min'], ['GA4', 'há 4 min']].map(([k, t]) => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', fontSize: 12 }}>
+              <span style={{ color: 'var(--ink-2)' }}>{k}</span>
+              <span className="mono" style={{ fontSize: 10.5, color: 'var(--ink-3)' }}>{t}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Mode switch — deixa claro QUANDO usar cada modo ────────────────────── */
+const MODE_INFO = {
+  simple: { label: 'Simplificada', icon: 'eye', tag: 'Visão essencial',
+    desc: 'Só os números e ações que importam, em linguagem direta. Ideal para o dia a dia e para apresentar a clientes.' },
+  pro:    { label: 'Avançada', icon: 'grid', tag: 'Operação completa',
+    desc: 'Todos os indicadores, tabelas, drill-down e ferramentas de IA. Ideal para analisar e otimizar a fundo.' },
+};
+function ModeSwitch({ mode, onMode }) {
+  const [help, setHelp] = useStateS(false);
+  const cur = MODE_INFO[mode] || MODE_INFO.pro;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <div style={{ display: 'inline-flex', background: 'var(--canvas-2)', borderRadius: 'var(--r-sm)', padding: 3, gap: 2, border: '1px solid var(--line)' }}>
+        {['simple', 'pro'].map(k => {
+          const active = k === mode, m = MODE_INFO[k];
+          return (
+            <button key={k} onClick={() => onMode(k)} title={m.label}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '6px 13px', fontSize: 13, fontWeight: active ? 600 : 500,
+                border: 'none', borderRadius: 6, background: active ? 'var(--paper)' : 'transparent', color: active ? 'var(--ink)' : 'var(--ink-3)',
+                boxShadow: active ? 'var(--sh-1)' : 'none', transition: 'all .15s' }}>
+              <Icon name={m.icon} size={15} w={active ? 2 : 1.7} />{m.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="tb-md" style={{ position: 'relative', display: 'flex' }}
+        onMouseEnter={() => setHelp(true)} onMouseLeave={() => setHelp(false)}>
+        <button aria-label="O que muda entre os modos" style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid var(--line)',
+          background: 'var(--paper)', color: 'var(--ink-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 }}>?</button>
+        {help && (
+          <div className="scale-in" style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 320, background: 'var(--paper)',
+            border: '1px solid var(--line)', borderRadius: 'var(--r-md)', boxShadow: 'var(--sh-pop)', padding: 14, zIndex: 160 }}>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>Como ver seus dados</div>
+            {['simple', 'pro'].map(k => {
+              const m = MODE_INFO[k], active = k === mode;
+              return (
+                <div key={k} style={{ display: 'flex', gap: 10, padding: '9px 0', borderTop: k === 'pro' ? '1px solid var(--line-2)' : 'none' }}>
+                  <span style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: active ? 'var(--blue-soft)' : 'var(--canvas-2)',
+                    color: active ? 'var(--blue-600)' : 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={m.icon} size={16} /></span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700 }}>{m.label}</span>
+                      {active && <Badge tone="blue" style={{ padding: '1px 7px', fontSize: 9.5 }}>Atual</Badge>}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 2 }}>{m.desc}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Topbar ─────────────────────────────────────────────────────────────── */
 function Topbar({ mode, onMode, title, sub, onAskNous, period, onPeriod, onNav }) {
   const D = window.DATA;
-  const Pill = ({ icon, children, onClick }) => (
-    <button onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 12px', fontSize: 13,
-      background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', color: 'var(--ink-2)', fontWeight: 500, transition: 'all .15s' }}
-      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--line-strong)'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--line)'}>
-      {icon && <Icon name={icon} size={15} />}{children}
-    </button>
-  );
   return (
-    <header style={{ height: 64, flexShrink: 0, borderBottom: '1px solid var(--line)', background: 'rgba(255,255,255,.8)',
-      backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', position: 'sticky', top: 0, zIndex: 50 }}>
+    <header style={{ height: 66, flexShrink: 0, borderBottom: '1px solid var(--line)', background: 'rgba(255,255,255,.82)',
+      backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', gap: 14, padding: '0 24px', position: 'sticky', top: 0, zIndex: 50 }}>
       {/* Title */}
       <div style={{ minWidth: 0, flex: '0 1 auto', overflow: 'hidden' }}>
-        <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+        <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-.025em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
         {sub && <div style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
       </div>
 
       <div style={{ flex: 1, minWidth: 12 }} />
 
       {/* Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <LiveSync />
         <span className="tb-md"><PeriodPicker value={period} onChange={onPeriod} /></span>
-        <Segmented options={[{ value: 'simple', label: 'Simplificada' }, { value: 'pro', label: 'Avançada' }]} value={mode} onChange={onMode} />
-        <div className="tb-md" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)' }} title="Canais conectados">
-          {D.channels.map((c, i) => <span key={i} style={{ marginLeft: i ? -4 : 0 }}><ChannelMark name={c} size={20} /></span>)}
-        </div>
+        <ModeSwitch mode={mode} onMode={onMode} />
         <span className="tb-md"><CreditsPill /></span>
         <Button variant="dark" size="md" icon="sparkle2" onClick={onAskNous}>Perguntar ao NOUS</Button>
         <NotificationsPanel onNav={onNav} />
@@ -201,4 +276,4 @@ function Topbar({ mode, onMode, title, sub, onAskNous, period, onPeriod, onNav }
   );
 }
 
-Object.assign(window, { Logo, Sidebar, Topbar, ClientSwitcher, CreditsPill });
+Object.assign(window, { Logo, Sidebar, Topbar, ClientSwitcher, CreditsPill, ModeSwitch, LiveSync });

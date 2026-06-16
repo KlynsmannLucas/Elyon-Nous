@@ -4,6 +4,7 @@
 
 import { useEffect, useState, ReactNode } from 'react'
 import { Icon } from './Icon'
+import { Badge } from './Badge'
 import { DropdownMenu, MenuItem, MenuLabel, MenuDivider } from './Overlay'
 
 export interface NotifItem { id: string; tone: 'good' | 'bad' | 'warn' | 'blue'; title: string; body?: string; when?: string; area?: string; read?: boolean }
@@ -25,6 +26,71 @@ interface TopbarProps {
   onOpenNous?: () => void
   notifications?: NotifItem[]
   onNavigate?: (area: string) => void
+  syncPlatforms?: string[]
+}
+
+const MODE_INFO: Record<'simplified' | 'advanced', { label: string; icon: string; desc: string }> = {
+  simplified: { label: 'Simplificada', icon: 'eye', desc: 'Só os números e ações que importam, em linguagem direta. Ideal para o dia a dia e para apresentar a clientes.' },
+  advanced: { label: 'Avançada', icon: 'grid', desc: 'Todos os indicadores, tabelas, drill-down e ferramentas de IA. Ideal para analisar e otimizar a fundo.' },
+}
+
+function ModeSwitch({ mode, onModeChange }: { mode: 'simplified' | 'advanced'; onModeChange: (m: 'simplified' | 'advanced') => void }) {
+  const [help, setHelp] = useState(false)
+  return (
+    <div className="flex items-center gap-2">
+      <div className="inline-flex bg-canvas-2 rounded-sm p-[3px] gap-0.5 border border-line">
+        {(['simplified', 'advanced'] as const).map(k => {
+          const active = k === mode; const m = MODE_INFO[k]
+          return (
+            <button key={k} onClick={() => onModeChange(k)} title={m.label}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] rounded-[6px] transition-all ${active ? 'bg-paper text-ink font-semibold shadow-sm' : 'text-ink-3 font-medium hover:text-ink'}`}>
+              <Icon name={m.icon} size={15} w={active ? 2 : 1.7} />{m.label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="tb-md relative flex" onMouseEnter={() => setHelp(true)} onMouseLeave={() => setHelp(false)}>
+        <button aria-label="O que muda entre os modos" className="w-[30px] h-[30px] rounded-full border border-line bg-paper text-ink-3 flex items-center justify-center text-[13px] font-bold hover:border-line-strong">?</button>
+        {help && (
+          <div className="scale-in absolute top-[calc(100%+8px)] right-0 w-[320px] bg-paper border border-line rounded-md shadow-pop p-3.5 z-[160]">
+            <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3 mb-2.5">Como ver seus dados</div>
+            {(['simplified', 'advanced'] as const).map(k => {
+              const m = MODE_INFO[k]; const active = k === mode
+              return (
+                <div key={k} className={`flex gap-2.5 py-2.5 ${k === 'advanced' ? 'border-t border-line-2' : ''}`}>
+                  <span className={`w-[30px] h-[30px] rounded-lg shrink-0 flex items-center justify-center ${active ? 'bg-blue-soft text-blue-600' : 'bg-canvas-2 text-ink-2'}`}><Icon name={m.icon} size={16} /></span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2"><span className="text-[13px] font-bold text-ink">{m.label}</span>{active && <Badge tone="blue">Atual</Badge>}</div>
+                    <div className="text-xs text-ink-2 leading-snug mt-0.5">{m.desc}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function LiveSync({ platforms }: { platforms?: string[] }) {
+  const [open, setOpen] = useState(false)
+  const list = (platforms && platforms.length ? platforms : ['Meta Ads', 'Google Ads'])
+  return (
+    <div className="tb-md relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <div className="inline-flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-pill bg-green-soft border border-green-line cursor-default">
+        <span className="live-dot" /><span className="font-mono text-[11px] font-semibold text-green-600 tracking-wide">AO VIVO</span>
+      </div>
+      {open && (
+        <div className="scale-in absolute top-[calc(100%+8px)] right-0 w-[232px] bg-paper border border-line rounded-md shadow-pop p-3 z-[150]">
+          <div className="flex items-center gap-2 mb-2"><span className="live-dot" /><span className="text-[12.5px] font-bold text-ink">Dados sincronizados</span></div>
+          {list.map((p) => (
+            <div key={p} className="flex justify-between items-center py-1 text-xs"><span className="text-ink-2">{p}</span><span className="font-mono text-[10.5px] text-ink-3">conectado</span></div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 const PERIODS: { label: string; preset: string }[] = [
@@ -60,6 +126,7 @@ export function TopbarV2({
   onOpenNous,
   notifications = [],
   onNavigate,
+  syncPlatforms,
 }: TopbarProps) {
   const [showClientMenu, setShowClientMenu] = useState(false)
   const [notifs, setNotifs] = useState<NotifItem[]>(notifications)
@@ -80,29 +147,11 @@ export function TopbarV2({
       <div className="flex-1 min-w-3" />
 
 
-      {/* Mode Toggle */}
-      <div className="flex bg-canvas-2 rounded-sm p-0.5">
-        <button
-          onClick={() => onModeChange('simplified')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
-            mode === 'simplified' 
-              ? 'bg-paper text-ink shadow-sm' 
-              : 'text-ink-3 hover:text-ink'
-          }`}
-        >
-          Simplificada
-        </button>
-        <button
-          onClick={() => onModeChange('advanced')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${
-            mode === 'advanced' 
-              ? 'bg-paper text-ink shadow-sm' 
-              : 'text-ink-3 hover:text-ink'
-          }`}
-        >
-          Avançada
-        </button>
-      </div>
+      {/* AO VIVO */}
+      <LiveSync platforms={syncPlatforms} />
+
+      {/* Mode Switch (ícones + ajuda) */}
+      <ModeSwitch mode={mode} onModeChange={onModeChange} />
 
       {/* Period Selector (funcional) */}
       <div className="tb-md">

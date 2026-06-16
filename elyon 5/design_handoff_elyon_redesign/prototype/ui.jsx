@@ -91,10 +91,10 @@ function Card({ children, pad = 18, style, className, onClick, hover, ...rest })
       style={{
         background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 'var(--r-md)',
         padding: pad, boxShadow: h ? 'var(--sh-2)' : 'var(--sh-1)',
-        transition: 'box-shadow .18s, border-color .18s, transform .18s',
-        transform: h ? 'translateY(-1px)' : 'none',
+        transition: 'box-shadow .2s cubic-bezier(.22,1,.36,1), border-color .2s, transform .2s cubic-bezier(.22,1,.36,1)',
+        transform: h ? 'translateY(-2px)' : 'none',
         cursor: onClick ? 'pointer' : 'default',
-        borderColor: h ? 'var(--line-strong)' : 'var(--line)',
+        borderColor: h ? 'var(--blue-line)' : 'var(--line)',
         ...style,
       }} {...rest}>
       {children}
@@ -106,10 +106,10 @@ function Card({ children, pad = 18, style, className, onClick, hover, ...rest })
 function SectionHead({ title, sub, right, icon }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        {icon && <span style={{ color: 'var(--ink-3)' }}><Icon name={icon} size={17} /></span>}
+      <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
+        {icon && <span style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'var(--canvas-2)', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} size={16} /></span>}
         <div>
-          <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em' }}>{title}</div>
+          <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.015em' }}>{title}</div>
           {sub && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 1 }}>{sub}</div>}
         </div>
       </div>
@@ -164,7 +164,7 @@ function Button({ children, variant = 'primary', size = 'md', icon, iconRight, o
     green:    { bg: h ? 'var(--green-600)' : 'var(--green)', c: '#fff', b: 'transparent', sh: '0 1px 2px rgba(14,158,110,.3)' },
     soft:     { bg: h ? '#DEE9FD' : 'var(--blue-soft)', c: 'var(--blue-600)', b: 'var(--blue-line)', sh: 'none' },
     ghost:    { bg: h ? 'var(--canvas-2)' : 'transparent', c: 'var(--ink-2)', b: 'var(--line)', sh: 'none' },
-    dark:     { bg: h ? '#0E1320' : '#161B26', c: '#fff', b: 'transparent', sh: 'var(--sh-1)' },
+    dark:     { bg: h ? '#20232B' : 'var(--ink-surface)', c: '#fff', b: 'transparent', sh: 'var(--sh-2)' },
   };
   const v = variants[variant] || variants.primary;
   return (
@@ -221,13 +221,13 @@ function Segmented({ options, value, onChange, size = 'md' }) {
 function StatCard({ kpi, compact }) {
   const color = kpi.good === 'up' ? 'var(--green)' : kpi.good === 'down' ? 'var(--blue)' : 'var(--slate)';
   return (
-    <Card pad={compact ? 14 : 16} hover style={{ display: 'flex', flexDirection: 'column', gap: compact ? 6 : 9 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Card pad={compact ? 15 : 17} hover style={{ display: 'flex', flexDirection: 'column', gap: compact ? 9 : 11 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <span className="eyebrow">{kpi.label}</span>
         <Delta v={kpi.delta} good={kpi.good} />
       </div>
-      <div className="mono" style={{ fontSize: compact ? 22 : 26, fontWeight: 700, letterSpacing: '-.02em' }}>{kpi.value}</div>
-      <div style={{ marginTop: 'auto' }}><Sparkline data={kpi.spark} color={color} h={compact ? 26 : 32} /></div>
+      <div className="mono count-up" style={{ fontSize: compact ? 24 : 28, fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1, whiteSpace: 'nowrap' }}>{kpi.value}</div>
+      <div style={{ marginTop: 'auto', opacity: .92 }}><Sparkline data={kpi.spark} color={color} h={compact ? 24 : 30} strokeW={1.6} /></div>
     </Card>
   );
 }

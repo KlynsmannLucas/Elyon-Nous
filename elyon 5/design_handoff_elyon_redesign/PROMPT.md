@@ -6,6 +6,41 @@
 
 ---
 
+## ⚡ ATUALIZAÇÃO — Redesign "CLARITY" (jun/2026, versão MAIS RECENTE)
+
+> O `prototype/` deste pacote já está nesta versão nova. Onde houver conflito, **vale o que
+> está no `prototype/app.css` (`:root`) e nos `.jsx`** — esta seção resume o que mudou:
+
+1. **Tokens reajustados** (use exatamente os de `prototype/app.css`):
+   - Azul primário **`#2B5BE3`** (era `#2C5FE0`) · azul-500 `#5485FF` · azul-soft `#EBF0FE`.
+   - Âmbar **`#D9870B`** · canvas **quente** `#F4F4F2` (era frio `#F4F5F7`) · linhas `#E6E5E0`.
+   - Raios mais precisos (md=12, sm=8, lg=16) e sombras mais difusas/baixo-contraste.
+2. **Superfície escura "command center"** — novos tokens `--ink-surface #181A20`,
+   `--ink-line #2C2F38`, `--on-ink`/`--on-ink-2`/`--on-ink-3`. Usada com parcimônia: **só
+   no herói do Briefing (tela Hoje)** e momentos de ação. Tudo o mais segue light.
+3. **Briefing do NOUS (Hoje) = herói escuro**: orb + eyebrow azul + selo **"ATUALIZADO
+   AGORA"** (live-dot) + headline branca + resumo + CTAs (primário azul + ghost-on-dark)
+   e um bloco de destaque **"Ganhos rápidos +R$ 41,8 mil → Revisar e aprovar"**
+   (dado virando ação em R$). Ver `screens-hoje.jsx › BriefingHero`.
+4. **Toggle de modo claro** (`shell.jsx › ModeSwitch`): dois botões **com ícone**
+   (Simplificada = olho, Avançada = grade) + botão **"?"** com popover explicando
+   **quando usar cada modo** + toast ao trocar. Resolve "saber quando mudar de modo".
+5. **Indicador "AO VIVO"** (`shell.jsx › LiveSync`): pill verde com `live-dot` na topbar e
+   popover com horário de sync por canal — passa a sensação de produto atualizado em tempo real.
+6. **"O que mudou desde ontem"** (`screens-hoje.jsx › WhatChanged`): linha de cards com
+   **texto completo** (corrige o corte de "ROAS geral subiu…" da versão anterior).
+7. **KPIs e charts refinados**: `StatCard` com label+delta no topo e **número grande** em
+   linha própria (mono, `tabular-nums`, count-up) + sparkline mais sutil (`strokeW≈1.6`).
+   Linhas com traço 2.2 e **apenas o ponto final destacado** (com halo).
+8. **Novas utilities CSS** (em `app.css`): `.live-dot` (anel pulsante), `.sheen` (brilho
+   sutil de "recém-atualizado"), `.count-up` (entrada de números), `@keyframes liveRing/sheen`.
+   Respeite `prefers-reduced-motion`.
+
+> O restante do documento (arquitetura, telas, padrões) continua válido — só atualize os
+> valores de token e adote os 8 itens acima.
+
+---
+
 Você vai **reimplementar o frontend do Elyon Nous** no codebase atual (Next.js + React +
 Tailwind, componentes `.tsx` em `components/dashboard/`), seguindo um redesign de alta
 fidelidade que está em `design_handoff_elyon_redesign/`. **Não mude a stack** (Clerk auth,

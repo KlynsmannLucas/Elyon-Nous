@@ -57,7 +57,8 @@ function Sparkline({ data, color = 'var(--blue)', h = 34, fill = true, strokeW =
           </defs>
           {fill && <path d={`${line} L ${W},${h} L 0,${h} Z`} fill={`url(#${id})`} />}
           <path d={line} fill="none" stroke={c} strokeWidth={strokeW} strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="2.6" fill={c} />
+          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4.2" fill={c} fillOpacity="0.16" />
+          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="2.4" fill={c} />
         </svg>
       )}
     </div>
@@ -106,9 +107,13 @@ function LineChart({ series, labels, h = 240, yFmt = (v) => v, area = false, ani
                     <path d={`${path} L ${x(labels.length - 1)},${y(min)} L ${x(0)},${y(min)} Z`} fill={`url(#${gid})`} />
                   </>
                 )}
-                <path d={path} fill="none" stroke={c} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
+                <path d={path} fill="none" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
                   style={animate ? { strokeDasharray: len, animation: `drawLine 1.1s cubic-bezier(.4,0,.2,1) ${si * 0.12}s both`, '--len': len } : {}} />
-                {pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r="2.8" fill="var(--paper)" stroke={c} strokeWidth="2" />)}
+                {pts.map((p, i) => {
+                  const last = i === pts.length - 1;
+                  if (!last) return null;
+                  return <g key={i}><circle cx={p[0]} cy={p[1]} r="6" fill={c} fillOpacity="0.14" /><circle cx={p[0]} cy={p[1]} r="3.4" fill={c} stroke="var(--paper)" strokeWidth="2" /></g>;
+                })}
               </g>
             );
           })}
