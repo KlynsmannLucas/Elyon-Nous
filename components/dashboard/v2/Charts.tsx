@@ -49,7 +49,8 @@ export function Sparkline({ data, color = CHART_COLORS.green, h = 40, fill = tru
           <path d={area} fill={`url(#sg-${id})`} />
         </>
       )}
-      <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <path d={line} fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <circle cx={coords[coords.length - 1][0]} cy={coords[coords.length - 1][1]} r="4.2" fill={color} fillOpacity="0.16" />
       <circle cx={coords[coords.length - 1][0]} cy={coords[coords.length - 1][1]} r="2.4" fill={color} />
     </svg>
   )
@@ -93,7 +94,7 @@ export function LineChart({ series, labels, height = 240, money = false, yTicks 
               </defs>
               <path d={area} fill={`url(#lg-${id}-${si})`} />
               <path d={line} fill="none" stroke={s.color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-              {s.data.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r="3" fill="#fff" stroke={s.color} strokeWidth="2" />)}
+              {(() => { const li = s.data.length - 1; return <g><circle cx={x(li)} cy={y(s.data[li])} r="6" fill={s.color} fillOpacity="0.14" /><circle cx={x(li)} cy={y(s.data[li])} r="3.4" fill={s.color} stroke="var(--paper)" strokeWidth="2" /></g> })()}
             </g>
           )
         })}

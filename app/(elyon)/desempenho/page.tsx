@@ -361,7 +361,7 @@ export default function DesempenhoPage() {
                   <span className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">{k.label}</span>
                   {k.trend != null && k.trend !== 0 && <Delta value={k.trend} inverse={k.inverse} />}
                 </div>
-                <span className="text-[20px] font-bold font-mono text-ink block" style={{ letterSpacing: '-0.02em' }}>{k.value}</span>
+                <span className="text-[20px] font-bold font-mono text-ink block count-up" style={{ letterSpacing: '-0.02em' }}>{k.value}</span>
                 {k.series && <div className="mt-2"><Sparkline data={k.series} h={26} color={k.up ? CHART_COLORS.green : CHART_COLORS.red} /></div>}
               </Card>
             ))}

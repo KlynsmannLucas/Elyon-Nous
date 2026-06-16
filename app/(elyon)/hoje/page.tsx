@@ -227,7 +227,7 @@ export default function HojePage() {
                   <span className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">{kpi.label}</span>
                   {kpi.trend != null && kpi.trend !== 0 && <Delta value={kpi.trend} inverse={kpi.inverse} />}
                 </div>
-                <span className="text-[20px] font-bold font-mono text-ink block" style={{ letterSpacing: '-0.02em' }}>{kpi.value}</span>
+                <span className="text-[20px] font-bold font-mono text-ink block count-up" style={{ letterSpacing: '-0.02em' }}>{kpi.value}</span>
                 {kpi.series && <div className="mt-2"><Sparkline data={kpi.series} h={28} color={kpi.up ? CHART_COLORS.green : CHART_COLORS.red} /></div>}
               </Card>
             ))}
