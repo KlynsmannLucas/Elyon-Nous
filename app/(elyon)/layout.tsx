@@ -8,11 +8,12 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
-import { SidebarV2, TopbarV2, NousRail, NousOrb, ToastProvider, type AreaKey } from '@/components/dashboard/v2'
+import { SidebarV2, TopbarV2, NousRail, NousOrb, StudioTabs, STUDIO_ROUTES, ToastProvider, type AreaKey } from '@/components/dashboard/v2'
 
 const TITLES: Record<AreaKey, string> = {
   hoje: 'Hoje', desempenho: 'Desempenho', diagnostico: 'Diagnóstico', mercado: 'Mercado',
   plano: 'Plano de Ação', relatorios: 'Relatórios',
+  estudio: 'Estúdio de Criação',
   criar: 'Criar campanha', biblioteca: 'Biblioteca', conteudo: 'Conteúdo', abtest: 'Teste A/B', cro: 'Otimização (CRO)',
   financeiro: 'Financeiro', integracoes: 'Integrações', config: 'Configurações',
 }
@@ -20,6 +21,7 @@ const SUBTITLES: Record<AreaKey, string> = {
   hoje: 'Seu resumo diário e próximas ações', desempenho: 'Campanhas, canais, criativos e funil',
   diagnostico: 'Saúde do negócio, gargalos e causas', mercado: 'Concorrência, benchmarks e oportunidades',
   plano: 'Execução priorizada por impacto', relatorios: 'Gere e compartilhe resultados',
+  estudio: 'Crie, teste e otimize — guiado pelo NOUS',
   criar: 'Descreva e o NOUS monta sua campanha', biblioteca: 'Criativos, assets e geração de copy com IA',
   conteudo: 'Ideias de posts geradas por IA', abtest: 'Compare variações e ache o vencedor', cro: 'Gargalos de conversão e ações com impacto no CPL',
   financeiro: 'Receita da agência e honorários', integracoes: 'Suas fontes de dados conectadas', config: 'Workspace e preferências',
@@ -144,7 +146,12 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
             syncPlatforms={syncPlatforms}
           />
           <main className="flex-1 overflow-y-auto bg-canvas">
-          <div className="mx-auto" style={{ maxWidth: 1240 }}>{children}</div>
+          <div className="mx-auto" style={{ maxWidth: 1240 }}>
+            {STUDIO_ROUTES.includes(activeArea) && (
+              <div className="px-4 md:px-6 pt-5"><StudioTabs /></div>
+            )}
+            {children}
+          </div>
         </main>
         </div>
 

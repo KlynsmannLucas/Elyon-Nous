@@ -7,8 +7,11 @@ import { Icon } from './Icon'
 
 export type AreaKey =
   | 'hoje' | 'desempenho' | 'diagnostico' | 'mercado' | 'plano' | 'relatorios'
-  | 'criar' | 'biblioteca' | 'conteudo' | 'abtest' | 'cro'
+  | 'estudio' | 'criar' | 'biblioteca' | 'conteudo' | 'abtest' | 'cro'
   | 'financeiro' | 'integracoes' | 'config'
+
+// Rotas que vivem sob o hub "Estúdio de Criação" (StudioTabs no topo).
+const STUDIO_SET = new Set(['estudio', 'criar', 'biblioteca', 'conteudo', 'abtest', 'cro'])
 
 const AREAS = {
   hoje:       { label: 'Hoje',         icon: 'home' },
@@ -18,13 +21,8 @@ const AREAS = {
   plano:      { label: 'Plano de Ação', icon: 'check' },
   relatorios: { label: 'Relatórios',   icon: 'doc' },
 }
-const STUDIO_AREAS = {
-  criar:      { label: 'Criar campanha', icon: 'rocket', badge: 'IA' },
-  biblioteca: { label: 'Biblioteca',     icon: 'image' },
-  conteudo:   { label: 'Conteúdo',       icon: 'megaphone' },
-  abtest:     { label: 'Teste A/B',      icon: 'scale' },
-  cro:        { label: 'Otimização (CRO)', icon: 'target' },
-}
+// Grupo "Criação" — agora um único hub (as 5 ferramentas vivem via StudioTabs).
+const STUDIO_HUB = { label: 'Estúdio de Criação', icon: 'spark', badge: 'IA' }
 const SYSTEM_AREAS = {
   financeiro: { label: 'Financeiro',   icon: 'money' },
   integracoes:{ label: 'Integrações',  icon: 'plug' },
@@ -104,8 +102,8 @@ export function SidebarV2({
   activeArea, onChangeArea, collapsed = false, onToggleCollapse,
   clients = [], activeClientId, onClientChange, onNewClient, userName, userPlan, onLogout,
 }: SidebarProps) {
-  const NavBtn = ({ area, item, sys }: { area: string; item: { label: string; icon: string; badge?: string }; sys?: boolean }) => {
-    const isActive = activeArea === area
+  const NavBtn = ({ area, item, sys, active }: { area: string; item: { label: string; icon: string; badge?: string }; sys?: boolean; active?: boolean }) => {
+    const isActive = active ?? activeArea === area
     return (
       <button onClick={() => onChangeArea(area as AreaKey)} title={collapsed ? item.label : undefined}
         className={`w-full flex items-center gap-3 rounded-sm text-left relative transition-all ${collapsed ? 'justify-center py-2.5' : 'px-3 py-2.5'}
@@ -154,7 +152,7 @@ export function SidebarV2({
         <div className="h-px bg-line mx-1 my-3.5" />
         {!collapsed && <div className="px-1 pb-2 text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Criação</div>}
         <div className="space-y-0.5">
-          {(Object.keys(STUDIO_AREAS) as (keyof typeof STUDIO_AREAS)[]).map(area => <NavBtn key={area} area={area} item={STUDIO_AREAS[area]} />)}
+          <NavBtn area="estudio" item={STUDIO_HUB} active={STUDIO_SET.has(activeArea)} />
         </div>
         <div className="h-px bg-line mx-1 my-3.5" />
         {!collapsed && <div className="px-1 pb-2 text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Sistema</div>}
