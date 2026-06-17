@@ -15,6 +15,7 @@ interface TopbarProps {
   mode: 'simplified' | 'advanced'
   onModeChange: (mode: 'simplified' | 'advanced') => void
   period: string
+  showPeriod?: boolean
   onPeriodChange: (period: string) => void
   onSelectPeriod?: (p: { label: string; preset: string }) => void
   clients?: { id: string; name: string }[]
@@ -115,6 +116,7 @@ export function TopbarV2({
   mode,
   onModeChange,
   period,
+  showPeriod = false,
   onPeriodChange,
   onSelectPeriod,
   clients,
@@ -153,7 +155,8 @@ export function TopbarV2({
       {/* Mode Switch (ícones + ajuda) */}
       <ModeSwitch mode={mode} onModeChange={onModeChange} />
 
-      {/* Period Selector (funcional) */}
+      {/* Period Selector — só onde realmente controla os dados (Diagnóstico) */}
+      {showPeriod && (
       <div className="tb-md">
         <DropdownMenu align="left" minWidth={210} trigger={
           <button className="inline-flex items-center gap-1.5 px-3 py-2 bg-paper border border-line rounded-sm text-sm text-ink-2 font-medium hover:border-line-strong transition-colors">
@@ -169,6 +172,7 @@ export function TopbarV2({
           <MenuItem icon="calendar" onClick={() => window.toast?.({ tone: 'blue', title: 'Período personalizado', body: 'Seletor de datas em breve.' })}>Personalizado…</MenuItem>
         </DropdownMenu>
       </div>
+      )}
 
       {/* Multi-Client Selector */}
       {((clients && clients.length > 0) || onNewClient) && (

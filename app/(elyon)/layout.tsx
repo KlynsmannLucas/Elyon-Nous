@@ -129,9 +129,10 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
         <div className="flex-1 flex flex-col min-w-0">
           <TopbarV2
             title={TITLES[activeArea]}
-            subtitle={`${SUBTITLES[activeArea]} · ${globalPeriod.label}`}
+            subtitle={activeArea === 'diagnostico' ? `${SUBTITLES[activeArea]} · ${globalPeriod.label}` : SUBTITLES[activeArea]}
             mode={mode}
             onModeChange={(m) => { setDashboardMode(m === 'advanced' ? 'pro' : 'simple'); if (typeof window !== 'undefined') window.toast?.({ tone: 'blue', title: m === 'advanced' ? 'Modo Avançado' : 'Modo Simplificado' }) }}
+            showPeriod={activeArea === 'diagnostico'}
             period={globalPeriod.label}
             onPeriodChange={() => {}}
             onSelectPeriod={(p) => { setGlobalPeriod(p); if (typeof window !== 'undefined') window.toast?.({ tone: 'blue', title: 'Período atualizado', body: p.label }) }}
