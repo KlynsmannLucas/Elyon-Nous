@@ -135,6 +135,65 @@ function buildFallbackStrategy(data: {
       : `Conta em fase inicial. Os primeiros 30–60 dias são críticos para encontrar o CPL de equilíbrio e identificar os criativos vencedores.`
   })()
 
+  // ── Métricas derivadas para o plano sequenciado e o plano de ação ──────────────
+  const fmt = (n: number) => 'R$' + Math.round(n).toLocaleString('pt-BR')
+  const cvr    = bench.cvr_lead_to_sale
+  const ticket = bench.avg_ticket
+  // CPL-alvo: 15% abaixo do real (respeitando o piso do benchmark); sem dados reais, piso +10%
+  const targetCPL    = realCPL > 0 ? Math.max(bench.cpl_min, Math.round(realCPL * 0.85)) : Math.round(bench.cpl_min * 1.1)
+  const leadsNow     = Math.round(data.budget / (realCPL > 0 ? realCPL : cplAvg))
+  const leadsTarget  = Math.round(data.budget / targetCPL)
+  const extraLeads   = Math.max(0, leadsTarget - leadsNow)
+  const extraRevenue = Math.round(extraLeads * cvr * ticket)            // ganho/mês ao atingir o CPL-alvo
+  const cplOverBench = realCPL > 0 && realCPL > bench.cpl_max
+  const wasteMonthly = Math.round(data.budget * 0.2)                    // ~20% do budget em públicos/criativos ruins
+  const speedRevenue = Math.round(leadsNow * 0.15 * cvr * ticket)       // leads recuperados com follow-up rápido
+  const ch0Budget    = Math.round(data.budget * pcts[0] / 100)
+  const evidenceBase = hasReal
+    ? `CPL real ${fmt(realCPL)} vs benchmark ${fmt(bench.cpl_min)}–${fmt(bench.cpl_max)} · ${realLeads.toLocaleString('pt-BR')} leads, ${fmt(realSpend)} investidos`
+    : `Projeção: ${leadsNow} leads/mês a ${fmt(cplAvg)} com budget de ${fmt(data.budget)} no nicho ${data.niche}`
+
+  // Plano de ação inteligente: cada movimento com impacto em R$, esforço, evidência e dependência
+  const next_moves_detailed = [
+    {
+      move: cplOverBench
+        ? `Pausar imediatamente os grupos com CPL acima de ${fmt(bench.cpl_max)} e realocar o budget para os 3 conjuntos mais eficientes`
+        : `Criar regra de corte automática: pausar qualquer grupo com CPL acima de ${fmt(bench.cpl_max)} por 3 dias seguidos`,
+      impact: `Recupera até ${fmt(wasteMonthly)}/mês hoje gastos em públicos/criativos sem retorno`,
+      effort: 'baixo',
+      evidence: evidenceBase,
+      depends_on: 'Tracking de conversão validado no Events Manager',
+    },
+    {
+      move: `Implementar contato em até 5 minutos após cada conversão (WhatsApp + ligação)`,
+      impact: speedRevenue > 0 ? `Pode recuperar ~${fmt(speedRevenue)}/mês em vendas que hoje esfriam sem follow-up` : 'Pode dobrar a taxa de fechamento dos leads atuais',
+      effort: 'médio',
+      evidence: 'Leads sem resposta em 5 min perdem ~80% da chance de fechamento (benchmark de mercado)',
+      depends_on: 'CRM ou planilha de leads com notificação em tempo real',
+    },
+    {
+      move: `Reduzir o CPL de ${realCPL > 0 ? fmt(realCPL) : fmt(cplAvg)} para ${fmt(targetCPL)} testando 3 criativos (dor / aspiração / prova social)`,
+      impact: extraRevenue > 0 ? `+${extraLeads} leads/mês (~${fmt(extraRevenue)} de receita) com o mesmo budget` : `Mais leads pelo mesmo budget ao baixar o CPL para ${fmt(targetCPL)}`,
+      effort: 'médio',
+      evidence: `CPL-alvo ${fmt(targetCPL)} = 15% abaixo do atual, ainda acima do piso ${fmt(bench.cpl_min)} do nicho`,
+      depends_on: 'Grupos vencedores já identificados (movimento 1)',
+    },
+    {
+      move: `Concentrar ${pcts[0]}% do budget (${fmt(ch0Budget)}) em ${channels[0]} nos primeiros 30 dias antes de diversificar`,
+      impact: `Acelera o aprendizado do algoritmo e estabiliza o CPL mais rápido`,
+      effort: 'baixo',
+      evidence: `${channels[0]} é o canal de maior eficiência projetada para ${data.niche}`,
+      depends_on: 'Budget mínimo por conjunto para sair da fase de aprendizado',
+    },
+    {
+      move: `Estruturar nutrição MOFU (5 mensagens em 7 dias) e alinhamento semanal marketing↔vendas`,
+      impact: `Aumenta a conversão de lead→cliente (hoje ${(cvr * 100).toFixed(0)}%) sem aumentar o budget`,
+      effort: 'alto',
+      evidence: `CVR do nicho ${(cvr * 100).toFixed(0)}% — ganho vem de trabalhar melhor os leads já capturados`,
+      depends_on: 'Volume de leads estável (movimentos 1–3 concluídos)',
+    },
+  ]
+
   return {
     intelligence_score: dynamicScore,
     score_label: scoreLabel,
@@ -308,16 +367,23 @@ function buildFallbackStrategy(data: {
       condition_to_increase: `Aumentar budget total somente após: (1) tracking validado, (2) CPL estável por 7 dias, (3) pelo menos 1 campanha com CPL abaixo de R$${bench?.cpl_min || 'benchmark'}`,
     },
     plan_7_30_90: {
+      // FASE 1 (0–7d) — Fundação: parar perdas e mapear o que funciona
       seven_days: [
-        { objective: 'Corrigir bloqueios críticos de tracking', action: 'Validar todos os eventos de conversão no Events Manager e definir CPL máximo de corte', metric: `100% dos eventos verificados e regra de corte em R$${bench?.cpl_max || 'X'} ativada` },
-        { objective: 'Mapear campanhas vencedoras', action: `Identificar grupos com CPL abaixo de R$${bench?.cpl_min || 'benchmark'} e suspender os acima de R$${bench?.cpl_max || 'benchmark'}`, metric: 'Lista de campanhas elegíveis para escala definida' },
+        { objective: 'Travar o tracking', action: 'Validar 100% dos eventos de conversão no Events Manager e ativar a regra de corte', metric: `Eventos verificados e corte automático em ${fmt(bench.cpl_max)} ativo` },
+        { objective: 'Separar vencedores de perdedores', action: `Listar grupos com CPL abaixo de ${fmt(bench.cpl_min)} (escalar) e pausar os acima de ${fmt(bench.cpl_max)}`, metric: cplOverBench ? `Grupos acima de ${fmt(bench.cpl_max)} pausados — até ${fmt(wasteMonthly)}/mês recuperados` : 'Lista de grupos elegíveis para escala definida' },
+        { objective: 'Acelerar resposta ao lead', action: 'Implementar contato em até 5 min após conversão (WhatsApp + ligação)', metric: 'Tempo médio de 1º contato abaixo de 5 minutos' },
       ],
+      // FASE 2 (8–30d) — Otimização: baixar o CPL e validar criativos
       thirty_days: [
-        { objective: 'Otimizar CPL e testar criativos', action: 'Lançar 3 criativos com ângulos diferentes (dor/aspiração/prova social) e testar lookalike 1%', metric: `CPL médio abaixo de R$${bench ? Math.round((bench.cpl_min + bench.cpl_max) / 2) : 'benchmark'}` },
-        { objective: 'Escalar canais vencedores', action: 'Aumentar budget 15–20% por semana nos grupos validados; criar estrutura de remarketing', metric: 'Volume de leads 20% acima do mês 1 sem aumento de CPL' },
+        { objective: `Baixar o CPL para ${fmt(targetCPL)}`, action: `Testar 3 criativos (dor / aspiração / prova social) e lookalike 1% concentrando ${pcts[0]}% do budget em ${channels[0]}`, metric: extraRevenue > 0 ? `CPL ≤ ${fmt(targetCPL)} → +${extraLeads} leads/mês (~${fmt(extraRevenue)})` : `CPL médio ≤ ${fmt(targetCPL)}` },
+        { objective: 'Estruturar nutrição (MOFU)', action: 'Ativar sequência de 5 mensagens em 7 dias e remarketing para leads não convertidos', metric: `Conversão lead→cliente subindo a partir de ${(cvr * 100).toFixed(0)}%` },
+        { objective: 'Escalar o que validou', action: 'Aumentar budget 15–20%/semana só nos grupos com CPL abaixo do alvo', metric: 'Volume de leads +20% vs. semana 1, sem subir o CPL' },
       ],
+      // FASE 3 (31–90d) — Escala: previsibilidade e diversificação
       ninety_days: [
-        { objective: 'Previsibilidade e escala sustentável', action: `Consolidar os canais vencedores, diversificar para ${channels[1] || 'segundo canal recomendado'}, estruturar funil MOFU`, metric: `CPL sustentável abaixo de R$${bench ? Math.round(bench.cpl_min * 1.1) : 'benchmark'} e funil MOFU/BOFU ativo` },
+        { objective: 'CPL sustentável e previsível', action: `Manter o CPL estável em ${fmt(targetCPL)} por 30 dias com renovação criativa quando a frequência passar de 3×`, metric: `CPL estável ≤ ${fmt(targetCPL)} por 4 semanas consecutivas` },
+        { objective: `Diversificar para ${channels[1] || 'um 2º canal'}`, action: `Abrir ${channels[1] || 'o segundo canal recomendado'} com 15–20% do budget só após o canal principal estar estável`, metric: '2º canal com CPL dentro do benchmark antes de ampliar' },
+        { objective: 'Virar um sistema de crescimento', action: 'Automatizar relatório semanal (CPL, leads, CVR, ROAS) e fechar o funil BOFU com script de objeções', metric: `Receita projetada de ${fmt(revenue)}/mês e ROAS ~${roas}× com previsibilidade` },
       ],
     },
     strategic_risks: [
@@ -325,13 +391,7 @@ function buildFallbackStrategy(data: {
       { risk: 'Saturação criativa com frequência alta causa queda de CTR e aumento de CPL', prevention: 'Monitorar frequência semanalmente — renovar criativos quando frequência ultrapassar 3×' },
       { risk: `CPL acima de R$${bench?.cpl_max || 'benchmark'} por mais de 5 dias sem intervenção drena budget`, prevention: `Criar regra automática de pausa: CPL > R$${bench?.cpl_max || 'X'} por 3 dias consecutivos` },
     ],
-    next_moves: [
-      `Validar eventos de conversão no Events Manager — prazo: 48h`,
-      `Pausar grupos com CPL acima de R$${bench?.cpl_max || 'X'} imediatamente`,
-      `Definir CPL máximo de corte de R$${bench?.cpl_max || 'X'} como regra automática no Meta`,
-      `Concentrar 70% do budget nas 3 campanhas com menor CPL`,
-      `Criar 2 novos criativos com prova social para testar em paralelo`,
-    ],
+    next_moves: next_moves_detailed,
     target_audience: {
       persona_snapshot: {
         name:     persona?.name || 'Cliente ideal',
@@ -650,7 +710,7 @@ Entregue uma estratégia de crescimento baseada no diagnóstico. Responda APENAS
     "ninety_days": [{"objective": "<objetivo>", "action": "<ação>", "metric": "<métrica>"}]
   },
   "strategic_risks": [{"risk": "<risco estratégico>", "prevention": "<como prevenir>"}],
-  "next_moves": ["<decisão clara e específica 1>", "<decisão 2>", "<decisão 3>", "<decisão 4>", "<decisão 5>"],
+  "next_moves": [{"move": "<decisão clara e específica>", "impact": "<impacto estimado em R$ ou % usando os dados reais — ex: +R$X/mês ou recupera R$Y>", "effort": "<baixo|médio|alto>", "evidence": "<o dado/benchmark que justifica>", "depends_on": "<pré-requisito para executar, se houver>"}],
 
   "target_audience": {
     "persona_snapshot": {"name": "<nome fictício do cliente ideal>", "age": "<FAIXA etária, ex: 30–45 anos>", "profile": "<profissão/perfil do segmento>", "one_liner": "<1 frase: quem é e o que mais quer>"},
@@ -661,7 +721,9 @@ Entregue uma estratégia de crescimento baseada no diagnóstico. Responda APENAS
   }
 }
 
-Para "target_audience": use a PERSONA fornecida, a cidade/região do negócio e o benchmark do nicho. Se houver dados reais de campanha, calibre por eles. Faixas (idade/renda), nunca valores exatos. "best_regions": 2–3 itens priorizando onde há melhor custo/demanda.`
+Para "target_audience": use a PERSONA fornecida, a cidade/região do negócio e o benchmark do nicho. Se houver dados reais de campanha, calibre por eles. Faixas (idade/renda), nunca valores exatos. "best_regions": 2–3 itens priorizando onde há melhor custo/demanda.
+
+Para "next_moves" (Plano de Ação) e "plan_7_30_90" (caminho de 90 dias): SEJA QUANTITATIVO e SEQUENCIADO, nunca genérico. Em "next_moves.impact" calcule o ganho em R$ ou % a partir do CPL/budget/ticket reais (ex: baixar o CPL de R$X para R$Y libera +N leads/mês ≈ R$Z). Ordene os movimentos por dependência (o que destrava o próximo). Em "plan_7_30_90", trate 7d como FUNDAÇÃO (parar perdas + tracking), 30d como OTIMIZAÇÃO (baixar CPL + validar criativos + nutrição) e 90d como ESCALA (previsibilidade + diversificação) — cada fase deve avançar a partir da anterior, com metas numéricas reais.`
 
       // IA com 23s — Tavily já rodou em paralelo (2s max), SSE keepalive mantém conexão
       const aiResult = await Promise.race([

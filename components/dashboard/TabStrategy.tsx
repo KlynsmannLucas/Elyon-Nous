@@ -1029,17 +1029,44 @@ export function TabStrategy({ strategy, analysis, onRefresh }: Props) {
             <span style={{ fontSize: 10, color: C.text3, fontWeight: 400 }}>Execute nessa ordem</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {nextMoves.slice(0, 5).map((move: string, i: number) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 14px', background: C.elevated, borderRadius: 10 }}>
-                <span style={{
-                  width: 24, height: 24, borderRadius: 7, flexShrink: 0, marginTop: 1,
-                  background: 'rgba(124,58,237,0.15)', color: C.purpleL,
-                  fontSize: 11, fontWeight: 800,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{i + 1}</span>
-                <span style={{ fontSize: 12, color: C.text1, lineHeight: 1.5 }}>{move}</span>
-              </div>
-            ))}
+            {nextMoves.slice(0, 5).map((move: any, i: number) => {
+              const isObj  = typeof move === 'object' && move !== null
+              const title  = isObj ? (move.move || move.action || move.titulo) : move
+              const impact = isObj ? move.impact : ''
+              const effort = isObj ? move.effort : ''
+              const evid   = isObj ? (move.evidence || move.evidencia) : ''
+              const dep    = isObj ? move.depends_on : ''
+              const effortColor = effort === 'baixo' ? C.green : effort === 'alto' ? C.red : C.gold
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', background: C.elevated, borderRadius: 10 }}>
+                  <span style={{
+                    width: 24, height: 24, borderRadius: 7, flexShrink: 0, marginTop: 1,
+                    background: 'rgba(124,58,237,0.15)', color: C.purpleL,
+                    fontSize: 11, fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{i + 1}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 12, color: C.text1, lineHeight: 1.5, fontWeight: isObj ? 600 : 400 }}>{title}</span>
+                    {impact && (
+                      <div style={{ fontSize: 11, color: C.green, marginTop: 5, display: 'flex', alignItems: 'flex-start', gap: 5 }}>
+                        <span style={{ flexShrink: 0 }}>💰</span><span style={{ lineHeight: 1.45 }}>{impact}</span>
+                      </div>
+                    )}
+                    {(effort || dep) && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6, alignItems: 'center' }}>
+                        {effort && (
+                          <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 5, color: effortColor, background: `${effortColor}14`, border: `1px solid ${effortColor}30`, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Esforço {effort}
+                          </span>
+                        )}
+                        {dep && <span style={{ fontSize: 10, color: C.text3 }}>↳ depende de: {dep}</span>}
+                      </div>
+                    )}
+                    {evid && <div style={{ fontSize: 10, color: C.text3, marginTop: 5, lineHeight: 1.4 }}>Evidência: {evid}</div>}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

@@ -680,9 +680,10 @@ export function TabOverview({ strategy, analysis, clientData, onNavigate }: Prop
       {clientData && (() => {
         const ev = latestAudit?._evolution as any
         const pendingTop = (pendingActionsCache[key] || []).filter((a: any) => a.status === 'pendente')[0]
+        const firstMove = strategy?.next_moves?.[0]
         const topAction = pendingTop?.title
           || latestAudit?.o_que_eu_faria_agora?.[0]?.titulo
-          || strategy?.next_moves?.[0]
+          || (typeof firstMove === 'object' && firstMove !== null ? firstMove.move : firstMove)
           || (hasRealData ? 'Reveja as campanhas com CPL acima do benchmark.' : null)
         const staleDays = lastAuditTime ? Math.floor((Date.now() - lastAuditTime) / 86400000) : null
         const needAudit = staleDays == null || staleDays >= 3
