@@ -4,6 +4,15 @@
 import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
+import { AdAccountPicker } from '@/components/dashboard/v2/AdAccountPicker'
+
+// Passo a passo de como o NOUS monta a campanha (exibido antes de gerar)
+const BUILD_STEPS: { icon: string; title: string; desc: string }[] = [
+  { icon: '🎯', title: 'Objetivo & estrutura', desc: 'A IA lê seu pedido + dados do cliente e escolhe o objetivo certo (leads, conversões, tráfego…) e nomeia a campanha.' },
+  { icon: '👥', title: 'Público & orçamento', desc: 'Define idade, gênero, região e interesses com base na sua persona/cadastro, e calibra o orçamento diário.' },
+  { icon: '🖼️', title: 'Criativo & copy', desc: 'Gera texto principal, título, descrição, CTA e URL de destino alinhados ao seu nicho.' },
+  { icon: '🚀', title: 'Revisão & publicação', desc: 'Você revisa o plano completo, escolhe a página do Facebook e a IA publica tudo no Meta Ads (em pausa, pronto para ativar).' },
+]
 
 interface Props {
   clientData: ClientData | null
@@ -65,7 +74,11 @@ const TOOL_DONE_LABELS: Record<string, string> = {
 
 export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props) {
   const connectedAccounts = useAppStore((s) => s.connectedAccounts)
+  const selectedMetaAccountByClient = useAppStore((s) => s.selectedMetaAccountByClient)
   const metaAccount       = connectedAccounts.find((a) => a.platform === 'meta')
+  const clientKey         = (clientData as any)?.clientName || ''
+  // Conta efetiva: a selecionada pelo usuário (seletor) ou a 1ª conectada.
+  const effectiveAccountId = (clientKey && selectedMetaAccountByClient[clientKey]) || metaAccount?.accountId || ''
 
   const [step,        setStep]        = useState<Step>('input')
   const [intent,      setIntent]      = useState('')
@@ -110,7 +123,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
           intent,
-          accountId:   metaAccount.accountId,
+          accountId: effectiveAccountId,
           clientData:  clientData ? {
             clientName:       (clientData as any).clientName,
             niche:            (clientData as any).niche,
@@ -145,7 +158,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
           plan,
-          accountId: metaAccount.accountId,
+          accountId: effectiveAccountId,
           pageId:    selectedPage,
         }),
       })
@@ -165,7 +178,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
             const event: StreamEvent = JSON.parse(line.slice(6))
             setEvents((prev) => [...prev, event])
             if (event.type === 'done') {
-              const accId = metaAccount.accountId?.replace('act_', '')
+              const accId = effectiveAccountId?.replace('act_', '')
               setFinalUrl(`https://www.facebook.com/adsmanager/manage/campaigns?act=${accId}`)
               setStep('done')
             }
@@ -226,21 +239,47 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
           Dica: inclua objetivo, orçamento, público e região para um plano mais preciso.
         </div>
 
-        {metaAccount.accountName && (
-          <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(24,119,242,0.08)', border: '1px solid rgba(24,119,242,0.2)', borderRadius: 8 }}>
-            <span style={{ fontSize: 14 }}>📘</span>
-            <span style={{ fontSize: 12, color: '#1E47C4' }}>Conta: <strong>{metaAccount.accountName}</strong></span>
+        {/* Seletor da conta de anúncio onde a campanha será criada */}
+        <div style={{ marginTop: 18 }}>
+          <label style={S.label}>Em qual conta criar a campanha?</label>
+          <AdAccountPicker platform="meta" clientKey={clientKey} compact />
+          <div style={{ marginTop: 6, fontSize: 11, color: '#898C97' }}>
+            A campanha será criada na conta selecionada acima. Você pode trocar a qualquer momento.
           </div>
-        )}
+        </div>
 
         <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end' }}>
           <button
             onClick={handlePlan}
-            disabled={!intent.trim()}
-            style={{ ...S.btn, ...S.btnPrim, opacity: intent.trim() ? 1 : 0.45 }}
+            disabled={!intent.trim() || !effectiveAccountId}
+            style={{ ...S.btn, ...S.btnPrim, opacity: intent.trim() && effectiveAccountId ? 1 : 0.45 }}
           >
             ✨ Gerar plano com IA
           </button>
+        </div>
+      </div>
+
+      {/* Passo a passo: como o NOUS monta a campanha */}
+      <div style={{ ...S.card, marginTop: 16 }}>
+        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#2B5BE3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>
+          Como o NOUS vai montar
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {BUILD_STEPS.map((s, i) => (
+            <div key={s.title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '12px 0', borderBottom: i < BUILD_STEPS.length - 1 ? '1px solid #EFEFEB' : 'none' }}>
+              <div style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 9, background: 'rgba(43,91,227,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, position: 'relative' }}>
+                {s.icon}
+                <span style={{ position: 'absolute', top: -6, left: -6, width: 18, height: 18, borderRadius: '50%', background: '#2B5BE3', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)' }}>{i + 1}</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#18191D', marginBottom: 2 }}>{s.title}</div>
+                <div style={{ fontSize: 12.5, color: '#565862', lineHeight: 1.5 }}>{s.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 14, fontSize: 11.5, color: '#898C97', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span>🔒</span> Nada é publicado sem a sua revisão — você confirma o plano antes de criar.
         </div>
       </div>
     </div>
