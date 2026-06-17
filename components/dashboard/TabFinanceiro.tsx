@@ -8,8 +8,8 @@ import type { SavedClient, FeeConfig } from '@/lib/store'
 const C = {
   surface:  '#FFFFFF',
   elevated: '#FBFCFD',
-  border:   'rgba(255,255,255,0.06)',
-  purpleBorder: 'rgba(124,58,237,0.22)',
+  border:   '#E6E5E0',
+  purpleBorder: 'rgba(43,91,227,0.22)',
   purple:   '#2C5FE0',
   purpleL:  '#2C5FE0',
   green:    '#0E9E6E',
@@ -17,7 +17,7 @@ const C = {
   amber:    '#E08B0B',
   text1:    '#161B26',
   text2:    '#5A6473',
-  text3:    'rgba(255,255,255,0.35)',
+  text3:    '#565862',
 }
 
 function fmt(n: number) {
@@ -41,7 +41,7 @@ function KpiCard({ label, value, sub, color, icon }: { label: string; value: str
 
 function ProgressBar({ pct, color }: { pct: number; color: string }) {
   return (
-    <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+    <div style={{ height: 4, background: '#E6E5E0', borderRadius: 2, overflow: 'hidden' }}>
       <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: color, borderRadius: 2, transition: 'width 0.5s ease' }} />
     </div>
   )
@@ -156,7 +156,7 @@ export function TabFinanceiro() {
                   <div style={{ fontSize: 9, color: C.text3, fontWeight: 600 }}>{d.value > 0 ? fmt(d.value) : ''}</div>
                   <div style={{
                     width: '100%', height: h,
-                    background: isLast ? `linear-gradient(180deg, ${C.purple}, ${C.purpleL})` : 'rgba(124,58,237,0.25)',
+                    background: isLast ? `linear-gradient(180deg, ${C.purple}, ${C.purpleL})` : 'rgba(43,91,227,0.25)',
                     borderRadius: '4px 4px 0 0',
                     transition: 'height 0.5s ease',
                   }} />
@@ -203,7 +203,7 @@ export function TabFinanceiro() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+              <tr style={{ background: '#F1F1EE' }}>
                 {['Cliente', 'Nicho', 'Verba/mês', 'Fee', 'Honorário', 'Status', 'Ações'].map(h => (
                   <th key={h} style={{
                     padding: '12px 16px',
@@ -211,7 +211,7 @@ export function TabFinanceiro() {
                     fontWeight: 600,
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
-                    color: 'rgba(255,255,255,0.35)',
+                    color: '#565862',
                     textAlign: 'left',
                     whiteSpace: 'nowrap',
                   }}>{h}</th>
@@ -234,8 +234,8 @@ export function TabFinanceiro() {
                       onMouseEnter={() => setHoveredRow(c.id)}
                       onMouseLeave={() => setHoveredRow(null)}
                       style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.06)',
-                        background: isHovered ? 'rgba(124,58,237,0.04)' : 'transparent',
+                        borderBottom: '1px solid #E6E5E0',
+                        background: isHovered ? 'rgba(43,91,227,0.04)' : 'transparent',
                         transition: 'background 0.15s ease',
                       }}
                     >
@@ -283,8 +283,8 @@ export function TabFinanceiro() {
                       <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                         <button onClick={() => isEditing ? setEditId(null) : startEdit(c)} style={{
                           fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 7, cursor: 'pointer',
-                          background: isEditing ? 'rgba(239,68,68,0.1)' : 'rgba(124,58,237,0.1)',
-                          border: `1px solid ${isEditing ? 'rgba(239,68,68,0.2)' : 'rgba(124,58,237,0.2)'}`,
+                          background: isEditing ? 'rgba(239,68,68,0.1)' : 'rgba(43,91,227,0.1)',
+                          border: `1px solid ${isEditing ? 'rgba(239,68,68,0.2)' : 'rgba(43,91,227,0.2)'}`,
                           color: isEditing ? C.red : C.purpleL,
                           whiteSpace: 'nowrap',
                         }}>
@@ -297,7 +297,7 @@ export function TabFinanceiro() {
                     {isEditing && (
                       <tr key={`${c.id}-edit`} style={{ borderBottom: `1px solid ${C.border}` }}>
                         <td colSpan={7} style={{ padding: '12px 16px 16px' }}>
-                          <div style={{ background: 'rgba(124,58,237,0.04)', borderRadius: 10, padding: '12px 16px' }}>
+                          <div style={{ background: 'rgba(43,91,227,0.04)', borderRadius: 10, padding: '12px 16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                               <div>
                                 <div style={{ fontSize: 10, color: C.text3, marginBottom: 4 }}>Tipo de fee</div>
@@ -305,8 +305,8 @@ export function TabFinanceiro() {
                                   {(['percent', 'fixed'] as const).map(t => (
                                     <button key={t} onClick={() => setEditType(t)} style={{
                                       fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 7, cursor: 'pointer',
-                                      background: editType === t ? 'rgba(124,58,237,0.2)' : 'transparent',
-                                      border: `1px solid ${editType === t ? 'rgba(124,58,237,0.4)' : C.border}`,
+                                      background: editType === t ? 'rgba(43,91,227,0.2)' : 'transparent',
+                                      border: `1px solid ${editType === t ? 'rgba(43,91,227,0.4)' : C.border}`,
                                       color: editType === t ? C.purpleL : C.text2,
                                     }}>
                                       {t === 'percent' ? '% da verba' : 'Valor fixo'}
@@ -338,7 +338,7 @@ export function TabFinanceiro() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <button onClick={() => setEditActive(v => !v)} style={{
                                   width: 36, height: 20, borderRadius: 10, cursor: 'pointer', border: 'none',
-                                  background: editActive ? C.green : 'rgba(255,255,255,0.1)', position: 'relative', flexShrink: 0,
+                                  background: editActive ? C.green : '#565862', position: 'relative', flexShrink: 0,
                                 }}>
                                   <div style={{ position: 'absolute', top: 2, left: editActive ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
                                 </button>

@@ -109,9 +109,27 @@ fontes: Schibsted Grotesk (sans) + JetBrains Mono (números)
 
 ---
 
+## PR 6 — Landing page "Clarity" (`landing/ELYON LP Clarity.html`)
+
+> A LP foi **migrada para a mesma linguagem do produto** (clara/editorial, azul-verde,
+> Schibsted) — o arquivo `landing/ELYON LP Clarity.html` é HTML/CSS/JS puro e serve de
+> **referência 1:1**. Conteúdo de vendas mantido; só o front mudou.
+
+| Referência (origem) | Repo (destino) | O que fazer |
+|---|---|---|
+| `landing/ELYON LP Clarity.html` (head `:root`) | rota de marketing (`app/landing/` ou `app/(marketing)/page.tsx`) | Reusar os **mesmos tokens** do PR 0 — LP e app compartilham a paleta. |
+| Hero + mock do produto | componente `<HeroMock/>` | O mock já reflete o **novo dashboard Clarity** (KPIs, selo AO VIVO, briefing escuro do NOUS). |
+| Seletor de benchmark / abas de recurso / calculadora de ROI | ilhas client-side | Lógica simples em JS no arquivo — portar como componentes client (`'use client'`). |
+| **Planos** | seção de pricing | **Valores reais e atuais:** Diagnóstico (Grátis) · Plataforma (R$297) · **Agency (R$997 — recomendado)** · Enterprise (R$2.997). Bater com Stripe. |
+| CTAs | — | Todos apontam para `elyon-nous.vercel.app/sign-up`, `/sign-in`, `/checkout?plan=…`. Ajustar para as rotas reais. |
+
+> A LP pode ir ao ar **independente** do dashboard (PRs 0–5) — é só uma rota estática.
+
+---
+
 ## Ordem & deploy
 1. Branch `redesign-clarity` a partir da `main`.
-2. PRs na ordem **0 → 5** (cada uma gera um Preview Deploy na Vercel pra validar isolada).
+2. PRs na ordem **0 → 6** (cada uma gera um Preview Deploy na Vercel pra validar isolada). A LP (PR 6) é independente e pode ir a qualquer momento.
 3. Confirme env vars na Vercel (Clerk, Stripe, Supabase, Sentry, Anthropic).
 4. Aprovado → merge na `main` → produção automática.
 

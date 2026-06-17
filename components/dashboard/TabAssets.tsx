@@ -26,11 +26,11 @@ interface DBAsset {
 }
 
 const ASSET_TYPES = [
-  { key: 'logo'      as const, label: 'Logo',             color: '#2C5FE0' },
-  { key: 'product'   as const, label: 'Produto',          color: '#2C5FE0' },
+  { key: 'logo'      as const, label: 'Logo',             color: '#2B5BE3' },
+  { key: 'product'   as const, label: 'Produto',          color: '#2B5BE3' },
   { key: 'lifestyle' as const, label: 'Lifestyle',        color: '#0E9E6E' },
   { key: 'banner'    as const, label: 'Banner / Criativo', color: '#E08B0B' },
-  { key: 'other'     as const, label: 'Outros',           color: '#8A93A3' },
+  { key: 'other'     as const, label: 'Outros',           color: '#898C97' },
 ]
 
 const TYPE_ICON: Record<string, JSX.Element> = {
@@ -237,16 +237,16 @@ export function TabAssets({ clientData }: Props) {
 
   // ── Design tokens ────────────────────────────────────────────────────────────
   const S = {
-    bg:       '#050B1A',
-    surface:  '#0C1426',
-    elevated: '#111D33',
+    bg:       '#FFFFFF',
+    surface:  '#FFFFFF',
+    elevated: '#FAFAF8',
     border:   '#E6E5E0',
     borderHi: 'rgba(43,91,227,0.35)',
-    purple:   '#2C5FE0',
-    purpleHi: '#2C5FE0',
+    purple:   '#2B5BE3',
+    purpleHi: '#2B5BE3',
     purpleBg: 'rgba(43,91,227,0.08)',
-    text1:    '#161B26',
-    text2:    '#5A6473',
+    text1:    '#18191D',
+    text2:    '#565862',
     text3:    '#565862',
     amber:    '#E08B0B',
     green:    '#0E9E6E',
@@ -278,7 +278,7 @@ export function TabAssets({ clientData }: Props) {
               <span style={{ fontSize: '13px', color: S.text1, fontWeight: 600 }}>{preview.name}</span>
               <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', color: S.text2, cursor: 'pointer', fontSize: '18px', lineHeight: 1 }}>×</button>
             </div>
-            <div style={{ background: '#F4F5F7', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', padding: '24px' }}>
+            <div style={{ background: '#F4F4F2', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', padding: '24px' }}>
               <img src={preview.public_url} alt={preview.name} style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', borderRadius: '8px' }} />
             </div>
           </div>
@@ -494,7 +494,7 @@ export function TabAssets({ clientData }: Props) {
                     onMouseLeave={e => { e.currentTarget.style.border = `1px solid ${activeAssetId === asset.id ? S.borderHi : S.border}` }}
                   >
                     {/* Thumbnail */}
-                    <div style={{ position: 'relative', aspectRatio: '16/9', background: '#F4F5F7', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ position: 'relative', aspectRatio: '16/9', background: '#F4F4F2', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <img
                         src={asset.public_url}
                         alt={asset.name}
@@ -558,8 +558,8 @@ export function TabAssets({ clientData }: Props) {
                           width: '100%', padding: '7px 0', borderRadius: '8px',
                           fontSize: '11px', fontWeight: 700, cursor: 'pointer',
                           transition: 'opacity 0.15s',
-                          background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
-                          border: 'none', color: '#fff',
+                          background: 'linear-gradient(135deg, #2B5BE3, #2B5BE3)',
+                          border: 'none', color: '#18191D',
                           opacity: generating && activeAssetId === asset.id ? 0.5 : 1,
                         }}
                         onMouseEnter={e => { if (!(generating && activeAssetId === asset.id)) e.currentTarget.style.opacity = '0.85' }}
@@ -609,8 +609,8 @@ export function TabAssets({ clientData }: Props) {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {variants.map((v, i) => {
-                    const angleColors: Record<string, string> = { dor: '#E1483F', aspiração: '#2C5FE0', 'prova social': '#0E9E6E', urgência: '#E08B0B', oferta: '#2C5FE0' }
-                    const ac = angleColors[v.angle] || '#8A93A3'
+                    const angleColors: Record<string, string> = { dor: '#E1483F', aspiração: '#2B5BE3', 'prova social': '#0E9E6E', urgência: '#E08B0B', oferta: '#2B5BE3' }
+                    const ac = angleColors[v.angle] || '#898C97'
                     return (
                       <div key={i} style={{ borderRadius: '10px', padding: '16px', background: S.elevated, border: `1px solid ${S.border}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>

@@ -35,9 +35,18 @@
 8. **Novas utilities CSS** (em `app.css`): `.live-dot` (anel pulsante), `.sheen` (brilho
    sutil de "recém-atualizado"), `.count-up` (entrada de números), `@keyframes liveRing/sheen`.
    Respeite `prefers-reduced-motion`.
+9. **4 módulos novos** (`screens-studio2.jsx`): **Teste A/B**, **Otimização (CRO)**,
+   **Conteúdo** e **Financeiro** — a lógica já existe no repo (`TabABTest/TabCRO/TabConteudo/TabFinanceiro.tsx`),
+   falta criar a rota em `app/(elyon)/` e vestir com Clarity. Detalhe no `MIGRATION.md › PR 4`.
+10. **Landing page migrada** (`landing/ELYON LP Clarity.html`): mesma linguagem Clarity,
+    mock do produto atualizado, **planos com valores reais** (Grátis / R$297 / R$997 / R$2.997).
+    Detalhe no `MIGRATION.md › PR 6`.
 
 > O restante do documento (arquitetura, telas, padrões) continua válido — só atualize os
-> valores de token e adote os 8 itens acima.
+> valores de token e adote os 10 itens acima.
+>
+> 📋 **Comece pelo `MIGRATION.md`** — ele lista, em PRs (0→6), o arquivo do protótipo → arquivo
+> exato do repo onde mexer. Siga essa ordem.
 
 ---
 

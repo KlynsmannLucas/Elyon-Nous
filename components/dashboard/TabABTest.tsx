@@ -48,8 +48,8 @@ function detectWinner(test: CreativeTest): 'a' | 'b' | null {
 const CREATIVE_TYPES = ['image', 'video', 'carousel', 'outro'] as const
 const CHANNELS = ['Meta Ads', 'Google Ads'] as const
 
-const inputCls = 'w-full bg-[#0D0D10] border border-[#E6E5E0] rounded-xl px-3 py-2.5 text-ink text-sm placeholder:text-slate-700 focus:outline-none focus:border-[#2B5BE3] transition-colors'
-const inputSmCls = 'w-full bg-[#0D0D10] border border-[#E6E5E0] rounded-lg px-2.5 py-2 text-ink text-xs placeholder:text-slate-700 focus:outline-none focus:border-[#2B5BE3] transition-colors'
+const inputCls = 'w-full bg-[#FFFFFF] border border-[#E6E5E0] rounded-xl px-3 py-2.5 text-ink text-sm placeholder:text-slate-700 focus:outline-none focus:border-[#2B5BE3] transition-colors'
+const inputSmCls = 'w-full bg-[#FFFFFF] border border-[#E6E5E0] rounded-lg px-2.5 py-2 text-ink text-xs placeholder:text-slate-700 focus:outline-none focus:border-[#2B5BE3] transition-colors'
 
 // ── Formulário de variante ───────────────────────────────────────────────────
 function VariantForm({ label, variant, onChange }: {
@@ -57,7 +57,7 @@ function VariantForm({ label, variant, onChange }: {
   variant: CreativeVariant
   onChange: (v: CreativeVariant) => void
 }) {
-  const color = label === 'A' ? '#2C5FE0' : '#2C5FE0'
+  const color = label === 'A' ? '#2B5BE3' : '#2B5BE3'
   const u = (k: keyof CreativeVariant, v: any) => onChange({ ...variant, [k]: v })
 
   return (
@@ -110,7 +110,7 @@ function VariantMetrics({ label, variant, isWinner, isLoser }: {
   isWinner: boolean
   isLoser: boolean
 }) {
-  const color = label === 'A' ? '#2C5FE0' : '#2C5FE0'
+  const color = label === 'A' ? '#2B5BE3' : '#2B5BE3'
   const ctr = calcCTR(variant)
   const cpl = calcCPL(variant)
   const cvr = calcConvRate(variant)
@@ -139,12 +139,12 @@ function VariantMetrics({ label, variant, isWinner, isLoser }: {
       )}
       <div className="grid grid-cols-2 gap-2">
         {[
-          { label: 'Impressões', value: variant.impressions > 0 ? variant.impressions.toLocaleString('pt-BR') : '—', color: '#8A93A3' },
-          { label: 'Cliques', value: variant.clicks > 0 ? variant.clicks.toLocaleString('pt-BR') : '—', color: '#8A93A3' },
-          { label: 'CTR', value: variant.impressions > 0 ? `${ctr.toFixed(2)}%` : '—', color: ctr > 3 ? '#0E9E6E' : ctr > 1 ? '#2B5BE3' : '#FF4D4D' },
+          { label: 'Impressões', value: variant.impressions > 0 ? variant.impressions.toLocaleString('pt-BR') : '—', color: '#898C97' },
+          { label: 'Cliques', value: variant.clicks > 0 ? variant.clicks.toLocaleString('pt-BR') : '—', color: '#898C97' },
+          { label: 'CTR', value: variant.impressions > 0 ? `${ctr.toFixed(2)}%` : '—', color: ctr > 3 ? '#0E9E6E' : ctr > 1 ? '#2B5BE3' : '#E1483F' },
           { label: 'CPL', value: cpl > 0 ? `R$${cpl}` : '—', color: '#2B5BE3' },
           { label: 'Conversões', value: variant.conversions > 0 ? String(variant.conversions) : '—', color: '#0E9E6E' },
-          { label: 'Conv. Rate', value: variant.clicks > 0 ? `${cvr.toFixed(1)}%` : '—', color: '#2C5FE0' },
+          { label: 'Conv. Rate', value: variant.clicks > 0 ? `${cvr.toFixed(1)}%` : '—', color: '#2B5BE3' },
         ].map(m => (
           <div key={m.label} className="bg-[#F4F4F2] rounded-lg p-2 text-center">
             <div className="text-xs font-bold" style={{ color: m.color }}>{m.value}</div>
@@ -173,7 +173,7 @@ function MetricsForm({ test, onSave, onClose }: {
   const ub = (k: keyof CreativeVariant, v: any) => setB(x => ({ ...x, [k]: Number(v) || 0 }))
 
   return (
-    <div className="mt-4 p-4 rounded-xl animate-fade-up" style={{ background: '#0D0D10', border: '1px solid #E6E5E0' }}>
+    <div className="mt-4 p-4 rounded-xl animate-fade-up" style={{ background: '#FFFFFF', border: '1px solid #E6E5E0' }}>
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs font-semibold text-ink">Atualizar Métricas</span>
         <button onClick={onClose} className="text-ink-2 hover:text-ink text-base">×</button>
@@ -182,7 +182,7 @@ function MetricsForm({ test, onSave, onClose }: {
         {(['A', 'B'] as const).map((lbl) => {
           const vals = lbl === 'A' ? a : b
           const upd = lbl === 'A' ? ua : ub
-          const color = lbl === 'A' ? '#2C5FE0' : '#2C5FE0'
+          const color = lbl === 'A' ? '#2B5BE3' : '#2B5BE3'
           return (
             <div key={lbl}>
               <div className="text-[10px] font-bold mb-2" style={{ color }}>Variante {lbl}</div>
@@ -227,9 +227,9 @@ function TestCard({ test, clientData }: { test: CreativeTest; clientData: Client
 
   const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     running:  { label: '🟢 Rodando',    color: '#0E9E6E' },
-    winner_a: { label: '🏆 A venceu',   color: '#2C5FE0' },
-    winner_b: { label: '🏆 B venceu',   color: '#2C5FE0' },
-    paused:   { label: '⏸ Pausado',     color: '#8A93A3' },
+    winner_a: { label: '🏆 A venceu',   color: '#2B5BE3' },
+    winner_b: { label: '🏆 B venceu',   color: '#2B5BE3' },
+    paused:   { label: '⏸ Pausado',     color: '#898C97' },
   }
   const st = STATUS_LABELS[test.status]
 
@@ -273,7 +273,7 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
   return (
     <div className="bg-[#FFFFFF] border border-[#E6E5E0] rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-[#1E1E24] flex items-center gap-3">
+      <div className="px-5 py-4 border-b border-[#EFEFEB] flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-ink text-sm truncate">{test.name}</span>
@@ -292,7 +292,7 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
         <select
           value={test.status}
           onChange={e => updateCreativeTest(test.id, { status: e.target.value as CreativeTest['status'] })}
-          className="text-[10px] bg-[#0D0D10] border border-[#E6E5E0] rounded-lg px-2 py-1 text-ink-2 focus:outline-none focus:border-[#2B5BE3]"
+          className="text-[10px] bg-[#FFFFFF] border border-[#E6E5E0] rounded-lg px-2 py-1 text-ink-2 focus:outline-none focus:border-[#2B5BE3]"
         >
           <option value="running">Rodando</option>
           <option value="winner_a">A Venceu</option>
@@ -314,7 +314,7 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
       </div>
 
       {/* Variantes */}
-      <div className="grid grid-cols-2 gap-px bg-[#1E1E24]">
+      <div className="grid grid-cols-2 gap-px bg-[#EFEFEB]">
         <div className="bg-[#FFFFFF] p-4">
           <VariantMetrics label="A" variant={test.variantA}
             isWinner={displayWinner === 'a'} isLoser={displayWinner === 'b'} />
@@ -327,7 +327,7 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
 
       {/* Insight de vencedor sugerido */}
       {suggested && !winner && (
-        <div className="px-5 py-3 border-t border-[#1E1E24] flex items-center gap-2"
+        <div className="px-5 py-3 border-t border-[#EFEFEB] flex items-center gap-2"
           style={{ background: 'rgba(34,197,94,0.04)' }}>
           <span className="text-[#0E9E6E] text-sm">💡</span>
           <span className="text-xs text-[#0E9E6E] font-semibold">
@@ -338,7 +338,7 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
 
       {/* Comparação de barras */}
       {(test.variantA.impressions > 0 || test.variantB.impressions > 0) && (
-        <div className="px-5 py-3 border-t border-[#1E1E24]">
+        <div className="px-5 py-3 border-t border-[#EFEFEB]">
           <div className="grid grid-cols-3 gap-4 text-center">
             {[
               { label: 'CTR', a: calcCTR(test.variantA), b: calcCTR(test.variantB), fmt: (v: number) => `${v.toFixed(2)}%`, higherBetter: true },
@@ -354,13 +354,13 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
                   <div className="text-[10px] text-ink-2 uppercase tracking-wider mb-2">{m.label}</div>
                   <div className="flex h-1.5 rounded-full overflow-hidden mb-2">
                     <div className="transition-all duration-500"
-                      style={{ width: `${pctA}%`, background: aWins ? '#2C5FE0' : '#E6E5E0' }} />
+                      style={{ width: `${pctA}%`, background: aWins ? '#2B5BE3' : '#E6E5E0' }} />
                     <div className="transition-all duration-500"
-                      style={{ width: `${100 - pctA}%`, background: bWins ? '#2C5FE0' : '#E6E5E0' }} />
+                      style={{ width: `${100 - pctA}%`, background: bWins ? '#2B5BE3' : '#E6E5E0' }} />
                   </div>
                   <div className="flex justify-between text-[10px]">
-                    <span style={{ color: aWins ? '#2C5FE0' : '#475569' }}>{m.fmt(m.a)}</span>
-                    <span style={{ color: bWins ? '#2C5FE0' : '#475569' }}>{m.fmt(m.b)}</span>
+                    <span style={{ color: aWins ? '#2B5BE3' : '#565862' }}>{m.fmt(m.a)}</span>
+                    <span style={{ color: bWins ? '#2B5BE3' : '#565862' }}>{m.fmt(m.b)}</span>
                   </div>
                 </div>
               )
@@ -370,11 +370,11 @@ Crie uma Variante B com abordagem completamente diferente. Mude o ângulo, o gat
       )}
 
       {/* Actions */}
-      <div className="px-5 py-3 border-t border-[#1E1E24] flex items-center gap-2">
+      <div className="px-5 py-3 border-t border-[#EFEFEB] flex items-center gap-2">
         <button
           onClick={() => setShowMetrics((x) => !x)}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E5E0', color: '#5A6473' }}
+          style={{ background: '#FFFFFF', border: '1px solid #E6E5E0', color: '#565862' }}
         >
           📊 Atualizar métricas
         </button>
@@ -439,7 +439,7 @@ function CreateForm({ onClose }: { onClose: () => void }) {
                 style={{
                   background: channel === c ? 'rgba(43,91,227,0.12)' : '#FFFFFF',
                   border: channel === c ? '1px solid rgba(43,91,227,0.4)' : '1px solid #E6E5E0',
-                  color: channel === c ? '#2B5BE3' : '#8A93A3',
+                  color: channel === c ? '#2B5BE3' : '#898C97',
                 }}>{c}</button>
             ))}
           </div>
@@ -447,10 +447,10 @@ function CreateForm({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="grid grid-cols-2 gap-6 mb-5">
-        <div className="bg-[#0D0D10] rounded-xl p-4 border border-[#2C5FE020]">
+        <div className="bg-[#FFFFFF] rounded-xl p-4 border border-[#2B5BE320]">
           <VariantForm label="A" variant={variantA} onChange={setVariantA} />
         </div>
-        <div className="bg-[#0D0D10] rounded-xl p-4 border border-[#2C5FE020]">
+        <div className="bg-[#FFFFFF] rounded-xl p-4 border border-[#2B5BE320]">
           <VariantForm label="B" variant={variantB} onChange={setVariantB} />
         </div>
       </div>

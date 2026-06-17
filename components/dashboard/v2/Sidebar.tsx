@@ -8,7 +8,7 @@ import { Icon } from './Icon'
 export type AreaKey =
   | 'hoje' | 'desempenho' | 'diagnostico' | 'mercado' | 'plano' | 'relatorios'
   | 'criar' | 'biblioteca' | 'conteudo' | 'abtest' | 'cro'
-  | 'integracoes' | 'config'
+  | 'financeiro' | 'integracoes' | 'config'
 
 const AREAS = {
   hoje:       { label: 'Hoje',         icon: 'home' },
@@ -26,6 +26,7 @@ const STUDIO_AREAS = {
   cro:        { label: 'Otimização (CRO)', icon: 'target' },
 }
 const SYSTEM_AREAS = {
+  financeiro: { label: 'Financeiro',   icon: 'money' },
   integracoes:{ label: 'Integrações',  icon: 'plug' },
   config:     { label: 'Configurações', icon: 'gear' },
 }

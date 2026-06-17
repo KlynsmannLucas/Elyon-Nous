@@ -13,7 +13,7 @@ const PLATFORMS = [
   { key: 'facebook',  label: 'Facebook',   icon: '👥', color: '#1877F2' },
   { key: 'linkedin',  label: 'LinkedIn',   icon: '💼', color: '#0A66C2' },
   { key: 'youtube',   label: 'YouTube',    icon: '▶️', color: '#FF0000' },
-  { key: 'email',     label: 'E-mail',     icon: '✉️', color: '#2C5FE0' },
+  { key: 'email',     label: 'E-mail',     icon: '✉️', color: '#2B5BE3' },
 ]
 
 const THEME_SUGGESTIONS = [
@@ -55,7 +55,7 @@ function CopyButton({ text }: { text: string }) {
         transition: 'all 0.15s',
         background: copied ? 'rgba(34,197,94,0.12)' : '#F1F1EE',
         border: copied ? '1px solid rgba(34,197,94,0.3)' : '1px solid #E6E5E0',
-        color: copied ? '#0E9E6E' : '#8A93A3',
+        color: copied ? '#0E9E6E' : '#898C97',
       }}
     >
       {copied ? '✓ Copiado' : 'Copiar'}
@@ -65,7 +65,7 @@ function CopyButton({ text }: { text: string }) {
 
 function PostCard({ post, index, platform }: { post: Post; index: number; platform: string }) {
   const pl = PLATFORMS.find(p => p.key === platform)
-  const color = pl?.color || '#2C5FE0'
+  const color = pl?.color || '#2B5BE3'
   const fullText = `${post.gancho}\n\n${post.legenda}\n\n${post.cta}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`
 
   return (
@@ -102,7 +102,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
           >
             {post.tipo}
           </span>
-          <span style={{ fontSize: '11px', color: '#8A93A3' }}>Ideia {index + 1}</span>
+          <span style={{ fontSize: '11px', color: '#898C97' }}>Ideia {index + 1}</span>
         </div>
         <CopyButton text={fullText} />
       </div>
@@ -122,7 +122,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
           >
             🎯 Gancho
           </div>
-          <p style={{ fontSize: '13px', fontWeight: 600, color: '#161B26', lineHeight: 1.4, margin: 0 }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: '#18191D', lineHeight: 1.4, margin: 0 }}>
             {post.gancho}
           </p>
         </div>
@@ -133,7 +133,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
             style={{
               fontSize: '10px',
               fontWeight: 700,
-              color: '#8A93A3',
+              color: '#898C97',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               marginBottom: '4px',
@@ -141,7 +141,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
           >
             📐 Estrutura
           </div>
-          <p style={{ fontSize: '11px', color: '#5A6473', lineHeight: 1.6, margin: 0 }}>{post.estrutura}</p>
+          <p style={{ fontSize: '11px', color: '#565862', lineHeight: 1.6, margin: 0 }}>{post.estrutura}</p>
         </div>
 
         {/* Legenda */}
@@ -158,7 +158,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
               style={{
                 fontSize: '10px',
                 fontWeight: 700,
-                color: '#8A93A3',
+                color: '#898C97',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
               }}
@@ -172,10 +172,10 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
               borderRadius: '10px',
               padding: '10px 12px',
               fontSize: '11px',
-              color: '#5A6473',
+              color: '#565862',
               lineHeight: 1.6,
               whiteSpace: 'pre-wrap',
-              background: '#F4F5F7',
+              background: '#F4F4F2',
               border: '1px solid #E6E5E0',
             }}
           >
@@ -208,7 +208,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
             >
               CTA
             </div>
-            <p style={{ fontSize: '11px', color: '#5A6473', margin: 0 }}>{post.cta}</p>
+            <p style={{ fontSize: '11px', color: '#565862', margin: 0 }}>{post.cta}</p>
           </div>
         </div>
 
@@ -219,7 +219,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
               style={{
                 fontSize: '10px',
                 fontWeight: 700,
-                color: '#8A93A3',
+                color: '#898C97',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
                 marginBottom: '6px',
@@ -237,7 +237,7 @@ function PostCard({ post, index, platform }: { post: Post; index: number; platfo
                     borderRadius: '6px',
                     background: '#F1F1EE',
                     border: '1px solid #E6E5E0',
-                    color: '#5A6473',
+                    color: '#565862',
                   }}
                 >
                   #{h.replace(/^#/, '')}
@@ -296,7 +296,7 @@ export function TabConteudo({ clientData }: Props) {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '50vh',
-          color: '#8A93A3',
+          color: '#898C97',
           fontSize: '13px',
         }}
       >
@@ -313,14 +313,14 @@ export function TabConteudo({ clientData }: Props) {
           style={{
             fontSize: '20px',
             fontWeight: 800,
-            color: '#161B26',
+            color: '#18191D',
             margin: 0,
             marginBottom: '4px',
           }}
         >
           Gerador de Conteúdo
         </h2>
-        <p style={{ fontSize: '12px', color: '#8A93A3', margin: 0 }}>
+        <p style={{ fontSize: '12px', color: '#898C97', margin: 0 }}>
           IA cria 3 ideias prontas para usar — gancho, legenda, CTA e hashtags adaptados à plataforma e persona
         </p>
       </div>
@@ -341,12 +341,12 @@ export function TabConteudo({ clientData }: Props) {
         >
           <span style={{ fontSize: '16px' }}>👤</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: '11px', color: '#2C5FE0', fontWeight: 600 }}>Persona ativa: </span>
-            <span style={{ fontSize: '11px', color: '#5A6473' }}>
+            <span style={{ fontSize: '11px', color: '#2B5BE3', fontWeight: 600 }}>Persona ativa: </span>
+            <span style={{ fontSize: '11px', color: '#565862' }}>
               {generatedPersona.name} · {generatedPersona.profession}
             </span>
           </div>
-          <span style={{ fontSize: '10px', color: '#8A93A3', flexShrink: 0 }}>conteúdo será personalizado</span>
+          <span style={{ fontSize: '10px', color: '#898C97', flexShrink: 0 }}>conteúdo será personalizado</span>
         </div>
       ) : (
         <div
@@ -355,13 +355,13 @@ export function TabConteudo({ clientData }: Props) {
             padding: '10px 16px',
             marginBottom: '20px',
             fontSize: '11px',
-            color: '#8A93A3',
+            color: '#898C97',
             background: '#F1F1EE',
             border: '1px solid #E6E5E0',
           }}
         >
           💡 Gere uma persona na aba{' '}
-          <span style={{ color: '#5A6473', fontWeight: 500 }}>Persona IA</span>{' '}
+          <span style={{ color: '#565862', fontWeight: 500 }}>Persona IA</span>{' '}
           para conteúdo ainda mais personalizado
         </div>
       )}
@@ -380,7 +380,7 @@ export function TabConteudo({ clientData }: Props) {
           style={{
             fontSize: '11px',
             fontWeight: 600,
-            color: '#5A6473',
+            color: '#565862',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
             marginBottom: '12px',
@@ -417,7 +417,7 @@ export function TabConteudo({ clientData }: Props) {
                 style={{
                   fontSize: '12px',
                   fontWeight: 600,
-                  color: platform === pl.key ? pl.color : '#5A6473',
+                  color: platform === pl.key ? pl.color : '#565862',
                 }}
               >
                 {pl.label}
@@ -441,7 +441,7 @@ export function TabConteudo({ clientData }: Props) {
           style={{
             fontSize: '11px',
             fontWeight: 600,
-            color: '#5A6473',
+            color: '#565862',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
             marginBottom: '12px',
@@ -457,7 +457,7 @@ export function TabConteudo({ clientData }: Props) {
             background: '#FBFCFD',
             border: '1px solid #E6E5E0',
             borderRadius: '10px',
-            color: '#161B26',
+            color: '#18191D',
             fontSize: '13px',
             padding: '8px 12px',
             outline: 'none',
@@ -470,7 +470,7 @@ export function TabConteudo({ clientData }: Props) {
         <div
           style={{
             fontSize: '10px',
-            color: '#8A93A3',
+            color: '#898C97',
             marginBottom: '8px',
           }}
         >
@@ -483,11 +483,11 @@ export function TabConteudo({ clientData }: Props) {
               onClick={() => setTheme(s)}
               onMouseEnter={e => {
                 e.currentTarget.style.borderColor = '#565862'
-                e.currentTarget.style.color = '#161B26'
+                e.currentTarget.style.color = '#18191D'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.borderColor = '#E6E5E0'
-                e.currentTarget.style.color = '#5A6473'
+                e.currentTarget.style.color = '#565862'
               }}
               style={{
                 fontSize: '10px',
@@ -497,7 +497,7 @@ export function TabConteudo({ clientData }: Props) {
                 transition: 'all 0.15s',
                 background: '#F1F1EE',
                 border: '1px solid #E6E5E0',
-                color: '#5A6473',
+                color: '#565862',
               }}
             >
               {s}
@@ -533,12 +533,12 @@ export function TabConteudo({ clientData }: Props) {
           borderRadius: '10px',
           fontWeight: 700,
           fontSize: '13px',
-          color: '#fff',
+          color: '#18191D',
           marginBottom: '24px',
           cursor: loading || !theme.trim() ? 'not-allowed' : 'pointer',
           opacity: loading || !theme.trim() ? 0.4 : 1,
           transition: 'opacity 0.15s',
-          background: 'linear-gradient(135deg, #2C5FE0, #2C5FE0)',
+          background: 'linear-gradient(135deg, #2B5BE3, #2B5BE3)',
           border: 'none',
         }}
       >
@@ -554,7 +554,7 @@ export function TabConteudo({ clientData }: Props) {
               style={{
                 fontSize: '11px',
                 fontWeight: 700,
-                color: '#5A6473',
+                color: '#565862',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
               }}
@@ -563,11 +563,11 @@ export function TabConteudo({ clientData }: Props) {
             </div>
             <button
               onClick={() => setPosts([])}
-              onMouseEnter={e => { e.currentTarget.style.color = '#5A6473' }}
-              onMouseLeave={e => { e.currentTarget.style.color = '#8A93A3' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#565862' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#898C97' }}
               style={{
                 fontSize: '10px',
-                color: '#8A93A3',
+                color: '#898C97',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',

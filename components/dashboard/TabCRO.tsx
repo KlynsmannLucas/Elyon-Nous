@@ -28,10 +28,10 @@ interface CROAnalysis {
 }
 
 const PRIORITY_CONFIG = {
-  urgent: { color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.2)', label: 'Urgente', emoji: '🔴' },
+  urgent: { color: '#E1483F', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.2)', label: 'Urgente', emoji: '🔴' },
   high:   { color: '#2B5BE3', bg: 'rgba(43,91,227,0.08)', border: 'rgba(43,91,227,0.2)', label: 'Alta',   emoji: '🟡' },
-  medium: { color: '#2C5FE0', bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.2)', label: 'Média',  emoji: '🔵' },
-  low:    { color: '#5A6473', bg: 'rgba(148,163,184,0.05)', border: 'rgba(148,163,184,0.1)', label: 'Baixa', emoji: '⚪' },
+  medium: { color: '#2B5BE3', bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.2)', label: 'Média',  emoji: '🔵' },
+  low:    { color: '#565862', bg: 'rgba(148,163,184,0.05)', border: 'rgba(148,163,184,0.1)', label: 'Baixa', emoji: '⚪' },
 }
 
 const AREA_LABELS: Record<string, { label: string; icon: string }> = {
@@ -47,7 +47,7 @@ const AREA_LABELS: Record<string, { label: string; icon: string }> = {
 const EFFORT_CONFIG = {
   baixo: { color: '#0E9E6E', label: 'Esforço baixo' },
   médio: { color: '#2B5BE3', label: 'Esforço médio' },
-  alto:  { color: '#FF4D4D', label: 'Esforço alto' },
+  alto:  { color: '#E1483F', label: 'Esforço alto' },
 }
 
 export function TabCRO() {
@@ -97,10 +97,10 @@ export function TabCRO() {
     ? (filter === 'all' ? cro.recommendations : cro.recommendations.filter(r => r.priority === filter))
     : []
 
-  const scoreColor = !cro ? '#8A93A3'
+  const scoreColor = !cro ? '#898C97'
     : cro.score >= 80 ? '#0E9E6E'
     : cro.score >= 60 ? '#2B5BE3'
-    : '#FF4D4D'
+    : '#E1483F'
 
   return (
     <div style={{ padding: '24px', maxWidth: '900px' }}>
@@ -109,7 +109,7 @@ export function TabCRO() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '20px' }}>⚙️</span>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#18191D', margin: 0 }}>
               {useViewMode().mode === 'simple' ? TAB_HEADINGS_SIMPLE.cro.title : 'Otimização de Conversão'}
             </h2>
             <span style={{
@@ -305,7 +305,7 @@ export function TabCRO() {
                     <span style={{ fontSize: '14px', flexShrink: 0 }}>{cfg.emoji}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        fontSize: '13px', fontWeight: 600, color: '#fff', marginBottom: '3px',
+                        fontSize: '13px', fontWeight: 600, color: '#18191D', marginBottom: '3px',
                       }}>
                         {rec.title}
                       </div>
@@ -362,7 +362,7 @@ export function TabCRO() {
                     }}>
                       <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <div>
-                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#FF4D4D', marginBottom: '4px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>PROBLEMA</div>
+                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#E1483F', marginBottom: '4px', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>PROBLEMA</div>
                           <div style={{ fontSize: '12px', color: '#E6E5E0', lineHeight: '1.5' }}>{rec.problem}</div>
                         </div>
                         <div>
