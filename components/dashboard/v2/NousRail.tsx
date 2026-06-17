@@ -124,7 +124,7 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
               </div>
               <div className="text-[11.5px] text-ink-3">Inteligência que decide</div>
             </div>
-            <button onClick={onClose} title="Recolher" className="p-1 text-ink-3 hover:text-ink"><Icon name="chevR" size={18} /></button>
+            <button onClick={onClose} title="Recolher" aria-label="Recolher o NOUS" className="p-1 text-ink-3 hover:text-ink"><Icon name="chevR" size={18} /></button>
           </div>
           <div className="flex gap-0.5 mt-3 bg-canvas-2 rounded-sm p-0.5">
             {(['insights', 'perguntas'] as const).map(k => (
@@ -177,8 +177,8 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
           </div>
           <div className="flex items-center gap-1.5 bg-paper border border-line rounded-pill pl-3.5 pr-1 py-1">
             <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send(input)}
-              placeholder="Pergunte ao NOUS…" className="flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-3 outline-none border-none" />
-            <button onClick={() => send(input)} disabled={!input.trim() || isTyping}
+              aria-label="Pergunte ao NOUS" placeholder="Pergunte ao NOUS…" className="flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-3 outline-none border-none" />
+            <button onClick={() => send(input)} disabled={!input.trim() || isTyping} aria-label="Enviar pergunta"
               className="w-8 h-8 rounded-full bg-blue text-white flex items-center justify-center shrink-0 disabled:opacity-50"><Icon name="send" size={15} /></button>
           </div>
         </div>

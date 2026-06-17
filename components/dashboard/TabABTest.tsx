@@ -122,8 +122,8 @@ function VariantMetrics({ label, variant, isWinner, isLoser }: {
         border: isWinner ? '1px solid rgba(34,197,94,0.25)' : isLoser ? '1px solid rgba(255,77,77,0.15)' : '1px solid #E6E5E0',
       }}>
       {isWinner && (
-        <div className="absolute -top-2 left-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
-          style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)', color: '#0E9E6E' }}>
+        <div className="absolute -top-2 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm"
+          style={{ background: '#E3F6EE', border: '1px solid #B7E6D1', color: '#0B855D' }}>
           🏆 Vencedora
         </div>
       )}

@@ -10,13 +10,16 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen bg-canvas flex">
       {/* Left - Brand Panel */}
-      <div className="hidden lg:flex lg:w-[1.15fr] bg-gradient-to-br from-blue-soft via-blue-soft/50 to-green-soft flex-col items-center justify-center p-8">
+      <div className="hidden lg:flex lg:w-[1.15fr] flex-col items-center justify-center p-8" style={{ background: 'radial-gradient(120% 90% at 0% 0%, var(--blue-soft) 0%, transparent 55%), radial-gradient(120% 90% at 100% 100%, var(--green-soft) 0%, transparent 55%), var(--paper)' }}>
         <div className="max-w-md text-center">
           {/* Logo */}
           <div className="mb-10">
-            <div className="w-16 h-16 rounded-xl bg-blue flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl font-bold">E</span>
-            </div>
+            <svg width="56" height="56" viewBox="0 0 32 32" className="mx-auto mb-4">
+              <defs><linearGradient id="lgsu" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#2B5BE3" /><stop offset="100%" stopColor="#0E9CB0" /></linearGradient></defs>
+              <rect x="1" y="1" width="30" height="30" rx="9" fill="url(#lgsu)" />
+              <path d="M11 9h10M11 16h7M11 23h10" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+              <circle cx="22" cy="16" r="1.8" fill="#fff" />
+            </svg>
             <h1 className="text-[40px] font-display font-bold text-ink">ELYON</h1>
             <p className="text-ink-2 text-sm">Comece gratuitamente · Sem cartão de crédito</p>
           </div>
