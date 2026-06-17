@@ -9,7 +9,6 @@ import { TabPersona } from '@/components/dashboard/TabPersona'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 type SubTab = 'execucao' | 'estrategia' | 'persona'
-const URGENCY_TONE: Record<string, 'bad' | 'warn' | 'neutral'> = { critica: 'bad', alta: 'warn', media: 'neutral', baixa: 'neutral' }
 const parseImpact = (s: any) => { const n = Number(String(s || '').replace(/[^\d]/g, '')); return Number.isFinite(n) ? n : 0 }
 // Esforço estimado (1=baixo, 3=alto) por palavra-chave do título da ação.
 const effortOf = (title: string) => {
@@ -23,6 +22,7 @@ export default function PlanoPage() {
   const clientData = useAppStore(s => s.clientData)
   const savedClients = useAppStore(s => s.savedClients)
   const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
+  const updatePendingActionStatus = useAppStore(s => s.updatePendingActionStatus)
   const strategyData = useAppStore(s => s.strategyData)
   const dashboardMode = useAppStore(s => s.dashboardMode)
   const [mounted, setMounted] = useState(false)
@@ -45,6 +45,12 @@ export default function PlanoPage() {
   const planned = actions.filter(a => a.status === 'pendente')
   const inProgress = actions.filter(a => a.status === 'em_andamento')
   const completed = actions.filter(a => a.status === 'concluida')
+  // Checklist funcional: clicar avança pendente → em_andamento → concluída → pendente
+  const nextStatus = (s: string): 'pendente' | 'em_andamento' | 'concluida' =>
+    s === 'pendente' ? 'em_andamento' : s === 'em_andamento' ? 'concluida' : 'pendente'
+  const rank: Record<string, number> = { pendente: 0, em_andamento: 1, concluida: 2, ignorada: 3 }
+  const orderedActions = [...actions].filter(a => a.status !== 'ignorada').sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9))
+  const impactTotal = actions.reduce((sum, a) => sum + parseImpact(a.impact), 0)
   const strat: any = strategyData?.strategy
   const ta = strat?.target_audience
   const matrix = strat?.strategic_matrix
@@ -55,23 +61,6 @@ export default function PlanoPage() {
     { key: 'execucao', label: 'Execução', icon: 'check' }, { key: 'estrategia', label: 'Estratégia 90 dias', icon: 'scale' },
     { key: 'persona', label: 'Persona', icon: 'users' },
   ]
-
-  const Column = ({ title, icon, items, tone }: { title: string; icon: string; items: any[]; tone: 'neutral' | 'blue' | 'good' }) => (
-    <Card>
-      <SectionHead title={title} subtitle={`${items.length}`} icon={<span>{icon}</span>} />
-      <div className="space-y-2">
-        {items.length ? items.map((a, i) => (
-          <div key={a.id || i} className="p-3 rounded-sm" style={{ background: tone === 'blue' ? '#EAF0FE' : tone === 'good' ? '#E4F6EE' : '#EEF0F3' }}>
-            <div className="text-sm font-medium text-ink">{a.title}</div>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <Badge tone={URGENCY_TONE[a.urgency] || 'neutral'} dot>{a.urgency}</Badge>
-              {a.platform && a.platform !== 'ambos' && <span className="text-[10px] text-ink-3 uppercase font-mono">{a.platform}</span>}
-            </div>
-          </div>
-        )) : <p className="text-xs text-ink-3 py-3 text-center">Vazio</p>}
-      </div>
-    </Card>
-  )
 
   const matrixText = (it: any) => it?.decision || it?.action || it?.hypothesis || (typeof it === 'string' ? it : '')
   const QUAD: { k: string; label: string; bg: string; bd: string; c: string }[] = [
@@ -88,15 +77,6 @@ export default function PlanoPage() {
         <p className="text-sm text-ink-2 mt-0.5">{key || 'Selecione um cliente'}</p>
       </header>
 
-      <div className="grid grid-cols-3 gap-3 mb-5 animate-fade-up">
-        {[['Planejadas', planned.length, '#161B26'], ['Em andamento', inProgress.length, '#1E4FD0'], ['Concluídas', completed.length, '#0B855D']].map(([l, v, c]) => (
-          <Card key={l as string} padding="sm">
-            <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">{l}</div>
-            <div className="text-xl font-bold font-mono" style={{ color: c as string }}>{v as number}</div>
-          </Card>
-        ))}
-      </div>
-
       <div className="mb-5 flex gap-1 border-b border-line">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
@@ -108,36 +88,65 @@ export default function PlanoPage() {
 
       {tab === 'execucao' && (
         actions.length > 0 ? (
-          dashboardMode === 'simple' ? (
-            /* Modo Simplificado — checklist marcável */
-            <Card className="animate-fade-up">
-              <SectionHead title="O que fazer agora" subtitle="Marque conforme for concluindo" icon={<Icon name="check" size={17} />} />
+          <div className="space-y-4 animate-fade-up">
+            {/* ── Cards de status (live) ───────────────────────────────────── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {([
+                ['Ações planejadas', planned.length,    '#161B26', 'check'],
+                ['Em andamento',     inProgress.length, '#1E4FD0', 'pulse'],
+                ['Concluídas',       completed.length,  '#0B855D', 'trophy'],
+              ] as const).map(([l, v, c, icon]) => (
+                <Card key={l} padding="sm">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-7 h-7 rounded-md bg-canvas-2 flex items-center justify-center" style={{ color: c }}><Icon name={icon as any} size={15} /></span>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">{l}</div>
+                  </div>
+                  <div className="text-2xl font-bold font-mono" style={{ color: c }}>{v}</div>
+                </Card>
+              ))}
+              <Card padding="sm">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="w-7 h-7 rounded-md bg-green-soft flex items-center justify-center text-green-600"><Icon name="bolt" size={15} /></span>
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Impacto total</div>
+                </div>
+                <div className="text-2xl font-bold font-mono text-green-600">{impactTotal > 0 ? `+${brl(impactTotal)}` : '—'}</div>
+              </Card>
+            </div>
+
+            {/* ── Checklist funcional: clique progride o status ────────────── */}
+            <Card>
+              <SectionHead title="O que fazer agora" subtitle="Clique para avançar: pendente → em andamento → concluída" icon={<Icon name="check" size={17} />} />
               <div className="divide-y divide-line-2">
-                {planned.map((a) => {
-                  const isDone = !!done[a.id]
+                {orderedActions.map((a) => {
+                  const st = a.status
+                  const isDone = st === 'concluida'
+                  const isProg = st === 'em_andamento'
                   return (
-                    <button key={a.id} onClick={() => setDone(d => ({ ...d, [a.id]: !d[a.id] }))} className="w-full flex items-start gap-3 py-3 text-left">
-                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${isDone ? 'bg-green border-green text-white' : 'border-line'}`}>
-                        {isDone && <Icon name="check" size={12} w={3} />}
-                      </span>
+                    <div key={a.id} className="flex items-start gap-3 py-3">
+                      <button
+                        onClick={() => updatePendingActionStatus(key, a.id, nextStatus(st))}
+                        title="Avançar status"
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${isDone ? 'bg-green border-green text-white' : isProg ? 'bg-blue border-blue text-white' : 'border-line hover:border-blue'}`}>
+                        {isDone ? <Icon name="check" size={12} w={3} /> : isProg ? <span className="w-2 h-2 rounded-full bg-white" /> : null}
+                      </button>
                       <div className="flex-1 min-w-0">
                         <div className={`text-sm font-medium ${isDone ? 'text-ink-3 line-through' : 'text-ink'}`}>{a.title}</div>
-                        {a.impact && <div className={`text-xs mt-0.5 ${isDone ? 'text-ink-4' : 'text-green-600 font-semibold'}`}>{a.impact}</div>}
+                        {(a.description || (a as any).evidence) && (
+                          <div className="text-xs text-ink-3 mt-0.5">{a.description || (a as any).evidence}</div>
+                        )}
+                        {isProg && <div className="text-[10px] font-mono uppercase tracking-wider text-blue mt-1">Em andamento</div>}
                       </div>
-                    </button>
+                      {parseImpact(a.impact) > 0 && (
+                        <div className={`text-sm font-bold font-mono shrink-0 ${isDone ? 'text-ink-4 line-through' : 'text-green-600'}`}>+{brl(parseImpact(a.impact))}</div>
+                      )}
+                    </div>
                   )
                 })}
               </div>
             </Card>
-          ) : (
-            /* Modo Avançado — kanban + matriz impacto×esforço + roadmap */
-            <div className="space-y-4 animate-fade-up">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Column title="Planejado" icon="📋" items={planned} tone="neutral" />
-                <Column title="Em andamento" icon="🔄" items={inProgress} tone="blue" />
-                <Column title="Concluído" icon="✓" items={completed} tone="good" />
-              </div>
 
+            {/* Extras do modo Avançado: matriz impacto×esforço + roadmap */}
+            {dashboardMode !== 'simple' && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Matriz impacto × esforço */}
                 {(() => {
@@ -189,8 +198,8 @@ export default function PlanoPage() {
                   </Card>
                 )}
               </div>
-            </div>
-          )
+            )}
+          </div>
         ) : (
           <Card className="animate-fade-up">
             <div className="text-center py-8 text-ink-3">
