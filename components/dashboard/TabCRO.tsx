@@ -108,8 +108,7 @@ export function TabCRO() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', gap: '16px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '20px' }}>⚙️</span>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#18191D', margin: 0 }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#18191D', margin: 0, letterSpacing: '-0.02em' }}>
               {useViewMode().mode === 'simple' ? TAB_HEADINGS_SIMPLE.cro.title : 'Otimização de Conversão'}
             </h2>
             <span style={{
@@ -133,7 +132,7 @@ export function TabCRO() {
             transition: 'all 0.15s',
           }}
         >
-          {loading ? '⏳ Analisando...' : cro ? '↻ Reanalisar' : '⚙️ Rodar análise CRO'}
+          {loading ? 'Analisando…' : cro ? 'Reanalisar' : 'Rodar análise CRO'}
         </button>
       </div>
 
@@ -271,7 +270,7 @@ export function TabCRO() {
                       ? (cfg?.color ?? '#2B5BE3')
                       : '#565862',
                   }}>
-                    {f === 'all' ? `Todos (${count})` : `${cfg?.emoji} ${cfg?.label} (${count})`}
+                    {f === 'all' ? `Todos (${count})` : `${cfg?.label} (${count})`}
                   </button>
                 )
               })}
@@ -302,7 +301,7 @@ export function TabCRO() {
                       border: 'none', cursor: 'pointer', textAlign: 'left',
                     }}
                   >
-                    <span style={{ fontSize: '14px', flexShrink: 0 }}>{cfg.emoji}</span>
+                    <span style={{ width: 8, height: 8, borderRadius: 99, background: cfg.color, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
                         fontSize: '13px', fontWeight: 600, color: '#18191D', marginBottom: '3px',

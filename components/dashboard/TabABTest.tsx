@@ -207,7 +207,7 @@ function MetricsForm({ test, onSave, onClose }: {
       </div>
       <button onClick={() => { onSave(a, b); onClose() }}
         className="mt-4 w-full py-2 rounded-xl text-xs font-bold text-white"
-        style={{ background: 'linear-gradient(135deg, #2B5BE3, #1E47C4)' }}>
+        style={{ background: '#2B5BE3' }}>
         Salvar métricas
       </button>
     </div>
@@ -459,7 +459,7 @@ function CreateForm({ onClose }: { onClose: () => void }) {
         onClick={handleSave}
         disabled={!canSave}
         className="w-full py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-opacity"
-        style={{ background: 'linear-gradient(135deg, #2B5BE3, #1E47C4)' }}
+        style={{ background: '#2B5BE3' }}
       >
         🧪 Criar teste A/B
       </button>
@@ -487,7 +487,7 @@ export function TabABTest({ clientData }: Props) {
           onClick={() => setCreating((x) => !x)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
           style={{
-            background: creating ? '#FFFFFF' : 'linear-gradient(135deg, #2B5BE3, #1E47C4)',
+            background: creating ? '#FFFFFF' : '#2B5BE3',
             color: creating ? '#2B5BE3' : '#000',
             border: creating ? '1px solid rgba(43,91,227,0.3)' : 'none',
           }}
@@ -508,7 +508,7 @@ export function TabABTest({ clientData }: Props) {
           <button
             onClick={() => setCreating(true)}
             className="px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-            style={{ background: 'linear-gradient(135deg, #2B5BE3, #1E47C4)' }}
+            style={{ background: '#2B5BE3' }}
           >
             + Criar primeiro teste
           </button>

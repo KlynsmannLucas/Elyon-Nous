@@ -540,7 +540,7 @@ export function TabAssets({ clientData }: Props) {
               style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '8px',
                 padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, border: 'none',
                 cursor: genLoading || !genPrompt.trim() ? 'default' : 'pointer',
-                background: 'linear-gradient(135deg, #2B5BE3, #0E9CB0)', color: '#fff',
+                background: '#2B5BE3', color: '#fff',
                 opacity: genLoading || !genPrompt.trim() ? 0.5 : 1 }}>
               {genLoading ? (
                 <>
@@ -686,7 +686,7 @@ export function TabAssets({ clientData }: Props) {
                           width: '100%', padding: '7px 0', borderRadius: '8px',
                           fontSize: '11px', fontWeight: 700, cursor: 'pointer',
                           transition: 'opacity 0.15s',
-                          background: 'linear-gradient(135deg, #2B5BE3, #2B5BE3)',
+                          background: '#2B5BE3',
                           border: 'none', color: '#18191D',
                           opacity: generating && activeAssetId === asset.id ? 0.5 : 1,
                         }}

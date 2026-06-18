@@ -103,7 +103,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
           </p>
           <button
             onClick={onNavigateToConnections}
-            style={{ padding: '10px 24px', borderRadius: 10, background: 'linear-gradient(135deg, #1877F2, #1E47C4)', color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}
+            style={{ padding: '10px 24px', borderRadius: 10, background: '#2B5BE3', color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}
           >
             📘 Conectar Meta Ads
           </button>
@@ -208,7 +208,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
     label:   { fontSize: 11, fontFamily: 'var(--font-mono)', color: '#898C97', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6, display: 'block' },
     input:   { width: '100%', background: '#FFFFFF', border: '1px solid #E6E5E0', borderRadius: 10, padding: '12px 14px', color: '#18191D', fontSize: 14, outline: 'none', resize: 'vertical' as const, fontFamily: 'inherit' },
     btn:     { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', border: 'none', transition: 'opacity 0.15s' },
-    btnPrim: { background: 'linear-gradient(135deg, #1877F2, #1E47C4)', color: '#fff' },
+    btnPrim: { background: '#2B5BE3', color: '#fff' },
     btnSec:  { background: '#E6E5E0', border: '1px solid #565862', color: '#18191D' },
     row:     { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: '1px solid #EFEFEB' },
     rowKey:  { fontSize: 12, color: '#898C97', width: 140, flexShrink: 0, paddingTop: 2 },
