@@ -339,7 +339,7 @@ export function TabConteudo({ clientData }: Props) {
             border: '1px solid rgba(43,91,227,0.22)',
           }}
         >
-          <span style={{ fontSize: '16px' }}>👤</span>
+          <span style={{ width: 8, height: 8, borderRadius: 99, background: '#2B5BE3', flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <span style={{ fontSize: '11px', color: '#2B5BE3', fontWeight: 600 }}>Persona ativa: </span>
             <span style={{ fontSize: '11px', color: '#565862' }}>
@@ -395,7 +395,9 @@ export function TabConteudo({ clientData }: Props) {
             gap: '8px',
           }}
         >
-          {PLATFORMS.map(pl => (
+          {PLATFORMS.map(pl => {
+            const active = platform === pl.key
+            return (
             <button
               key={pl.key}
               onClick={() => setPlatform(pl.key)}
@@ -403,27 +405,29 @@ export function TabConteudo({ clientData }: Props) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '8px 12px',
-                borderRadius: '10px',
+                padding: '9px 12px',
+                borderRadius: '8px',
                 textAlign: 'left',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                background: platform === pl.key ? `${pl.color}12` : 'transparent',
-                border: platform === pl.key ? `1px solid ${pl.color}40` : '1px solid #E6E5E0',
+                background: active ? '#FFFFFF' : '#F4F4F2',
+                border: `1px solid ${active ? pl.color : '#E6E5E0'}`,
+                boxShadow: active ? '0 1px 2px rgba(20,20,30,0.05)' : 'none',
               }}
             >
-              <span style={{ fontSize: '16px' }}>{pl.icon}</span>
+              <span style={{ width: 9, height: 9, borderRadius: 3, background: pl.color, flexShrink: 0 }} />
               <span
                 style={{
-                  fontSize: '12px',
+                  fontSize: '12.5px',
                   fontWeight: 600,
-                  color: platform === pl.key ? pl.color : '#565862',
+                  color: active ? '#18191D' : '#565862',
                 }}
               >
                 {pl.label}
               </span>
             </button>
-          ))}
+            )
+          })}
         </div>
       </div>
 

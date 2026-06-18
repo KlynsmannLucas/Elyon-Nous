@@ -11,6 +11,7 @@ const AREA_META = {
   integracoes: { title: 'Integrações', sub: 'Suas fontes de dados conectadas' },
   config:      { title: 'Configurações', sub: 'Workspace e preferências' },
   planos:      { title: 'Planos', sub: 'Diagnóstico → Acompanhamento → Operação' },
+  estudio:     { title: 'Estúdio de Criação', sub: 'Crie, teste e otimize — guiado pelo NOUS' },
   criar:       { title: 'Criar campanha', sub: 'Descreva e o NOUS monta sua campanha' },
   biblioteca:  { title: 'Biblioteca', sub: 'Criativos, assets e geração de copy com IA' },
   conteudo:    { title: 'Conteúdo', sub: 'Ideias de posts geradas por IA, por plataforma' },
@@ -80,6 +81,7 @@ function App() {
             period={period} onPeriod={handlePeriod} onAskNous={() => setNousOpen(true)} onNav={navigate} />
           <main id="scroll-main" style={{ flex: 1, overflowY: 'auto', padding: '22px 26px 60px' }}>
             <div key={area + mode} className="fade-in" style={{ maxWidth: 1240, margin: '0 auto' }}>
+              {['estudio','criar','biblioteca','conteudo','abtest','cro'].includes(area) && <StudioTabs active={area} onNav={navigate} />}
               {area === 'hoje' && <Hoje mode={mode} onNav={navigate} />}
               {area === 'desempenho' && <Desempenho mode={mode} />}
               {area === 'diagnostico' && <Diagnostico mode={mode} onNav={navigate} />}
@@ -89,6 +91,7 @@ function App() {
               {area === 'integracoes' && <Integracoes mode={mode} />}
               {area === 'config' && <Config mode={mode} onNav={navigate} />}
               {area === 'planos' && <Planos mode={mode} />}
+              {area === 'estudio' && <Estudio mode={mode} onNav={navigate} />}
               {area === 'criar' && <CriarCampanha mode={mode} onNav={navigate} />}
               {area === 'biblioteca' && <Biblioteca mode={mode} />}
               {area === 'conteudo' && <Conteudo mode={mode} />}

@@ -41,9 +41,14 @@
 10. **Landing page migrada** (`landing/ELYON LP Clarity.html`): mesma linguagem Clarity,
     mock do produto atualizado, **planos com valores reais** (Grátis / R$297 / R$997 / R$2.997).
     Detalhe no `MIGRATION.md › PR 6`.
+11. **Estúdio de Criação** (`screens-estudio.jsx`): os 5 itens soltos do grupo Criação viram
+    **1 item de sidebar "Estúdio de Criação"** → um hub (prompt do NOUS + fluxo + cards) +
+    **barra de sub-abas (StudioTabs)** que une as ferramentas. Detalhe no `MIGRATION.md › PR 4a`.
+12. **Sub-aba "Persona"** (`screens-extra.jsx › PersonaBlock`): 3ª aba do Plano de Ação —
+    seletor de papel com saída específica por papel + confiabilidade. Detalhe no `MIGRATION.md › PR 4b`.
 
 > O restante do documento (arquitetura, telas, padrões) continua válido — só atualize os
-> valores de token e adote os 10 itens acima.
+> valores de token e adote os 12 itens acima.
 >
 > 📋 **Comece pelo `MIGRATION.md`** — ele lista, em PRs (0→6), o arquivo do protótipo → arquivo
 > exato do repo onde mexer. Siga essa ordem.

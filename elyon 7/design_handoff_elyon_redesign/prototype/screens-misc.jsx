@@ -208,8 +208,8 @@ function PlanoAcao({ mode, onNav }) {
   const [ptab, setPtab] = useStateM('plano');
   return (
     <div>
-      <SubTabs value={ptab} onChange={setPtab} tabs={[{ k: 'plano', label: 'Execução', icon: 'check' }, { k: 'estrategia', label: 'Estratégia 90 dias', icon: 'rocket' }]} />
-      {ptab === 'estrategia' ? <div className="fade-in"><EstrategiaBlock /></div> : (
+      <SubTabs value={ptab} onChange={setPtab} tabs={[{ k: 'plano', label: 'Execução', icon: 'check' }, { k: 'estrategia', label: 'Estratégia 90 dias', icon: 'rocket' }, { k: 'persona', label: 'Persona', icon: 'users' }]} />
+      {ptab === 'estrategia' ? <div className="fade-in"><EstrategiaBlock /></div> : ptab === 'persona' ? <div className="fade-in"><PersonaBlock /></div> : (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="auto-kpi">
         {[['Ações planejadas', D.actions.length, 'check', 'var(--blue)'], ['Em andamento', 2, 'pulse', 'var(--amber)'],

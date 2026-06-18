@@ -439,4 +439,219 @@ function PortalBlock() {
   );
 }
 
-Object.assign(window, { Audiencias, AlocadorIA, CampanhaDetalhe, AuditBlock, EstrategiaBlock, MemoriaBlock, PortalBlock });
+/* ═══ PERSONA DO CLIENTE — bloco p/ Plano de Ação ═══════════════════════ */
+const PERSONA_ROLES = [
+  { k: 'gestor',  icon: 'target',    title: 'Gestor de Tráfego',     desc: 'Interesses do Facebook Ads prontos para segmentar' },
+  { k: 'social',  icon: 'megaphone', title: 'Social Media',          desc: 'Ângulos de conteúdo e linguagem editorial' },
+  { k: 'creator', icon: 'bolt',      title: 'Influencer / Creator',  desc: 'Roteiros e ganchos que geram identificação' },
+  { k: 'dono',    icon: 'building',  title: 'Dono do Negócio',       desc: 'Visão estratégica e proposta de valor' },
+];
+
+/* Saída específica por papel */
+function PersonaDeliverable({ role, p }) {
+  if (role === 'gestor') {
+    const interests = ['Educação financeira', 'Investimentos', 'Nubank', 'Empreendedorismo', 'XP Investimentos', 'Crédito pessoal', 'Serasa', 'PicPay', 'Finanças pessoais'];
+    return (
+      <Card hover>
+        <SectionHead title="Interesses para o Facebook Ads" sub="Prontos para colar no Gerenciador de Anúncios" icon="target" right={<SourceBadge kind="ai" />} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          {interests.map(i => (
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 500, color: 'var(--blue-600)', background: 'var(--blue-soft)', border: '1px solid var(--blue-line)', borderRadius: 'var(--r-pill)', padding: '6px 12px' }}>
+              <span style={{ width: 5, height: 5, borderRadius: 99, background: 'var(--blue)' }} />{i}
+            </span>
+          ))}
+        </div>
+        <div className="cols-3">
+          {[['Alcance estimado', '2,4–3,1 mi', 'SP · RJ · BH'], ['Público frio', 'LAL 1% Compradores', 'recomendado'], ['Sobreposição', 'Baixa', 'pronto para subir']].map(([l, v, s]) => (
+            <div key={l} style={{ padding: '11px 13px', background: 'var(--canvas)', border: '1px solid var(--line)', borderRadius: 'var(--r-md)' }}>
+              <div className="eyebrow" style={{ marginBottom: 5 }}>{l}</div>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>{v}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{s}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  }
+  if (role === 'social') {
+    const angles = [
+      ['Educar', 'Mitos sobre crédito que custam caro', 'Posicione-se como quem simplifica o complicado.'],
+      ['Prova social', 'Histórias de quem organizou as contas', 'Depoimentos reais reduzem a desconfiança.'],
+      ['Urgência', 'Condições que mudam todo mês', 'Crie escassez honesta com prazos reais.'],
+      ['Bastidores', 'Como avaliamos cada proposta', 'Transparência gera autoridade.'],
+    ];
+    return (
+      <Card hover>
+        <SectionHead title="Ângulos de conteúdo & tom de voz" sub="Para guiar a linha editorial" icon="megaphone" right={<SourceBadge kind="ai" />} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+          {angles.map(([tag, t, d]) => (
+            <div key={t} style={{ display: 'flex', gap: 12, padding: '12px 14px', background: 'var(--canvas)', border: '1px solid var(--line)', borderRadius: 'var(--r-md)', alignItems: 'flex-start' }}>
+              <Badge tone="blue" style={{ flexShrink: 0, marginTop: 1 }}>{tag}</Badge>
+              <div><div style={{ fontSize: 13.5, fontWeight: 600 }}>{t}</div><div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 2, lineHeight: 1.5 }}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 13px', background: 'var(--green-soft)', border: '1px solid var(--green-line)', borderRadius: 'var(--r-sm)' }}>
+          <Icon name="spark" size={15} style={{ color: 'var(--green-600)' }} />
+          <span style={{ fontSize: 12.5, color: 'var(--ink-2)' }}><b style={{ color: 'var(--ink)' }}>Tom de voz:</b> próximo, claro e sem jargão — fala como amigo que entende de dinheiro.</span>
+        </div>
+      </Card>
+    );
+  }
+  if (role === 'creator') {
+    const hooks = [
+      ['Gancho de abertura', '"Ninguém te conta isso sobre crédito…"', '3s para prender a atenção'],
+      ['Roteiro · problema → virada', 'Mostre a dor (contas bagunçadas) → a virada (1 parcela só)', 'Ideal para Reels de 30–45s'],
+      ['CTA nativo', '"Comenta ORGANIZAR que eu te mando o passo a passo"', 'Gera conversa e alcance'],
+    ];
+    return (
+      <Card hover>
+        <SectionHead title="Roteiros & ganchos" sub="Que geram identificação com a persona" icon="bolt" right={<SourceBadge kind="ai" />} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {hooks.map(([tag, t, s], i) => (
+            <div key={i} style={{ padding: '13px 15px', background: 'var(--canvas)', border: '1px solid var(--line)', borderRadius: 'var(--r-md)' }}>
+              <div className="eyebrow" style={{ marginBottom: 6 }}>{tag}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>{t}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 5 }}>{s}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  }
+  // dono
+  const pillars = [['Proposta de valor', 'Crédito sem letras miúdas, aprovado na hora e que cabe no bolso.'], ['Diferencial', 'Transparência total + simulação em 2 minutos, 100% online.'], ['Promessa', 'Sair do vermelho com uma parcela só — sem burocracia.']];
+  return (
+    <Card hover>
+      <SectionHead title="Visão estratégica & proposta de valor" sub="Para alinhar posicionamento e oferta" icon="building" right={<SourceBadge kind="ai" />} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {pillars.map(([l, v]) => (
+          <div key={l} style={{ display: 'flex', gap: 12, padding: '13px 15px', background: 'var(--canvas)', border: '1px solid var(--line)', borderRadius: 'var(--r-md)' }}>
+            <span style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'var(--blue-soft)', color: 'var(--blue-600)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={16} w={2.4} /></span>
+            <div><div style={{ fontSize: 13, fontWeight: 700 }}>{l}</div><div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 2, lineHeight: 1.55 }}>{v}</div></div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function PersonaBlock() {
+  const D = window.DATA, p = D.strategy.persona;
+  const [role, setRole] = useStateX('gestor');
+  const [stage, setStage] = useStateX('idle'); // idle · loading · done
+  const cur = PERSONA_ROLES.find(r => r.k === role);
+  const learned = ['Crédito & Fintech · público nacional', 'Objetivo principal: geração de leads', 'Ticket médio R$ 2.200 · margem 38%', 'Meta Ads e Google Ads conectados'];
+
+  const generate = () => {
+    setStage('loading');
+    setTimeout(() => { setStage('done'); window.toast && window.toast({ tone: 'good', title: 'Persona gerada', body: `Perfil para ${cur.title} pronto.` }); }, 1400);
+  };
+
+  return (
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Header */}
+      <div>
+        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-.025em', margin: 0 }}>Persona do Cliente</h2>
+        <p style={{ fontSize: 13.5, color: 'var(--ink-2)', margin: '5px 0 0', lineHeight: 1.6, maxWidth: 680 }}>O NOUS cria o perfil do cliente ideal — dores, desejos, objeções e segmentações — a partir dos dados reais do seu negócio, adaptado para quem vai usar.</p>
+      </div>
+
+      {/* Seletor de papel */}
+      <Card>
+        <div className="eyebrow" style={{ marginBottom: 13 }}>Você vai usar como</div>
+        <div className="split">
+          {PERSONA_ROLES.map(r => {
+            const on = role === r.k;
+            return (
+              <button key={r.k} onClick={() => { setRole(r.k); setStage('idle'); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: '14px 15px', borderRadius: 'var(--r-md)', cursor: 'pointer', transition: 'all .15s',
+                  background: on ? 'var(--blue-soft)' : 'var(--paper)', border: `1px solid ${on ? 'var(--blue)' : 'var(--line)'}`, boxShadow: on ? 'none' : 'var(--sh-1)' }}>
+                <span style={{ width: 40, height: 40, borderRadius: 'var(--r-md)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: on ? 'var(--blue)' : 'var(--canvas-2)', color: on ? '#fff' : 'var(--ink-2)' }}><Icon name={r.icon} size={19} /></span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: on ? 'var(--blue-600)' : 'var(--ink)' }}>{r.title}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 2, lineHeight: 1.4 }}>{r.desc}</div>
+                </div>
+                <span style={{ width: 20, height: 20, borderRadius: 99, flexShrink: 0, border: `2px solid ${on ? 'var(--blue)' : 'var(--line-strong)'}`, background: on ? 'var(--blue)' : 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {on && <Icon name="check" size={12} w={3} />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <Button variant="primary" icon="sparkle2" full size="lg" onClick={generate} disabled={stage === 'loading'}>
+            {stage === 'loading' ? 'Gerando persona…' : stage === 'done' ? `Regenerar para ${cur.title}` : `Gerar persona para ${cur.title}`}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Confiabilidade + o que aprendemos */}
+      <div className="split">
+        <Card hover>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>Confiabilidade da persona</span>
+            <span><span className="mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--amber)' }}>43%</span> <span style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>dados reais</span></span>
+          </div>
+          <div style={{ display: 'flex', height: 9, borderRadius: 99, overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ width: '43%', background: 'var(--green)' }} />
+            <div style={{ width: '57%', background: 'var(--amber)' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 10 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--ink-2)' }}><span style={{ width: 8, height: 8, borderRadius: 99, background: 'var(--green)' }} />43% dados confirmados</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--ink-2)' }}><span style={{ width: 8, height: 8, borderRadius: 99, background: 'var(--amber)' }} />57% inferência estratégica</span>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>Combina dados reais das contas conectadas com inferências estratégicas da IA. Conecte mais fontes para aumentar a confiabilidade.</div>
+        </Card>
+        <Card hover style={{ background: 'var(--green-soft)', borderColor: 'var(--green-line)' }}>
+          <div className="eyebrow" style={{ color: 'var(--green-600)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 7 }}><Icon name="check" size={14} /> O que aprendemos com seus dados</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {learned.map(l => (
+              <div key={l} style={{ display: 'flex', gap: 9, fontSize: 13, color: 'var(--ink)', alignItems: 'flex-start' }}>
+                <span style={{ color: 'var(--green-600)', flexShrink: 0, marginTop: 1 }}><Icon name="check" size={14} w={2.4} /></span>{l}
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Estado: loading */}
+      {stage === 'loading' && (
+        <Card style={{ textAlign: 'center', padding: '40px 24px' }} className="fade-in">
+          <NousOrb size={50} thinking />
+          <div style={{ fontSize: 15, fontWeight: 700, marginTop: 14 }}>O NOUS está montando a persona…</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 5 }}>Cruzando seus dados com benchmarks do nicho para {cur.title}.</div>
+        </Card>
+      )}
+
+      {/* Estado: resultado */}
+      {stage === 'done' && (
+        <div className="fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Perfil base */}
+          <Card hover>
+            <SectionHead title="Perfil da persona" sub={`Adaptado para ${cur.title}`} icon="users" right={<Badge tone="blue" dot>{cur.title}</Badge>} />
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <Avatar initials="M" size={56} tone="linear-gradient(135deg, var(--dv-3), var(--dv-2))" />
+              <div style={{ flex: 1, minWidth: 240 }}>
+                <div style={{ fontSize: 17, fontWeight: 700 }}>{p.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: 4 }}>{p.summary}</div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginTop: 16 }}>
+              {[['Idade', p.age], ['Gênero', p.gender], ['Renda', p.income], ['Regiões', p.regions.join(' · ')]].map(([k, v]) => (
+                <div key={k} style={{ padding: '10px 12px', background: 'var(--canvas)', borderRadius: 'var(--r-sm)', border: '1px solid var(--line)' }}>
+                  <div className="eyebrow" style={{ marginBottom: 3 }}>{k}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+          {/* Saída específica do papel */}
+          <PersonaDeliverable role={role} p={p} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { Audiencias, AlocadorIA, CampanhaDetalhe, AuditBlock, EstrategiaBlock, MemoriaBlock, PortalBlock, PersonaBlock });

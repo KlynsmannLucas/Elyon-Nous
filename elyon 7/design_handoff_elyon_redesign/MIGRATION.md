@@ -76,14 +76,38 @@ fontes: Schibsted Grotesk (sans) + JetBrains Mono (números)
 | `screens-desempenho.jsx` | `app/(elyon)/desempenho/page.tsx` | Sub-abas, filtros, export, drill-down — só re-estilo. |
 | `screens-misc.jsx` (Diagnóstico) | `app/(elyon)/diagnostico/page.tsx` | — |
 | `screens-misc.jsx` (Mercado) | `app/(elyon)/mercado/page.tsx` | — |
-| `screens-misc.jsx` (Plano) | `app/(elyon)/plano/page.tsx` | — |
+| `screens-misc.jsx` (Plano) | `app/(elyon)/plano/page.tsx` | Execução (kanban/matriz) + sub-aba **Estratégia 90 dias** + **nova sub-aba "Persona"** (ver PR 4). |
 | `screens-misc.jsx` (Relatórios) | `app/(elyon)/relatorios/page.tsx` | Ligar botões de export (já há `@react-pdf` + `xlsx`). |
 | `screens-misc.jsx` (Integrações/Config) | `integracoes/page.tsx`, `config/page.tsx` | — |
 | `screens-auth.jsx` | rota de auth (Clerk) | Split hero claro + form. |
 
 ---
 
-## PR 4 — Módulos que faltam no layout novo (lógica já existe!)
+## PR 4 — Estúdio de Criação + módulos que faltam (lógica já existe!)
+
+### 4a · Estúdio de Criação (NOVO — reorganiza o grupo "Criação")
+
+> No redesign, os **5 itens soltos** do grupo Criação (Criar campanha, Biblioteca,
+> Conteúdo, Teste A/B, CRO) viram **um único item de sidebar "Estúdio de Criação"**
+> que abre um **hub**, e as 5 ferramentas passam a ser navegadas por uma **barra de
+> sub-abas (StudioTabs)** no topo de cada uma. Referência: `prototype/screens-estudio.jsx`.
+
+| Protótipo | Repo (destino) | O que fazer |
+|---|---|---|
+| `screens-estudio.jsx › Estudio` (hub) | `app/(elyon)/estudio/page.tsx` | Hero escuro c/ prompt do NOUS ("O que você quer criar hoje?"), ribbon do fluxo (Criar→Guardar→Produzir→Testar→Otimizar), 5 cards de ferramenta com **dado ao vivo** e card "Sugestão do NOUS". |
+| `screens-estudio.jsx › StudioTabs` | layout do grupo: `app/(elyon)/(estudio)/layout.tsx` | Barra de sub-abas (Estúdio + 5 ferramentas) renderizada no topo das 6 rotas — vira o "layout" que une o estúdio. |
+| `data.js › nav` | Sidebar | Trocar os 5 itens do grupo `studio` por **1 item** `Estúdio de Criação` (ícone sparkle, badge IA). As 5 rotas continuam existindo, só saem da sidebar. |
+
+> Sugestão de estrutura: agrupar as 6 rotas sob `app/(elyon)/(estudio)/` com um `layout.tsx`
+> que renderiza a StudioTabs; `estudio/` é o hub e `criar|biblioteca|conteudo|abtest|cro/` as ferramentas.
+
+### 4b · Sub-aba "Persona" (NOVA) em Plano de Ação
+
+| Protótipo | Repo (destino) | O que fazer |
+|---|---|---|
+| `screens-extra.jsx › PersonaBlock` | `app/(elyon)/plano/page.tsx` (3ª sub-aba) | Seletor de **papel** (Gestor de Tráfego / Social Media / Influencer / Dono) → botão gerar → **saída específica por papel** (interesses FB Ads, ângulos de conteúdo, roteiros, proposta de valor) + **Confiabilidade da persona** (barra 43/57) + "O que aprendemos". Acento **azul** (não laranja). |
+
+### 4c · Módulos que faltam no layout novo (lógica já existe!)
 
 > Estes `Tab*.tsx` **já existem no repo** mas não têm rota própria no grupo `(elyon)`.
 > Criar a rota + aplicar o estilo Clarity (referência no protótipo `screens-studio2.jsx`).
@@ -97,7 +121,7 @@ fontes: Schibsted Grotesk (sans) + JetBrains Mono (números)
 | `screens-studio.jsx › CriarCampanha` | `components/dashboard/TabCriarCampanha.tsx` + `app/api/campaign/generate` | `app/(elyon)/criar/page.tsx` (ou `novo/`) |
 | `screens-studio.jsx › Biblioteca` | `components/dashboard/TabAssets.tsx` + `app/api/assets/*` | `app/(elyon)/biblioteca/page.tsx` |
 
-**+ Adicionar esses itens à navegação** (na Sidebar, grupos Criação/Sistema) — espelha o `nav` do protótipo (`prototype/data.js`).
+**+ Navegação:** em vez de 6 itens soltos, a sidebar mostra **1 item "Estúdio de Criação"** (ver 4a); as ferramentas vivem sob ele via StudioTabs.
 
 ---
 

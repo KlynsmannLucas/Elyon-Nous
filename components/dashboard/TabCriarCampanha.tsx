@@ -218,11 +218,14 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
   if (step === 'input') return (
     <div style={S.wrap}>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ color: '#18191D', fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 6 }}>
-          📣 Criar Campanha com IA
+        <div style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', color: '#1E47C4', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>
+          Criar campanha · NOUS IA
+        </div>
+        <h2 style={{ color: '#18191D', fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 6, letterSpacing: '-0.02em' }}>
+          Descreva o que você quer — o NOUS monta a campanha.
         </h2>
         <p style={{ color: '#898C97', fontSize: 14 }}>
-          Descreva o que você quer em linguagem natural. A IA monta o plano completo e cria no Meta Ads.
+          Em linguagem natural. A IA monta o plano completo (objetivo, público, verba e criativo) e cria no Meta Ads.
         </p>
       </div>
 

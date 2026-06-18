@@ -412,8 +412,8 @@ export default function DesempenhoPage() {
               <SectionHead title="Desempenho por campanha" subtitle={`${filtered.length} de ${camps.length} campanhas · clique numa linha para detalhes`} icon={<Icon name="megaphone" size={17} />}
                 action={camps.length ? (
                   <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" icon="filter" onClick={() => setFilterOpen(true)}>Filtros{activeFilters ? ` · ${activeFilters}` : ''}</Button>
-                    <Button size="sm" variant="ghost" icon="download" onClick={() => setExportOpen(true)}>Exportar</Button>
+                    <Button size="sm" variant="ghost" icon={<Icon name="funnel" size={14} />} onClick={() => setFilterOpen(true)}>Filtros{activeFilters ? ` · ${activeFilters}` : ''}</Button>
+                    <Button size="sm" variant="ghost" icon={<Icon name="download" size={14} />} onClick={() => setExportOpen(true)}>Exportar</Button>
                   </div>
                 ) : undefined} />
               {filtered.length > 0 ? <CampTable rows={filtered} /> : <p className="text-center py-8 text-ink-3 text-sm">Nenhuma campanha{activeFilters ? ' com esses filtros' : ''}.</p>}
