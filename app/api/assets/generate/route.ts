@@ -46,13 +46,42 @@ function buildPrompt(body: GenerateRequest): string {
   return parts.join(' ')
 }
 
+// Aspect ratio do Imagen por formato
+const ASPECT: Record<string, string> = { square: '1:1', portrait: '9:16', landscape: '16:9' }
+
+// Fallback: gera a imagem com o Imagen (Google Gemini API). Retorna base64 ou null.
+async function generateWithGemini(prompt: string, format: string): Promise<string | null> {
+  const key = process.env.GEMINI_API_KEY
+  if (!key) return null
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{ prompt }],
+        parameters: { sampleCount: 1, aspectRatio: ASPECT[format] || '1:1' },
+      }),
+      signal: AbortSignal.timeout(110000),
+    })
+    if (!res.ok) {
+      console.error('[assets/generate] gemini imagen error:', res.status, (await res.text().catch(() => '')).slice(0, 300))
+      return null
+    }
+    const data = await res.json()
+    return data?.predictions?.[0]?.bytesBase64Encoded || null
+  } catch (e: any) {
+    console.error('[assets/generate] gemini imagen threw:', e?.message)
+    return null
+  }
+}
+
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({ error: 'OPENAI_API_KEY não configurada no servidor.' }, { status: 503 })
+  if (!apiKey && !process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: 'Nenhum provedor de imagem configurado (OPENAI_API_KEY ou GEMINI_API_KEY).' }, { status: 503 })
   }
   if (!supabaseAdmin) {
     return NextResponse.json(
@@ -74,51 +103,59 @@ export async function POST(req: NextRequest) {
   const type = VALID_TYPES.includes(body.type || '') ? body.type! : 'banner'
   const size = VALID_SIZES[body.format || 'square'] || VALID_SIZES.square
 
-  // ── 1. Gera a imagem com gpt-image-1 ────────────────────────────────────────
-  let b64: string
-  try {
-    const res = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: buildPrompt(body),
-        size,
-        n: 1,
-        quality: 'high',
-      }),
-      signal: AbortSignal.timeout(110000),
-    })
+  // ── 1. Gera a imagem: OpenAI (gpt-image-1) → fallback Gemini (Imagen) ───────
+  const prompt = buildPrompt(body)
+  let b64: string | null = null
+  let provider = ''
+  let openaiMsg = '' // mensagem amigável caso a OpenAI falhe (mostrada só se o Gemini também falhar)
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '')
-      let rawMsg = `Falha na geração (${res.status})`
-      try { const j = JSON.parse(errText); rawMsg = j.error?.message || rawMsg } catch {}
-      console.error('[assets/generate] openai error:', res.status, errText.slice(0, 400))
-      // Mensagens amigáveis para erros de conta/cobrança da OpenAI.
-      const low = rawMsg.toLowerCase()
-      let msg = rawMsg
-      if (low.includes('billing') || low.includes('hard limit') || res.status === 402) {
-        msg = 'Geração de imagem indisponível: o limite de cobrança da conta OpenAI foi atingido. Ajuste o limite/saldo em platform.openai.com (Billing → Limits) e tente de novo.'
-      } else if (low.includes('quota') || low.includes('insufficient')) {
-        msg = 'Geração de imagem indisponível: a conta OpenAI está sem créditos/quota. Adicione saldo em platform.openai.com e tente de novo.'
-      } else if (res.status === 429) {
-        msg = 'Muitas requisições à OpenAI agora. Aguarde alguns segundos e tente de novo.'
+  if (apiKey) {
+    try {
+      const res = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: 'gpt-image-1', prompt, size, n: 1, quality: 'high' }),
+        signal: AbortSignal.timeout(110000),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        b64 = data?.data?.[0]?.b64_json || null
+        if (b64) provider = 'openai'
+      } else {
+        const errText = await res.text().catch(() => '')
+        let rawMsg = `Falha na geração (${res.status})`
+        try { const j = JSON.parse(errText); rawMsg = j.error?.message || rawMsg } catch {}
+        console.error('[assets/generate] openai error:', res.status, errText.slice(0, 400))
+        const low = rawMsg.toLowerCase()
+        if (low.includes('billing') || low.includes('hard limit') || res.status === 402) {
+          openaiMsg = 'Limite de cobrança da conta OpenAI atingido (ajuste em platform.openai.com → Billing → Limits).'
+        } else if (low.includes('quota') || low.includes('insufficient')) {
+          openaiMsg = 'Conta OpenAI sem créditos/quota (adicione saldo em platform.openai.com).'
+        } else if (res.status === 429) {
+          openaiMsg = 'Muitas requisições à OpenAI agora.'
+        } else {
+          openaiMsg = rawMsg
+        }
       }
-      return NextResponse.json({ error: msg }, { status: 502 })
+    } catch (e: any) {
+      openaiMsg = e?.name === 'TimeoutError' ? 'A OpenAI demorou demais para responder.' : (e?.message || 'Erro na OpenAI')
+      console.error('[assets/generate] openai threw:', openaiMsg)
     }
-
-    const data = await res.json()
-    b64 = data?.data?.[0]?.b64_json
-    if (!b64) {
-      console.error('[assets/generate] resposta sem b64_json')
-      return NextResponse.json({ error: 'A IA não retornou imagem.' }, { status: 502 })
-    }
-  } catch (e: any) {
-    const msg = e?.name === 'TimeoutError' ? 'A geração demorou demais. Tente um prompt mais simples.' : (e?.message || 'Erro na geração')
-    console.error('[assets/generate]', msg)
-    return NextResponse.json({ error: msg }, { status: 504 })
   }
+
+  // Fallback automático: se a OpenAI não gerou, tenta o Imagen (Gemini).
+  if (!b64) {
+    const g = await generateWithGemini(prompt, body.format || 'square')
+    if (g) { b64 = g; provider = 'gemini' }
+  }
+
+  if (!b64) {
+    const msg = openaiMsg
+      ? `${openaiMsg} O fallback (Gemini Imagen) também não conseguiu gerar a imagem agora.`
+      : 'Não foi possível gerar a imagem com nenhum provedor (OpenAI/Gemini). Tente novamente em instantes.'
+    return NextResponse.json({ error: msg }, { status: 502 })
+  }
+  console.log('[assets/generate] imagem gerada via', provider)
 
   // ── 2. Upload para o Supabase Storage ───────────────────────────────────────
   const buffer = Buffer.from(b64, 'base64')
