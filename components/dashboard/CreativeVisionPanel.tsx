@@ -16,9 +16,10 @@ interface VisionAnalysis {
 }
 
 const C = {
-  surface: '#FFFFFF', elevated: '#FBFCFD', border: 'rgba(255,255,255,0.06)',
-  text1: '#161B26', text2: '#5A6473', text3: '#8A93A3',
-  amber: '#E08B0B', green: '#0E9E6E', red: '#E1483F', purpleL: '#2C5FE0',
+  surface: '#FFFFFF', elevated: '#FAFAF8', border: '#E6E5E0',
+  text1: '#18191D', text2: '#565862', text3: '#898C97',
+  amber: '#D9870B', green: '#0E9E6E', red: '#E1483F', purpleL: '#1E47C4',
+  blueSoft: '#EBF0FE', blueLine: '#CCDAFB',
 }
 
 function scoreColor(s: number) { return s >= 75 ? C.green : s >= 50 ? C.amber : C.red }
@@ -70,23 +71,19 @@ export default function CreativeVisionPanel({ clientData }: { clientData: Client
   const score = typeof result?.score === 'number' ? Math.max(0, Math.min(100, Math.round(result.score))) : null
 
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '20px', marginBottom: '16px' }}>
+    <div style={{ background: 'linear-gradient(110deg, #EBF0FE, #E3F6EE)', border: `1px solid ${C.blueLine}`, borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h3 style={{ fontSize: '14px', fontWeight: 700, color: C.text1, margin: 0, display: 'flex', alignItems: 'center', gap: '7px' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.purpleL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg>
-            Análise visual com IA
-            <span style={{ fontSize: '9px', fontWeight: 700, color: C.purpleL, background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)', borderRadius: '5px', padding: '1px 6px' }}>Gemini</span>
-          </h3>
-          <p style={{ fontSize: '11px', color: C.text3, margin: '3px 0 0' }}>Suba a imagem do anúncio ou um print da landing page e receba um parecer de CRO.</p>
+          <div style={{ fontSize: '10.5px', fontFamily: 'var(--font-mono)', color: C.purpleL, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '4px' }}>Análise visual do NOUS · Gemini</div>
+          <p style={{ fontSize: '12px', color: C.text2, margin: 0 }}>Suba a imagem do anúncio ou um print da landing page e receba um parecer de CRO.</p>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
           {(['creative', 'landing'] as const).map(k => (
             <button key={k} onClick={() => setKind(k)} style={{
-              fontSize: '11px', fontWeight: 600, padding: '5px 11px', borderRadius: '7px', cursor: 'pointer',
-              background: kind === k ? 'rgba(167,139,250,0.14)' : 'transparent',
-              border: `1px solid ${kind === k ? 'rgba(167,139,250,0.4)' : C.border}`,
-              color: kind === k ? C.purpleL : C.text2,
+              fontSize: '11px', fontWeight: 600, padding: '5px 11px', borderRadius: '8px', cursor: 'pointer',
+              background: kind === k ? '#FFFFFF' : 'transparent',
+              border: `1px solid ${kind === k ? '#2B5BE3' : C.blueLine}`,
+              color: kind === k ? '#1E47C4' : C.text2,
             }}>{k === 'creative' ? 'Criativo' : 'Landing page'}</button>
           ))}
         </div>
@@ -102,10 +99,10 @@ export default function CreativeVisionPanel({ clientData }: { clientData: Client
         <div>
           <button onClick={() => fileRef.current?.click()} disabled={loading} style={{
             width: preview ? 'auto' : '100%', padding: '10px 16px', borderRadius: '10px',
-            border: `1px dashed ${C.border}`, background: C.elevated, color: loading ? C.text3 : C.text2,
+            border: `1px dashed ${C.blueLine}`, background: '#FFFFFF', color: loading ? C.text3 : '#1E47C4',
             cursor: loading ? 'wait' : 'pointer', fontSize: '12px', fontWeight: 600,
           }}>
-            {loading ? '⏳ Analisando imagem…' : preview ? '↻ Trocar imagem' : '+ Selecionar imagem'}
+            {loading ? 'Analisando imagem…' : preview ? 'Trocar imagem' : '+ Selecionar imagem'}
           </button>
           {error && <div style={{ marginTop: '10px', fontSize: '11px', color: C.red }}>{error}</div>}
 
