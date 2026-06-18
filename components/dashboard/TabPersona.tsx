@@ -3,6 +3,10 @@
 import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData, GeneratedPersona } from '@/lib/store'
+import { Icon } from '@/components/dashboard/v2'
+
+// Ícone Clarity por papel (substitui os emojis)
+const ROLE_ICON: Record<string, string> = { gestor: 'target', social: 'megaphone', influencer: 'bolt', dono: 'gem' }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -422,36 +426,43 @@ export function TabPersona({ clientData }: Props) {
   ].filter(Boolean).length
 
   return (
-    <div style={{ maxWidth: 720 }}>
+    <div style={{ maxWidth: 960 }}>
       {/* Cabeçalho */}
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text1, margin: 0 }}>Persona do Cliente</h2>
-        <p style={{ fontSize: 12, color: C.text3, marginTop: 4, marginBottom: 0 }}>
-          IA cria o perfil do cliente ideal com dores, desejos, objeções e segmentações — baseada nos dados reais do negócio
+      <div style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text1, margin: 0, letterSpacing: '-0.025em' }}>Persona do Cliente</h2>
+        <p style={{ fontSize: 13.5, color: C.text2, marginTop: 5, marginBottom: 0, lineHeight: 1.6, maxWidth: 680 }}>
+          O NOUS cria o perfil do cliente ideal — dores, desejos, objeções e segmentações — a partir dos dados reais do seu negócio, adaptado para quem vai usar.
         </p>
       </div>
 
       {/* Seletor de papel */}
       <div style={{ borderRadius: 14, padding: 20, marginBottom: 16, background: C.surface, border: `1px solid ${C.border}` }}>
-        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: C.text3, marginBottom: 12 }}>
-          Você é um:
+        <div style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.14em', color: C.text3, marginBottom: 13 }}>
+          Você vai usar como
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {ROLES.map(r => {
             const active = role === r.key
             return (
               <button key={r.key} onClick={() => setRole(r.key)} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 12,
-                padding: 14, borderRadius: 12, textAlign: 'left' as const,
-                background: active ? 'rgba(245,158,11,0.08)' : C.elevated,
-                border: `1px solid ${active ? `${C.gold}50` : C.border}`,
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '14px 15px', borderRadius: 12, textAlign: 'left' as const,
+                background: active ? '#EBF0FE' : '#FFFFFF',
+                border: `1px solid ${active ? '#2B5BE3' : C.border}`,
+                boxShadow: active ? 'none' : '0 1px 2px rgba(24,25,29,.04)',
                 cursor: 'pointer', transition: 'all 0.15s',
               }}>
-                <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{r.icon}</span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: active ? C.gold : C.text1, marginBottom: 2 }}>{r.label}</div>
-                  <div style={{ fontSize: 10, color: C.text3, lineHeight: 1.4 }}>{r.desc}</div>
+                <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: active ? '#2B5BE3' : '#ECECE8', color: active ? '#fff' : C.text2 }}>
+                  <Icon name={ROLE_ICON[r.key] || 'users'} size={19} />
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? '#1E47C4' : C.text1, marginBottom: 2 }}>{r.label}</div>
+                  <div style={{ fontSize: 12, color: C.text2, lineHeight: 1.4 }}>{r.desc}</div>
                 </div>
+                <span style={{ width: 20, height: 20, borderRadius: 99, flexShrink: 0, border: `2px solid ${active ? '#2B5BE3' : '#D5D4CD'}`, background: active ? '#2B5BE3' : 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {active && <Icon name="check" size={12} w={3} />}
+                </span>
               </button>
             )
           })}
@@ -506,10 +517,10 @@ export function TabPersona({ clientData }: Props) {
         disabled={loading}
         style={{
           width: '100%', padding: '14px 0', borderRadius: 12, marginBottom: 28,
-          fontWeight: 700, fontSize: 14, color: '#000',
-          background: loading ? C.elevated : `linear-gradient(135deg, ${C.gold}, #FFD166)`,
+          fontWeight: 700, fontSize: 14, color: '#fff',
+          background: loading ? '#ECECE8' : '#2B5BE3',
           border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-          opacity: loading ? 0.6 : 1,
+          opacity: loading ? 0.7 : 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
       >
@@ -519,10 +530,10 @@ export function TabPersona({ clientData }: Props) {
               style={{ animation: 'personaSpin 1s linear infinite' }}>
               <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
             </svg>
-            <span style={{ color: C.text2 }}>Gerando persona...</span>
+            <span style={{ color: C.text2 }}>Gerando persona…</span>
           </>
         ) : (
-          `Gerar Persona para ${ROLES.find(r => r.key === role)?.label}`
+          <><Icon name="spark" size={15} /> {generatedPersona ? 'Regenerar' : 'Gerar'} persona para {ROLES.find(r => r.key === role)?.label}</>
         )}
       </button>
 
