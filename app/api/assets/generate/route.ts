@@ -46,33 +46,68 @@ function buildPrompt(body: GenerateRequest): string {
   return parts.join(' ')
 }
 
-// Aspect ratio do Imagen por formato
-const ASPECT: Record<string, string> = { square: '1:1', portrait: '9:16', landscape: '16:9' }
+// Dica de composição por formato (o Flash image-gen não tem parâmetro de aspect ratio)
+const ASPECT_HINT: Record<string, string> = {
+  square:    ' Square 1:1 composition, centered.',
+  portrait:  ' Vertical 9:16 composition (stories/reels), subject centered with headroom on top.',
+  landscape: ' Horizontal 16:9 banner composition, leave clear space for a headline.',
+}
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
+// Modelos de geração de imagem do Gemini (free-tier via generateContent), em ordem de preferência.
+const GEMINI_IMAGE_MODELS = ['gemini-2.5-flash-image-preview', 'gemini-2.0-flash-preview-image-generation']
+// Por último, tenta o Imagen (pago/predict) caso a conta tenha billing.
+const IMAGEN_MODEL = 'imagen-3.0-generate-002'
 
-// Fallback: gera a imagem com o Imagen (Google Gemini API). Retorna base64 ou null.
+// Fallback: gera a imagem com o Gemini (Imagen ou Flash image-gen). Retorna base64 ou null.
 async function generateWithGemini(prompt: string, format: string): Promise<string | null> {
   const key = process.env.GEMINI_API_KEY
   if (!key) return null
+  const fullPrompt = prompt + (ASPECT_HINT[format] || ASPECT_HINT.square)
+
+  // 1) Flash image generation (generateContent → inlineData) — funciona na API key padrão.
+  for (const model of GEMINI_IMAGE_MODELS) {
+    try {
+      const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: fullPrompt }] }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+        }),
+        signal: AbortSignal.timeout(110000),
+      })
+      if (!res.ok) {
+        console.error(`[assets/generate] gemini ${model} error:`, res.status, (await res.text().catch(() => '')).slice(0, 300))
+        continue
+      }
+      const data = await res.json()
+      const parts: any[] = data?.candidates?.[0]?.content?.parts || []
+      const img = parts.find(p => p?.inlineData?.data)?.inlineData?.data
+      if (img) return img
+      console.error(`[assets/generate] gemini ${model} sem imagem na resposta`)
+    } catch (e: any) {
+      console.error(`[assets/generate] gemini ${model} threw:`, e?.message)
+    }
+  }
+
+  // 2) Imagen predict (só se a conta Google tiver billing).
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${key}`, {
+    const ar = format === 'portrait' ? '9:16' : format === 'landscape' ? '16:9' : '1:1'
+    const res = await fetch(`${GEMINI_BASE}/${IMAGEN_MODEL}:predict?key=${key}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [{ prompt }],
-        parameters: { sampleCount: 1, aspectRatio: ASPECT[format] || '1:1' },
-      }),
+      body: JSON.stringify({ instances: [{ prompt }], parameters: { sampleCount: 1, aspectRatio: ar } }),
       signal: AbortSignal.timeout(110000),
     })
-    if (!res.ok) {
-      console.error('[assets/generate] gemini imagen error:', res.status, (await res.text().catch(() => '')).slice(0, 300))
-      return null
+    if (res.ok) {
+      const data = await res.json()
+      return data?.predictions?.[0]?.bytesBase64Encoded || null
     }
-    const data = await res.json()
-    return data?.predictions?.[0]?.bytesBase64Encoded || null
+    console.error('[assets/generate] imagen predict error:', res.status, (await res.text().catch(() => '')).slice(0, 300))
   } catch (e: any) {
-    console.error('[assets/generate] gemini imagen threw:', e?.message)
-    return null
+    console.error('[assets/generate] imagen predict threw:', e?.message)
   }
+  return null
 }
 
 export async function POST(req: NextRequest) {
