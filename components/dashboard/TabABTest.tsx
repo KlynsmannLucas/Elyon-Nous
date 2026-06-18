@@ -122,9 +122,9 @@ function VariantMetrics({ label, variant, isWinner, isLoser }: {
         border: isWinner ? '1px solid rgba(34,197,94,0.25)' : isLoser ? '1px solid rgba(255,77,77,0.15)' : '1px solid #E6E5E0',
       }}>
       {isWinner && (
-        <div className="absolute -top-2 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm"
+        <div className="absolute -top-2 right-3 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm"
           style={{ background: '#E3F6EE', border: '1px solid #B7E6D1', color: '#0B855D' }}>
-          🏆 Vencedora
+          <span style={{ width: 6, height: 6, borderRadius: 99, background: '#0E9E6E' }} /> Vencedora
         </div>
       )}
       <div className="flex items-center gap-2 mb-3">
@@ -461,7 +461,7 @@ function CreateForm({ onClose }: { onClose: () => void }) {
         className="w-full py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-opacity"
         style={{ background: '#2B5BE3' }}
       >
-        🧪 Criar teste A/B
+        Criar teste A/B
       </button>
     </div>
   )
@@ -480,19 +480,19 @@ export function TabABTest({ clientData }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="font-display text-lg font-bold text-ink">Testes A/B de Criativos</h2>
-          <p className="text-xs text-ink-2 mt-0.5">Compare copy, hooks e CTAs. Deixe os dados escolherem o vencedor.</p>
+          <h2 className="font-display text-lg font-bold text-ink">Testes A/B de criativos</h2>
+          <p className="text-xs text-ink-2 mt-0.5">Compare copy, hooks e CTAs — deixe os dados escolherem o vencedor.</p>
         </div>
         <button
           onClick={() => setCreating((x) => !x)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
           style={{
             background: creating ? '#FFFFFF' : '#2B5BE3',
-            color: creating ? '#2B5BE3' : '#000',
-            border: creating ? '1px solid rgba(43,91,227,0.3)' : 'none',
+            color: creating ? '#1E47C4' : '#FFFFFF',
+            border: creating ? '1px solid #CCDAFB' : 'none',
           }}
         >
-          {creating ? '× Cancelar' : '+ Novo Teste'}
+          {creating ? 'Cancelar' : '+ Novo teste'}
         </button>
       </div>
 
@@ -500,7 +500,9 @@ export function TabABTest({ clientData }: Props) {
 
       {creativeTests.length === 0 && !creating && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="text-5xl mb-4 opacity-30">🧪</div>
+          <div className="mb-4 text-ink-4">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6M10 3v6.5L5 18a2 2 0 0 0 1.7 3h10.6A2 2 0 0 0 19 18l-5-8.5V3"/><path d="M7.5 14h9"/></svg>
+          </div>
           <h3 className="font-display text-lg font-bold text-ink mb-2">Nenhum teste ativo</h3>
           <p className="text-ink-2 text-sm max-w-xs mb-6">
             Crie seu primeiro teste A/B para descobrir qual criativo performa melhor no seu nicho.
