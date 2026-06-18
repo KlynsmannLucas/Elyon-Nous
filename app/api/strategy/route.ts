@@ -25,8 +25,30 @@ const CHANNEL_CPL_MULT: Record<string, number> = {
   'WhatsApp':       0.55,
 }
 
+// Multiplicador por canal com matching tolerante (nomes vêm do benchmark sem "Ads":
+// "Instagram", "Google Shopping", "Pinterest" etc.) — evita CPL idêntico em todos.
+function channelMult(channel: string): number {
+  const exact = CHANNEL_CPL_MULT[channel]
+  if (exact != null) return exact
+  const c = (channel || '').toLowerCase()
+  if (c.includes('instagram')) return 1.10
+  if (c.includes('google')) {
+    if (c.includes('search')) return 1.40
+    if (c.includes('pmax') || c.includes('performance')) return 1.20
+    if (c.includes('shopping')) return 1.15
+    return 1.35
+  }
+  if (c.includes('youtube')) return 0.85
+  if (c.includes('tiktok')) return 0.90
+  if (c.includes('pinterest')) return 0.80
+  if (c.includes('linkedin')) return 2.20
+  if (c.includes('whatsapp')) return 0.55
+  if (c.includes('meta') || c.includes('facebook')) return 1.00
+  return 1.0
+}
+
 function channelCPL(channel: string, cplAvg: number) {
-  const mult = CHANNEL_CPL_MULT[channel] ?? 1.0
+  const mult = channelMult(channel)
   return {
     cpl_min: Math.round(cplAvg * mult * 0.80),
     cpl_max: Math.round(cplAvg * mult * 1.20),

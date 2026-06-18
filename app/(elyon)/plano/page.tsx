@@ -213,6 +213,18 @@ export default function PlanoPage() {
       {tab === 'estrategia' && (
         strat ? (
           <div className="space-y-4 animate-fade-up">
+            {(!strat.growth_thesis || !matrix || !ta) && (
+              <Card className="bg-amber-soft border-[#F2DDB0]">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="w-9 h-9 rounded-md bg-paper flex items-center justify-center shrink-0" style={{ color: '#D9870B' }}><Icon name="alert" size={17} /></span>
+                  <div className="flex-1 min-w-[220px]">
+                    <div className="text-sm font-bold text-ink">Estratégia desatualizada</div>
+                    <div className="text-xs text-ink-2 mt-0.5">Esta estratégia foi gerada antes da nova inteligência. Gere novamente para ver a <b>tese de crescimento</b>, a <b>matriz Escalar/Corrigir/Testar/Cortar</b> e a <b>persona-alvo</b> com dados reais.</div>
+                  </div>
+                  <Button variant="primary" size="sm" icon={<Icon name="spark" size={14} />} onClick={genStrat} disabled={genLoading}>{genLoading ? 'Gerando…' : 'Atualizar estratégia'}</Button>
+                </div>
+              </Card>
+            )}
             {(strat.growth_thesis) && (
               <Card className="bg-gradient-to-br from-blue-soft to-green-soft border-blue-line">
                 <div className="flex items-start gap-3">
