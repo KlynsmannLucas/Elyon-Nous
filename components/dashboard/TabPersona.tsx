@@ -156,118 +156,46 @@ function PersonaCard({ persona, clientData }: { persona: GeneratedPersona; clien
   const objBadge:     BadgeType = clientData.mainObjection ? 'confirmed' : 'benchmark'
   const channelBadge: BadgeType = clientData.onlineChannels?.length ? 'confirmed' : 'benchmark'
 
+  const roleLabel = ROLES.find(r => r.key === persona.role)?.label || 'Gestor de Tráfego'
+  const personaSummary = persona.strategySummary || persona.buyingBehavior || `${persona.profession}.`
+  const statBoxes: [string, string][] = [
+    ['Idade', persona.age || '—'],
+    ['Gênero', clientData.targetGender || '—'],
+    ['Renda', persona.income || clientData.targetIncome || '—'],
+    ['Regiões', clientData.city || '—'],
+  ]
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
 
-      {/* ── 1. BARRA DE CONFIANÇA (Melhoria 1) ──────────────────────────── */}
-      <div style={{ padding: '14px 18px', borderRadius: 12, background: C.surface, border: `1px solid ${C.borderSub}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: C.text2 }}>Confiabilidade da Persona</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 18, fontWeight: 800, color: confidence.pct >= 50 ? C.green : confidence.pct >= 35 ? C.gold : C.orange }}>
-              {confidence.pct}%
-            </span>
-            <span style={{ fontSize: 10, color: C.text3 }}>dados reais</span>
+      {/* ── Perfil da persona (fiel a screens-extra › PersonaBlock) ──────── */}
+      <div style={{ padding: 18, borderRadius: 16, background: '#FFFFFF', border: '1px solid #E6E5E0', boxShadow: '0 1px 2px rgba(24,25,29,.04)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' as const }}>
+          <span style={{ width: 30, height: 30, borderRadius: 8, background: '#ECECE8', color: C.text2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name="users" size={16} /></span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text1, letterSpacing: '-0.01em' }}>Perfil da persona</div>
+            <div style={{ fontSize: 12, color: C.text3 }}>Adaptado para {roleLabel}</div>
           </div>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: '#EBF0FE', color: '#1E47C4', border: '1px solid #CCDAFB' }}>
+            <span style={{ width: 6, height: 6, borderRadius: 99, background: '#2B5BE3' }} /> {roleLabel}
+          </span>
         </div>
-        {/* Barra dupla */}
-        <div style={{ height: 6, borderRadius: 99, background: '#E6E8EC', overflow: 'hidden', marginBottom: 8 }}>
-          <div style={{
-            height: '100%', borderRadius: 99, transition: 'width 0.8s ease',
-            width: `${confidence.pct}%`,
-            background: confidence.pct >= 50
-              ? `linear-gradient(90deg, #0E9E6E, #4ADE80)`
-              : confidence.pct >= 35
-              ? `linear-gradient(90deg, #E08B0B, #FCD34D)`
-              : `linear-gradient(90deg, #F97316, #FB923C)`,
-          }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' as const }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 99, background: C.green }} />
-            <span style={{ fontSize: 10, color: C.text3 }}>{confidence.pct}% dados confirmados</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 99, background: C.gold }} />
-            <span style={{ fontSize: 10, color: C.text3 }}>{100 - confidence.pct}% inferência estratégica</span>
-          </div>
-        </div>
-        <p style={{ fontSize: 10, color: C.text3, margin: '6px 0 0', lineHeight: 1.5 }}>{confidence.detail}</p>
-      </div>
-
-      {/* ── 2. O QUE APRENDEMOS COM SEUS DADOS (Melhoria 4) ──────────────── */}
-      <div style={{ padding: '14px 18px', borderRadius: 12, background: C.greenBg, border: `1px solid rgba(34,197,94,0.2)` }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: C.green, marginBottom: 10, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>
-          O que aprendemos com seus dados
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
-          {[
-            clientData.niche       && `${clientData.niche}${clientData.city ? ` em ${clientData.city}` : ''}`,
-            clientData.objective   && `Objetivo principal: ${clientData.objective}`,
-            clientData.budget      && `Investimento mensal: R$${clientData.budget.toLocaleString('pt-BR')}`,
-            clientData.products?.length && `Produto/Serviço: ${clientData.products.slice(0, 2).join(', ')}`,
-            clientData.targetAge   && `Público: ${clientData.targetAge}${clientData.targetGender ? `, ${clientData.targetGender}` : ''}`,
-            clientData.targetIncome && `Renda do público: ${clientData.targetIncome}`,
-            clientData.mainPains   && `Dor principal declarada: ${clientData.mainPains}`,
-            clientData.mainObjection && `Objeção principal: ${clientData.mainObjection}`,
-          ].filter(Boolean).map((line, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 12, color: C.text1, lineHeight: 1.4 }}>
-              <span style={{ color: C.green, flexShrink: 0, marginTop: 1 }}>✓</span>
-              {line}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── 3. PERFIL DA PERSONA ─────────────────────────────────────────── */}
-      <div style={{
-        padding: 20, borderRadius: 14,
-        background: 'linear-gradient(135deg, rgba(44,95,224,0.08), rgba(56,189,248,0.04))',
-        border: '1px solid rgba(44,95,224,0.22)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-          <div style={{
-            width: 60, height: 60, borderRadius: 18, flexShrink: 0,
-            background: av.bg, boxShadow: `0 0 20px ${av.shadow}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: 0.5,
-          }}>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, flexShrink: 0, background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff' }}>
             {getInitials(persona.name)}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, marginBottom: 3 }}>
-              <span style={{ fontSize: 20, fontWeight: 700, color: C.text1 }}>{persona.name}</span>
-              <DataBadge type="inferred" />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' as const }}>
-              <span style={{ fontSize: 13, color: C.text2 }}>{persona.age}</span>
-              <DataBadge type={ageBadge} />
-              <span style={{ fontSize: 12, color: C.text3 }}>·</span>
-              <span style={{ fontSize: 13, color: C.text2 }}>{persona.profession}</span>
-              <DataBadge type="inferred" />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <span style={{ fontSize: 11, color: C.text3 }}>Renda: {persona.income}</span>
-              <DataBadge type={incomeBadge} />
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap' as const }}>
-              {persona.favoriteChannels.map(ch => <Chip key={ch} text={ch} color={C.blue} />)}
-            </div>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: C.text1 }}>{persona.name}</div>
+            <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginTop: 4 }}>{personaSummary}</div>
           </div>
         </div>
-
-        {/* ── Como foi construída (Melhoria 3) ── */}
-        <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #E6E8EC' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4 }}>
-            Como esta persona foi construída?
-          </div>
-          <p style={{ fontSize: 11, color: C.text3, margin: 0, lineHeight: 1.65 }}>
-            Esta persona foi criada utilizando dados reais do negócio (nicho, cidade, budget, objetivo
-            {clientData.targetAge || clientData.mainPains ? ', perfil do público informado' : ''}),
-            combinados com padrões estatísticos do setor <strong style={{ color: C.text2 }}>{clientData.niche}</strong> e
-            inferências estratégicas da IA para os campos sem fonte verificável.
-            {' '}<span style={{ color: C.gold }}>Os campos com 🟡 são estimativas — valide com dados reais de campanha.</span>
-          </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginTop: 16 }}>
+          {statBoxes.map(([k, v]) => (
+            <div key={k} style={{ padding: '10px 12px', background: '#F4F4F2', borderRadius: 8, border: '1px solid #E6E5E0' }}>
+              <div style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.12em', color: C.text3, marginBottom: 3 }}>{k}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>{v}</div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -309,14 +237,14 @@ function PersonaCard({ persona, clientData }: { persona: GeneratedPersona; clien
       {persona.facebookInterests && persona.facebookInterests.length > 0 && (
         <div style={{ padding: 16, borderRadius: 12, background: C.blueBg, border: `1px solid ${C.blue}30` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: C.blue }}>
-              Segmentações sugeridas para Meta Ads
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text1, letterSpacing: '-0.01em' }}>Interesses para o Facebook Ads</div>
+              <div style={{ fontSize: 12, color: C.text3 }}>Prontos para colar no Gerenciador de Anúncios</div>
             </div>
             <DataBadge type="benchmark" />
           </div>
           <p style={{ fontSize: 11, color: C.text3, margin: '0 0 10px', lineHeight: 1.5 }}>
             Hipóteses estratégicas geradas pela IA. Valide em campanhas reais antes de escalar.
-            Use em Gerenciador de Anúncios → Segmentação Detalhada.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap' as const }}>
             {persona.facebookInterests.map((int, idx) => <Chip key={idx} text={int} color={C.blue} />)}
