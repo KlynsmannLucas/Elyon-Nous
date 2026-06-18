@@ -1,7 +1,7 @@
 // components/dashboard/TabCriarCampanha.tsx — Criador de campanha Meta Ads via IA + Tool Use
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 import { AdAccountPicker } from '@/components/dashboard/v2/AdAccountPicker'
@@ -118,6 +118,13 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
 
   const [step,        setStep]        = useState<Step>('input')
   const [intent,      setIntent]      = useState('')
+
+  // Preenche a intenção quando vem do hub do Estúdio (/criar?intent=…).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const q = new URLSearchParams(window.location.search).get('intent')
+    if (q) setIntent(q)
+  }, [])
   const [plan,        setPlan]        = useState<CampaignPlan | null>(null)
   const [pages,       setPages]       = useState<{ id: string; name: string }[]>([])
   const [selectedPage, setSelectedPage] = useState('')

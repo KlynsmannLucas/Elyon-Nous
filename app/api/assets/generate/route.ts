@@ -92,9 +92,19 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '')
-      let msg = `Falha na geração (${res.status})`
-      try { const j = JSON.parse(errText); msg = j.error?.message || msg } catch {}
+      let rawMsg = `Falha na geração (${res.status})`
+      try { const j = JSON.parse(errText); rawMsg = j.error?.message || rawMsg } catch {}
       console.error('[assets/generate] openai error:', res.status, errText.slice(0, 400))
+      // Mensagens amigáveis para erros de conta/cobrança da OpenAI.
+      const low = rawMsg.toLowerCase()
+      let msg = rawMsg
+      if (low.includes('billing') || low.includes('hard limit') || res.status === 402) {
+        msg = 'Geração de imagem indisponível: o limite de cobrança da conta OpenAI foi atingido. Ajuste o limite/saldo em platform.openai.com (Billing → Limits) e tente de novo.'
+      } else if (low.includes('quota') || low.includes('insufficient')) {
+        msg = 'Geração de imagem indisponível: a conta OpenAI está sem créditos/quota. Adicione saldo em platform.openai.com e tente de novo.'
+      } else if (res.status === 429) {
+        msg = 'Muitas requisições à OpenAI agora. Aguarde alguns segundos e tente de novo.'
+      }
       return NextResponse.json({ error: msg }, { status: 502 })
     }
 
