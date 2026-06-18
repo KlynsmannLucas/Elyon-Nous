@@ -80,7 +80,25 @@ export default function DesempenhoPage() {
   const [intel, setIntel] = useState<any | null>(null)
   const [intelLoading, setIntelLoading] = useState(false)
   const [detailCamp, setDetailCamp] = useState<any | null>(null)
+  const [stratGen, setStratGen] = useState(false)
   useEffect(() => { setMounted(true) }, [])
+
+  // Regenera a estratégia (público-alvo, ranking) sem sair da tela.
+  const genStrat = async () => {
+    setStratGen(true)
+    const { generateStrategyForActiveClient } = await import('@/lib/createClientFlow')
+    const r = await generateStrategyForActiveClient()
+    setStratGen(false)
+    if (typeof window !== 'undefined') window.toast?.(r.ok
+      ? { tone: 'good', title: 'Estratégia gerada', body: 'Público-alvo, regiões e ranking atualizados.' }
+      : { tone: 'bad', title: 'Falha ao gerar', body: r.error })
+  }
+  const StrategyEmpty = ({ text }: { text: string }) => (
+    <Card><div className="text-center py-8 text-ink-3">
+      <p className="text-sm">{text}</p>
+      <Button variant="primary" size="sm" className="mt-3" icon={<Icon name="spark" size={14} />} onClick={genStrat} disabled={stratGen}>{stratGen ? 'Gerando…' : 'Gerar estratégia'}</Button>
+    </div></Card>
+  )
 
   const hasMeta = connectedAccounts.some(a => a.platform === 'meta')
   const acctKey = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
@@ -502,7 +520,7 @@ export default function DesempenhoPage() {
           ) : (
             <div className="text-center py-8 text-ink-3">
               <p className="text-sm">Gere a estratégia para ver o ranking de canais.</p>
-              <Button variant="soft" size="sm" className="mt-3" onClick={() => (window.location.href = '/plano')}>Ver Plano de Ação</Button>
+              <Button variant="primary" size="sm" className="mt-3" icon={<Icon name="spark" size={14} />} onClick={genStrat} disabled={stratGen}>{stratGen ? 'Gerando…' : 'Gerar estratégia'}</Button>
             </div>
           )}
         </Card>
@@ -551,7 +569,7 @@ export default function DesempenhoPage() {
               </div>
             </>
           ) : (
-            <Card><div className="text-center py-8 text-ink-3"><p className="text-sm">Gere a estratégia para ver público-alvo, regiões e interesses.</p><Button variant="soft" size="sm" className="mt-3" onClick={() => (window.location.href = '/plano')}>Ver Plano de Ação</Button></div></Card>
+            <StrategyEmpty text="Gere a estratégia para ver público-alvo, regiões e interesses." />
           )}
         </div>
       )}
@@ -685,7 +703,7 @@ export default function DesempenhoPage() {
               </>
             )
           })() : (
-            <Card><div className="text-center py-8 text-ink-3"><p className="text-sm">Gere a estratégia e rode a auditoria para o alocador de verba.</p><Button variant="soft" size="sm" className="mt-3" onClick={() => (window.location.href = '/plano')}>Ver Plano de Ação</Button></div></Card>
+            <StrategyEmpty text="Gere a estratégia e rode a auditoria para o alocador de verba." />
           )}
         </div>
       )}
