@@ -5,6 +5,13 @@ import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 import { AdAccountPicker } from '@/components/dashboard/v2/AdAccountPicker'
+import { NousOrb, Icon } from '@/components/dashboard/v2'
+
+const EXAMPLES = [
+  'Gerar leads de crédito pessoal em SP com R$ 150/dia',
+  'Campanha de remarketing para quem abandonou a simulação',
+  'Reconhecimento de marca para o novo produto, público 25–45',
+]
 
 // Passo a passo de como o NOUS monta a campanha (exibido antes de gerar)
 const BUILD_STEPS: { icon: string; title: string; desc: string }[] = [
@@ -70,6 +77,35 @@ const TOOL_DONE_LABELS: Record<string, string> = {
   create_ad_set:      'Público e orçamento configurados',
   create_ad_creative: 'Criativo montado',
   create_ad:          'Anúncio publicado',
+}
+
+// Linha label↔valor do plano (fiel a screens-studio.jsx › PlanField)
+function PlanField({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 0', borderBottom: '1px solid #EFEFEB', fontSize: 13 }}>
+      <span style={{ color: '#898C97', flexShrink: 0 }}>{label}</span>
+      <span style={{ fontWeight: 600, textAlign: 'right', fontFamily: mono ? 'var(--font-mono)' : 'inherit' }}>{value}</span>
+    </div>
+  )
+}
+
+// Card de seção do plano (chip de ícone + reasoning box azul)
+function PlanCard({ icon, title, reasoning, children }: { icon: string; title: string; reasoning?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: '#FFFFFF', border: '1px solid #E6E5E0', borderRadius: 12, padding: 18, marginBottom: 14, boxShadow: '0 1px 2px rgba(24,25,29,.04)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        <span style={{ width: 30, height: 30, borderRadius: 8, background: '#EBF0FE', color: '#1E47C4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} size={16} /></span>
+        <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', color: '#18191D' }}>{title}</span>
+      </div>
+      <div>{children}</div>
+      {reasoning && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 11, padding: '9px 11px', background: '#EBF0FE', border: '1px solid #CCDAFB', borderRadius: 8 }}>
+          <span style={{ color: '#1E47C4', flexShrink: 0, marginTop: 1 }}><Icon name="spark" size={13} /></span>
+          <span style={{ fontSize: 12, color: '#565862', lineHeight: 1.5 }}>{reasoning}</span>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props) {
@@ -217,53 +253,50 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
 
   if (step === 'input') return (
     <div style={S.wrap}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', color: '#1E47C4', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>
-          Criar campanha · NOUS IA
+      {/* Hero escuro — prompt do NOUS (fiel a screens-studio.jsx › CriarCampanha) */}
+      <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--sh-ink)', border: '1px solid var(--ink-line)',
+        background: 'radial-gradient(130% 130% at 8% -10%, rgba(43,91,227,.32), transparent 48%), var(--ink-surface)', padding: 26 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <NousOrb size={44} />
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--blue-500)' }}>Criar campanha · NOUS IA</div>
+            <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--on-ink)', marginTop: 2 }}>Descreva o que você quer — o NOUS monta a campanha.</div>
+          </div>
         </div>
-        <h2 style={{ color: '#18191D', fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 6, letterSpacing: '-0.02em' }}>
-          Descreva o que você quer — o NOUS monta a campanha.
-        </h2>
-        <p style={{ color: '#898C97', fontSize: 14 }}>
-          Em linguagem natural. A IA monta o plano completo (objetivo, público, verba e criativo) e cria no Meta Ads.
-        </p>
-      </div>
-
-      <div style={S.card}>
-        <label style={S.label}>Descreva sua campanha</label>
         <textarea
           value={intent}
           onChange={(e) => setIntent(e.target.value)}
-          placeholder={`Ex: "Quero uma campanha de leads para ${(clientData as any)?.niche || 'o meu negócio'}, orçamento R$50/dia, público feminino 30-50 anos em São Paulo"`}
-          rows={4}
-          style={S.input}
+          rows={3}
+          placeholder="Ex: gerar leads de crédito pessoal em São Paulo com R$ 150/dia, público 25–45…"
+          style={{ width: '100%', resize: 'vertical', padding: '13px 15px', fontSize: 14, lineHeight: 1.55, color: 'var(--on-ink)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--ink-line)', borderRadius: 12, outline: 'none', fontFamily: 'inherit' }}
         />
-        <div style={{ marginTop: 8, fontSize: 12, color: '#565862' }}>
-          Dica: inclua objetivo, orçamento, público e região para um plano mais preciso.
+        <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 12 }}>
+          {EXAMPLES.map((ex, i) => (
+            <button key={i} onClick={() => setIntent(ex)} style={{ fontSize: 11.5, color: 'var(--on-ink-2)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--ink-line)', borderRadius: 999, padding: '6px 12px', cursor: 'pointer' }}>{ex}</button>
+          ))}
         </div>
-
-        {/* Seletor da conta de anúncio onde a campanha será criada */}
-        <div style={{ marginTop: 18 }}>
-          <label style={S.label}>Em qual conta criar a campanha?</label>
-          <AdAccountPicker platform="meta" clientKey={clientKey} compact />
-          <div style={{ marginTop: 6, fontSize: 11, color: '#898C97' }}>
-            A campanha será criada na conta selecionada acima. Você pode trocar a qualquer momento.
-          </div>
-        </div>
-
-        <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
           <button
             onClick={handlePlan}
             disabled={!intent.trim() || !effectiveAccountId}
-            style={{ ...S.btn, ...S.btnPrim, opacity: intent.trim() && effectiveAccountId ? 1 : 0.45 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: 'pointer', border: 'none', background: '#2B5BE3', color: '#fff', opacity: intent.trim() && effectiveAccountId ? 1 : 0.45 }}
           >
-            ✨ Gerar plano com IA
+            <Icon name="spark" size={15} /> Planejar com o NOUS
           </button>
         </div>
       </div>
 
+      {/* Conta de anúncio (feature: escolher a conta) */}
+      <div style={{ ...S.card, marginTop: 16, padding: 20 }}>
+        <label style={S.label}>Em qual conta criar a campanha?</label>
+        <AdAccountPicker platform="meta" clientKey={clientKey} compact />
+        <div style={{ marginTop: 6, fontSize: 11, color: '#898C97' }}>
+          A campanha será criada na conta selecionada acima. Você pode trocar a qualquer momento.
+        </div>
+      </div>
+
       {/* Passo a passo: como o NOUS monta a campanha */}
-      <div style={{ ...S.card, marginTop: 16 }}>
+      <div style={{ ...S.card, marginTop: 16, padding: 20 }}>
         <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#2B5BE3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>
           Como o NOUS vai montar
         </div>
@@ -291,53 +324,43 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
   if (step === 'planning') return (
     <div style={S.wrap}>
       <div style={{ ...S.card, textAlign: 'center', padding: 48 }}>
-        <div style={{ fontSize: 40, marginBottom: 16, animation: 'spin 2s linear infinite', display: 'inline-block' }}>⚙️</div>
-        <div style={{ color: '#18191D', fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Analisando e planejando campanha...</div>
-        <div style={{ color: '#898C97', fontSize: 13 }}>Claude está revisando os dados do cliente e gerando o plano ideal</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}><NousOrb size={56} thinking /></div>
+        <div style={{ color: '#18191D', fontWeight: 700, fontSize: 16, marginBottom: 6 }}>O NOUS está planejando sua campanha…</div>
+        <div style={{ color: '#898C97', fontSize: 13 }}>Cruzando seu nicho, verba e público de melhor ROAS.</div>
       </div>
     </div>
   )
 
   if (step === 'review' && plan) return (
     <div style={S.wrap}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <h2 style={{ color: '#18191D', fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 4 }}>
-            📋 Plano gerado — revise antes de criar
-          </h2>
-          <p style={{ color: '#898C97', fontSize: 13 }}>{plan.summary}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: '#EBF0FE', color: '#1E47C4', border: '1px solid #CCDAFB' }}>
+          <span style={{ width: 6, height: 6, borderRadius: 99, background: '#2B5BE3' }} /> Plano gerado pelo NOUS
+        </span>
+        <span style={{ fontSize: 12.5, color: '#898C97' }}>Revise e ajuste antes de publicar — nada vai ao ar sem sua aprovação.</span>
+      </div>
+
+      <PlanCard icon="megaphone" title="Campanha" reasoning={plan.campaign.reasoning}>
+        <PlanField label="Nome" value={plan.campaign.name} />
+        <PlanField label="Objetivo" value={OBJECTIVE_LABELS[plan.campaign.objective] || plan.campaign.objective} />
+      </PlanCard>
+
+      <PlanCard icon="users" title="Público & Orçamento" reasoning={plan.ad_set.reasoning}>
+        <PlanField label="Orçamento diário" value={`R$${plan.ad_set.daily_budget_brl}/dia`} mono />
+        <PlanField label="Idade" value={`${plan.ad_set.age_min}–${plan.ad_set.age_max} anos`} mono />
+        <PlanField label="Gênero" value={!plan.ad_set.genders?.length ? 'Todos' : plan.ad_set.genders.includes(1) && plan.ad_set.genders.includes(2) ? 'Todos' : plan.ad_set.genders.includes(1) ? 'Masculino' : 'Feminino'} />
+        <PlanField label="Localização" value={plan.ad_set.geo_description || 'Brasil'} />
+      </PlanCard>
+
+      <PlanCard icon="image" title="Criativo" reasoning={plan.creative.reasoning}>
+        <PlanField label="Título" value={plan.creative.headline} />
+        <div style={{ padding: '9px 0', borderBottom: '1px solid #EFEFEB' }}>
+          <div style={{ fontSize: 12, color: '#898C97', marginBottom: 4 }}>Texto principal</div>
+          <div style={{ fontSize: 13, color: '#18191D', lineHeight: 1.55 }}>{plan.creative.primary_text}</div>
         </div>
-        <button onClick={reset} style={{ ...S.btn, ...S.btnSec, padding: '7px 14px', fontSize: 12 }}>← Refazer</button>
-      </div>
-
-      {/* Campanha */}
-      <div style={{ ...S.card, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#2B5BE3', letterSpacing: '0.1em', marginBottom: 14 }}>CAMPANHA</div>
-        <div style={S.row}><span style={S.rowKey}>Nome</span><span style={S.rowVal}>{plan.campaign.name}</span></div>
-        <div style={S.row}><span style={S.rowKey}>Objetivo</span><span style={S.rowVal}>{OBJECTIVE_LABELS[plan.campaign.objective] || plan.campaign.objective}</span></div>
-        <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#565862', fontSize: 13 }}>{plan.campaign.reasoning}</span></div>
-      </div>
-
-      {/* Ad Set */}
-      <div style={{ ...S.card, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#0E9E6E', letterSpacing: '0.1em', marginBottom: 14 }}>PÚBLICO & ORÇAMENTO</div>
-        <div style={S.row}><span style={S.rowKey}>Orçamento diário</span><span style={S.rowVal}>R${plan.ad_set.daily_budget_brl}/dia</span></div>
-        <div style={S.row}><span style={S.rowKey}>Idade</span><span style={S.rowVal}>{plan.ad_set.age_min}–{plan.ad_set.age_max} anos</span></div>
-        <div style={S.row}><span style={S.rowKey}>Gênero</span><span style={S.rowVal}>{!plan.ad_set.genders?.length ? 'Todos' : plan.ad_set.genders.includes(1) && plan.ad_set.genders.includes(2) ? 'Todos' : plan.ad_set.genders.includes(1) ? 'Masculino' : 'Feminino'}</span></div>
-        <div style={S.row}><span style={S.rowKey}>Região</span><span style={S.rowVal}>{plan.ad_set.geo_description || 'Brasil'}</span></div>
-        <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#565862', fontSize: 13 }}>{plan.ad_set.reasoning}</span></div>
-      </div>
-
-      {/* Creative */}
-      <div style={{ ...S.card, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#2B5BE3', letterSpacing: '0.1em', marginBottom: 14 }}>CRIATIVO</div>
-        <div style={S.row}><span style={S.rowKey}>Texto principal</span><span style={S.rowVal}>{plan.creative.primary_text}</span></div>
-        <div style={S.row}><span style={S.rowKey}>Título</span><span style={S.rowVal}>{plan.creative.headline}</span></div>
-        <div style={S.row}><span style={S.rowKey}>Descrição</span><span style={S.rowVal}>{plan.creative.description || '—'}</span></div>
-        <div style={S.row}><span style={S.rowKey}>CTA</span><span style={S.rowVal}>{CTA_LABELS[plan.creative.call_to_action] || plan.creative.call_to_action}</span></div>
-        <div style={S.row}><span style={S.rowKey}>URL destino</span><span style={S.rowVal}>{plan.creative.website_url}</span></div>
-        <div style={{ ...S.row, borderBottom: 'none' }}><span style={S.rowKey}>Por que?</span><span style={{ ...S.rowVal, color: '#565862', fontSize: 13 }}>{plan.creative.reasoning}</span></div>
-      </div>
+        <PlanField label="CTA" value={CTA_LABELS[plan.creative.call_to_action] || plan.creative.call_to_action} />
+        <PlanField label="Destino" value={plan.creative.website_url} mono />
+      </PlanCard>
 
       {/* Seleção de página */}
       {pages.length > 0 && (
@@ -370,14 +393,16 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button onClick={reset} style={{ ...S.btn, ...S.btnSec }}>← Refazer</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+        <button onClick={reset} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 16px', fontSize: 13.5, fontWeight: 600, borderRadius: 8, background: 'transparent', color: '#565862', border: '1px solid #E6E5E0', cursor: 'pointer' }}>
+          <Icon name="chevL" size={15} /> Refazer
+        </button>
         <button
           onClick={handleCreate}
           disabled={!selectedPage && pages.length > 0}
-          style={{ ...S.btn, ...S.btnPrim, opacity: (!selectedPage && pages.length > 0) ? 0.45 : 1 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer', border: 'none', background: '#2B5BE3', color: '#fff', opacity: (!selectedPage && pages.length > 0) ? 0.45 : 1 }}
         >
-          🚀 Criar campanha agora
+          <Icon name="rocket" size={15} /> Publicar campanha
         </button>
       </div>
 
@@ -389,9 +414,13 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
 
   if (step === 'creating') return (
     <div style={S.wrap}>
-      <h2 style={{ color: '#18191D', fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 20 }}>
-        ⚡ Criando campanha...
-      </h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 18 }}>
+        <NousOrb size={40} thinking />
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#18191D' }}>Publicando na Meta…</div>
+          <div style={{ fontSize: 12.5, color: '#898C97' }}>O NOUS executa cada etapa via API.</div>
+        </div>
+      </div>
       <div style={S.card}>
         {events.length === 0 && (
           <div style={{ color: '#898C97', fontSize: 14, textAlign: 'center', padding: 24 }}>Iniciando...</div>
@@ -437,8 +466,8 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
   if (step === 'done') return (
     <div style={S.wrap}>
       <div style={{ ...S.card, textAlign: 'center', padding: 48 }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-        <h2 style={{ color: '#18191D', fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 8 }}>
+        <span style={{ width: 56, height: 56, borderRadius: 99, background: '#E3F6EE', color: '#0B855D', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}><Icon name="check" size={28} w={2.6} /></span>
+        <h2 style={{ color: '#18191D', fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-syne)', marginBottom: 8, letterSpacing: '-0.02em' }}>
           Campanha criada com sucesso!
         </h2>
         <p style={{ color: '#898C97', fontSize: 14, marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
