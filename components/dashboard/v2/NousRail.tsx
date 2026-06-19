@@ -48,11 +48,16 @@ function InsightCard({ tone, title, tag, body, onAct }: { tone: 'bad' | 'warn' |
   )
 }
 
+// Cache de insights ao vivo por cliente|conta (evita refetch a cada navegação na sessão).
+const INSIGHTS_CACHE = new Map<string, { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string }[]>()
+
 export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   const clientData = useAppStore(s => s.clientData)
   const auditCache = useAppStore(s => s.auditCache)
   const strategyData = useAppStore(s => s.strategyData)
   const dashboardMode = useAppStore(s => s.dashboardMode)
+  const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
 
   const [tab, setTab] = useState<'insights' | 'perguntas'>('insights')
   const [input, setInput] = useState('')
@@ -69,9 +74,38 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   // Insights reais (briefing + alertas/ações)
   const briefing = latestAudit?.executive_summary || strategyData?.strategy?.growth_thesis
     || (rm ? `Conta com ${Number(rm.totalSpend).toLocaleString('pt-BR')} investidos e ${rm.totalLeads} leads.` : 'Rode a Análise Profunda para um briefing com os dados reais da conta.')
-  const insights: { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string }[] =
+  const auditInsights: { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string }[] =
     (latestAudit?.o_que_eu_faria_agora || []).filter((a: any) => a?.titulo).slice(0, 4)
       .map((a: any) => ({ tone: a.prioridade === 'P1' ? 'bad' as const : a.prioridade === 'P2' ? 'warn' as const : 'blue' as const, title: a.titulo, tag: a.prioridade, body: a.motivo || a.evidencia }))
+
+  // Insights ao vivo — lê as campanhas reais do Meta (sem precisar rodar a Análise Profunda).
+  const metaConnected = connectedAccounts.some(a => a.platform === 'meta')
+  const metaAccountId = (key && selectedMetaAccountByClient[key]) || connectedAccounts.find(a => a.platform === 'meta')?.accountId || ''
+  const [liveInsights, setLiveInsights] = useState<typeof auditInsights>([])
+  const [liveLoading, setLiveLoading] = useState(false)
+  useEffect(() => {
+    if (!metaConnected || !key) { setLiveInsights([]); return }
+    const cacheKey = `${key}|${metaAccountId}`
+    if (INSIGHTS_CACHE.has(cacheKey)) { setLiveInsights(INSIGHTS_CACHE.get(cacheKey)!); return }
+    let active = true
+    setLiveLoading(true)
+    fetch('/api/insights', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ niche: clientData?.niche, accountId: metaAccountId || undefined }),
+    })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        const list = (d?.success && Array.isArray(d.insights)) ? d.insights : []
+        INSIGHTS_CACHE.set(cacheKey, list)
+        if (active) setLiveInsights(list)
+      })
+      .catch(() => { if (active) setLiveInsights([]) })
+      .finally(() => { if (active) setLiveLoading(false) })
+    return () => { active = false }
+  }, [metaConnected, key, metaAccountId, clientData?.niche])
+
+  // Prioriza insights ao vivo (específicos); completa com os da auditoria.
+  const insights = [...liveInsights, ...auditInsights].slice(0, 6)
 
   const buildContext = () => {
     const l: string[] = ['=== STATUS DOS DADOS — LEIA PRIMEIRO ===']
@@ -143,9 +177,14 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
               <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-blue-600 mb-1.5">Briefing de hoje</div>
               <div className="text-[13px] leading-relaxed text-ink line-clamp-5">{briefing}</div>
             </div>
-            <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3 mt-1">Insights em destaque</div>
-            {insights.length > 0 ? insights.map((a, i) => <InsightCard key={i} {...a} onAct={() => (window.location.href = '/diagnostico')} />)
-              : <p className="text-xs text-ink-3 text-center py-6">Rode a Análise Profunda para ver insights.</p>}
+            <div className="flex items-center gap-2 mt-1">
+              <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Insights em destaque</div>
+              {liveInsights.length > 0 && <span className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-green-600"><span className="pulse-dot" />ao vivo</span>}
+            </div>
+            {insights.length > 0 ? insights.map((a, i) => <InsightCard key={i} {...a} onAct={() => (window.location.href = liveInsights.length > 0 ? '/desempenho' : '/diagnostico')} />)
+              : liveLoading ? <p className="text-xs text-ink-3 text-center py-6">Lendo suas campanhas…</p>
+              : metaConnected ? <p className="text-xs text-ink-3 text-center py-6">Nenhuma observação crítica nas campanhas agora. 👍</p>
+              : <p className="text-xs text-ink-3 text-center py-6">Conecte o Meta Ads para ver insights da sua conta.</p>}
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto p-3.5 no-sb">
