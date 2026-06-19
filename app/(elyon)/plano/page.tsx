@@ -213,7 +213,7 @@ export default function PlanoPage() {
       {tab === 'estrategia' && (
         strat ? (
           <div className="space-y-4 animate-fade-up">
-            {(!strat.growth_thesis || !matrix || !ta) && (
+            {(!strat.growth_thesis || !matrix || !ta || (strat._schemaVersion ?? 0) < 2) && (
               <Card className="bg-amber-soft border-[#F2DDB0]">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="w-9 h-9 rounded-md bg-paper flex items-center justify-center shrink-0" style={{ color: '#D9870B' }}><Icon name="alert" size={17} /></span>

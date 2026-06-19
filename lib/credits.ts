@@ -25,6 +25,7 @@ export const OPERATION_COSTS: Record<string, number> = {
   campaign_generate:4,
   action_plan:      3,
   assets_copy:      2,
+  assets_generate:  5,
   market_intel:     4,
   gemini_vision:    3,
   gemini_crosscheck:4,

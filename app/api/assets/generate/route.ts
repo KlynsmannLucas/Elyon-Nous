@@ -138,6 +138,23 @@ export async function POST(req: NextRequest) {
   const type = VALID_TYPES.includes(body.type || '') ? body.type! : 'banner'
   const size = VALID_SIZES[body.format || 'square'] || VALID_SIZES.square
 
+  // ── Controle de custo: debita créditos ANTES de chamar os provedores ────────
+  const { clerkClient } = await import('@clerk/nextjs/server')
+  const clerkUser = await (await clerkClient()).users.getUser(userId)
+  const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
+  const hasActivePlan = !!plan && plan !== 'free'
+  const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
+  const inTrial = (Date.now() - createdAtMs) < 14 * 24 * 60 * 60 * 1000
+  const effectivePlan = hasActivePlan ? plan! : (inTrial ? 'trial' : 'free')
+
+  const { checkAndDeductCredits, refundCredits } = await import('@/lib/credits')
+  const credit = await checkAndDeductCredits(userId, effectivePlan, 'assets_generate')
+  if (!credit.allowed) {
+    return NextResponse.json({ error: credit.error || 'Créditos insuficientes para gerar imagem.' }, { status: 402 })
+  }
+  // Em qualquer saída de erro a partir daqui, devolvemos o crédito.
+  const refund = () => { refundCredits(userId, effectivePlan, 'assets_generate').catch(() => {}) }
+
   // ── 1. Gera a imagem: OpenAI (gpt-image-1) → fallback Gemini (Imagen) ───────
   const prompt = buildPrompt(body)
   let b64: string | null = null
@@ -185,8 +202,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (!b64) {
+    refund()
     const msg = openaiMsg
-      ? `${openaiMsg} O fallback (Gemini Imagen) também não conseguiu gerar a imagem agora.`
+      ? `${openaiMsg} O fallback (Gemini) também não conseguiu gerar a imagem agora.`
       : 'Não foi possível gerar a imagem com nenhum provedor (OpenAI/Gemini). Tente novamente em instantes.'
     return NextResponse.json({ error: msg }, { status: 502 })
   }
@@ -204,6 +222,7 @@ export async function POST(req: NextRequest) {
     .upload(storagePath, buffer, { contentType: 'image/png', upsert: false })
 
   if (uploadError) {
+    refund()
     console.error('[assets/generate] upload error:', uploadError.message)
     return NextResponse.json({ error: `Erro ao salvar imagem: ${uploadError.message}` }, { status: 500 })
   }
@@ -234,6 +253,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (dbError) {
+    refund()
     await supabaseAdmin.storage.from('client-assets').remove([storagePath])
     console.error('[assets/generate] db error:', dbError.message)
     return NextResponse.json({ error: dbError.message }, { status: 500 })

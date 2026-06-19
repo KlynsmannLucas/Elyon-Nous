@@ -10,6 +10,11 @@ import { sanitizeText } from '@/lib/sanitize'
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
+// Versão do schema da estratégia. Suba quando adicionar/alterar seções (tese, matriz,
+// persona, ranking…). O cliente usa isso para detectar estratégias antigas em cache
+// e oferecer "Atualizar estratégia".
+const STRATEGY_SCHEMA_VERSION = 2
+
 // CPL relativo por canal — multiplicadores sobre a média do nicho
 const CHANNEL_CPL_MULT: Record<string, number> = {
   'Meta Ads':       1.00,
@@ -747,14 +752,15 @@ Para "target_audience": use a PERSONA fornecida, a cidade/região do negócio e 
 
 Para "next_moves" (Plano de Ação) e "plan_7_30_90" (caminho de 90 dias): SEJA QUANTITATIVO e SEQUENCIADO, nunca genérico. Em "next_moves.impact" calcule o ganho em R$ ou % a partir do CPL/budget/ticket reais (ex: baixar o CPL de R$X para R$Y libera +N leads/mês ≈ R$Z). Ordene os movimentos por dependência (o que destrava o próximo). Em "plan_7_30_90", trate 7d como FUNDAÇÃO (parar perdas + tracking), 30d como OTIMIZAÇÃO (baixar CPL + validar criativos + nutrição) e 90d como ESCALA (previsibilidade + diversificação) — cada fase deve avançar a partir da anterior, com metas numéricas reais.`
 
-      // IA com 23s — Tavily já rodou em paralelo (2s max), SSE keepalive mantém conexão
+      // IA com 42s — aproveita o maxDuration de 60s (antes 23s cortava cedo → fallback genérico).
+      // Tavily já rodou em paralelo (8s max), SSE keepalive mantém a conexão.
       const aiResult = await Promise.race([
         anthropic.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 4000,
           messages: [{ role: 'user', content: prompt }],
         }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 23000)),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 42000)),
       ])
 
       if (!aiResult) throw new Error('AI timeout — usando benchmark')
@@ -762,6 +768,7 @@ Para "next_moves" (Plano de Ação) e "plan_7_30_90" (caminho de 90 dias): SEJA 
       const raw     = (aiResult.content[0] as any).text.trim()
       const jsonStr = raw.startsWith('```') ? raw.split('```')[1].replace(/^json\n/, '') : raw
       const strategy = JSON.parse(jsonStr)
+      strategy._schemaVersion = STRATEGY_SCHEMA_VERSION
       return { success: true, strategy, source: 'ai' }
 
     } catch (aiError: any) {
@@ -775,8 +782,9 @@ Para "next_moves" (Plano de Ação) e "plan_7_30_90" (caminho de 90 dias): SEJA 
             model: geminiModel('FALLBACK'),
             user: prompt,
             maxTokens: 4000,
-            timeoutMs: 22000,
+            timeoutMs: 40000,
           })
+          strategy._schemaVersion = STRATEGY_SCHEMA_VERSION
           return { success: true, strategy, source: 'gemini' }
         }
       } catch (gemErr: any) {
@@ -789,12 +797,13 @@ Para "next_moves" (Plano de Ação) e "plan_7_30_90" (caminho de 90 dias): SEJA 
     return { success: false, error: 'Nicho não reconhecido e API indisponível.' }
   }
 
-  const strategy = buildFallbackStrategy(
+  const strategy: any = buildFallbackStrategy(
     { clientName, niche, products, budget, objective, monthlyRevenue, currentCPL, currentLeadSource, mainChallenge, city },
     bench,
     recentAudit?._realMetrics ?? null,
     persona
   )
+  strategy._schemaVersion = STRATEGY_SCHEMA_VERSION
   return { success: true, strategy, source: 'benchmark' }
 }
 
