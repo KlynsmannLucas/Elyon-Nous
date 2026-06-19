@@ -79,7 +79,26 @@ export async function POST(req: NextRequest) {
     const totalSpend = camps.reduce((s, c) => s + c.spend, 0)
     const freqLimit = 3.5
 
+    // #3 Unit economics — CPL de equilíbrio (acima disso o lead dá PREJUÍZO).
+    const ticket = Number(body.ticket) || 0
+    const margin = Number(body.margin) || 0     // %
+    const convRate = Number(body.convRate) || 0 // % lead -> venda
+    const breakeven = ticket > 0 && margin > 0 && convRate > 0
+      ? Math.round(ticket * (margin / 100) * (convRate / 100))
+      : null
+
     const insights: Insight[] = []
+
+    // Prioridade máxima: campanhas que custam mais que o lucro por lead (prejuízo real).
+    if (breakeven && breakeven > 0) {
+      const loss = camps.filter(c => c.leads > 0 && c.cpl > breakeven).sort((a, b) => b.cpl - a.cpl)
+      if (loss.length) {
+        const c = loss[0]
+        insights.push({ tone: 'bad', tag: 'Prejuízo', title: `"${c.name}" dá prejuízo (CPL ${brl(c.cpl)})`, body: `Acima do seu CPL de equilíbrio (${brl(breakeven)} = ticket × margem × conversão). Cada lead aqui custa mais do que gera de lucro.`, campaignId: c.id || undefined, campaignName: c.name, action: c.id ? 'pause' : undefined })
+      } else {
+        insights.push({ tone: 'good', tag: 'Lucro', title: `Toda a conta opera no lucro`, body: `Nenhuma campanha acima do CPL de equilíbrio (${brl(breakeven)}). Foque em escalar as vencedoras.` })
+      }
+    }
 
     // 1. Saturação de público (frequência alta)
     const saturated = camps.filter(c => c.freq >= freqLimit).sort((a, b) => b.freq - a.freq)
@@ -96,8 +115,8 @@ export async function POST(req: NextRequest) {
       insights.push({ tone: 'bad', tag: 'Desperdício', title: `"${c.name}" gastou ${brl(c.spend)} sem conversão`, body: waste.length > 1 ? `${waste.length} campanhas sem nenhum resultado somam ${brl(wasteTotal)} — pause e realoque.` : 'Pause ou revise o público/criativo desta campanha.', campaignId: c.id || undefined, campaignName: c.name, action: c.id ? 'pause' : undefined })
     }
 
-    // 3. CPL muito acima do benchmark
-    if (cplMax) {
+    // 3. CPL muito acima do benchmark — só quando NÃO há unit economics (senão usamos o prejuízo real acima)
+    if (cplMax && !breakeven) {
       const overpriced = camps.filter(c => c.leads > 0 && c.cpl > cplMax).sort((a, b) => b.cpl - a.cpl)
       if (overpriced.length) {
         const c = overpriced[0]

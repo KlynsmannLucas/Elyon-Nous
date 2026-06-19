@@ -119,7 +119,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
     if (!metaConn || !nkey) { setInsightNotifs([]); return }
     const accId = selectedMetaAccountByClient[nkey] || connectedAccounts.find(a => a.platform === 'meta')?.accountId
     let active = true
-    fetch('/api/insights', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: clientData?.niche, accountId: accId || undefined }) })
+    fetch('/api/insights', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: clientData?.niche, accountId: accId || undefined, ticket: clientData?.ticketPrice, margin: clientData?.grossMargin, convRate: clientData?.conversionRate }) })
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
         if (!active || !d?.success) return

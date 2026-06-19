@@ -129,7 +129,7 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
     setLiveLoading(true)
     fetch('/api/insights', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ niche: clientData?.niche, accountId: metaAccountId || undefined }),
+      body: JSON.stringify({ niche: clientData?.niche, accountId: metaAccountId || undefined, ticket: clientData?.ticketPrice, margin: clientData?.grossMargin, convRate: clientData?.conversionRate }),
     })
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
