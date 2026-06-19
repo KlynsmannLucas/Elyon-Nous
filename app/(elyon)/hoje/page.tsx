@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, HBar, NousOrb, CHART_COLORS } from '@/components/dashboard/v2'
 import { deriveMaturity } from '@/lib/maturity'
-import { getBenchmark } from '@/lib/niche_benchmarks'
+import { useBenchmark } from '@/lib/useBenchmark'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
@@ -59,6 +59,9 @@ export default function HojePage() {
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const pro = dashboardMode === 'pro'
+  // Hook ANTES de qualquer early-return (regras de hooks). Benchmark vem da API.
+  const niche = clientData?.niche || savedClients?.find(c => c.clientData.clientName === key)?.clientData.niche || ''
+  const bench = useBenchmark(niche)
 
   const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
   const dailyAccountId = selectedMetaAccountByClient[key] || metaAccount?.accountId
@@ -99,8 +102,6 @@ export default function HojePage() {
   ].slice(0, pro ? 6 : 4) : []
 
   // 6 pilares de saúde (ordem do prototype) derivados de sinais reais.
-  const niche = clientData?.niche || savedClients?.find(c => c.clientData.clientName === key)?.clientData.niche || ''
-  const bench = niche ? getBenchmark(niche) : null
   const trackingArr: any[] = latestAudit?._trackingChecklist || []
   const trackOk = trackingArr.length > 0 ? trackingArr.filter((t: any) => t.status === 'verificado').length / trackingArr.length : null
   const maturity = rm ? deriveMaturity(rm, bench, trackOk, score) : null

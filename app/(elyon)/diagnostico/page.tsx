@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Radar, AdAccountPicker, CHART_COLORS } from '@/components/dashboard/v2'
 import CrossCheckPanel from '@/components/dashboard/CrossCheckPanel'
-import { getBenchmark } from '@/lib/niche_benchmarks'
+import { useBenchmark } from '@/lib/useBenchmark'
 import { deriveMaturity, deriveDimensions } from '@/lib/maturity'
 
 // SWOT derivada dos pilares (maturidade real) + oportunidades/riscos do audit.
@@ -38,6 +38,9 @@ export default function DiagnosticoPage() {
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
+  // Hook ANTES de qualquer early-return (regras de hooks). Benchmark vem da API.
+  const niche = clientData?.niche || savedClients?.find(c => c.clientData.clientName === key)?.clientData.niche || ''
+  const bench = useBenchmark(niche)
 
   const run = async () => {
     setRunning(true); setRunErr('')
@@ -99,8 +102,6 @@ export default function DiagnosticoPage() {
   const tu = tracking.filter(t => t.status === 'nao_verificado').length
   const tp = tracking.filter(t => t.status === 'problema').length
   const rm = audit._realMetrics
-  const niche = clientData?.niche || savedClients?.find(c => c.clientData.clientName === key)?.clientData.niche || ''
-  const bench = niche ? getBenchmark(niche) : null
   const trackOkRatio = tracking.length > 0 ? tv / tracking.length : 0.6
   const maturity = deriveMaturity(rm, bench, trackOkRatio, score)
 

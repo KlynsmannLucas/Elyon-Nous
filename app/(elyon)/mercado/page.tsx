@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Sparkline, Delta, HBar, CHART_COLORS } from '@/components/dashboard/v2'
-import { getBenchmark } from '@/lib/niche_benchmarks'
+import { useBenchmark } from '@/lib/useBenchmark'
 import { TabConcorrentes } from '@/components/dashboard/TabConcorrentes'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
@@ -20,9 +20,10 @@ export default function MercadoPage() {
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const niche = clientData?.niche || savedClients?.find(c => c.clientData.clientName === key)?.clientData.niche || ''
+  // Hook ANTES de qualquer early-return (regras de hooks). Benchmark vem da API.
+  const bench = useBenchmark(niche)
   if (!mounted) return null
 
-  const bench = niche ? getBenchmark(niche) : null
   const rm = auditCache[key]?.[0]?.audit?._realMetrics
   const competitors = competitorsMap[key] || []
   const cpl = rm?.avgCPL ? Number(rm.avgCPL) : null

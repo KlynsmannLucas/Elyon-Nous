@@ -5,11 +5,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getBenchmarkForNiche, getBenchmarksForAllNiches } from '@/lib/benchmark-service'
-import { BENCHMARKS } from '@/lib/niche_benchmarks'
+import { BENCHMARKS, getBenchmark } from '@/lib/niche_benchmarks'
 
 export async function GET(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  // Lookup direto por NOME do nicho (server-side) — mantém o shape de getBenchmark()
+  // fora do bundle do cliente. Usado pelo hook client useBenchmark.
+  const niche = req.nextUrl.searchParams.get('niche')
+  if (niche) {
+    return NextResponse.json({ benchmark: getBenchmark(niche) })
+  }
 
   const key = req.nextUrl.searchParams.get('key')
 
