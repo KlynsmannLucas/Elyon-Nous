@@ -29,6 +29,7 @@ export default function PlanoPage() {
   const [tab, setTab] = useState<SubTab>('execucao')
   const [done, setDone] = useState<Record<string, boolean>>({})
   const [genLoading, setGenLoading] = useState(false)
+  const [executed, setExecuted] = useState<any[]>([])
 
   const genStrat = async () => {
     setGenLoading(true)
@@ -39,6 +40,14 @@ export default function PlanoPage() {
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
+  // #2 Medir impacto — ações executadas no Meta e seu efeito no CPL da conta.
+  useEffect(() => {
+    if (!key) { setExecuted([]); return }
+    let active = true
+    fetch(`/api/actions/executed?clientName=${encodeURIComponent(key)}`)
+      .then(r => (r.ok ? r.json() : null)).then(d => { if (active) setExecuted(d?.actions || []) }).catch(() => {})
+    return () => { active = false }
+  }, [key])
   if (!mounted) return null
 
   const actions = key ? pendingActionsCache[key] || [] : []
@@ -144,6 +153,39 @@ export default function PlanoPage() {
                 })}
               </div>
             </Card>
+
+            {/* #2 Impacto das ações executadas no Meta (antes → depois do CPL da conta) */}
+            {executed.length > 0 && (
+              <Card>
+                <SectionHead title="Impacto das ações executadas" subtitle="O que o NOUS executou no Meta e o efeito no CPL da conta" icon={<Icon name="bolt" size={17} />} />
+                <div className="divide-y divide-line-2">
+                  {executed.map((a: any) => {
+                    const actLabel = a.action === 'pause' ? 'Pausou' : a.action === 'scale' ? 'Escalou' : 'Reativou'
+                    const good = a.deltaPct != null && a.deltaPct < 0
+                    return (
+                      <div key={a.id} className="flex items-center gap-3 py-3">
+                        <span className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${a.action === 'pause' ? 'bg-red-soft text-red' : 'bg-green-soft text-green-600'}`}><Icon name={a.action === 'scale' ? 'arrowUp' : 'check'} size={15} /></span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-ink truncate">{actLabel} "{a.campaign_name || 'campanha'}"</div>
+                          <div className="text-xs text-ink-3">{a.days === 0 ? 'hoje' : `há ${a.days} ${a.days === 1 ? 'dia' : 'dias'}`}</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          {a.measured ? (
+                            <>
+                              <div className="text-xs text-ink-3">CPL da conta</div>
+                              <div className="text-sm font-mono font-semibold text-ink">{brl(a.cpl_before)} → {brl(a.cpl_after)}</div>
+                              {a.deltaPct != null && <div className={`text-xs font-bold ${good ? 'text-green-600' : 'text-red'}`}>{a.deltaPct > 0 ? '+' : ''}{a.deltaPct}%</div>}
+                            </>
+                          ) : (
+                            <div className="text-xs text-ink-3 italic">medindo… {a.days < 3 ? `(faltam ${3 - a.days}d)` : ''}</div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </Card>
+            )}
 
             {/* Extras do modo Avançado: matriz impacto×esforço + roadmap */}
             {dashboardMode !== 'simple' && (

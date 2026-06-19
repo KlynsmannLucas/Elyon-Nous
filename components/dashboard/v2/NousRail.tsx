@@ -107,7 +107,7 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
     try {
       const res = await fetch('/api/meta/campaign/action', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: ins.action, id: ins.campaignId }),
+        body: JSON.stringify({ action: ins.action, id: ins.campaignId, accountId: metaAccountId || undefined, clientName: key, campaignName: ins.campaignName }),
       })
       const d = await res.json()
       if (typeof window !== 'undefined') window.toast?.(d?.success

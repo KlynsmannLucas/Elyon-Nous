@@ -4,11 +4,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export const maxDuration = 30
 const META_BASE = 'https://graph.facebook.com/v21.0'
 
 type ActionType = 'pause' | 'resume' | 'scale'
+
+// Registra a ação + o CPL/spend da conta no momento (para medir o "depois").
+// Tolerante: se a tabela não existir ainda, apenas ignora.
+async function logExecutedAction(userId: string, accountId: string | undefined, body: any, action: ActionType) {
+  if (!supabaseAdmin) return
+  try {
+    let cplBefore: number | null = null
+    let spendBefore: number | null = null
+    if (accountId) {
+      const { data } = await supabaseAdmin.from('daily_metrics')
+        .select('cpl, spend').eq('user_id', userId).eq('account_id', accountId).eq('platform', 'meta')
+        .order('date', { ascending: false }).limit(1)
+      if (data?.[0]) { cplBefore = data[0].cpl ?? null; spendBefore = data[0].spend ?? null }
+    }
+    await supabaseAdmin.from('executed_actions').insert({
+      user_id: userId, account_id: accountId || null, client_name: body.clientName || null,
+      campaign_id: String(body.id || ''), campaign_name: body.campaignName || null,
+      action, cpl_before: cplBefore, spend_before: spendBefore,
+    })
+  } catch { /* tabela ausente ou erro de log — não quebra a ação */ }
+}
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -24,9 +46,11 @@ export async function POST(req: NextRequest) {
   if (!id) return NextResponse.json({ success: false, error: 'ID da campanha ausente.' }, { status: 400 })
 
   let accessToken: string
+  let tokenAccountId: string | undefined
   try {
     const t = await getValidMetaToken(userId)
     accessToken = t.accessToken
+    tokenAccountId = (body.accountId as string) || t.accountId || undefined
   } catch (err) {
     const { error, code } = metaTokenErrorToResponse(err)
     return NextResponse.json({ success: false, error, code }, { status: 401 })
@@ -47,6 +71,7 @@ export async function POST(req: NextRequest) {
       const status = action === 'pause' ? 'PAUSED' : 'ACTIVE'
       const r = await post(id, { status })
       if (!r.ok) return NextResponse.json({ success: false, error: r.error || 'Falha ao atualizar a campanha no Meta.' }, { status: 502 })
+      await logExecutedAction(userId, tokenAccountId, body, action)
       return NextResponse.json({ success: true, message: action === 'pause' ? 'Campanha pausada no Meta Ads.' : 'Campanha reativada no Meta Ads.' })
     }
 
@@ -63,6 +88,7 @@ export async function POST(req: NextRequest) {
     const next = Math.round(daily * factor)
     const r = await post(id, { daily_budget: String(next) })
     if (!r.ok) return NextResponse.json({ success: false, error: r.error || 'Falha ao escalar o orçamento.' }, { status: 502 })
+    await logExecutedAction(userId, tokenAccountId, body, action)
     const fmt = (cents: number) => 'R$' + Math.round(cents / 100).toLocaleString('pt-BR')
     return NextResponse.json({ success: true, message: `Orçamento elevado de ${fmt(daily)} para ${fmt(next)}/dia.` })
   } catch (e: any) {
