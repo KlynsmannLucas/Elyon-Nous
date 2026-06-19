@@ -178,6 +178,67 @@ function buildFallbackAudit(
       : 'Auditoria completa requer acesso ao Events Manager para validar eventos e API de Conversões.')
   }
 
+  // ── Plano de ação DATA-DRIVEN: nomeia campanhas reais (pausar/escalar) com CPL real.
+  // Cai no genérico só quando a conta não tem dados de campanha.
+  const money = (n: number) => 'R$' + Math.round(n || 0).toLocaleString('pt-BR')
+  const cplOf = (c: any) => ((c.leads || 0) > 0 ? (c.spend || 0) / c.leads : Infinity)
+  const withLeads = metaCamps.filter(c => (c.leads || 0) > 0 && (c.spend || 0) > 0)
+  const worstCamps = withLeads.filter(c => cplOf(c) > bench.cpl_max).sort((a, b) => cplOf(b) - cplOf(a)).slice(0, 3)
+  const bestCamps  = withLeads.filter(c => cplOf(c) <= bench.cpl_min).sort((a, b) => cplOf(a) - cplOf(b)).slice(0, 2)
+  const wasteTotal = wasteCamps.reduce((s, c) => s + (c.spend || 0), 0)
+
+  const curto: any[] = []
+  if (wasteCamps.length) {
+    curto.push({
+      acao: `Pausar ${wasteCamps.length} campanha(s) que gastam sem converter`,
+      como: wasteCamps.slice(0, 3).map(c => `"${c.name}" (${money(c.spend)} gastos, 0 leads)`).join(' · '),
+      impacto: `Recupera ~${money(wasteTotal)} já no próximo ciclo`,
+    })
+  }
+  if (worstCamps.length) {
+    const w = worstCamps[0]
+    curto.push({
+      acao: `Revisar/cortar a campanha de CPL mais alto: "${w.name}"`,
+      como: `CPL ${money(cplOf(w))} — ${(cplOf(w) / Math.max(1, benchCPL)).toFixed(1)}× o benchmark (${money(benchCPL)}). Realocar a verba para os conjuntos eficientes.`,
+      impacto: 'Alto — corta o maior ralo de CPL da conta',
+    })
+  }
+  if (pixelOk === false) {
+    curto.push({ acao: 'Corrigir o tracking (pixel + API de Conversões)', como: 'Gasto registrado e 0 leads via API — validar o evento de conversão no Events Manager e instalar a Conversions API.', impacto: 'Crítico — sem isso toda otimização é cega' })
+  }
+  if (!curto.length) {
+    curto.push(
+      { acao: 'Auditar tracking (pixel + API conversões)', como: 'Acessar o Meta Events Manager e verificar cada evento. Instalar Conversions API se não tiver.', impacto: 'Crítico — base de tudo' },
+      { acao: `Definir CPL máximo de corte em ${money(bench.cpl_max)}`, como: 'Pausar automaticamente qualquer conjunto acima desse CPL por 3 dias seguidos.', impacto: 'Alto — reduz desperdício' },
+    )
+  }
+
+  const medio: any[] = []
+  if (bestCamps.length) {
+    const b = bestCamps[0]
+    medio.push({
+      acao: `Escalar a campanha vencedora "${b.name}"`,
+      como: `CPL ${money(cplOf(b))} (abaixo do piso ${money(bench.cpl_min)} do nicho). Subir budget 15–20%/semana enquanto o CPL segurar.`,
+      impacto: '+volume de leads sem subir o CPL',
+    })
+  }
+  medio.push({
+    acao: hasBof ? 'Reforçar o remarketing existente em 3 camadas' : 'Criar estrutura de remarketing em 3 camadas',
+    como: hasBof ? 'Já há campanhas de remarketing — separar visitantes 7d / 30d / leads sem conversão com criativos próprios.' : 'Sem remarketing detectado nos nomes das campanhas — criar audiências: visitantes 7d, 30d e leads sem conversão.',
+    impacto: '+15–25% de conversão no funil total',
+  })
+  medio.push({ acao: 'Lançar ciclo de testes A/B de criativos', como: `Mínimo 3 criativos por conjunto para ${niche}: ângulo de dor vs. solução vs. prova social.`, impacto: 'CTR +30%, CPL -15%' })
+
+  const longo: any[] = []
+  longo.push({
+    acao: funnelTiers.length >= 2 ? 'Otimizar o funil TOFU/MOFU/BOFU já existente' : 'Estruturar o funil completo TOFU/MOFU/BOFU',
+    como: funnelTiers.length >= 2 ? `Funil com ${funnelTiers.join('+')} detectado — balancear verba entre as etapas e alinhar objetivos por temperatura.` : `Hoje há ${funnelTiers.length === 1 ? `só ${funnelTiers[0]}` : 'campanhas sem nomenclatura de funil'} — separar topo, meio e fundo com objetivos distintos.`,
+    impacto: 'Escalabilidade sustentável',
+  })
+  longo.push({ acao: `Diversificar para ${bench.best_channels[1] || 'Google Search'}`, como: 'Após estabilizar o canal principal, abrir um 2º canal para captura de demanda e reduzir dependência.', impacto: 'Mais cobertura de mercado' })
+
+  const planoAcao = { curto, medio, longo }
+
   return {
     health_score: score,
     grade,
@@ -318,20 +379,7 @@ function buildFallbackAudit(
       },
     ],
 
-    plano_acao: {
-      curto: [
-        { acao: 'Auditar tracking (pixel + API conversões)', como: 'Acessar Meta Events Manager e verificar cada evento. Instalar conversions API se não tiver.', impacto: 'Crítico — base de tudo' },
-        { acao: 'Pausar campanhas com CPL > benchmark máximo', como: `Identificar campanhas com CPL > R$${bench.cpl_max} e redirecionar verba para as que performam`, impacto: 'Alto — redução imediata de desperdício' },
-      ],
-      medio: [
-        { acao: 'Criar estrutura de remarketing em 3 camadas', como: 'Audiências: visitantes 7d, 30d e leads sem conversão. Criativos diferentes para cada grupo.', impacto: '+20% conversão sem aumento de custo' },
-        { acao: 'Lançar ciclo de testes A/B de criativos', como: 'Mínimo 3 criativos por conjunto. Testar: problema vs. solução vs. prova social', impacto: 'CTR +30%, CPL -15%' },
-      ],
-      longo: [
-        { acao: 'Estrutura de funil completo TOFU/MOFU/BOFU', como: 'Separar campanhas por temperatura de público. Objetivos diferentes por etapa do funil.', impacto: 'Escalabilidade sustentável' },
-        { acao: `Diversificar para ${bench.best_channels[1] || 'Google Search'}`, como: 'Após dominar o canal principal, expandir para captura de demanda existente', impacto: 'Redução de dependência e maior cobertura de mercado' },
-      ],
-    },
+    plano_acao: planoAcao,
 
     insights_senior: [
       {
@@ -1186,7 +1234,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
             system: 'Você é um consultor sênior de tráfego pago com 10+ anos no mercado brasileiro. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois do JSON. Sem ```json. Comece direto com { e termine com }.',
             messages: [{ role: 'user', content: prompt }],
           }),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 35000)),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 46000)),
         ])
 
         if (!message) throw new Error('AI timeout — usando fallback')

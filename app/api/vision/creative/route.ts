@@ -98,6 +98,13 @@ Responda em português APENAS com JSON válido (sem markdown), nesta estrutura:
     return NextResponse.json({ success: true, kind, analysis, source: 'gemini' })
   } catch (err: any) {
     refundCredits(userId, effectivePlan, 'gemini_vision').catch(() => {})
+    const raw = String(err?.message || err || '')
+    // Bloqueio de conta/projeto do Google (403/PERMISSION_DENIED) ou indisponibilidade:
+    // não é acionável pelo usuário → responde 503 para o painel se esconder sozinho.
+    if (/403|permission_denied|denied access|api key not valid|quota|not enabled|forbidden/i.test(raw)) {
+      console.error('[vision/creative] Gemini indisponível (403/permissão):', raw.slice(0, 200))
+      return NextResponse.json({ success: false, error: 'Análise visual indisponível no momento.' }, { status: 503 })
+    }
     const { errMsg } = await import('@/lib/errMsg')
     return NextResponse.json({ success: false, error: errMsg(err, 'Não foi possível analisar a imagem. Tente novamente.') }, { status: 500 })
   }
