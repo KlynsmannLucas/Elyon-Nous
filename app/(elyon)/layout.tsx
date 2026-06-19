@@ -39,6 +39,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
   const auditCache = useAppStore(s => s.auditCache)
   const connectedAccounts = useAppStore(s => s.connectedAccounts)
+  const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
   const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta Ads', google: 'Google Ads' }
   const syncPlatforms = Array.from(new Set(connectedAccounts.map(a => PLATFORM_LABEL[a.platform] || a.platform)))
   // Modo compartilhado com o app (persistido no store): pro↔avançado, simple↔simplificado
@@ -103,13 +104,37 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   // Notificações reais derivadas das ações pendentes + alertas da última auditoria.
   const nkey = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const URG_TONE: Record<string, 'bad' | 'warn' | 'blue'> = { critica: 'bad', alta: 'warn', media: 'blue', baixa: 'blue' }
-  const notifications = (pendingActionsCache[nkey] || [])
+  const pendingNotifs = (pendingActionsCache[nkey] || [])
     .filter((a: any) => a.status === 'pendente')
     .slice(0, 6)
     .map((a: any) => ({
       id: a.id, tone: URG_TONE[a.urgency] || 'blue', title: a.title,
       body: typeof a.impact === 'string' ? a.impact : a.evidence, when: undefined, area: 'plano', read: false,
     }))
+
+  // #4 Alertas proativos — insights ao vivo das campanhas (severidade alta) viram notificação.
+  const [insightNotifs, setInsightNotifs] = useState<any[]>([])
+  useEffect(() => {
+    const metaConn = connectedAccounts.some(a => a.platform === 'meta')
+    if (!metaConn || !nkey) { setInsightNotifs([]); return }
+    const accId = selectedMetaAccountByClient[nkey] || connectedAccounts.find(a => a.platform === 'meta')?.accountId
+    let active = true
+    fetch('/api/insights', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: clientData?.niche, accountId: accId || undefined }) })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (!active || !d?.success) return
+        setInsightNotifs((d.insights || [])
+          .filter((i: any) => i.tone === 'bad' || i.tone === 'warn')
+          .slice(0, 4)
+          .map((i: any, idx: number) => ({ id: `insight_${idx}`, tone: i.tone, title: i.title, body: i.body, area: 'desempenho', read: false })))
+      })
+      .catch(() => {})
+    return () => { active = false }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nkey, clientData?.niche, connectedAccounts.length])
+
+  // Insights de campanha (tempo real) primeiro; depois as ações pendentes.
+  const notifications = [...insightNotifs, ...pendingNotifs].slice(0, 8)
 
   return (
     <ToastProvider>
