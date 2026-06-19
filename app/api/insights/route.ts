@@ -9,7 +9,8 @@ import { getBenchmark } from '@/lib/niche_benchmarks'
 export const maxDuration = 30
 
 type Tone = 'bad' | 'warn' | 'good' | 'blue'
-interface Insight { tone: Tone; title: string; body?: string; tag?: string }
+type Action = 'pause' | 'scale'
+interface Insight { tone: Tone; title: string; body?: string; tag?: string; campaignId?: string; campaignName?: string; action?: Action }
 
 const LEAD_RE = /lead|complete_registration|onsite_conversion\.messaging|purchase|offsite_conversion\.fb_pixel_(lead|purchase|complete_registration)/i
 const REMARKETING_RE = /\b(remar|retar|remarketing|retargeting|rmk|bof|bofu|quente|hot|carrinho|abandon)/i
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       const ctr = Number(r.ctr || 0)
       const freq = Number(r.frequency || 0)
       const impressions = Number(r.impressions || 0)
-      return { name: r.campaign_name || 'Campanha', spend, leads, cpl: leads > 0 ? spend / leads : Infinity, ctr, freq, impressions }
+      return { id: String(r.campaign_id || ''), name: r.campaign_name || 'Campanha', spend, leads, cpl: leads > 0 ? spend / leads : Infinity, ctr, freq, impressions }
     }).filter(c => c.spend > 0)
 
     if (camps.length === 0) {
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     if (waste.length) {
       const c = waste[0]
       const wasteTotal = waste.reduce((s, x) => s + x.spend, 0)
-      insights.push({ tone: 'bad', tag: 'Desperdício', title: `"${c.name}" gastou ${brl(c.spend)} sem conversão`, body: waste.length > 1 ? `${waste.length} campanhas sem nenhum resultado somam ${brl(wasteTotal)} — pause e realoque.` : 'Pause ou revise o público/criativo desta campanha.' })
+      insights.push({ tone: 'bad', tag: 'Desperdício', title: `"${c.name}" gastou ${brl(c.spend)} sem conversão`, body: waste.length > 1 ? `${waste.length} campanhas sem nenhum resultado somam ${brl(wasteTotal)} — pause e realoque.` : 'Pause ou revise o público/criativo desta campanha.', campaignId: c.id || undefined, campaignName: c.name, action: c.id ? 'pause' : undefined })
     }
 
     // 3. CPL muito acima do benchmark
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
       const overpriced = camps.filter(c => c.leads > 0 && c.cpl > cplMax).sort((a, b) => b.cpl - a.cpl)
       if (overpriced.length) {
         const c = overpriced[0]
-        insights.push({ tone: 'warn', tag: 'CPL', title: `"${c.name}" com CPL ${brl(c.cpl)}`, body: `${(c.cpl / cplMax).toFixed(1)}× o teto do benchmark (${brl(cplMax)}) — revise segmentação ou corte a verba.` })
+        insights.push({ tone: 'warn', tag: 'CPL', title: `"${c.name}" com CPL ${brl(c.cpl)}`, body: `${(c.cpl / cplMax).toFixed(1)}× o teto do benchmark (${brl(cplMax)}) — revise segmentação ou corte a verba.`, campaignId: c.id || undefined, campaignName: c.name, action: c.id ? 'pause' : undefined })
       }
     }
 
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
       const winners = camps.filter(c => c.leads > 1 && c.cpl <= cplMin).sort((a, b) => a.cpl - b.cpl)
       if (winners.length) {
         const c = winners[0]
-        insights.push({ tone: 'good', tag: 'Escalar', title: `"${c.name}" rende abaixo do mercado (CPL ${brl(c.cpl)})`, body: `Abaixo do piso do nicho (${brl(cplMin)}) — suba o budget 15–20%/semana enquanto o CPL segurar.` })
+        insights.push({ tone: 'good', tag: 'Escalar', title: `"${c.name}" rende abaixo do mercado (CPL ${brl(c.cpl)})`, body: `Abaixo do piso do nicho (${brl(cplMin)}) — suba o budget 15–20%/semana enquanto o CPL segurar.`, campaignId: c.id || undefined, campaignName: c.name, action: c.id ? 'scale' : undefined })
       }
     }
 

@@ -31,7 +31,9 @@ export function NousOrb({ size = 40, thinking = false }: { size?: number; thinki
   )
 }
 
-function InsightCard({ tone, title, tag, body, onAct }: { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string; onAct?: () => void }) {
+interface InsightItem { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string; campaignId?: string; campaignName?: string; action?: 'pause' | 'scale' }
+
+function InsightCard({ tone, title, tag, body, action, onAct, onExecute, executing }: InsightItem & { onAct?: () => void; onExecute?: () => void; executing?: boolean }) {
   const C: Record<string, string> = { bad: '#E1483F', warn: '#E08B0B', good: '#0E9E6E', blue: '#2C5FE0' }
   const icon = tone === 'bad' ? 'alert' : tone === 'warn' ? 'flag' : 'spark'
   const c = C[tone]
@@ -43,13 +45,22 @@ function InsightCard({ tone, title, tag, body, onAct }: { tone: 'bad' | 'warn' |
         {tag && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-pill" style={{ color: c, background: `${c}14` }}>{tag}</span>}
       </div>
       {body && <div className="text-xs text-ink-2 leading-relaxed">{body}</div>}
-      {onAct && <button onClick={onAct} className="mt-2 text-xs font-semibold text-blue inline-flex items-center gap-1 hover:gap-1.5 transition-all">Ver detalhes <Icon name="chevR" size={13} /></button>}
+      <div className="flex items-center gap-3 mt-2">
+        {action && onExecute && (
+          <button onClick={onExecute} disabled={executing}
+            className="text-xs font-bold inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-white disabled:opacity-60"
+            style={{ background: action === 'pause' ? '#E1483F' : '#0E9E6E' }}>
+            {executing ? 'Executando…' : action === 'pause' ? <>Pausar agora</> : <>Escalar +20%</>}
+          </button>
+        )}
+        {onAct && <button onClick={onAct} className="text-xs font-semibold text-blue inline-flex items-center gap-1 hover:gap-1.5 transition-all">Ver no Desempenho <Icon name="chevR" size={13} /></button>}
+      </div>
     </div>
   )
 }
 
 // Cache de insights ao vivo por cliente|conta (evita refetch a cada navegação na sessão).
-const INSIGHTS_CACHE = new Map<string, { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string }[]>()
+const INSIGHTS_CACHE = new Map<string, InsightItem[]>()
 
 export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   const clientData = useAppStore(s => s.clientData)
@@ -74,15 +85,42 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   // Insights reais (briefing + alertas/ações)
   const briefing = latestAudit?.executive_summary || strategyData?.strategy?.growth_thesis
     || (rm ? `Conta com ${Number(rm.totalSpend).toLocaleString('pt-BR')} investidos e ${rm.totalLeads} leads.` : 'Rode a Análise Profunda para um briefing com os dados reais da conta.')
-  const auditInsights: { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string }[] =
+  const auditInsights: InsightItem[] =
     (latestAudit?.o_que_eu_faria_agora || []).filter((a: any) => a?.titulo).slice(0, 4)
       .map((a: any) => ({ tone: a.prioridade === 'P1' ? 'bad' as const : a.prioridade === 'P2' ? 'warn' as const : 'blue' as const, title: a.titulo, tag: a.prioridade, body: a.motivo || a.evidencia }))
 
   // Insights ao vivo — lê as campanhas reais do Meta (sem precisar rodar a Análise Profunda).
   const metaConnected = connectedAccounts.some(a => a.platform === 'meta')
   const metaAccountId = (key && selectedMetaAccountByClient[key]) || connectedAccounts.find(a => a.platform === 'meta')?.accountId || ''
-  const [liveInsights, setLiveInsights] = useState<typeof auditInsights>([])
+  const [liveInsights, setLiveInsights] = useState<InsightItem[]>([])
   const [liveLoading, setLiveLoading] = useState(false)
+  const [executingId, setExecutingId] = useState<string | null>(null)
+
+  // Fecha o loop: executa a ação do insight direto no Meta (com confirmação).
+  const executeInsight = async (ins: InsightItem) => {
+    if (!ins.campaignId || !ins.action) return
+    const q = ins.action === 'pause'
+      ? `Pausar "${ins.campaignName}" no Meta Ads agora?`
+      : `Aumentar o orçamento de "${ins.campaignName}" em +20% no Meta Ads?`
+    if (typeof window !== 'undefined' && !window.confirm(q)) return
+    setExecutingId(ins.campaignId)
+    try {
+      const res = await fetch('/api/meta/campaign/action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: ins.action, id: ins.campaignId }),
+      })
+      const d = await res.json()
+      if (typeof window !== 'undefined') window.toast?.(d?.success
+        ? { tone: 'good', title: 'Ação executada', body: d.message }
+        : { tone: 'bad', title: 'Não foi possível', body: d?.error || 'Tente novamente.' })
+      if (d?.success) {
+        INSIGHTS_CACHE.delete(`${key}|${metaAccountId}`)
+        setLiveInsights(prev => prev.filter(x => x !== ins))
+      }
+    } catch {
+      if (typeof window !== 'undefined') window.toast?.({ tone: 'bad', title: 'Falha de conexão' })
+    } finally { setExecutingId(null) }
+  }
   useEffect(() => {
     if (!metaConnected || !key) { setLiveInsights([]); return }
     const cacheKey = `${key}|${metaAccountId}`
@@ -181,7 +219,7 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
               <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Insights em destaque</div>
               {liveInsights.length > 0 && <span className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-green-600"><span className="pulse-dot" />ao vivo</span>}
             </div>
-            {insights.length > 0 ? insights.map((a, i) => <InsightCard key={i} {...a} onAct={() => (window.location.href = liveInsights.length > 0 ? '/desempenho' : '/diagnostico')} />)
+            {insights.length > 0 ? insights.map((a, i) => <InsightCard key={i} {...a} executing={!!a.campaignId && executingId === a.campaignId} onExecute={a.action && a.campaignId ? () => executeInsight(a) : undefined} onAct={() => (window.location.href = liveInsights.length > 0 ? '/desempenho' : '/diagnostico')} />)
               : liveLoading ? <p className="text-xs text-ink-3 text-center py-6">Lendo suas campanhas…</p>
               : metaConnected ? <p className="text-xs text-ink-3 text-center py-6">Nenhuma observação crítica nas campanhas agora. 👍</p>
               : <p className="text-xs text-ink-3 text-center py-6">Conecte o Meta Ads para ver insights da sua conta.</p>}
