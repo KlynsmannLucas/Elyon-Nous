@@ -80,17 +80,49 @@ export async function POST(req: NextRequest) {
     const cj = await cur.json().catch(() => ({}))
     if (cj?.error) return NextResponse.json({ success: false, error: cj.error.message || 'Não foi possível ler o orçamento.' }, { status: 502 })
 
-    const daily = Number(cj?.daily_budget || 0) // em centavos
-    if (!daily) {
-      // Sem budget no nível da campanha → está no conjunto (ABO). Não mexemos às cegas.
-      return NextResponse.json({ success: false, error: 'O orçamento desta campanha está no nível do conjunto (ABO). Ajuste o budget do ad set vencedor manualmente — escalar a campanha inteira poderia inflar conjuntos ruins.' }, { status: 409 })
-    }
-    const next = Math.round(daily * factor)
-    const r = await post(id, { daily_budget: String(next) })
-    if (!r.ok) return NextResponse.json({ success: false, error: r.error || 'Falha ao escalar o orçamento.' }, { status: 502 })
-    await logExecutedAction(userId, tokenAccountId, body, action)
     const fmt = (cents: number) => 'R$' + Math.round(cents / 100).toLocaleString('pt-BR')
-    return NextResponse.json({ success: true, message: `Orçamento elevado de ${fmt(daily)} para ${fmt(next)}/dia.` })
+    const daily = Number(cj?.daily_budget || 0) // em centavos
+
+    // Caso CBO: escala o orçamento da campanha inteira.
+    if (daily) {
+      const next = Math.round(daily * factor)
+      const r = await post(id, { daily_budget: String(next) })
+      if (!r.ok) return NextResponse.json({ success: false, error: r.error || 'Falha ao escalar o orçamento.' }, { status: 502 })
+      await logExecutedAction(userId, tokenAccountId, body, action)
+      return NextResponse.json({ success: true, message: `Orçamento elevado de ${fmt(daily)} para ${fmt(next)}/dia.` })
+    }
+
+    // Caso ABO (orçamento no conjunto): escala o AD SET VENCEDOR (menor CPL com leads),
+    // em vez de inflar a campanha inteira.
+    const enc = encodeURIComponent(accessToken)
+    const [setsRes, insRes] = await Promise.all([
+      fetch(`${META_BASE}/${id}/adsets?fields=id,name,daily_budget,effective_status&limit=50&access_token=${enc}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()).catch(() => ({})),
+      fetch(`${META_BASE}/${id}/insights?level=adset&fields=adset_id,spend,actions&date_preset=last_30d&limit=50&access_token=${enc}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()).catch(() => ({})),
+    ])
+    const LEAD_RE = /lead|complete_registration|onsite_conversion\.messaging|purchase/i
+    const cplByAdset: Record<string, number> = {}
+    for (const row of (insRes?.data || [])) {
+      const spend = Number(row.spend || 0)
+      let leads = 0
+      for (const a of (row.actions || [])) if (LEAD_RE.test(a?.action_type || '')) leads += Number(a?.value || 0)
+      cplByAdset[String(row.adset_id)] = leads > 0 ? spend / leads : Infinity
+    }
+    // candidatos: ad sets ativos, com daily_budget e com leads (CPL finito)
+    const candidates = (setsRes?.data || [])
+      .filter((s: any) => Number(s.daily_budget || 0) > 0 && (s.effective_status === 'ACTIVE' || !s.effective_status))
+      .map((s: any) => ({ id: String(s.id), name: s.name, budget: Number(s.daily_budget), cpl: cplByAdset[String(s.id)] ?? Infinity }))
+      .filter((s: any) => isFinite(s.cpl))
+      .sort((a: any, b: any) => a.cpl - b.cpl)
+
+    if (!candidates.length) {
+      return NextResponse.json({ success: false, error: 'Esta campanha usa orçamento no conjunto (ABO) e não encontrei um ad set vencedor com dados suficientes para escalar com segurança. Ajuste manualmente o conjunto de melhor CPL.' }, { status: 409 })
+    }
+    const best = candidates[0]
+    const next = Math.round(best.budget * factor)
+    const r = await post(best.id, { daily_budget: String(next) })
+    if (!r.ok) return NextResponse.json({ success: false, error: r.error || 'Falha ao escalar o ad set vencedor.' }, { status: 502 })
+    await logExecutedAction(userId, tokenAccountId, body, action)
+    return NextResponse.json({ success: true, message: `Ad set vencedor "${best.name}" (CPL ${fmt(Math.round(best.cpl * 100))}): orçamento ${fmt(best.budget)} → ${fmt(next)}/dia.` })
   } catch (e: any) {
     console.error('[meta/campaign/action]', e?.message)
     return NextResponse.json({ success: false, error: 'Erro ao executar a ação no Meta.' }, { status: 500 })
