@@ -96,18 +96,29 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   const [liveLoading, setLiveLoading] = useState(false)
   const [executingId, setExecutingId] = useState<string | null>(null)
 
-  // Fecha o loop: executa a ação do insight direto no Meta (com confirmação).
+  // Fecha o loop com APROVAÇÃO EXPLÍCITA: 1) preview do plano exato (sem executar)
+  // → 2) o usuário aprova o plano específico → 3) executa. Nada vai ao Meta sem o OK.
   const executeInsight = async (ins: InsightItem) => {
     if (!ins.campaignId || !ins.action) return
-    const q = ins.action === 'pause'
-      ? `Pausar "${ins.campaignName}" no Meta Ads agora?`
-      : `Aumentar o orçamento de "${ins.campaignName}" em +20% no Meta Ads?`
-    if (typeof window !== 'undefined' && !window.confirm(q)) return
+    const payload = { action: ins.action, id: ins.campaignId, accountId: metaAccountId || undefined, clientName: key, campaignName: ins.campaignName }
     setExecutingId(ins.campaignId)
     try {
+      // 1) Preview — calcula exatamente o que vai mudar, sem tocar no Meta.
+      const prev = await fetch('/api/meta/campaign/action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, dryRun: true }),
+      })
+      const pd = await prev.json()
+      if (!pd?.success) {
+        if (typeof window !== 'undefined') window.toast?.({ tone: 'bad', title: 'Não foi possível', body: pd?.error || 'Tente novamente.' })
+        return
+      }
+      // 2) Aprovação explícita do plano ESPECÍFICO (qual alvo, de/para).
+      if (typeof window !== 'undefined' && !window.confirm(`${pd.plan}\n\nConfirmar e executar no Meta Ads?`)) return
+      // 3) Executa só após o OK.
       const res = await fetch('/api/meta/campaign/action', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: ins.action, id: ins.campaignId, accountId: metaAccountId || undefined, clientName: key, campaignName: ins.campaignName }),
+        body: JSON.stringify(payload),
       })
       const d = await res.json()
       if (typeof window !== 'undefined') window.toast?.(d?.success
