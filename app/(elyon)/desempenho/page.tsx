@@ -81,6 +81,23 @@ export default function DesempenhoPage() {
   const [intelLoading, setIntelLoading] = useState(false)
   const [detailCamp, setDetailCamp] = useState<any | null>(null)
   const [stratGen, setStratGen] = useState(false)
+  const [execId, setExecId] = useState<string | null>(null)
+
+  // Executa ação na campanha (Meta) com aprovação explícita: preview -> aprovar -> executar.
+  const execCampaign = async (c: any, action: 'pause' | 'scale') => {
+    if (!c?.id) return
+    const payload = { action, id: String(c.id), accountId: metaAcctId || undefined, clientName: acctKey, campaignName: c.name }
+    setExecId(String(c.id))
+    try {
+      const prev = await fetch('/api/meta/campaign/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, dryRun: true }) })
+      const pd = await prev.json()
+      if (!pd?.success) { window.toast?.({ tone: 'bad', title: 'Não foi possível', body: pd?.error || 'Tente novamente.' }); return }
+      if (typeof window !== 'undefined' && !window.confirm(`${pd.plan}\n\nConfirmar e executar no Meta Ads?`)) return
+      const res = await fetch('/api/meta/campaign/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      const d = await res.json()
+      window.toast?.(d?.success ? { tone: 'good', title: 'Ação executada', body: d.message } : { tone: 'bad', title: 'Não foi possível', body: d?.error || 'Tente novamente.' })
+    } catch { window.toast?.({ tone: 'bad', title: 'Falha de conexão' }) } finally { setExecId(null) }
+  }
   useEffect(() => { setMounted(true) }, [])
 
   // Regenera a estratégia (público-alvo, ranking) sem sair da tela.
@@ -259,7 +276,76 @@ export default function DesempenhoPage() {
               {c.recommended_action && <div className="p-3 rounded-sm bg-blue-soft border border-blue-line"><div className="text-[10px] font-mono uppercase tracking-wider text-blue mb-1">Recomendação do NOUS</div><p className="text-xs text-ink-2 leading-relaxed">{c.recommended_action}</p></div>}
             </div>
           )}
+          {/* Ações executáveis (Meta) com aprovação explícita */}
+          {c.platform !== 'google' && c.id && (
+            <div className="flex gap-2 mt-3 pt-3 border-t border-line-2">
+              {c._s === 'vencedora'
+                ? <Button size="sm" variant="primary" icon={<Icon name="arrowUp" size={14} />} disabled={execId === String(c.id)} onClick={() => execCampaign(c, 'scale')}>{execId === String(c.id) ? 'Aguarde…' : 'Escalar (+20%)'}</Button>
+                : <Button size="sm" variant="soft" icon={<Icon name="alert" size={14} />} disabled={execId === String(c.id)} onClick={() => execCampaign(c, 'pause')}>{execId === String(c.id) ? 'Aguarde…' : 'Pausar campanha'}</Button>}
+            </div>
+          )}
         </Card>
+
+        {/* ── Diagnóstico do NOUS desta campanha (sempre renderiza, dados da própria campanha) ── */}
+        {(() => {
+          const cpl = campCPL(c)
+          const ctr = Number(c.ctr || 0)
+          const roas = Number(c.roas || 0)
+          const freq = Number(c.frequency || 0)
+          const reach = Number(c.reach || 0)
+          const impressions = Number(c.impressions || 0)
+          const revenue = Number(c.revenue || 0)
+          const cpc = c.clicks > 0 ? c.spend / c.clicks : (impressions && ctr ? (c.spend / (impressions * ctr / 100)) : null)
+          const cpm = impressions > 0 ? (c.spend / impressions) * 1000 : null
+          const accCpls = camps.map((x: any) => campCPL(x)).filter((v: any) => v && v > 0) as number[]
+          const avgCpl = accCpls.length ? Math.round(accCpls.reduce((a, b) => a + b, 0) / accCpls.length) : null
+          const be = (clientData?.ticketPrice && clientData?.grossMargin && clientData?.conversionRate)
+            ? Math.round(clientData.ticketPrice * (clientData.grossMargin / 100) * (clientData.conversionRate / 100)) : null
+          const diag: { t: 'good' | 'warn' | 'bad'; text: string }[] = []
+          if (cpl && avgCpl) { const d = Math.round((cpl / avgCpl - 1) * 100); diag.push({ t: d <= -15 ? 'good' : d >= 15 ? 'bad' : 'warn', text: `CPL ${brl(cpl)} — ${Math.abs(d)}% ${d < 0 ? 'abaixo' : 'acima'} da média da conta (${brl(avgCpl)}).` }) }
+          if (cpl && be) diag.push({ t: cpl <= be ? 'good' : 'bad', text: cpl <= be ? `Dentro do ponto de equilíbrio (${brl(be)}) — cada lead dá lucro.` : `${(cpl / be).toFixed(1)}× o ponto de equilíbrio (${brl(be)}) — cada lead aqui dá prejuízo.` })
+          if (ctr) diag.push({ t: ctr >= 2 ? 'good' : ctr >= 1 ? 'warn' : 'bad', text: `CTR ${ctr.toFixed(2)}% — ${ctr >= 2 ? 'criativo forte' : ctr >= 1 ? 'mediano' : 'criativo pouco atrativo, teste um novo ângulo'}.` })
+          if (freq >= 3.5) diag.push({ t: freq >= 5 ? 'bad' : 'warn', text: `Frequência ${freq.toFixed(1)}× — público ${freq >= 5 ? 'saturado' : 'saturando'}; renove o criativo antes do CTR cair.` })
+          if (roas) diag.push({ t: roas >= 3 ? 'good' : roas >= 1.5 ? 'warn' : 'bad', text: `ROAS ${roas.toFixed(2)}× — ${roas >= 3 ? 'retorno saudável' : roas >= 1.5 ? 'no limite' : 'abaixo do break-even'}.` })
+          const verdict = c._s === 'vencedora' ? { t: 'good' as const, label: 'Escalar', why: 'Eficiência acima da conta — suba a verba com segurança.' }
+            : c._s === 'critica' ? { t: 'bad' as const, label: 'Pausar / revisar', why: 'Custo alto sem retorno proporcional — corte ou reestruture.' }
+            : { t: 'warn' as const, label: 'Monitorar', why: 'Resultado mediano — otimize criativo e segmentação.' }
+          const proj = (c._s === 'vencedora' && cpl) ? Math.round((c.spend * 0.2) / cpl) : null
+          const metrics: [string, string][] = [
+            ['Investido', brl(c.spend || 0)], ['Conversões', int(c.leads || 0)], ['CPL/CPA', cpl ? brl(cpl) : '—'],
+            ['CTR', ctr ? `${ctr.toFixed(2)}%` : '—'], ['ROAS', roas ? `${roas.toFixed(2)}×` : '—'], ['Receita', revenue > 0 ? brl(revenue) : '—'],
+            ['CPC', cpc ? brl(cpc) : '—'], ['CPM', cpm ? brl(cpm) : '—'], ['Frequência', freq ? `${freq.toFixed(1)}×` : '—'], ['Alcance', reach ? int(reach) : '—'],
+          ]
+          const tc: Record<string, string> = { good: '#0E9E6E', warn: '#D9870B', bad: '#E1483F' }
+          return (
+            <>
+              <Card>
+                <SectionHead title="Diagnóstico do NOUS" subtitle="Leitura desta campanha vs. sua conta e ponto de equilíbrio" icon={<Icon name="spark" size={17} />} action={<SourceBadge source="real" />} />
+                <div className="flex items-start gap-3 mb-3 p-3 rounded-md" style={{ background: `${tc[verdict.t]}10`, border: `1px solid ${tc[verdict.t]}30` }}>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-pill shrink-0" style={{ color: tc[verdict.t], background: `${tc[verdict.t]}1A` }}>{verdict.label}</span>
+                  <span className="text-[13px] text-ink-2 leading-relaxed">{verdict.why}{proj ? ` Escalar +20% ≈ +${int(proj)} leads/mês no mesmo CPL.` : ''}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {diag.map((d, i) => (
+                    <div key={i} className="flex items-start gap-2 text-[13px] text-ink-2"><span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: tc[d.t] }} />{d.text}</div>
+                  ))}
+                  {diag.length === 0 && <p className="text-[13px] text-ink-3">Dados insuficientes para um diagnóstico completo — rode a Análise Profunda para enriquecer.</p>}
+                </div>
+              </Card>
+              <Card>
+                <SectionHead title="Métricas detalhadas" icon={<Icon name="chart" size={17} />} action={<SourceBadge source="real" />} />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                  {metrics.map(([k, v]) => (
+                    <div key={k} className="p-2.5 rounded-sm bg-canvas-2 border border-line">
+                      <div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3 mb-0.5">{k}</div>
+                      <div className="text-[15px] font-mono font-bold text-ink">{v}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </>
+          )
+        })()}
 
         {intelLoading && <Card><div className="text-center py-10 text-ink-3 text-sm">Carregando detalhes da conta…</div></Card>}
         {!intelLoading && intel && (
