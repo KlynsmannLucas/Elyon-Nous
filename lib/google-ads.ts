@@ -184,3 +184,49 @@ export async function gaqlSearch(
       : `Verifique se o Customer ID ${customerId} está correto e se o Developer Token tem acesso de produção.`)
   )
 }
+
+/**
+ * Mutate genérico do Google Ads (escrita) — mesmo padrão de headers/versões do gaqlSearch.
+ * endpoint ex.: 'campaigns:mutate', 'campaignBudgets:mutate'.
+ */
+export async function googleAdsMutate(
+  customerId: string,
+  accessToken: string,
+  developerToken: string,
+  endpoint: string,
+  payload: any,
+  loginCustomerIdOverride?: string,
+): Promise<any> {
+  const loginCid = loginCustomerIdOverride ?? process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID ?? null
+  let lastError = 'Google Ads API indisponível'
+  let lastDetail: GoogleAdsErrorDetail | null = null
+
+  for (const version of API_VERSIONS) {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${accessToken}`,
+      'developer-token': developerToken,
+      'Content-Type': 'application/json',
+    }
+    if (loginCid && loginCid !== customerId) headers['login-customer-id'] = loginCid
+
+    let res: Response
+    try {
+      res = await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/${endpoint}`, {
+        method: 'POST', headers, body: JSON.stringify(payload), signal: AbortSignal.timeout(20_000),
+      })
+    } catch (err: any) { lastError = err?.message || 'erro de rede'; continue }
+
+    const ct = res.headers.get('content-type') || ''
+    if (!ct.includes('application/json')) { lastError = `HTTP ${res.status}`; continue }
+    const data = await res.json()
+    if (!res.ok || data.error) {
+      const detail = parseGoogleAdsError(data, res.status)
+      lastDetail = detail; lastError = detail.rawMessage
+      if (isVersionError(detail.rawMessage)) continue
+      throw new Error(friendlyGoogleAdsError(detail, customerId))
+    }
+    return data
+  }
+  if (lastDetail) throw new Error(friendlyGoogleAdsError(lastDetail, customerId))
+  throw new Error(`Google Ads API indisponível (${lastError}).`)
+}

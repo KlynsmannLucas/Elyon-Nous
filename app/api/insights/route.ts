@@ -10,7 +10,7 @@ export const maxDuration = 30
 
 type Tone = 'bad' | 'warn' | 'good' | 'blue'
 type Action = 'pause' | 'scale'
-interface Insight { tone: Tone; title: string; body?: string; tag?: string; campaignId?: string; campaignName?: string; action?: Action }
+interface Insight { tone: Tone; title: string; body?: string; tag?: string; campaignId?: string; campaignName?: string; action?: Action; platform?: 'meta' | 'google' }
 
 const LEAD_RE = /lead|complete_registration|onsite_conversion\.messaging|purchase|offsite_conversion\.fb_pixel_(lead|purchase|complete_registration)/i
 const REMARKETING_RE = /\b(remar|retar|remarketing|retargeting|rmk|bof|bofu|quente|hot|carrinho|abandon)/i
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
         const cid = normalizeCustomerId((body.googleAccountId as string) || gt.accountId || '')
         if (cid) {
           const results = await gaqlSearch(cid, gt.accessToken, devToken, `
-            SELECT campaign.name, metrics.cost_micros, metrics.conversions, metrics.conversions_value, metrics.ctr, metrics.cost_per_conversion
+            SELECT campaign.id, campaign.name, metrics.cost_micros, metrics.conversions, metrics.conversions_value, metrics.ctr, metrics.cost_per_conversion
             FROM campaign
             WHERE segments.date DURING LAST_30_DAYS AND campaign.status = 'ENABLED'
             ORDER BY metrics.cost_micros DESC LIMIT 40
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
             const cost = Number(m.costMicros || 0) / 1e6
             const conv = Number(m.conversions || 0)
             const rev = Number(m.conversionsValue || 0) / 1e6
-            return { name: r.campaign?.name || 'Campanha', cost, conv, cpa: conv > 0 ? cost / conv : Infinity, roas: cost > 0 ? rev / cost : 0, hasRev: rev > 0, ctr: Number(m.ctr || 0) * 100 }
+            return { id: String(r.campaign?.id || ''), name: r.campaign?.name || 'Campanha', cost, conv, cpa: conv > 0 ? cost / conv : Infinity, roas: cost > 0 ? rev / cost : 0, hasRev: rev > 0, ctr: Number(m.ctr || 0) * 100 }
           }).filter((c: any) => c.cost > 0)
           gAnalyzed = gcamps.length
           const gTotal = gcamps.reduce((s: number, c: any) => s + c.cost, 0)
@@ -167,14 +167,14 @@ export async function POST(req: NextRequest) {
           const gLoss = gcamps.filter((c: any) => c.hasRev && c.roas < 1).sort((a: any, b: any) => a.roas - b.roas)
           if (gLoss.length) {
             const c = gLoss[0]
-            insights.push({ tone: 'bad', tag: 'Google · Prejuízo', title: `"${c.name}" com ROAS ${c.roas.toFixed(2)}×`, body: `Gasta ${brl(c.cost)} e retorna menos que o investido — revise lances, palavras-chave negativas e a landing.` })
+            insights.push({ tone: 'bad', tag: 'Google · Prejuízo', title: `"${c.name}" com ROAS ${c.roas.toFixed(2)}×`, body: `Gasta ${brl(c.cost)} e retorna menos que o investido — revise lances, palavras-chave negativas e a landing.`, campaignId: c.id || undefined, campaignName: c.name, platform: 'google', action: c.id ? 'pause' : undefined })
           }
           // Desperdício (gasto relevante, zero conversão)
           const gWaste = gcamps.filter((c: any) => c.conv === 0 && c.cost > Math.max(200, gTotal * 0.05)).sort((a: any, b: any) => b.cost - a.cost)
           if (gWaste.length && insights.length < 8) {
             const c = gWaste[0]
             const wt = gWaste.reduce((s: number, x: any) => s + x.cost, 0)
-            insights.push({ tone: 'bad', tag: 'Google · Desperdício', title: `"${c.name}" gastou ${brl(c.cost)} sem conversão`, body: gWaste.length > 1 ? `${gWaste.length} campanhas Google sem resultado somam ${brl(wt)} — adicione negativas/pause.` : 'Adicione palavras-chave negativas ou pause.' })
+            insights.push({ tone: 'bad', tag: 'Google · Desperdício', title: `"${c.name}" gastou ${brl(c.cost)} sem conversão`, body: gWaste.length > 1 ? `${gWaste.length} campanhas Google sem resultado somam ${brl(wt)} — adicione negativas/pause.` : 'Adicione palavras-chave negativas ou pause.', campaignId: c.id || undefined, campaignName: c.name, platform: 'google', action: c.id ? 'pause' : undefined })
           }
           // CPA acima do equilíbrio (prejuízo por lead)
           const be2 = ticket > 0 && margin > 0 && convRate > 0 ? Math.round(ticket * (margin / 100) * (convRate / 100)) : null
@@ -182,14 +182,14 @@ export async function POST(req: NextRequest) {
             const gOver = gcamps.filter((c: any) => c.conv > 0 && c.cpa > be2).sort((a: any, b: any) => b.cpa - a.cpa)
             if (gOver.length && insights.length < 8) {
               const c = gOver[0]
-              insights.push({ tone: 'warn', tag: 'Google · CPA', title: `"${c.name}" com CPA ${brl(c.cpa)}`, body: `${(c.cpa / be2).toFixed(1)}× o ponto de equilíbrio (${brl(be2)}) — cada conversão sai cara demais.` })
+              insights.push({ tone: 'warn', tag: 'Google · CPA', title: `"${c.name}" com CPA ${brl(c.cpa)}`, body: `${(c.cpa / be2).toFixed(1)}× o ponto de equilíbrio (${brl(be2)}) — cada conversão sai cara demais.`, campaignId: c.id || undefined, campaignName: c.name, platform: 'google', action: c.id ? 'pause' : undefined })
             }
           }
           // Vencedora Google (CPA baixo ou ROAS alto)
           const gWin = gcamps.filter((c: any) => c.conv > 1 && (be2 ? c.cpa <= be2 : c.roas >= 2)).sort((a: any, b: any) => a.cpa - b.cpa)
           if (gWin.length && insights.length < 8) {
             const c = gWin[0]
-            insights.push({ tone: 'good', tag: 'Google · Escalar', title: `"${c.name}" rende bem no Google${c.roas ? ` (ROAS ${c.roas.toFixed(1)}×)` : ''}`, body: 'Aumente o orçamento e amplie palavras-chave/lances dessa campanha.' })
+            insights.push({ tone: 'good', tag: 'Google · Escalar', title: `"${c.name}" rende bem no Google${c.roas ? ` (ROAS ${c.roas.toFixed(1)}×)` : ''}`, body: 'Aumente o orçamento e amplie palavras-chave/lances dessa campanha.', campaignId: c.id || undefined, campaignName: c.name, platform: 'google', action: c.id ? 'scale' : undefined })
           }
         }
       }

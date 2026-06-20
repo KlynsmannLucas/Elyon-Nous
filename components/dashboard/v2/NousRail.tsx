@@ -31,7 +31,7 @@ export function NousOrb({ size = 40, thinking = false }: { size?: number; thinki
   )
 }
 
-interface InsightItem { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string; campaignId?: string; campaignName?: string; action?: 'pause' | 'scale' }
+interface InsightItem { tone: 'bad' | 'warn' | 'good' | 'blue'; title: string; tag?: string; body?: string; campaignId?: string; campaignName?: string; action?: 'pause' | 'scale'; platform?: 'meta' | 'google' }
 
 function InsightCard({ tone, title, tag, body, action, onAct, onExecute, executing }: InsightItem & { onAct?: () => void; onExecute?: () => void; executing?: boolean }) {
   const C: Record<string, string> = { bad: '#E1483F', warn: '#E08B0B', good: '#0E9E6E', blue: '#2C5FE0' }
@@ -100,11 +100,15 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   // → 2) o usuário aprova o plano específico → 3) executa. Nada vai ao Meta sem o OK.
   const executeInsight = async (ins: InsightItem) => {
     if (!ins.campaignId || !ins.action) return
-    const payload = { action: ins.action, id: ins.campaignId, accountId: metaAccountId || undefined, clientName: key, campaignName: ins.campaignName }
+    const isGoogle = ins.platform === 'google'
+    const endpoint = isGoogle ? '/api/google/campaign/action' : '/api/meta/campaign/action'
+    const canalLabel = isGoogle ? 'Google Ads' : 'Meta Ads'
+    // accountId só para Meta; no Google a rota usa a conta da conexão (evita mandar id errado).
+    const payload = { action: ins.action, id: ins.campaignId, accountId: isGoogle ? undefined : (metaAccountId || undefined), clientName: key, campaignName: ins.campaignName }
     setExecutingId(ins.campaignId)
     try {
-      // 1) Preview — calcula exatamente o que vai mudar, sem tocar no Meta.
-      const prev = await fetch('/api/meta/campaign/action', {
+      // 1) Preview — calcula exatamente o que vai mudar, sem tocar na conta.
+      const prev = await fetch(endpoint, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, dryRun: true }),
       })
@@ -114,9 +118,9 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
         return
       }
       // 2) Aprovação explícita do plano ESPECÍFICO (qual alvo, de/para).
-      if (typeof window !== 'undefined' && !window.confirm(`${pd.plan}\n\nConfirmar e executar no Meta Ads?`)) return
+      if (typeof window !== 'undefined' && !window.confirm(`${pd.plan}\n\nConfirmar e executar no ${canalLabel}?`)) return
       // 3) Executa só após o OK.
-      const res = await fetch('/api/meta/campaign/action', {
+      const res = await fetch(endpoint, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
