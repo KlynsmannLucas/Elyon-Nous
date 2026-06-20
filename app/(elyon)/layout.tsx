@@ -90,6 +90,34 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
     }
   }, [])
 
+  // Restaura os CLIENTES do Supabase (fonte da verdade, isolada por user_id).
+  // Corrige "clientes sumiram": se o localStorage foi limpo/evictado ou estourou
+  // a cota, os clientes voltam do banco em vez de aparecerem como conta vazia.
+  useEffect(() => {
+    fetch('/api/clients')
+      .then(r => (r.ok ? r.json() : { clients: [] }))
+      .then(({ clients }) => {
+        const server = Array.isArray(clients) ? clients : []
+        if (server.length === 0) return // server vazio/erro transitório → NÃO apaga o local
+        const st = useAppStore.getState()
+        // Base = server (restaura os que sumiram); local sobrepõe (mantém edições/recém-criados).
+        const byId = new Map<string, any>()
+        for (const c of server) byId.set(c.id, { id: c.id, clientData: c.clientData, strategyData: c.strategyData ?? null, savedAt: c.savedAt })
+        for (const c of st.savedClients) byId.set(c.id, c)
+        st.setSavedClients(Array.from(byId.values()))
+        // Restaura o auditCache do servidor (local da sessão tem precedência).
+        const auditRestored: Record<string, any[]> = {}
+        for (const c of server) {
+          const name = c.clientData?.clientName
+          if (name && c.auditData) auditRestored[name] = Array.isArray(c.auditData) ? c.auditData : [c.auditData]
+        }
+        if (Object.keys(auditRestored).length) {
+          useAppStore.setState(s => ({ auditCache: { ...auditRestored, ...s.auditCache } }))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   // NOUS docked em telas largas (≥1280); drawer abaixo
   useEffect(() => {
     const check = () => { const w = window.innerWidth >= 1280; setWide(w); setNousOpen(w) }

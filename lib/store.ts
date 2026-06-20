@@ -4,9 +4,26 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 
 // Safari Private Browsing e configurações de privacidade podem lançar SecurityError
 // ao acessar localStorage. Este wrapper garante que nunca quebre a hidratação.
+// Caches pesados que podem ser descartados sob pressão de cota — são restaurados
+// do servidor (Supabase) na hidratação. NUNCA descartamos savedClients/clientData/conexões.
+const HEAVY_KEYS = ['auditCache', 'marketResearch', 'marketResearchTaskIds', 'nousConversations', 'creativeTests', 'clientAssets', 'freshBenchmarks', 'actionPlanCache', 'pendingActionsCache', 'funnelEntries', 'campaignHistory']
+
 const safeLocalStorage = createJSONStorage(() => ({
   getItem:    (k: string) => { try { return localStorage.getItem(k) } catch { return null } },
-  setItem:    (k: string, v: string) => { try { localStorage.setItem(k, v) } catch {} },
+  setItem:    (k: string, v: string) => {
+    try { localStorage.setItem(k, v) }
+    catch {
+      // Cota estourada: salva uma versão ENXUTA (sem os caches pesados) para que
+      // savedClients/clientData/conexões NUNCA se percam. Corrige "clientes sumiram".
+      try {
+        const parsed = JSON.parse(v)
+        if (parsed?.state) {
+          for (const key of HEAVY_KEYS) delete parsed.state[key]
+          localStorage.setItem(k, JSON.stringify(parsed))
+        }
+      } catch { /* desiste em silêncio */ }
+    }
+  },
   removeItem: (k: string) => { try { localStorage.removeItem(k) } catch {} },
 }))
 
