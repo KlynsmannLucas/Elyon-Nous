@@ -3,7 +3,7 @@
 // sem depender de rodar a Análise Profunda. Uma chamada leve + regras determinísticas.
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
+import { getValidMetaToken } from '@/services/meta/token-manager'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 
 export const maxDuration = 30
@@ -36,42 +36,27 @@ export async function POST(req: NextRequest) {
     const niche = (body.niche as string) || ''
     const bodyAccountId = body.accountId as string | undefined
 
-    let accessToken: string
-    let accountId: string | null
+    // ── META (opcional — se não conectado, seguimos só com Google) ───────────
+    let camps: { id: string; name: string; spend: number; leads: number; cpl: number; ctr: number; freq: number; impressions: number }[] = []
     try {
       const t = await getValidMetaToken(userId)
-      accessToken = t.accessToken
-      accountId = bodyAccountId || t.accountId
-    } catch (err) {
-      const { error, code } = metaTokenErrorToResponse(err)
-      return NextResponse.json({ success: false, error, code }, { status: 401 })
-    }
-    if (!accountId) return NextResponse.json({ success: false, error: 'Conta de anúncio não encontrada', code: 'NO_ACCOUNT_ID' }, { status: 400 })
-
-    const act = `act_${accountId}`
-    const token = encodeURIComponent(accessToken)
-    const fields = 'campaign_id,campaign_name,spend,impressions,clicks,reach,frequency,ctr,actions'
-    const url = `https://graph.facebook.com/v21.0/${act}/insights?fields=${fields}&level=campaign&date_preset=last_30d&limit=80&access_token=${token}`
-
-    const res = await fetch(url, { signal: AbortSignal.timeout(20000) })
-    const json = await res.json()
-    if (json?.error) {
-      return NextResponse.json({ success: false, error: 'Não foi possível ler as campanhas do Meta agora.' }, { status: 502 })
-    }
-
-    const rows: any[] = json?.data || []
-    const camps = rows.map(r => {
-      const spend = Number(r.spend || 0)
-      const leads = leadsFromActions(r.actions)
-      const ctr = Number(r.ctr || 0)
-      const freq = Number(r.frequency || 0)
-      const impressions = Number(r.impressions || 0)
-      return { id: String(r.campaign_id || ''), name: r.campaign_name || 'Campanha', spend, leads, cpl: leads > 0 ? spend / leads : Infinity, ctr, freq, impressions }
-    }).filter(c => c.spend > 0)
-
-    if (camps.length === 0) {
-      return NextResponse.json({ success: true, insights: [], reason: 'no_campaigns' })
-    }
+      const accountId = bodyAccountId || t.accountId
+      if (accountId) {
+        const act = `act_${accountId}`
+        const token = encodeURIComponent(t.accessToken)
+        const fields = 'campaign_id,campaign_name,spend,impressions,clicks,reach,frequency,ctr,actions'
+        const url = `https://graph.facebook.com/v21.0/${act}/insights?fields=${fields}&level=campaign&date_preset=last_30d&limit=80&access_token=${token}`
+        const res = await fetch(url, { signal: AbortSignal.timeout(20000) })
+        const json = await res.json()
+        if (!json?.error) {
+          camps = (json?.data || []).map((r: any) => {
+            const spend = Number(r.spend || 0)
+            const leads = leadsFromActions(r.actions)
+            return { id: String(r.campaign_id || ''), name: r.campaign_name || 'Campanha', spend, leads, cpl: leads > 0 ? spend / leads : Infinity, ctr: Number(r.ctr || 0), freq: Number(r.frequency || 0), impressions: Number(r.impressions || 0) }
+          }).filter((c: any) => c.spend > 0)
+        }
+      }
+    } catch { /* Meta não conectado */ }
 
     const bench = getBenchmark(niche)
     const cplMax = bench?.cpl_max ?? null
@@ -152,10 +137,72 @@ export async function POST(req: NextRequest) {
       insights.push({ tone: 'blue', tag: 'Funil', title: 'Nenhuma campanha de remarketing ativa', body: 'Você está deixando na mesa quem já te conhece — crie audiências de visitantes 7d/30d e leads sem conversão.' })
     }
 
+    // ── GOOGLE ADS (mesma inteligência: prejuízo/ROAS, desperdício, CPA, vencedora) ──
+    let gAnalyzed = 0
+    try {
+      const devToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN
+      if (devToken) {
+        const { getValidGoogleToken } = await import('@/services/google/token-manager')
+        const { gaqlSearch, normalizeCustomerId } = await import('@/lib/google-ads')
+        const gt = await getValidGoogleToken(userId)
+        const cid = normalizeCustomerId((body.googleAccountId as string) || gt.accountId || '')
+        if (cid) {
+          const results = await gaqlSearch(cid, gt.accessToken, devToken, `
+            SELECT campaign.name, metrics.cost_micros, metrics.conversions, metrics.conversions_value, metrics.ctr, metrics.cost_per_conversion
+            FROM campaign
+            WHERE segments.date DURING LAST_30_DAYS AND campaign.status = 'ENABLED'
+            ORDER BY metrics.cost_micros DESC LIMIT 40
+          `)
+          const gcamps = (results || []).map((r: any) => {
+            const m = r.metrics || {}
+            const cost = Number(m.costMicros || 0) / 1e6
+            const conv = Number(m.conversions || 0)
+            const rev = Number(m.conversionsValue || 0) / 1e6
+            return { name: r.campaign?.name || 'Campanha', cost, conv, cpa: conv > 0 ? cost / conv : Infinity, roas: cost > 0 ? rev / cost : 0, hasRev: rev > 0, ctr: Number(m.ctr || 0) * 100 }
+          }).filter((c: any) => c.cost > 0)
+          gAnalyzed = gcamps.length
+          const gTotal = gcamps.reduce((s: number, c: any) => s + c.cost, 0)
+
+          // Prejuízo (ROAS < 1 em campanhas com receita) — o caso mais grave no Google.
+          const gLoss = gcamps.filter((c: any) => c.hasRev && c.roas < 1).sort((a: any, b: any) => a.roas - b.roas)
+          if (gLoss.length) {
+            const c = gLoss[0]
+            insights.push({ tone: 'bad', tag: 'Google · Prejuízo', title: `"${c.name}" com ROAS ${c.roas.toFixed(2)}×`, body: `Gasta ${brl(c.cost)} e retorna menos que o investido — revise lances, palavras-chave negativas e a landing.` })
+          }
+          // Desperdício (gasto relevante, zero conversão)
+          const gWaste = gcamps.filter((c: any) => c.conv === 0 && c.cost > Math.max(200, gTotal * 0.05)).sort((a: any, b: any) => b.cost - a.cost)
+          if (gWaste.length && insights.length < 8) {
+            const c = gWaste[0]
+            const wt = gWaste.reduce((s: number, x: any) => s + x.cost, 0)
+            insights.push({ tone: 'bad', tag: 'Google · Desperdício', title: `"${c.name}" gastou ${brl(c.cost)} sem conversão`, body: gWaste.length > 1 ? `${gWaste.length} campanhas Google sem resultado somam ${brl(wt)} — adicione negativas/pause.` : 'Adicione palavras-chave negativas ou pause.' })
+          }
+          // CPA acima do equilíbrio (prejuízo por lead)
+          const be2 = ticket > 0 && margin > 0 && convRate > 0 ? Math.round(ticket * (margin / 100) * (convRate / 100)) : null
+          if (be2) {
+            const gOver = gcamps.filter((c: any) => c.conv > 0 && c.cpa > be2).sort((a: any, b: any) => b.cpa - a.cpa)
+            if (gOver.length && insights.length < 8) {
+              const c = gOver[0]
+              insights.push({ tone: 'warn', tag: 'Google · CPA', title: `"${c.name}" com CPA ${brl(c.cpa)}`, body: `${(c.cpa / be2).toFixed(1)}× o ponto de equilíbrio (${brl(be2)}) — cada conversão sai cara demais.` })
+            }
+          }
+          // Vencedora Google (CPA baixo ou ROAS alto)
+          const gWin = gcamps.filter((c: any) => c.conv > 1 && (be2 ? c.cpa <= be2 : c.roas >= 2)).sort((a: any, b: any) => a.cpa - b.cpa)
+          if (gWin.length && insights.length < 8) {
+            const c = gWin[0]
+            insights.push({ tone: 'good', tag: 'Google · Escalar', title: `"${c.name}" rende bem no Google${c.roas ? ` (ROAS ${c.roas.toFixed(1)}×)` : ''}`, body: 'Aumente o orçamento e amplie palavras-chave/lances dessa campanha.' })
+          }
+        }
+      }
+    } catch { /* Google não conectado */ }
+
+    if (insights.length === 0) {
+      return NextResponse.json({ success: true, insights: [], reason: 'no_campaigns' })
+    }
+
     const order: Record<Tone, number> = { bad: 0, warn: 1, good: 2, blue: 3 }
     insights.sort((a, b) => order[a.tone] - order[b.tone])
 
-    return NextResponse.json({ success: true, insights: insights.slice(0, 6), analyzed: camps.length })
+    return NextResponse.json({ success: true, insights: insights.slice(0, 7), analyzed: camps.length + gAnalyzed })
   } catch (e: any) {
     console.error('[insights]', e?.message)
     return NextResponse.json({ success: false, error: 'Erro ao gerar insights.' }, { status: 500 })
