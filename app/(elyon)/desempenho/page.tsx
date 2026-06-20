@@ -83,17 +83,20 @@ export default function DesempenhoPage() {
   const [stratGen, setStratGen] = useState(false)
   const [execId, setExecId] = useState<string | null>(null)
 
-  // Executa ação na campanha (Meta) com aprovação explícita: preview -> aprovar -> executar.
+  // Executa ação na campanha (Meta ou Google) com aprovação explícita: preview -> aprovar -> executar.
   const execCampaign = async (c: any, action: 'pause' | 'scale') => {
     if (!c?.id) return
-    const payload = { action, id: String(c.id), accountId: metaAcctId || undefined, clientName: acctKey, campaignName: c.name }
+    const isGoogle = c.platform === 'google'
+    const endpoint = isGoogle ? '/api/google/campaign/action' : '/api/meta/campaign/action'
+    const canal = isGoogle ? 'Google Ads' : 'Meta Ads'
+    const payload = { action, id: String(c.id), accountId: isGoogle ? undefined : (metaAcctId || undefined), clientName: acctKey, campaignName: c.name }
     setExecId(String(c.id))
     try {
-      const prev = await fetch('/api/meta/campaign/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, dryRun: true }) })
+      const prev = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, dryRun: true }) })
       const pd = await prev.json()
       if (!pd?.success) { window.toast?.({ tone: 'bad', title: 'Não foi possível', body: pd?.error || 'Tente novamente.' }); return }
-      if (typeof window !== 'undefined' && !window.confirm(`${pd.plan}\n\nConfirmar e executar no Meta Ads?`)) return
-      const res = await fetch('/api/meta/campaign/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      if (typeof window !== 'undefined' && !window.confirm(`${pd.plan}\n\nConfirmar e executar no ${canal}?`)) return
+      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const d = await res.json()
       window.toast?.(d?.success ? { tone: 'good', title: 'Ação executada', body: d.message } : { tone: 'bad', title: 'Não foi possível', body: d?.error || 'Tente novamente.' })
     } catch { window.toast?.({ tone: 'bad', title: 'Falha de conexão' }) } finally { setExecId(null) }
@@ -276,12 +279,13 @@ export default function DesempenhoPage() {
               {c.recommended_action && <div className="p-3 rounded-sm bg-blue-soft border border-blue-line"><div className="text-[10px] font-mono uppercase tracking-wider text-blue mb-1">Recomendação do NOUS</div><p className="text-xs text-ink-2 leading-relaxed">{c.recommended_action}</p></div>}
             </div>
           )}
-          {/* Ações executáveis (Meta) com aprovação explícita */}
-          {c.platform !== 'google' && c.id && (
-            <div className="flex gap-2 mt-3 pt-3 border-t border-line-2">
+          {/* Ações executáveis (Meta e Google) com aprovação explícita */}
+          {c.id && (
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line-2">
               {c._s === 'vencedora'
                 ? <Button size="sm" variant="primary" icon={<Icon name="arrowUp" size={14} />} disabled={execId === String(c.id)} onClick={() => execCampaign(c, 'scale')}>{execId === String(c.id) ? 'Aguarde…' : 'Escalar (+20%)'}</Button>
                 : <Button size="sm" variant="soft" icon={<Icon name="alert" size={14} />} disabled={execId === String(c.id)} onClick={() => execCampaign(c, 'pause')}>{execId === String(c.id) ? 'Aguarde…' : 'Pausar campanha'}</Button>}
+              <span className="text-[11px] text-ink-3">no {c.platform === 'google' ? 'Google Ads' : 'Meta Ads'} · com aprovação</span>
             </div>
           )}
         </Card>
