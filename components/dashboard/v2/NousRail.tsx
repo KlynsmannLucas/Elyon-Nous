@@ -170,7 +170,7 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
     try {
       const res = await fetch('/api/nous', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, context: buildContext(), niche: clientData?.niche, city: clientData?.city, hasRealData, viewMode: dashboardMode, history }),
+        body: JSON.stringify({ message: msg, context: buildContext(), niche: clientData?.niche, city: clientData?.city, hasRealData, viewMode: dashboardMode, history, clientName: key, liveInsights }),
       })
       const data = await res.json()
       setMessages(m => [...m, { role: 'assistant', content: data?.reply || data?.error || 'Não consegui responder agora.' }])

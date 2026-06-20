@@ -126,7 +126,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode, nicheProfile } = await req.json()
+    const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode, nicheProfile, clientName: _cn, liveInsights } = await req.json()
+    const clientName = sanitizeText(_cn, 120)
     const isSimpleMode = viewMode === 'simple'
     const isHealthBroker = nicheProfile === 'health_insurance_broker'
     const message = sanitizeText(_msg, 600)
@@ -152,6 +153,35 @@ export async function POST(req: NextRequest) {
         ])
       : ''
 
+    // #5 Memória da conta — aprendizados acumulados (campaign_memory) + ações já executadas.
+    let accountMemory = ''
+    try {
+      const { supabaseAdmin } = await import('@/lib/supabase')
+      if (supabaseAdmin && clientName) {
+        const [{ data: mem }, { data: acts }] = await Promise.all([
+          supabaseAdmin.from('campaign_memory').select('memory_type,title,description').eq('user_id', userId).eq('client_name', clientName).order('created_at', { ascending: false }).limit(8),
+          supabaseAdmin.from('executed_actions').select('action,campaign_name,executed_at,cpl_before').eq('user_id', userId).eq('client_name', clientName).order('executed_at', { ascending: false }).limit(5),
+        ])
+        const wins = (mem || []).filter((m: any) => m.memory_type === 'winning_creative').map((m: any) => `• ${m.title}`).slice(0, 3)
+        const losses = (mem || []).filter((m: any) => m.memory_type === 'losing_pattern').map((m: any) => `• ${m.title}`).slice(0, 3)
+        const actLines = (acts || []).map((a: any) => {
+          const days = Math.floor((Date.now() - new Date(a.executed_at).getTime()) / 86400000)
+          const verb = a.action === 'pause' ? 'Pausou' : a.action === 'scale' ? 'Escalou' : 'Reativou'
+          return `• ${verb} "${a.campaign_name || 'campanha'}" há ${days}d (CPL da conta na época: ${a.cpl_before != null ? 'R$' + a.cpl_before : '—'})`
+        })
+        const parts: string[] = []
+        if (wins.length) parts.push(`Padrões VENCEDORES (histórico):\n${wins.join('\n')}`)
+        if (losses.length) parts.push(`Padrões que FALHARAM (histórico):\n${losses.join('\n')}`)
+        if (actLines.length) parts.push(`Ações já executadas pelo NOUS:\n${actLines.join('\n')}`)
+        if (parts.length) accountMemory = `\n[MEMÓRIA DA CONTA — aprendizados reais; cite como histórico ("da última vez...", "no seu histórico...")]\n${parts.join('\n\n')}`
+      }
+    } catch { /* memória é opcional */ }
+
+    // Insights ao vivo das campanhas (tempo real), enviados pelo cliente.
+    const liveBlock = Array.isArray(liveInsights) && liveInsights.length
+      ? `\n[INSIGHTS AO VIVO DAS CAMPANHAS — dados reais do Meta agora; pode afirmar como fato]\n${liveInsights.slice(0, 6).map((i: any) => `• ${i.title}${i.body ? ' — ' + i.body : ''}`).join('\n')}`
+      : ''
+
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (apiKey) {
       try {
@@ -162,6 +192,8 @@ export async function POST(req: NextRequest) {
 
 CONTEXTO DO CLIENTE (leia os rótulos de cada seção antes de responder):
 ${context}
+${liveBlock}
+${accountMemory}
 ${realtimeData ? `\nDADOS EXTERNOS DE MERCADO (Tavily — fonte externa, não da conta):\n${realtimeData}` : ''}
 
 ══════════════════════════════════════════
