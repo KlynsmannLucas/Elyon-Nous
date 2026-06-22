@@ -33,12 +33,13 @@ export default function ConfigPage() {
   const [pulse, setPulse] = useState<PulseCfg>({ enabled: false, channels: { email: true, whatsapp: false }, phone: '' })
   const [pulseSaving, setPulseSaving] = useState(false)
   const [pulseTesting, setPulseTesting] = useState(false)
+  const [waAvailable, setWaAvailable] = useState(false)
 
   useEffect(() => {
     setMounted(true)
     try { const raw = localStorage.getItem(PREF_KEY); if (raw) setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(raw) }) } catch {}
     fetch('/api/credits').then(r => (r.ok ? r.json() : null)).then(d => d && setPlan(d)).catch(() => {})
-    fetch('/api/briefing/prefs').then(r => (r.ok ? r.json() : null)).then(d => { if (d && !d.error) setPulse({ enabled: !!d.enabled, channels: d.channels || { email: true, whatsapp: false }, phone: d.phone || '' }) }).catch(() => {})
+    fetch('/api/briefing/prefs').then(r => (r.ok ? r.json() : null)).then(d => { if (d && !d.error) { setPulse({ enabled: !!d.enabled, channels: d.channels || { email: true, whatsapp: false }, phone: d.phone || '' }); setWaAvailable(!!d.whatsappAvailable) } }).catch(() => {})
   }, [])
 
   if (!mounted) return null
@@ -148,17 +149,20 @@ export default function ConfigPage() {
               <div className="min-w-0"><div className="text-sm text-ink">E-mail</div><div className="text-xs text-ink-3">Enviado para o e-mail da sua conta</div></div>
               <Toggle on={pulse.channels.email} onClick={() => savePulse({ ...pulse, channels: { ...pulse.channels, email: !pulse.channels.email } })} />
             </div>
-            <div className="flex items-center justify-between gap-3 py-2.5 border-t border-line-2">
-              <div className="min-w-0"><div className="text-sm text-ink">WhatsApp</div><div className="text-xs text-ink-3">Mensagem proativa via WhatsApp (Meta Cloud API)</div></div>
-              <Toggle on={pulse.channels.whatsapp} onClick={() => savePulse({ ...pulse, channels: { ...pulse.channels, whatsapp: !pulse.channels.whatsapp } })} />
-            </div>
-            {pulse.channels.whatsapp && (
-              <div className="pt-2 border-t border-line-2">
-                <label className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">Número do WhatsApp (com DDD)</label>
-                <input value={pulse.phone} onChange={e => setPulse({ ...pulse, phone: e.target.value })} onBlur={() => savePulse(pulse)} placeholder="(41) 99999-8888"
-                  className="w-full mt-1 bg-paper border border-line rounded-sm px-3 py-2 text-sm text-ink focus:border-blue focus:outline-none" />
-                <p className="text-[11px] text-ink-3 mt-1.5">Mensagem proativa exige um template aprovado na Meta. Variáveis de ambiente: <span className="font-mono">WHATSAPP_PHONE_NUMBER_ID</span>, <span className="font-mono">WHATSAPP_ACCESS_TOKEN</span>, <span className="font-mono">WHATSAPP_PULSE_TEMPLATE</span>.</p>
-              </div>
+            {waAvailable && (
+              <>
+                <div className="flex items-center justify-between gap-3 py-2.5 border-t border-line-2">
+                  <div className="min-w-0"><div className="text-sm text-ink">WhatsApp</div><div className="text-xs text-ink-3">Mensagem proativa via WhatsApp (Meta Cloud API)</div></div>
+                  <Toggle on={pulse.channels.whatsapp} onClick={() => savePulse({ ...pulse, channels: { ...pulse.channels, whatsapp: !pulse.channels.whatsapp } })} />
+                </div>
+                {pulse.channels.whatsapp && (
+                  <div className="pt-2 border-t border-line-2">
+                    <label className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">Número do WhatsApp (com DDD)</label>
+                    <input value={pulse.phone} onChange={e => setPulse({ ...pulse, phone: e.target.value })} onBlur={() => savePulse(pulse)} placeholder="(41) 99999-8888"
+                      className="w-full mt-1 bg-paper border border-line rounded-sm px-3 py-2 text-sm text-ink focus:border-blue focus:outline-none" />
+                  </div>
+                )}
+              </>
             )}
             <div className="flex items-center gap-2 pt-3 border-t border-line-2">
               <Button size="sm" variant="soft" disabled={pulseTesting} onClick={testPulse}>{pulseTesting ? 'Enviando…' : 'Enviar teste agora'}</Button>

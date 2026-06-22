@@ -1,6 +1,7 @@
 // app/api/briefing/prefs/route.ts — Gerencia opt-in do morning briefing
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { whatsappConfigured } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 
 // GET — retorna preferência atual do usuário
@@ -8,7 +9,7 @@ export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  if (!supabaseAdmin) return NextResponse.json({ enabled: false })
+  if (!supabaseAdmin) return NextResponse.json({ enabled: false, whatsappAvailable: whatsappConfigured() })
 
   const { data } = await supabaseAdmin
     .from('report_schedules')
@@ -23,6 +24,7 @@ export async function GET() {
     emails: data?.emails ?? [],
     channels: meta.channels || { email: true, whatsapp: false },
     phone: meta.phone || '',
+    whatsappAvailable: whatsappConfigured(),
   })
 }
 
