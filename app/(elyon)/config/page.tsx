@@ -29,11 +29,16 @@ export default function ConfigPage() {
   const [mounted, setMounted] = useState(false)
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS)
   const [plan, setPlan] = useState<{ plan?: string; remaining?: number } | null>(null)
+  type PulseCfg = { enabled: boolean; channels: { email: boolean; whatsapp: boolean }; phone: string }
+  const [pulse, setPulse] = useState<PulseCfg>({ enabled: false, channels: { email: true, whatsapp: false }, phone: '' })
+  const [pulseSaving, setPulseSaving] = useState(false)
+  const [pulseTesting, setPulseTesting] = useState(false)
 
   useEffect(() => {
     setMounted(true)
     try { const raw = localStorage.getItem(PREF_KEY); if (raw) setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(raw) }) } catch {}
     fetch('/api/credits').then(r => (r.ok ? r.json() : null)).then(d => d && setPlan(d)).catch(() => {})
+    fetch('/api/briefing/prefs').then(r => (r.ok ? r.json() : null)).then(d => { if (d && !d.error) setPulse({ enabled: !!d.enabled, channels: d.channels || { email: true, whatsapp: false }, phone: d.phone || '' }) }).catch(() => {})
   }, [])
 
   if (!mounted) return null
@@ -50,6 +55,38 @@ export default function ConfigPage() {
     if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Preferência salva' })
   }
   const setMode = (m: 'pro' | 'simple') => { setDashboardMode(m); if (typeof window !== 'undefined') window.toast?.({ tone: 'blue', title: m === 'pro' ? 'Modo Avançado' : 'Modo Simplificado' }) }
+
+  // Pulse diário — persiste no servidor (report_schedules) e dispara teste real.
+  const savePulse = async (next: PulseCfg) => {
+    setPulse(next)
+    setPulseSaving(true)
+    try {
+      const budget = (clientData as any)?.monthlyBudget || (clientData as any)?.budget || 0
+      const r = await fetch('/api/briefing/prefs', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: next.enabled, clientName: key, niche: niche === '—' ? '' : niche, budget, channels: next.channels, phone: next.phone }),
+      })
+      window.toast?.(r.ok ? { tone: 'good', title: 'Pulse atualizado' } : { tone: 'bad', title: 'Não foi possível salvar' })
+    } catch { window.toast?.({ tone: 'bad', title: 'Falha de conexão' }) }
+    finally { setPulseSaving(false) }
+  }
+  const testPulse = async () => {
+    setPulseTesting(true)
+    try {
+      const r = await fetch('/api/pulse/test', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientName: key, phone: pulse.phone, channels: pulse.channels }),
+      })
+      const d = await r.json().catch(() => ({}))
+      const em = d?.sent?.email, wa = d?.sent?.whatsapp
+      const parts: string[] = []
+      if (em) parts.push(`E-mail: ${em.ok ? 'enviado ✓' : (em.error || 'falhou')}`)
+      if (wa) parts.push(`WhatsApp: ${wa.ok ? 'enviado ✓' : (wa.error || 'falhou')}`)
+      const allOk = (!em || em.ok) && (!wa || wa.ok)
+      window.toast?.({ tone: allOk ? 'good' : 'warn', title: 'Teste do Pulse', body: parts.join(' · ') || 'Nada enviado' })
+    } catch { window.toast?.({ tone: 'bad', title: 'Falha no teste' }) }
+    finally { setPulseTesting(false) }
+  }
 
   // Memória viva (RAG) — padrões aprendidos, derivados dos sinais reais da conta.
   const planName = plan?.plan ? plan.plan.charAt(0).toUpperCase() + plan.plan.slice(1) : 'Ativo'
@@ -100,6 +137,38 @@ export default function ConfigPage() {
           </div>
         </Card>
       </div>
+
+      {/* Pulse diário proativo — resumo automático por e-mail + WhatsApp */}
+      <Card className="mt-4 animate-fade-up">
+        <SectionHead title="Pulse diário proativo" subtitle="Resumo automático todo dia de manhã · urgências + 1 vitória" icon={<Icon name="bell" size={17} />}
+          action={<Toggle on={pulse.enabled} onClick={() => savePulse({ ...pulse, enabled: !pulse.enabled })} />} />
+        {pulse.enabled ? (
+          <div className="space-y-1 mt-1">
+            <div className="flex items-center justify-between gap-3 py-2.5">
+              <div className="min-w-0"><div className="text-sm text-ink">E-mail</div><div className="text-xs text-ink-3">Enviado para o e-mail da sua conta</div></div>
+              <Toggle on={pulse.channels.email} onClick={() => savePulse({ ...pulse, channels: { ...pulse.channels, email: !pulse.channels.email } })} />
+            </div>
+            <div className="flex items-center justify-between gap-3 py-2.5 border-t border-line-2">
+              <div className="min-w-0"><div className="text-sm text-ink">WhatsApp</div><div className="text-xs text-ink-3">Mensagem proativa via WhatsApp (Meta Cloud API)</div></div>
+              <Toggle on={pulse.channels.whatsapp} onClick={() => savePulse({ ...pulse, channels: { ...pulse.channels, whatsapp: !pulse.channels.whatsapp } })} />
+            </div>
+            {pulse.channels.whatsapp && (
+              <div className="pt-2 border-t border-line-2">
+                <label className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">Número do WhatsApp (com DDD)</label>
+                <input value={pulse.phone} onChange={e => setPulse({ ...pulse, phone: e.target.value })} onBlur={() => savePulse(pulse)} placeholder="(41) 99999-8888"
+                  className="w-full mt-1 bg-paper border border-line rounded-sm px-3 py-2 text-sm text-ink focus:border-blue focus:outline-none" />
+                <p className="text-[11px] text-ink-3 mt-1.5">Mensagem proativa exige um template aprovado na Meta. Variáveis de ambiente: <span className="font-mono">WHATSAPP_PHONE_NUMBER_ID</span>, <span className="font-mono">WHATSAPP_ACCESS_TOKEN</span>, <span className="font-mono">WHATSAPP_PULSE_TEMPLATE</span>.</p>
+              </div>
+            )}
+            <div className="flex items-center gap-2 pt-3 border-t border-line-2">
+              <Button size="sm" variant="soft" disabled={pulseTesting} onClick={testPulse}>{pulseTesting ? 'Enviando…' : 'Enviar teste agora'}</Button>
+              {pulseSaving && <span className="text-xs text-ink-3">salvando…</span>}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-ink-3 mt-1">Ative para receber, todo dia, o que precisa de atenção e a vitória do período — sem precisar abrir o painel.</p>
+        )}
+      </Card>
 
       {/* Modo + Plano */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 animate-fade-up">

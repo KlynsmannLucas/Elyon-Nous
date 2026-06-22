@@ -1,10 +1,14 @@
-// app/api/cron/morning-briefing/route.ts — Morning briefing diário por email
+// app/api/cron/morning-briefing/route.ts — Pulse diário proativo (e-mail + WhatsApp).
+// Para cada assinante ativo: monta o Pulse (urgências + 1 vitória) e envia pelos
+// canais ligados nas preferências (metadata.channels). Degrada sem quebrar.
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { buildPulseData, pulseToEmailBlocks, pulseToWhatsAppParams } from '@/lib/pulse'
+import { sendWhatsAppTemplate, whatsappConfigured } from '@/lib/notify'
 
 const CRON_SECRET   = process.env.CRON_SECRET
 const RESEND_KEY    = process.env.RESEND_API_KEY
-const FROM_EMAIL    = 'ELYON <relatorios@elyon.app>'
+const FROM_EMAIL    = process.env.PULSE_FROM_EMAIL || 'ELYON <relatorios@elyon.app>'
 
 interface BriefingPulse {
   score: number | null
@@ -23,6 +27,7 @@ function buildBriefingHtml(entry: {
   budget: number
   agencyName?: string
   pulse?: BriefingPulse | null
+  pulseBlocks?: string
 }): string {
   const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
   const capDay = today.charAt(0).toUpperCase() + today.slice(1)
@@ -55,6 +60,8 @@ function buildBriefingHtml(entry: {
       <div style="font-size:18px;font-weight:700;color:#F1F5F9;margin-bottom:4px;">${entry.clientName}</div>
       <div style="font-size:12px;color:#A78BFA;">${entry.niche}</div>
     </div>
+
+    ${entry.pulseBlocks || ''}
 
     ${(() => {
       const p = entry.pulse
@@ -152,14 +159,17 @@ export async function GET(req: Request) {
   }
 
   let sent = 0
+  let waSent = 0
   const errors: string[] = []
 
   for (const sub of subscriptions) {
     const emailList: string[] = Array.isArray(sub.emails) ? sub.emails : [sub.emails].filter(Boolean)
-    if (!emailList.length) continue
 
     const meta = sub.metadata || {}
     const clientName = sub.client_name || meta.clientName || 'Seu cliente'
+    // Canais habilitados nas preferências (default: e-mail ligado, WhatsApp desligado).
+    const channels = meta.channels || { email: true, whatsapp: false }
+    const phone: string = meta.phone || ''
 
     // Memória viva no email: última auditoria deste cliente
     let pulse: BriefingPulse | null = null
@@ -193,22 +203,35 @@ export async function GET(req: Request) {
       console.warn('[morning-briefing] pulse fetch falhou:', (e as Error).message)
     }
 
-    const html = buildBriefingHtml({
-      email:      emailList[0],
-      clientName,
-      niche:      meta.niche || '',
-      budget:     meta.budget || 0,
-      pulse,
-    })
+    // Pulse acionável (urgências + 1 vitória) — alimenta e-mail e WhatsApp.
+    const pd = await buildPulseData(sub.user_id, clientName)
 
-    for (const email of emailList) {
-      const ok = await sendEmail(email, '☀️ Morning Briefing — ELYON', html)
-      if (ok) sent++
-      else errors.push(email)
+    // ── Canal: e-mail ──
+    if (channels.email !== false && emailList.length) {
+      const html = buildBriefingHtml({
+        email:      emailList[0],
+        clientName,
+        niche:      meta.niche || '',
+        budget:     meta.budget || 0,
+        pulse,
+        pulseBlocks: pulseToEmailBlocks(pd),
+      })
+      for (const email of emailList) {
+        const ok = await sendEmail(email, '☀️ Pulse diário — ELYON', html)
+        if (ok) sent++
+        else errors.push(`email:${email}`)
+      }
+    }
+
+    // ── Canal: WhatsApp (template aprovado, via Cloud API) ──
+    if (channels.whatsapp && phone && whatsappConfigured()) {
+      const r = await sendWhatsAppTemplate(phone, pulseToWhatsAppParams(pd))
+      if (r.ok) waSent++
+      else errors.push(`wa:${phone}:${r.error || 'falhou'}`)
     }
   }
 
-  return NextResponse.json({ sent, errors: errors.length, ts: new Date().toISOString() })
+  return NextResponse.json({ sent, waSent, errors: errors.length, errorDetail: errors.slice(0, 5), ts: new Date().toISOString() })
 }
 
 // Rota para opt-in/opt-out do morning briefing

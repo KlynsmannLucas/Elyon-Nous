@@ -17,7 +17,13 @@ export async function GET() {
     .eq('schedule_type', 'morning_briefing')
     .maybeSingle()
 
-  return NextResponse.json({ enabled: data?.active ?? false, emails: data?.emails ?? [] })
+  const meta: any = data?.metadata || {}
+  return NextResponse.json({
+    enabled: data?.active ?? false,
+    emails: data?.emails ?? [],
+    channels: meta.channels || { email: true, whatsapp: false },
+    phone: meta.phone || '',
+  })
 }
 
 // POST — ativa ou desativa o briefing
@@ -27,7 +33,7 @@ export async function POST(req: Request) {
 
   const user = await currentUser()
   const body = await req.json()
-  const { enabled, clientName, niche, budget } = body
+  const { enabled, clientName, niche, budget, channels, phone } = body
 
   if (!supabaseAdmin) return NextResponse.json({ success: true })
 
@@ -42,13 +48,17 @@ export async function POST(req: Request) {
     .eq('schedule_type', 'morning_briefing')
     .maybeSingle()
 
+  const normChannels = channels && typeof channels === 'object'
+    ? { email: channels.email !== false, whatsapp: Boolean(channels.whatsapp) }
+    : { email: true, whatsapp: false }
+
   const payload = {
     user_id:       userId,
     schedule_type: 'morning_briefing',
     emails:        [userEmail],
     client_name:   clientName || '',
     active:        Boolean(enabled),
-    metadata: { clientName, niche, budget },
+    metadata: { clientName, niche, budget, channels: normChannels, phone: (phone || '').trim() },
   }
 
   if (existing) {
