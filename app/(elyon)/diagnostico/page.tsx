@@ -116,9 +116,18 @@ export default function DiagnosticoPage() {
           <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>Diagnóstico</h1>
           <p className="text-sm text-ink-2 mt-0.5">{key}{audit._period ? ` · ${audit._period}` : ''}</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-end gap-2 flex-wrap">
           {connectedAccounts.some(a => a.platform === 'meta') && (
-            <div className="w-[220px]"><AdAccountPicker platform="meta" clientKey={key} compact /></div>
+            <div className="w-[210px]">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3 mb-1">Conta Meta Ads</div>
+              <AdAccountPicker platform="meta" clientKey={key} compact />
+            </div>
+          )}
+          {connectedAccounts.some(a => a.platform === 'google') && (
+            <div className="w-[210px]">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3 mb-1">Conta Google Ads</div>
+              <AdAccountPicker platform="google" clientKey={key} compact />
+            </div>
           )}
           <Button size="sm" variant="soft" onClick={run}>↻ Atualizar auditoria</Button>
         </div>
