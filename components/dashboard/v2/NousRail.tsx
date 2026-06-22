@@ -12,6 +12,14 @@ interface NousRailProps { open: boolean; onClose: () => void; docked?: boolean }
 
 const SUGGESTIONS = ['Como estão meus KPIs?', 'Qual campanha tem melhor ROAS?', 'O que eu faço esta semana?']
 
+// Render simples de **negrito** (a resposta do NOUS usa markdown leve).
+function renderRich(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((p, i) =>
+    p.startsWith('**') && p.endsWith('**')
+      ? <strong key={i}>{p.slice(2, -2)}</strong>
+      : <span key={i}>{p}</span>)
+}
+
 export function NousOrb({ size = 40, thinking = false }: { size?: number; thinking?: boolean }) {
   const id = useMemo(() => 'orb' + Math.random().toString(36).slice(2, 6), [])
   return (
@@ -183,9 +191,15 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
     setMessages(m => [...m, { role: 'user', content: msg }])
     setInput(''); setIsTyping(true)
     try {
+      // Campanhas em desperdício da auditoria (com id real) — viram candidatas a pausar
+      // pelo NOUS, mesmo que não estejam nos insights ao vivo (que ele costuma citar).
+      const actionableCampaigns = (latestAudit?._wasteCampaigns || [])
+        .filter((c: any) => c?.id)
+        .slice(0, 8)
+        .map((c: any) => ({ campaignId: String(c.id), campaignName: c.name || c.campaign_name || 'campanha', platform: c.platform === 'google' ? 'google' : 'meta', action: 'pause' as const }))
       const res = await fetch('/api/nous', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, context: buildContext(), niche: clientData?.niche, city: clientData?.city, hasRealData, viewMode: dashboardMode, history, clientName: key, liveInsights, metaAccountId }),
+        body: JSON.stringify({ message: msg, context: buildContext(), niche: clientData?.niche, city: clientData?.city, hasRealData, viewMode: dashboardMode, history, clientName: key, liveInsights, metaAccountId, actionableCampaigns }),
       })
       const data = await res.json()
       setMessages(m => [...m, { role: 'assistant', content: data?.reply || data?.error || 'Não consegui responder agora.', proposedAction: data?.proposedAction || undefined }])
@@ -251,7 +265,7 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
               {messages.map((m, i) => (
                 <div key={i}>
                   <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'bg-blue text-white rounded-xl rounded-br-[3px]' : 'bg-paper border border-line text-ink rounded-xl rounded-bl-[3px]'}`}>{m.content}</div>
+                    <div className={`max-w-[85%] px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'bg-blue text-white rounded-xl rounded-br-[3px]' : 'bg-paper border border-line text-ink rounded-xl rounded-bl-[3px]'}`}>{m.role === 'assistant' ? renderRich(m.content) : m.content}</div>
                   </div>
                   {/* Ação proposta pelo NOUS na conversa — aprovação explícita (dryRun → confirmar → executar) */}
                   {m.role === 'assistant' && m.proposedAction && (

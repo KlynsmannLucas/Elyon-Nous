@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode, nicheProfile, clientName: _cn, liveInsights, metaAccountId: _acct } = await req.json()
+    const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode, nicheProfile, clientName: _cn, liveInsights, metaAccountId: _acct, actionableCampaigns } = await req.json()
     const clientName = sanitizeText(_cn, 120)
     const metaAccountId = sanitizeText(_acct, 64)
     const isSimpleMode = viewMode === 'simple'
@@ -278,11 +278,17 @@ COMPLIANCE — OBRIGATÓRIO: nunca prometa aprovação, preço final ou ausênci
           { role: 'user', content: message },
         ]
 
-        // Campanhas acionáveis (com id real) vindas dos insights ao vivo — base segura
-        // para o NOUS PROPOR uma ação executável (pausar/escalar), sempre com aprovação.
-        const actionable = (Array.isArray(liveInsights) ? liveInsights : [])
+        // Campanhas acionáveis (com id real) — insights ao vivo + campanhas em desperdício
+        // da auditoria (que o NOUS costuma citar). Base segura para PROPOR ação com aprovação.
+        const seenAct = new Set<string>()
+        const actionable = [
+          ...(Array.isArray(liveInsights) ? liveInsights : []),
+          ...(Array.isArray(actionableCampaigns) ? actionableCampaigns : []),
+        ]
           .filter((i: any) => i?.campaignId && i?.action)
-          .map((i: any) => ({ campaignId: String(i.campaignId), campaignName: i.campaignName || '', platform: i.platform === 'google' ? 'google' : 'meta', action: i.action }))
+          .map((i: any) => ({ campaignId: String(i.campaignId), campaignName: i.campaignName || '', platform: i.platform === 'google' ? 'google' : 'meta', action: i.action === 'scale' ? 'scale' : 'pause' }))
+          .filter(a => { if (seenAct.has(a.campaignId)) return false; seenAct.add(a.campaignId); return true })
+          .slice(0, 14)
 
         const tools = actionable.length ? [{
           name: 'propose_action',
@@ -301,7 +307,7 @@ COMPLIANCE — OBRIGATÓRIO: nunca prometa aprovação, preço final ou ausênci
         const response = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 800,
-          system: systemPrompt + (actionable.length ? `\n\nVocê pode usar a ferramenta propose_action quando a pergunta pedir uma decisão de pausar/escalar e houver uma campanha clara nos INSIGHTS AO VIVO. Caso contrário, responda apenas com texto. Campanhas disponíveis para ação: ${actionable.map(a => `"${a.campaignName}" (id ${a.campaignId})`).join(', ')}.` : ''),
+          system: systemPrompt + (actionable.length ? `\n\nQuando a pergunta pedir uma decisão de PAUSAR ou ESCALAR e houver campanhas na lista abaixo, ESCOLHA A MAIS CRÍTICA e CHAME a ferramenta propose_action para ela (usando o id EXATO da lista), além de explicar no texto. Se citar várias no texto, ainda assim proponha a principal pela ferramenta. Campanhas disponíveis para ação (use o id exato): ${actionable.map(a => `"${a.campaignName}" — id ${a.campaignId} — sugestão: ${a.action}`).join('; ')}.` : ''),
           messages,
           ...(tools.length ? { tools, tool_choice: { type: 'auto' as const } } : {}),
         })
