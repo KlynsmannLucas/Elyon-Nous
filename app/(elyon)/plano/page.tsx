@@ -30,6 +30,7 @@ export default function PlanoPage() {
   const [done, setDone] = useState<Record<string, boolean>>({})
   const [genLoading, setGenLoading] = useState(false)
   const [executed, setExecuted] = useState<any[]>([])
+  const [impact, setImpact] = useState<any>(null)
 
   const genStrat = async () => {
     setGenLoading(true)
@@ -45,7 +46,7 @@ export default function PlanoPage() {
     if (!key) { setExecuted([]); return }
     let active = true
     fetch(`/api/actions/executed?clientName=${encodeURIComponent(key)}`)
-      .then(r => (r.ok ? r.json() : null)).then(d => { if (active) setExecuted(d?.actions || []) }).catch(() => {})
+      .then(r => (r.ok ? r.json() : null)).then(d => { if (active) { setExecuted(d?.actions || []); setImpact(d?.summary || null) } }).catch(() => {})
     return () => { active = false }
   }, [key])
   if (!mounted) return null
@@ -158,6 +159,29 @@ export default function PlanoPage() {
             {executed.length > 0 && (
               <Card>
                 <SectionHead title="Impacto das ações executadas" subtitle="O que o NOUS executou no Meta e o efeito no CPL da conta" icon={<Icon name="bolt" size={17} />} />
+                {impact && (
+                  <div className="flex items-center gap-5 flex-wrap mb-3 pb-3 border-b border-line-2">
+                    {impact.estMonthlySavings ? (
+                      <div>
+                        <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Economia estimada</div>
+                        <div className="text-xl font-bold font-mono text-green-600">+{brl(impact.estMonthlySavings)}<span className="text-xs text-ink-3 font-semibold">/mês</span></div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Ações do NOUS</div>
+                        <div className="text-xl font-bold font-mono text-ink">{impact.count}</div>
+                      </div>
+                    )}
+                    {impact.pauses > 0 && <div><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Cortou desperdício</div><div className="text-lg font-bold font-mono text-ink">{impact.pauses}×</div></div>}
+                    {impact.scales > 0 && <div><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Escalou vencedora</div><div className="text-lg font-bold font-mono text-ink">{impact.scales}×</div></div>}
+                    {impact.cplBaseline != null && impact.cplNow != null && (
+                      <div>
+                        <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPL da conta</div>
+                        <div className="text-sm font-mono font-semibold text-ink">{brl(impact.cplBaseline)} → {brl(impact.cplNow)}{impact.cplDeltaPct != null && <span className={`ml-1.5 text-[11px] font-bold ${impact.cplDeltaPct <= 0 ? 'text-green-600' : 'text-red'}`}>{impact.cplDeltaPct > 0 ? '+' : ''}{impact.cplDeltaPct}%</span>}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="divide-y divide-line-2">
                   {executed.map((a: any) => {
                     const actLabel = a.action === 'pause' ? 'Pausou' : a.action === 'scale' ? 'Escalou' : 'Reativou'

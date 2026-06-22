@@ -55,6 +55,7 @@ export default function HojePage() {
 
   const [mounted, setMounted] = useState(false)
   const [daily, setDaily] = useState<any>(null)
+  const [impact, setImpact] = useState<any>(null)
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
@@ -72,6 +73,15 @@ export default function HojePage() {
       .then(r => r.ok ? r.json() : { delta: null }).then(d => { if (active) setDaily(d?.delta ?? null) }).catch(() => { if (active) setDaily(null) })
     return () => { active = false }
   }, [key, dailyAccountId, metaAccount])
+
+  // Impacto ELYON — valor já entregue pelo NOUS (ações executadas + efeito real no CPL).
+  useEffect(() => {
+    if (!key) { setImpact(null); return }
+    let active = true
+    fetch(`/api/actions/executed?clientName=${encodeURIComponent(key)}`)
+      .then(r => r.ok ? r.json() : null).then(d => { if (active) setImpact(d?.summary ?? null) }).catch(() => { if (active) setImpact(null) })
+    return () => { active = false }
+  }, [key])
 
   if (!mounted) return <Loading />
   if (!key) return <Empty />
@@ -233,6 +243,47 @@ export default function HojePage() {
               </Card>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Impacto ELYON — valor JÁ ENTREGUE pelo NOUS (prova que a ferramenta se paga) */}
+      {impact && impact.count > 0 && (
+        <section className="mb-4 animate-fade-up">
+          <Card className="bg-gradient-to-br from-green-soft to-paper border-green-line">
+            <div className="flex items-start gap-4 flex-wrap">
+              <span className="w-11 h-11 rounded-lg bg-green-soft flex items-center justify-center text-green-600 shrink-0"><Icon name="bolt" size={22} /></span>
+              <div className="flex-1 min-w-[240px]">
+                <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3 mb-1">Impacto ELYON</div>
+                {impact.estMonthlySavings ? (
+                  <>
+                    <div className="text-[26px] font-bold font-mono text-green-600 count-up" style={{ letterSpacing: '-0.03em' }}>+{brl(impact.estMonthlySavings)}<span className="text-[14px] text-ink-3 font-semibold ml-0.5">/mês</span></div>
+                    <p className="text-[12.5px] text-ink-2 mt-0.5 max-w-[460px]">Economia estimada desde que o NOUS começou a agir — queda real de CPL × seu volume de leads.</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-[23px] font-bold text-ink count-up" style={{ letterSpacing: '-0.02em' }}>{impact.count} {impact.count === 1 ? 'ação executada' : 'ações executadas'} pelo NOUS</div>
+                    <p className="text-[12.5px] text-ink-2 mt-0.5 max-w-[460px]">{impact.measuredCount > 0 ? 'Medindo o efeito no CPL da conta.' : 'O efeito no CPL aparece aqui após alguns dias de dados.'}</p>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-5 flex-wrap">
+                {impact.pauses > 0 && (
+                  <div><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Desperdícios cortados</div><div className="text-lg font-bold font-mono text-ink">{impact.pauses}</div></div>
+                )}
+                {impact.scales > 0 && (
+                  <div><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Vencedoras escaladas</div><div className="text-lg font-bold font-mono text-ink">{impact.scales}</div></div>
+                )}
+                {impact.cplBaseline != null && impact.cplNow != null && (
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPL da conta</div>
+                    <div className="text-sm font-mono font-semibold text-ink">{brl(impact.cplBaseline)} → {brl(impact.cplNow)}</div>
+                    {impact.cplDeltaPct != null && <div className={`text-[11px] font-bold ${impact.cplDeltaPct <= 0 ? 'text-green-600' : 'text-red'}`}>{impact.cplDeltaPct > 0 ? '+' : ''}{impact.cplDeltaPct}% no período</div>}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => (window.location.href = '/plano')} className="self-center inline-flex items-center gap-1.5 text-[13px] font-semibold text-blue hover:underline shrink-0">Ver detalhes <Icon name="arrowR" size={14} /></button>
+            </div>
+          </Card>
         </section>
       )}
 
