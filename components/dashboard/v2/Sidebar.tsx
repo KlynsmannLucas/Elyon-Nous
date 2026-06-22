@@ -42,6 +42,8 @@ interface SidebarProps {
   userName?: string
   userPlan?: string
   onLogout?: () => void
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
 const initials = (s: string) => (s || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()
@@ -99,13 +101,23 @@ function ClientSwitcher({ clients, activeId, onChange, onNew }: { clients: Clien
 }
 
 export function SidebarV2({
-  activeArea, onChangeArea, collapsed = false, onToggleCollapse,
+  activeArea, onChangeArea, collapsed: collapsedProp = false, onToggleCollapse,
   clients = [], activeClientId, onClientChange, onNewClient, userName, userPlan, onLogout,
+  mobileOpen = false, onMobileClose,
 }: SidebarProps) {
+  // No mobile (<1024px) a sidebar vira drawer e SEMPRE renderiza expandida (ignora o collapse do desktop).
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check(); window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  const collapsed = isMobile ? false : collapsedProp
+  const go = (area: AreaKey) => { onChangeArea(area); onMobileClose?.() }
   const NavBtn = ({ area, item, sys, active }: { area: string; item: { label: string; icon: string; badge?: string }; sys?: boolean; active?: boolean }) => {
     const isActive = active ?? activeArea === area
     return (
-      <button onClick={() => onChangeArea(area as AreaKey)} title={collapsed ? item.label : undefined}
+      <button onClick={() => go(area as AreaKey)} title={collapsed ? item.label : undefined}
         className={`w-full flex items-center gap-3 rounded-sm text-left relative transition-all ${collapsed ? 'justify-center py-2.5' : 'px-3 py-2.5'}
           ${isActive ? (sys ? 'bg-canvas-2 text-ink' : 'bg-blue-soft text-blue-600 font-semibold') : sys ? 'text-ink-3 hover:bg-canvas-2 hover:text-ink-2' : 'text-ink-2 hover:bg-canvas-2 hover:text-ink'}`}>
         {isActive && !collapsed && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-blue" />}
@@ -118,7 +130,12 @@ export function SidebarV2({
   }
 
   return (
-    <aside className={`h-screen bg-paper border-r border-line flex flex-col transition-all duration-200 ${collapsed ? 'w-[66px]' : 'w-[232px]'}`}>
+    <>
+      {/* Backdrop do drawer (só mobile) */}
+      {mobileOpen && <div className="fixed inset-0 bg-ink/30 z-40 lg:hidden" onClick={onMobileClose} aria-hidden />}
+      <aside className={`h-screen bg-paper border-r border-line flex flex-col transition-transform duration-200
+        fixed inset-y-0 left-0 z-50 w-[232px] ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[66px]' : 'lg:w-[232px]'}`}>
       {/* Logo + recolher */}
       <div className={`h-16 flex items-center border-b border-line ${collapsed ? 'justify-center px-0' : 'px-4 justify-between'}`}>
         <div className="flex items-center gap-2.5">
@@ -136,7 +153,10 @@ export function SidebarV2({
           )}
         </div>
         {!collapsed && onToggleCollapse && (
-          <button onClick={onToggleCollapse} title="Recolher" className="p-1 text-ink-4 hover:text-ink"><Icon name="chevL" size={18} /></button>
+          <div className="flex items-center gap-1">
+            <button onClick={onToggleCollapse} title="Recolher" className="hidden lg:block p-1 text-ink-4 hover:text-ink"><Icon name="chevL" size={18} /></button>
+            <button onClick={onMobileClose} title="Fechar" className="lg:hidden p-1 text-ink-4 hover:text-ink"><Icon name="x" size={18} /></button>
+          </div>
         )}
       </div>
       {collapsed && onToggleCollapse && (
@@ -181,5 +201,6 @@ export function SidebarV2({
         </div>
       )}
     </aside>
+    </>
   )
 }

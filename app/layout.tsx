@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Syne, DM_Sans, JetBrains_Mono, Schibsted_Grotesk } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
@@ -57,6 +57,12 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -53,6 +53,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const { user } = useUser()
   const { signOut } = useClerk()
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileNav, setMobileNav] = useState(false)
   const [nousOpen, setNousOpen] = useState(false)
   const [wide, setWide] = useState(true)
   const [credits, setCredits] = useState<number | undefined>(undefined)
@@ -126,6 +127,9 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Fecha o drawer da sidebar ao navegar (mobile).
+  useEffect(() => { setMobileNav(false) }, [pathname])
+
   const clients = savedClients.map(c => ({ id: c.id, name: c.clientData.clientName }))
   const activeId = savedClients.find(c => c.clientData.clientName === clientData?.clientName)?.id
 
@@ -179,10 +183,13 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
           userName={userName}
           userPlan={plan}
           onLogout={() => signOut(() => router.push('/'))}
+          mobileOpen={mobileNav}
+          onMobileClose={() => setMobileNav(false)}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
           <TopbarV2
+            onMenu={() => setMobileNav(true)}
             title={TITLES[activeArea]}
             subtitle={activeArea === 'diagnostico' ? `${SUBTITLES[activeArea]} · ${globalPeriod.label}` : SUBTITLES[activeArea]}
             mode={mode}

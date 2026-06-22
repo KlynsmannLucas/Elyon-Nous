@@ -28,6 +28,7 @@ interface TopbarProps {
   notifications?: NotifItem[]
   onNavigate?: (area: string) => void
   syncPlatforms?: string[]
+  onMenu?: () => void
 }
 
 const MODE_INFO: Record<'simplified' | 'advanced', { label: string; icon: string; desc: string }> = {
@@ -129,6 +130,7 @@ export function TopbarV2({
   notifications = [],
   onNavigate,
   syncPlatforms,
+  onMenu,
 }: TopbarProps) {
   const [showClientMenu, setShowClientMenu] = useState(false)
   const [notifs, setNotifs] = useState<NotifItem[]>(notifications)
@@ -139,11 +141,17 @@ export function TopbarV2({
   const activeClientData = clients?.find(c => c.id === activeClient)
 
   return (
-    <header className="sticky top-0 z-40 h-16 glass border-b border-line flex items-center px-4 gap-4">
+    <header className="sticky top-0 z-40 h-16 glass border-b border-line flex items-center px-3 md:px-4 gap-2 md:gap-4">
+      {/* Hambúrguer — abre a sidebar (drawer) no mobile */}
+      {onMenu && (
+        <button onClick={onMenu} aria-label="Abrir menu" className="lg:hidden p-1.5 -ml-1 text-ink-2 hover:text-ink shrink-0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+        </button>
+      )}
       {/* Title */}
       <div className="flex flex-col min-w-0 overflow-hidden">
-        <h1 className="text-[17px] font-bold text-ink leading-tight truncate" style={{ letterSpacing: '-0.02em' }}>{title}</h1>
-        {subtitle && <p className="text-xs text-ink-3 truncate">{subtitle}</p>}
+        <h1 className="text-[16px] md:text-[17px] font-bold text-ink leading-tight truncate" style={{ letterSpacing: '-0.02em' }}>{title}</h1>
+        {subtitle && <p className="text-xs text-ink-3 truncate hidden sm:block">{subtitle}</p>}
       </div>
 
       <div className="flex-1 min-w-3" />
@@ -174,9 +182,9 @@ export function TopbarV2({
       </div>
       )}
 
-      {/* Multi-Client Selector */}
+      {/* Multi-Client Selector (no mobile fica no rodapé da sidebar) */}
       {((clients && clients.length > 0) || onNewClient) && (
-        <div className="relative">
+        <div className="tb-md relative">
           <button
             onClick={() => setShowClientMenu(!showClientMenu)}
             className="flex items-center gap-2 px-3 py-2 bg-paper border border-line rounded-sm text-sm text-ink hover:border-blue"
@@ -218,7 +226,7 @@ export function TopbarV2({
       {credits !== undefined && (
         <button
           onClick={onOpenCredits}
-          className="flex items-center gap-1.5 px-3 py-2 bg-blue-soft text-blue rounded-sm text-sm font-medium hover:bg-blue-line/40"
+          className="tb-md items-center gap-1.5 px-3 py-2 bg-blue-soft text-blue rounded-sm text-sm font-medium hover:bg-blue-line/40"
           title="Créditos de IA"
         >
           <Icon name="gem" size={15} />
@@ -229,11 +237,11 @@ export function TopbarV2({
       {/* NOUS Button (dark, como no prototype) */}
       <button
         onClick={onOpenNous}
-        className="flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
+        className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-sm text-sm font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
         style={{ background: '#161B26' }}
       >
         <Icon name="sparkle2" size={16} />
-        <span>Perguntar ao NOUS</span>
+        <span className="hidden sm:inline">Perguntar ao NOUS</span>
       </button>
 
       {/* Notifications */}

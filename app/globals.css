@@ -306,3 +306,7 @@ body {
 .bg-paper-2 { background-color: var(--paper-2); }
 
 .border-hairline { border-color: var(--line); }
+
+/* Topbar — controles secundários: escondem no celular (<820px) para não estourar. */
+.tb-md { display: none; }
+@media (min-width: 820px) { .tb-md { display: flex; } }
