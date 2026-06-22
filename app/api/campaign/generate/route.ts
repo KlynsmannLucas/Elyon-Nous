@@ -5,6 +5,7 @@ import { callLLMJson } from '@/lib/pipeline/llm'
 import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { buildNichePromptContext } from '@/lib/niche_prompts'
 import { sanitizeText } from '@/lib/sanitize'
+import { gateAndCharge, refundGate } from '@/lib/gate'
 
 interface CampaignGenerateRequest {
   clientName: string
@@ -219,6 +220,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'clientName e niche são obrigatórios' }, { status: 400 })
   }
 
+  const gate = await gateAndCharge('campaign_generate')
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const prompt = buildGenerativePrompt(body)
 
@@ -241,6 +245,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(response)
   } catch (e: any) {
+    await refundGate(gate, 'campaign_generate')
     console.error('[campaign/generate] Erro:', e.message)
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

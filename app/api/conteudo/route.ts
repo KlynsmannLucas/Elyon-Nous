@@ -1,7 +1,7 @@
 // app/api/conteudo/route.ts — Geração de conteúdo para redes sociais via Claude
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { sanitizeText } from '@/lib/sanitize'
+import { gateAndCharge, refundGate } from '@/lib/gate'
 
 const PLATFORM_GUIDE: Record<string, string> = {
   instagram: 'Instagram Feed/Reels — legendas de até 2200 chars, hashtags ao final, gancho forte nos primeiros 2 segundos do Reels',
@@ -34,13 +34,14 @@ async function fetchAdLibraryContext(accessToken: string, niche: string, theme: 
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const gate = await gateAndCharge('conteudo')
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
 
   const { clientData: _cd, persona, platform, theme: _theme, role, metaAccessToken } = await req.json()
   const theme = sanitizeText(_theme, 200)
   const clientData = _cd ? { ..._cd, niche: sanitizeText(_cd.niche, 120), name: sanitizeText(_cd.name, 120) } : _cd
   if (!clientData || !platform || !theme) {
+    await refundGate(gate, 'conteudo')
     return NextResponse.json({ error: 'Dados insuficientes' }, { status: 400 })
   }
 
@@ -75,7 +76,7 @@ Use a ferramenta "emit_posts" para retornar as 3 ideias. Cada post precisa de:
 - hashtags: 5 hashtags relevantes`
 
   const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'API key não configurada' }, { status: 500 })
+  if (!apiKey) { await refundGate(gate, 'conteudo'); return NextResponse.json({ error: 'API key não configurada' }, { status: 500 }) }
 
   // Pesquisa na Biblioteca de Anúncios do Meta em paralelo (silenciosa — só enriquece o prompt)
   const adLibCtx = metaAccessToken
@@ -136,6 +137,7 @@ Use a ferramenta "emit_posts" para retornar as 3 ideias. Cada post precisa de:
     }
     return NextResponse.json({ success: true, posts: result.posts, usedAdLibrary: !!adLibCtx })
   } catch (e: any) {
+    await refundGate(gate, 'conteudo')
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }

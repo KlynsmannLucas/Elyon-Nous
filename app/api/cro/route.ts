@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { sanitizeText } from '@/lib/sanitize'
+import { gateAndCharge, refundGate } from '@/lib/gate'
 
 interface CRORecommendation {
   priority: 'urgent' | 'high' | 'medium' | 'low'
@@ -235,6 +236,8 @@ export async function POST(req: NextRequest) {
     // Tenta gerar com IA se disponível
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (apiKey && (realMetrics || funnelData.length > 0)) {
+      const croGate = await gateAndCharge('cro')
+      if (croGate.ok) {
       try {
         const { default: Anthropic } = await import('@anthropic-ai/sdk')
         const anthropic = new Anthropic({ apiKey })
@@ -298,8 +301,11 @@ Com base nesses dados, gere uma análise de CRO detalhada no formato JSON abaixo
           const parsed = JSON.parse(jsonMatch[0])
           return NextResponse.json({ cro: parsed, source: 'ai' })
         }
+        await refundGate(croGate, 'cro')
       } catch (err) {
+        await refundGate(croGate, 'cro')
         console.error('[cro] AI error, falling back:', err)
+      }
       }
     }
 
