@@ -845,59 +845,128 @@ export default function DesempenhoPage() {
         </div>
       )}
 
-      {tab === 'alocador' && (
-        <div className="space-y-4 animate-fade-up">
-          {ranking.length > 0 && channels.length > 0 ? (() => {
-            const totalCur = channels.reduce((s, c) => s + c.spend, 0) || 1
-            const totalSug = ranking.reduce((s: number, r: any) => s + (r.budget_brl || 0), 0) || totalCur
-            const rows = ranking.map((r: any) => {
-              const cur = channels.find(c => c.label.toLowerCase().includes(String(r.channel || '').toLowerCase().split(' ')[0]))?.spend || 0
-              const sug = totalSug > 0 ? Math.round((r.budget_brl || 0) / totalSug * totalCur) : cur
-              return { channel: r.channel, cur, sug, delta: cur > 0 ? Math.round((sug / cur - 1) * 100) : null }
-            })
-            const maxV = Math.max(...rows.flatMap((r: any) => [r.cur, r.sug]), 1)
-            return (
-              <>
-                <Card className="bg-gradient-to-br from-blue-soft to-green-soft border-blue-line">
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue flex items-center justify-center shrink-0"><span className="text-white text-lg">◎</span></div>
-                      <div>
-                        <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">Alocador de verba · NOUS IA</div>
-                        <p className="text-sm text-ink">Realocação sugerida mantendo o mesmo orçamento total ({brl(totalCur)}).</p>
+      {tab === 'alocador' && (() => {
+        // Alocador = RECOMENDAÇÃO pura (não executa nada). Realoca verba dos que perdem
+        // para os que ganham, mantendo o orçamento total — com base em performance real.
+        const list = camps.filter((c: any) => (c.spend || 0) > 0)
+        if (list.length === 0) return <div className="animate-fade-up"><StrategyEmpty text="Rode a Análise Profunda para o alocador recomendar a realocação de verba." /></div>
+
+        const cplOf = (c: any) => (c.leads > 0 ? c.spend / c.leads : Infinity)
+        const totalSpend = list.reduce((s: number, c: any) => s + (c.spend || 0), 0)
+        const winners = list.filter((c: any) => c._s === 'vencedora')
+        const losers = list.filter((c: any) => c._s === 'critica')
+
+        // Recomendação de verba por campanha (mantém o total).
+        const rec = new Map<any, { sug: number; cut: number; reason: string }>()
+        let freed = 0
+        for (const c of losers) {
+          const isWaste = (c.leads || 0) === 0
+          const cut = isWaste ? (c.spend || 0) : (c.spend || 0) * 0.5
+          rec.set(c, { sug: (c.spend || 0) - cut, cut, reason: isWaste ? 'Gasta sem conversão — corte a verba' : `CPL alto (${brl(Math.round(cplOf(c)))}) — reduza pela metade` })
+          freed += cut
+        }
+        const wWeight = (c: any) => ((c.leads || 0) > 0 ? c.leads : (isFinite(cplOf(c)) ? 1 / cplOf(c) : 0))
+        const totalW = winners.reduce((s: number, c: any) => s + wWeight(c), 0) || 1
+        let placed = 0
+        for (const c of winners) {
+          const add = Math.min(freed * (wWeight(c) / totalW), (c.spend || 0) * 0.5) // máx +50%/campanha
+          if (add > 0) { rec.set(c, { sug: (c.spend || 0) + add, cut: -add, reason: `Eficiente (CPL ${cplOf(c) !== Infinity ? brl(Math.round(cplOf(c))) : '—'}) — reforce o orçamento` }); placed += add }
+        }
+        const remainder = Math.max(0, Math.round(freed - placed))
+
+        // Impacto estimado: leads ganhos ao reforçar vencedoras − leads perdidos ao cortar.
+        let extraLeads = 0, lostLeads = 0
+        for (const c of winners) { const r = rec.get(c); const cpl = cplOf(c); if (r && isFinite(cpl) && cpl > 0) extraLeads += (-r.cut) / cpl }
+        for (const c of losers) { const r = rec.get(c); const cpl = cplOf(c); if (r && isFinite(cpl) && cpl > 0) lostLeads += r.cut / cpl }
+        const netLeads = Math.round(extraLeads - lostLeads)
+
+        const moves = list.filter((c: any) => rec.has(c))
+          .map((c: any) => { const r = rec.get(c)!; const cur = Math.round(c.spend || 0); const sug = Math.round(r.sug); return { c, cur, sug, delta: cur > 0 ? Math.round((sug / cur - 1) * 100) : null, reason: r.reason, boost: r.cut < 0 } })
+          .sort((a: any, b: any) => (b.sug - b.cur) - (a.sug - a.cur))
+        const maxV = Math.max(...moves.flatMap((m: any) => [m.cur, m.sug]), 1)
+
+        // Resumo por canal (Meta vs Google).
+        const chAgg = new Map<string, { cur: number; sug: number }>()
+        for (const c of list) {
+          const label = singlePlatform?.label || platformName(c.platform)
+          const e = chAgg.get(label) || { cur: 0, sug: 0 }
+          e.cur += c.spend || 0; e.sug += rec.has(c) ? rec.get(c)!.sug : (c.spend || 0)
+          chAgg.set(label, e)
+        }
+        const chRows = [...chAgg.entries()].filter(([, v]) => v.cur > 0)
+
+        return (
+          <div className="space-y-4 animate-fade-up">
+            <Card className="bg-gradient-to-br from-blue-soft to-green-soft border-blue-line">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue flex items-center justify-center shrink-0"><span className="text-white text-lg">◎</span></div>
+                <div className="flex-1">
+                  <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">Alocador de verba · recomendação do NOUS</div>
+                  {moves.length > 0 ? (
+                    <p className="text-sm text-ink">Realoque cerca de <span className="font-semibold">{brl(Math.round(freed))}</span> dos que perdem para os que ganham — mantendo o mesmo orçamento total ({brl(Math.round(totalSpend))}).{netLeads > 0 && <> Estimativa: <span className="font-semibold text-green-600">+{netLeads} leads/mês</span> ao mesmo custo.</>}</p>
+                  ) : (
+                    <p className="text-sm text-ink">Conta equilibrada — sem realocação óbvia agora. Foque em testar novos criativos e públicos para criar novas vencedoras.</p>
+                  )}
+                  <p className="text-[11.5px] text-ink-3 mt-1.5">Isto é uma recomendação — o Alocador não executa nada. Você decide se aplica no gerenciador. Estimativa baseada no CPL atual de cada campanha.</p>
+                </div>
+              </div>
+            </Card>
+
+            {moves.length > 0 && (
+              <Card>
+                <SectionHead title="Realocação sugerida" subtitle="Por campanha · atual → sugerido" icon={<Icon name="scale" size={17} />} action={<SourceBadge source="real" />} />
+                <div className="space-y-3.5">
+                  {moves.map((m: any, i: number) => (
+                    <div key={i}>
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <ChannelMark name={platformName(m.c.platform)} size={16} />
+                        <span className="text-sm font-medium text-ink flex-1 min-w-[120px] truncate">{m.c.name || 'Campanha'}</span>
+                        <span className="font-mono text-xs text-ink-3">{brl(m.cur)} → <span className="text-ink font-semibold">{brl(m.sug)}</span></span>
+                        {m.delta != null && m.delta !== 0 && <Badge tone={m.boost ? 'good' : 'bad'}>{m.boost ? '↑' : '↓'} {Math.abs(m.delta)}%</Badge>}
                       </div>
+                      <div className="relative">
+                        <HBar value={m.cur} max={maxV} color="#C7CDD6" h={6} className="mb-1" />
+                        <HBar value={m.sug} max={maxV} color={m.boost ? CHART_COLORS.green : CHART_COLORS.red} h={6} />
+                      </div>
+                      <div className="text-[11.5px] text-ink-3 mt-1">{m.boost ? '↑ Reforçar' : '↓ Reduzir'} · {m.reason}</div>
                     </div>
-                    <Button onClick={() => window.toast?.({ tone: 'good', title: 'Alocação aplicada', body: 'A sugestão foi registrada no plano de ação.' })}>Aplicar alocação</Button>
-                  </div>
-                </Card>
-                <Card>
-                  <SectionHead title="Atual → Sugerido" subtitle="Por canal" icon={<Icon name="layers" size={17} />} />
-                  <div className="space-y-4">
-                    {rows.map((r: any, i: number) => (
-                      <div key={i}>
+                  ))}
+                </div>
+                <div className="flex gap-4 mt-4 pt-3 border-t border-line-2 flex-wrap">
+                  <LegendDot color="#C7CDD6">Atual</LegendDot><LegendDot color={CHART_COLORS.green}>Reforçar</LegendDot><LegendDot color={CHART_COLORS.red}>Reduzir</LegendDot>
+                </div>
+                {remainder > 0 && <p className="text-[11.5px] text-ink-3 mt-3">Sobra ~{brl(remainder)} sem destino claro (vencedoras já no teto de +50%). Considere testar um novo público/criativo para absorver essa verba.</p>}
+              </Card>
+            )}
+
+            {chRows.length > 1 && (
+              <Card>
+                <SectionHead title="Entre canais" subtitle="Meta × Google · atual → sugerido" icon={<Icon name="layers" size={17} />} />
+                <div className="space-y-4">
+                  {chRows.map(([label, v]) => {
+                    const cur = Math.round(v.cur), sug = Math.round(v.sug)
+                    const delta = cur > 0 ? Math.round((sug / cur - 1) * 100) : null
+                    const maxC = Math.max(...chRows.flatMap(([, x]) => [x.cur, x.sug]), 1)
+                    return (
+                      <div key={label}>
                         <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-sm font-medium text-ink flex-1">{r.channel}</span>
-                          <span className="font-mono text-xs text-ink-3">{brl(r.cur)} → <span className="text-ink font-semibold">{brl(r.sug)}</span></span>
-                          {r.delta != null && r.delta !== 0 && <Badge tone={r.delta > 0 ? 'good' : 'bad'}>{r.delta > 0 ? '↑' : '↓'} {Math.abs(r.delta)}%</Badge>}
+                          <span className="text-sm font-medium text-ink flex-1">{label}</span>
+                          <span className="font-mono text-xs text-ink-3">{brl(cur)} → <span className="text-ink font-semibold">{brl(sug)}</span></span>
+                          {delta != null && delta !== 0 && <Badge tone={delta > 0 ? 'good' : 'bad'}>{delta > 0 ? '↑' : '↓'} {Math.abs(delta)}%</Badge>}
                         </div>
                         <div className="relative">
-                          <HBar value={r.cur} max={maxV} color="#C7CDD6" h={6} className="mb-1" />
-                          <HBar value={r.sug} max={maxV} color={CHART_COLORS.blue} h={6} />
+                          <HBar value={v.cur} max={maxC} color="#C7CDD6" h={6} className="mb-1" />
+                          <HBar value={v.sug} max={maxC} color={CHART_COLORS.blue} h={6} />
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-4 mt-4 pt-3 border-t border-line-2">
-                    <LegendDot color="#C7CDD6">Atual</LegendDot><LegendDot color={CHART_COLORS.blue}>Sugerido pelo NOUS</LegendDot>
-                  </div>
-                </Card>
-              </>
-            )
-          })() : (
-            <StrategyEmpty text="Gere a estratégia e rode a auditoria para o alocador de verba." />
-          )}
-        </div>
-      )}
+                    )
+                  })}
+                </div>
+              </Card>
+            )}
+          </div>
+        )
+      })()}
 
       {tab === 'funil' && (() => {
         // Sanitiza: impressões/cliques às vezes vêm como string (concatenação) ou
