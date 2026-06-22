@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, HBar, NousOrb, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, Delta, SourceBadge, Gauge, Sparkline, HBar, NousOrb, OnboardingChecklist, CHART_COLORS } from '@/components/dashboard/v2'
 import { deriveMaturity } from '@/lib/maturity'
 import { useBenchmark } from '@/lib/useBenchmark'
 
@@ -173,6 +173,9 @@ export default function HojePage() {
           </div>
         )}
       </header>
+
+      {/* Onboarding guiado — some sozinho quando os primeiros passos estão completos */}
+      <OnboardingChecklist />
 
       {/* Briefing Hero — command center escuro (CLARITY) */}
       <section className="mb-4 animate-fade-up sheen rounded-lg overflow-hidden" style={{ boxShadow: 'var(--sh-ink)', border: '1px solid var(--ink-line)', background: 'radial-gradient(135% 130% at 6% -10%, rgba(43,91,227,.34), transparent 46%), radial-gradient(120% 130% at 102% 120%, rgba(14,156,176,.20), transparent 52%), var(--ink-surface)' }}>
