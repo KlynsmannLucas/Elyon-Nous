@@ -126,8 +126,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode, nicheProfile, clientName: _cn, liveInsights } = await req.json()
+    const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode, nicheProfile, clientName: _cn, liveInsights, metaAccountId: _acct } = await req.json()
     const clientName = sanitizeText(_cn, 120)
+    const metaAccountId = sanitizeText(_acct, 64)
     const isSimpleMode = viewMode === 'simple'
     const isHealthBroker = nicheProfile === 'health_insurance_broker'
     const message = sanitizeText(_msg, 600)
@@ -177,6 +178,29 @@ export async function POST(req: NextRequest) {
       }
     } catch { /* memória é opcional */ }
 
+    // Tendência diária real (daily_metrics) — permite investigar "por que o CPL mudou".
+    let trendBlock = ''
+    try {
+      const { supabaseAdmin } = await import('@/lib/supabase')
+      if (supabaseAdmin && metaAccountId) {
+        const { data: series } = await supabaseAdmin.from('daily_metrics')
+          .select('date, cpl, spend, leads').eq('user_id', userId).eq('account_id', metaAccountId).eq('platform', 'meta')
+          .order('date', { ascending: false }).limit(14)
+        if (series && series.length >= 4) {
+          const recent = series.slice(0, 7), prior = series.slice(7, 14)
+          const sum = (arr: any[], k: string) => arr.reduce((s, r) => s + (Number(r[k]) || 0), 0)
+          const avgCpl = (arr: any[]) => { const v = arr.filter(r => r.cpl != null); return v.length ? sum(v, 'cpl') / v.length : 0 }
+          const cplR = avgCpl(recent), cplP = avgCpl(prior)
+          const cplDelta = cplP > 0 ? Math.round(((cplR - cplP) / cplP) * 100) : null
+          const lines = [...series].slice(0, 7).reverse()
+            .map(r => `${r.date}: CPL ${r.cpl != null ? 'R$' + r.cpl : '—'}, ${r.leads || 0} leads, R$${Math.round(Number(r.spend) || 0)} gasto`)
+          trendBlock = `\n[TENDÊNCIA DIÁRIA — dados reais da conta (daily_metrics); pode afirmar como fato]\n`
+            + `7 dias recentes vs. 7 anteriores: CPL ${cplDelta != null ? (cplDelta > 0 ? `subiu ${cplDelta}%` : cplDelta < 0 ? `caiu ${Math.abs(cplDelta)}%` : 'estável') : '—'} (R$${Math.round(cplP)}→R$${Math.round(cplR)}), leads ${sum(prior, 'leads')}→${sum(recent, 'leads')}, investimento R$${Math.round(sum(prior, 'spend'))}→R$${Math.round(sum(recent, 'spend'))}.\n`
+            + `Série diária recente:\n${lines.join('\n')}`
+        }
+      }
+    } catch { /* tendência é opcional */ }
+
     // Insights ao vivo das campanhas (tempo real), enviados pelo cliente.
     const liveBlock = Array.isArray(liveInsights) && liveInsights.length
       ? `\n[INSIGHTS AO VIVO DAS CAMPANHAS — dados reais do Meta agora; pode afirmar como fato]\n${liveInsights.slice(0, 6).map((i: any) => `• ${i.title}${i.body ? ' — ' + i.body : ''}`).join('\n')}`
@@ -193,6 +217,7 @@ export async function POST(req: NextRequest) {
 CONTEXTO DO CLIENTE (leia os rótulos de cada seção antes de responder):
 ${context}
 ${liveBlock}
+${trendBlock}
 ${accountMemory}
 ${realtimeData ? `\nDADOS EXTERNOS DE MERCADO (Tavily — fonte externa, não da conta):\n${realtimeData}` : ''}
 
@@ -253,15 +278,47 @@ COMPLIANCE — OBRIGATÓRIO: nunca prometa aprovação, preço final ou ausênci
           { role: 'user', content: message },
         ]
 
+        // Campanhas acionáveis (com id real) vindas dos insights ao vivo — base segura
+        // para o NOUS PROPOR uma ação executável (pausar/escalar), sempre com aprovação.
+        const actionable = (Array.isArray(liveInsights) ? liveInsights : [])
+          .filter((i: any) => i?.campaignId && i?.action)
+          .map((i: any) => ({ campaignId: String(i.campaignId), campaignName: i.campaignName || '', platform: i.platform === 'google' ? 'google' : 'meta', action: i.action }))
+
+        const tools = actionable.length ? [{
+          name: 'propose_action',
+          description: 'Propõe UMA ação executável (pausar ou escalar) para uma campanha específica quando a pergunta do usuário pede uma decisão. A ação NÃO é executada automaticamente — vira um botão que o usuário aprova. Só proponha para uma campanha listada em INSIGHTS AO VIVO (que tem id real).',
+          input_schema: {
+            type: 'object' as const,
+            properties: {
+              campaignId: { type: 'string' as const, description: 'id exato de uma campanha dos INSIGHTS AO VIVO' },
+              action: { type: 'string' as const, enum: ['pause', 'scale'] },
+              reason: { type: 'string' as const, description: 'motivo curto, baseado nos dados reais' },
+            },
+            required: ['campaignId', 'action', 'reason'],
+          },
+        }] : []
+
         const response = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 800,
-          system: systemPrompt,
+          system: systemPrompt + (actionable.length ? `\n\nVocê pode usar a ferramenta propose_action quando a pergunta pedir uma decisão de pausar/escalar e houver uma campanha clara nos INSIGHTS AO VIVO. Caso contrário, responda apenas com texto. Campanhas disponíveis para ação: ${actionable.map(a => `"${a.campaignName}" (id ${a.campaignId})`).join(', ')}.` : ''),
           messages,
+          ...(tools.length ? { tools, tool_choice: { type: 'auto' as const } } : {}),
         })
 
-        const reply = (response.content[0] as any).text.trim()
-        return NextResponse.json({ success: true, reply, dataSource })
+        const textBlock = response.content.find((b: any) => b.type === 'text') as any
+        const toolBlock = response.content.find((b: any) => b.type === 'tool_use') as any
+        let proposedAction: any = null
+        if (toolBlock?.input) {
+          const inp = toolBlock.input
+          const match = actionable.find(a => a.campaignId === String(inp.campaignId))
+          if (match && (inp.action === 'pause' || inp.action === 'scale')) {
+            proposedAction = { campaignId: match.campaignId, campaignName: match.campaignName, platform: match.platform, action: inp.action, reason: String(inp.reason || '').slice(0, 240) }
+          }
+        }
+        const reply = (textBlock?.text?.trim())
+          || (proposedAction ? `${proposedAction.reason}\n\nPosso ${proposedAction.action === 'pause' ? 'pausar' : 'escalar'} "${proposedAction.campaignName}" — é só aprovar.` : 'Não consegui responder agora.')
+        return NextResponse.json({ success: true, reply, dataSource, proposedAction })
 
       } catch (aiError: any) {
         console.warn('NOUS API falhou, tentando Gemini / fallback local:', aiError.message)

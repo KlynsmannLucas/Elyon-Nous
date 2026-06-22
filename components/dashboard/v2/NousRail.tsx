@@ -7,7 +7,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon } from './Icon'
 
-interface Message { role: 'user' | 'assistant'; content: string }
+interface Message { role: 'user' | 'assistant'; content: string; proposedAction?: { campaignId: string; campaignName?: string; platform?: 'meta' | 'google'; action: 'pause' | 'scale'; reason?: string } }
 interface NousRailProps { open: boolean; onClose: () => void; docked?: boolean }
 
 const SUGGESTIONS = ['Como estão meus KPIs?', 'Qual campanha tem melhor ROAS?', 'O que eu faço esta semana?']
@@ -185,10 +185,10 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
     try {
       const res = await fetch('/api/nous', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, context: buildContext(), niche: clientData?.niche, city: clientData?.city, hasRealData, viewMode: dashboardMode, history, clientName: key, liveInsights }),
+        body: JSON.stringify({ message: msg, context: buildContext(), niche: clientData?.niche, city: clientData?.city, hasRealData, viewMode: dashboardMode, history, clientName: key, liveInsights, metaAccountId }),
       })
       const data = await res.json()
-      setMessages(m => [...m, { role: 'assistant', content: data?.reply || data?.error || 'Não consegui responder agora.' }])
+      setMessages(m => [...m, { role: 'assistant', content: data?.reply || data?.error || 'Não consegui responder agora.', proposedAction: data?.proposedAction || undefined }])
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'Falha de conexão. Tente novamente.' }])
     } finally { setIsTyping(false) }
@@ -249,8 +249,25 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
             )}
             <div className="space-y-2.5">
               {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'bg-blue text-white rounded-xl rounded-br-[3px]' : 'bg-paper border border-line text-ink rounded-xl rounded-bl-[3px]'}`}>{m.content}</div>
+                <div key={i}>
+                  <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'bg-blue text-white rounded-xl rounded-br-[3px]' : 'bg-paper border border-line text-ink rounded-xl rounded-bl-[3px]'}`}>{m.content}</div>
+                  </div>
+                  {/* Ação proposta pelo NOUS na conversa — aprovação explícita (dryRun → confirmar → executar) */}
+                  {m.role === 'assistant' && m.proposedAction && (
+                    <div className="flex justify-start mt-1.5">
+                      <button
+                        onClick={() => executeInsight(m.proposedAction as any)}
+                        disabled={executingId === m.proposedAction.campaignId}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-white text-[12.5px] font-semibold disabled:opacity-60"
+                        style={{ background: m.proposedAction.action === 'pause' ? '#E1483F' : '#0E9E6E' }}>
+                        <Icon name={m.proposedAction.action === 'pause' ? 'alert' : 'arrowUp'} size={14} />
+                        {executingId === m.proposedAction.campaignId
+                          ? 'Aguarde…'
+                          : `${m.proposedAction.action === 'pause' ? 'Pausar' : 'Escalar +20%'} "${(m.proposedAction.campaignName || 'campanha').slice(0, 28)}"`}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
               {isTyping && <div className="flex gap-1 text-ink-4 px-1"><span className="pulse-dot" /><span className="pulse-dot" style={{ animationDelay: '.15s' }} /><span className="pulse-dot" style={{ animationDelay: '.3s' }} /></div>}
