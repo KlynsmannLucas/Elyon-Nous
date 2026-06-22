@@ -487,9 +487,9 @@ export async function POST(req: NextRequest) {
     const totalSpend         = campaigns.reduce((s, c) => s + c.spend30,      0)
     const totalLeads         = campaigns.reduce((s, c) => s + c.leads30,      0)
     const totalRevenue       = campaigns.reduce((s, c) => s + c.revenue30,    0)
-    const totalMessages      = campaigns.reduce((s, c) => s + c.messages30,   0)
-    const totalClicks        = campaigns.reduce((s, c) => s + c.clicks,       0)
-    const totalImpressions   = campaigns.reduce((s, c) => s + c.impressions,  0)
+    const totalMessages      = campaigns.reduce((s, c) => s + (Number(c.messages30) || 0),   0)
+    const totalClicks        = campaigns.reduce((s, c) => s + (Number(c.clicks) || 0),       0)
+    const totalImpressions   = campaigns.reduce((s, c) => s + (Number(c.impressions) || 0),  0)
     const avgCTR             = activeCampaigns.length > 0 ? activeCampaigns.reduce((s, c) => s + c.ctr30, 0) / activeCampaigns.length : 0
     const avgFrequency       = activeCampaigns.length > 0 ? activeCampaigns.reduce((s, c) => s + c.frequency, 0) / activeCampaigns.length : 0
 

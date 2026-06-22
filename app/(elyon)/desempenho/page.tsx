@@ -798,22 +798,33 @@ export default function DesempenhoPage() {
         </div>
       )}
 
-      {tab === 'funil' && (
+      {tab === 'funil' && (() => {
+        // Sanitiza: impressões/cliques às vezes vêm como string (concatenação) ou
+        // de cache antigo corrompido. Soma das campanhas (Number) é a fonte confiável;
+        // valores absurdos (> 10 trilhões) são descartados.
+        const sane = (v: any) => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n < 1e13 ? n : 0 }
+        const fromCamps = (k: string) => camps.reduce((s: number, c: any) => s + (Number(c[k]) || 0), 0)
+        const fImp = fromCamps('impressions') || sane(rm?.totalImpressions)
+        const fClk = fromCamps('clicks') || sane(rm?.totalClicks)
+        const fLeads = fromCamps('leads') || sane(rm?.totalLeads)
+        const hasFunnel = fImp > 0 || fClk > 0 || fLeads > 0
+        const stages = [
+          { stage: 'Impressões', v: fImp, color: CHART_COLORS.blue },
+          { stage: 'Cliques', v: fClk, color: CHART_COLORS.teal },
+          { stage: 'Leads', v: fLeads, color: CHART_COLORS.green },
+        ]
+        return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-up">
           <Card>
             <SectionHead title="Funil de conversão" subtitle="Da impressão ao lead" icon={<Icon name="funnel" size={17} />}
-              action={rm?.totalImpressions && rm?.totalLeads ? <Badge tone="blue">Conv. {((rm.totalLeads / rm.totalImpressions) * 100).toFixed(2)}%</Badge> : undefined} />
-            {rm && (rm.totalImpressions || rm.totalClicks || rm.totalLeads) ? (
-              <Funnel stages={[
-                { label: 'Impressões', value: rm.totalImpressions || 0, color: CHART_COLORS.blue },
-                { label: 'Cliques', value: rm.totalClicks || 0, color: CHART_COLORS.teal },
-                { label: 'Leads', value: rm.totalLeads || 0, color: CHART_COLORS.green },
-              ]} />
+              action={fImp > 0 && fLeads > 0 ? <Badge tone="blue">Conv. {((fLeads / fImp) * 100).toFixed(2)}%</Badge> : undefined} />
+            {hasFunnel ? (
+              <Funnel stages={stages.map(s => ({ label: s.stage, value: s.v, color: s.color }))} />
             ) : (
               <p className="text-center py-8 text-ink-3 text-sm">Sem dados de funil. Rode a Análise Profunda com dados de campanha.</p>
             )}
           </Card>
-          {rm && (rm.totalImpressions || rm.totalClicks || rm.totalLeads) && (
+          {hasFunnel && (
             <Card>
               <SectionHead title="Conversão por etapa" icon={<Icon name="chart" size={17} />} />
               <div className="overflow-x-auto">
@@ -827,11 +838,7 @@ export default function DesempenhoPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { stage: 'Impressões', v: rm.totalImpressions || 0 },
-                      { stage: 'Cliques', v: rm.totalClicks || 0 },
-                      { stage: 'Leads', v: rm.totalLeads || 0 },
-                    ].map((s, i, arr) => {
+                    {stages.map((s, i, arr) => {
                       const top = arr[0].v || 1
                       const drop = i > 0 && arr[i - 1].v > 0 ? Math.round((1 - s.v / arr[i - 1].v) * 100) : null
                       return (
@@ -849,7 +856,8 @@ export default function DesempenhoPage() {
             </Card>
           )}
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

@@ -335,9 +335,9 @@ export async function POST(req: NextRequest) {
     const activeCampaigns  = campaigns.filter(c => c.status === 'ENABLED' && c.spend > 0)
     const totalSpend       = campaigns.reduce((s, c) => s + c.spend,       0)
     const totalConversions = campaigns.reduce((s, c) => s + c.conversions, 0)
-    const totalRevenue     = campaigns.reduce((s, c) => s + c.revenue,     0)
-    const totalClicks      = campaigns.reduce((s, c) => s + c.clicks,      0)
-    const totalImpressions = campaigns.reduce((s, c) => s + c.impressions, 0)
+    const totalRevenue     = campaigns.reduce((s, c) => s + (Number(c.revenue) || 0),     0)
+    const totalClicks      = campaigns.reduce((s, c) => s + (Number(c.clicks) || 0),      0)
+    const totalImpressions = campaigns.reduce((s, c) => s + (Number(c.impressions) || 0), 0)
     const avgCTR  = totalImpressions > 0 ? +((totalClicks / totalImpressions) * 100).toFixed(2) : 0
     const avgCPA  = totalConversions > 0 ? +(totalSpend / totalConversions).toFixed(2) : 0
     const avgROAS = totalSpend > 0 && totalRevenue > 0 ? +(totalRevenue / totalSpend).toFixed(2) : 0

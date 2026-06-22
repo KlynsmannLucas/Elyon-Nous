@@ -709,12 +709,15 @@ export async function POST(req: NextRequest) {
     const realCPL    = totalLeads > 0 ? +(totalSpend / totalLeads).toFixed(2) : 0
 
     // ── Métricas reais agregadas (usadas pelo Overview) ────────────────────────
-    const totalImpressions = allCampaigns.reduce((s: number, c: any) => s + (c.impressions || 0), 0)
-      + (srcMetaTotals?.impressions || 0) + (srcGoogleTotals?.impressions || 0)
-    const totalClicks = allCampaigns.reduce((s: number, c: any) => s + (c.clicks || 0), 0)
-      + (srcMetaTotals?.clicks || 0) + (srcGoogleTotals?.clicks || 0)
-    const totalRevenue = allCampaigns.reduce((s: number, c: any) => s + (c.revenue || c.conversionValue || 0), 0)
-      + (srcMetaTotals?.revenue || 0) + (srcGoogleTotals?.revenue || 0)
+    // IMPORTANTE: impressions/clicks/revenue vêm como STRING da API do Meta/Google.
+    // Sem Number() o "+" CONCATENA strings → número astronômico (bug do funil).
+    const num = (v: any) => Number(v) || 0
+    const totalImpressions = allCampaigns.reduce((s: number, c: any) => s + num(c.impressions), 0)
+      + num(srcMetaTotals?.impressions) + num(srcGoogleTotals?.impressions)
+    const totalClicks = allCampaigns.reduce((s: number, c: any) => s + num(c.clicks), 0)
+      + num(srcMetaTotals?.clicks) + num(srcGoogleTotals?.clicks)
+    const totalRevenue = allCampaigns.reduce((s: number, c: any) => s + num(c.revenue ?? c.conversionValue), 0)
+      + num(srcMetaTotals?.revenue) + num(srcGoogleTotals?.revenue)
     const avgROAS = totalSpend > 0 && totalRevenue > 0 ? +(totalRevenue / Number(totalSpend)).toFixed(2) : null
     const avgCTR  = totalImpressions > 0 ? +((totalClicks / totalImpressions) * 100).toFixed(2) : null
 
