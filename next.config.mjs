@@ -54,6 +54,9 @@ const securityHeaders = [
 const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint:     { ignoreDuringBuilds: true },
+  // svix (webhooks Clerk) tem barrel exports que quebram quando o plugin do Sentry
+  // mexe no bundling do server — externalizar resolve em runtime (node_modules).
+  experimental: { serverComponentsExternalPackages: ['svix'] },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },
@@ -64,37 +67,14 @@ const nextConfig = {
   },
 }
 
-// DIAGNÓSTICO: Sentry desabilitado temporariamente para isolar crash de chunk
-export default nextConfig
-/*
-const _withSentry = withSentryConfig(nextConfig, {
-  // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-
-  org: "elyon-nous",
-
-  project: "javascript-nextjs",
-
-  // Only print logs for uploading source maps in CI
+// Sentry RE-HABILITADO (sem Session Replay — ver instrumentation-client.ts, que
+// removeu o replayIntegration causador da tela preta). Source maps só sobem com
+// SENTRY_AUTH_TOKEN; sem o token, o upload é pulado e o build NÃO quebra.
+export default withSentryConfig(nextConfig, {
+  org: 'elyon-nous',
+  project: 'javascript-nextjs',
   silent: !process.env.CI,
-
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-
   widenClientFileUpload: true,
-
-  webpack: {
-    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
-    automaticVercelMonitors: true,
-
-    // Tree-shaking options for reducing bundle size
-    treeshake: {
-      // Automatically tree-shake Sentry logger statements to reduce bundle size
-      removeDebugLogging: true,
-    },
-  },
-});
-*/
+  disableLogger: true,
+  automaticVercelMonitors: true,
+})

@@ -1,14 +1,15 @@
 import * as Sentry from '@sentry/nextjs'
 
+// IMPORTANTE: SEM replayIntegration. O Session Replay bloqueava o commit phase do
+// React e causava TELA PRETA (ver memória project_sentry_black_screen). Mantemos só
+// captura de erros + tracing leve. Não reintroduza replay aqui.
+const DSN = process.env.NEXT_PUBLIC_SENTRY_DSN
+  || 'https://4d78606659d9f6ac86d6a1b4fc39b81b@o4511298124382208.ingest.us.sentry.io/4511298129166336'
+
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  dsn: DSN,
   environment: process.env.NODE_ENV,
   tracesSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
-  replaysSessionSampleRate: 0.05,
-  integrations: [
-    Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true }),
-  ],
 })
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart
