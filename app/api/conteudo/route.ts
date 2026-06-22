@@ -66,19 +66,13 @@ CONTEXTO:
 Crie 3 ideias de conteúdo distintas para ${platform} sobre "${theme}".
 Cada ideia deve ser pronta para usar — não genérica, específica para o nicho e a persona.
 
-Retorne APENAS um JSON válido com esta estrutura:
-{
-  "posts": [
-    {
-      "tipo": "tipo do conteúdo (Reels, Carrossel, Stories, Post, Vídeo, etc.)",
-      "gancho": "primeira frase ou cena — deve parar o scroll imediatamente, máximo 15 palavras",
-      "estrutura": "descrição de 2-3 frases de como o conteúdo se desenvolve",
-      "legenda": "legenda completa pronta para copiar e postar, com emojis e tom correto para a plataforma",
-      "cta": "chamada para ação específica e não genérica",
-      "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"]
-    }
-  ]
-}`
+Use a ferramenta "emit_posts" para retornar as 3 ideias. Cada post precisa de:
+- tipo: tipo do conteúdo (Reels, Carrossel, Stories, Post, Vídeo, etc.)
+- gancho: primeira frase ou cena que para o scroll imediatamente, máximo 15 palavras
+- estrutura: 2-3 frases de como o conteúdo se desenvolve
+- legenda: legenda completa pronta para copiar e postar, com emojis e tom correto para a plataforma
+- cta: chamada para ação específica e não genérica
+- hashtags: 5 hashtags relevantes`
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'API key não configurada' }, { status: 500 })
@@ -97,19 +91,48 @@ Retorne APENAS um JSON válido com esta estrutura:
     const { default: Anthropic } = await import('@anthropic-ai/sdk')
     const anthropic = new Anthropic({ apiKey })
 
+    // Structured output via tool use: a API garante JSON válido (já parseado),
+    // sem o risco de aspas/quebras de linha no texto quebrarem o JSON.parse.
+    const postSchema = {
+      type: 'object' as const,
+      properties: {
+        tipo:      { type: 'string' as const },
+        gancho:    { type: 'string' as const },
+        estrutura: { type: 'string' as const },
+        legenda:   { type: 'string' as const },
+        cta:       { type: 'string' as const },
+        hashtags:  { type: 'array' as const, items: { type: 'string' as const } },
+      },
+      required: ['tipo', 'gancho', 'estrutura', 'legenda', 'cta', 'hashtags'],
+    }
+
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 3000,
-      system: 'Você é um especialista em marketing de conteúdo digital brasileiro. Responda APENAS com JSON válido, sem markdown.',
+      system: 'Você é um especialista em marketing de conteúdo digital brasileiro.',
+      tools: [{
+        name: 'emit_posts',
+        description: 'Retorna as 3 ideias de conteúdo geradas, prontas para usar.',
+        input_schema: {
+          type: 'object',
+          properties: { posts: { type: 'array', items: postSchema } },
+          required: ['posts'],
+        },
+      }],
+      tool_choice: { type: 'tool', name: 'emit_posts' },
       messages: [{ role: 'user', content: enrichedPrompt }],
     })
 
-    const text = (response.content[0] as any).text?.trim() || ''
-    let result: any
-    try { result = JSON.parse(text) } catch {
+    const toolUse = response.content.find((b: any) => b.type === 'tool_use') as any
+    let result: any = toolUse?.input
+    // Fallback defensivo: se por algum motivo não vier tool_use, tenta texto.
+    if (!result?.posts) {
+      const text = (response.content.find((b: any) => b.type === 'text') as any)?.text?.trim() || ''
       const m = text.match(/(\{[\s\S]*\})/)
-      if (!m) throw new Error('JSON inválido na resposta — tente novamente.')
-      result = JSON.parse(m[1])
+      if (m) { try { result = JSON.parse(m[1]) } catch {} }
+    }
+    if (!Array.isArray(result?.posts) || result.posts.length === 0) {
+      throw new Error('Não consegui gerar as ideias agora — tente novamente.')
     }
     return NextResponse.json({ success: true, posts: result.posts, usedAdLibrary: !!adLibCtx })
   } catch (e: any) {
