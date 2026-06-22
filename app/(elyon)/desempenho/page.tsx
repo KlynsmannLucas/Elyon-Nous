@@ -130,7 +130,7 @@ export default function DesempenhoPage() {
     fetch(`/api/ads-data/meta-intelligence${metaAcctId ? `?accountId=${encodeURIComponent(metaAcctId)}` : ''}`, { signal: AbortSignal.timeout(45000) })
       .then(r => r.json()).then(d => setIntel(d?.success ? d : {})).catch(() => setIntel({})).finally(() => setIntelLoading(false))
   }, [intel, intelLoading, hasMeta, metaAcctId])
-  useEffect(() => { if (tab === 'criativos') loadIntel() }, [tab, loadIntel])
+  useEffect(() => { if (tab === 'criativos' || tab === 'audiencias') loadIntel() }, [tab, loadIntel])
   const creatives: any[] | null = intel ? (Array.isArray(intel.ads) ? intel.ads : []) : null
   const creLoading = intelLoading
 
@@ -617,25 +617,121 @@ export default function DesempenhoPage() {
         </div>
       )}
 
-      {tab === 'audiencias' && (
-        <div className="space-y-4 animate-fade-up">
-          {ta ? (
-            <>
+      {tab === 'audiencias' && (() => {
+        // Audiências REAIS da conta (ad sets = públicos, demografia, geo) + recomendação do NOUS.
+        const adsets: any[] = (intel?.adSets || []).filter((a: any) => (a.spend || 0) > 0)
+        const demo: any[] = (intel?.demoBreakdown || []).filter((d: any) => (d.leads || 0) > 0 || (d.spend || 0) > 0)
+        const geoReal: any[] = (intel?.geoBreakdown || intel?.intelligenceData?.geoBreakdown || []).filter((g: any) => (g.spend || 0) > 0)
+        const hasReal = adsets.length > 0 || demo.length > 0 || geoReal.length > 0
+
+        // Mediana de CPL entre públicos com lead → base para classificar (escalar/manter/cortar).
+        const cplArr = adsets.filter(a => (a.leads || 0) > 0 && (a.cpl || 0) > 0).map(a => a.cpl).sort((x, y) => x - y)
+        const medCpl = cplArr.length ? cplArr[Math.floor(cplArr.length / 2)] : 0
+        const recOf = (a: any): { t: string; tone: 'good' | 'bad' | 'blue'; txt: string } => {
+          if ((a.leads || 0) === 0 && (a.spend || 0) >= Math.max(medCpl || 0, 25)) return { t: 'Revisar', tone: 'bad', txt: 'Investiu sem gerar lead — revise segmentação/criativo' }
+          if (medCpl && (a.cpl || 0) > 0 && a.cpl <= medCpl * 0.85) return { t: 'Escalar', tone: 'good', txt: 'CPL abaixo da mediana da conta — candidato a +orçamento' }
+          if (medCpl && (a.cpl || 0) >= medCpl * 1.4) return { t: 'Cortar', tone: 'bad', txt: 'CPL bem acima da mediana — realoque a verba' }
+          return { t: 'Manter', tone: 'blue', txt: 'Dentro da média da conta' }
+        }
+        const topAdsets = [...adsets].sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8)
+
+        const demoLeads = demo.filter(d => (d.leads || 0) > 0)
+        const maxLeads = Math.max(1, ...demoLeads.map(d => d.leads || 0))
+        const topDemo = [...demoLeads].sort((a, b) => (b.leads || 0) - (a.leads || 0)).slice(0, 6)
+        const bestCohort = demoLeads.filter(d => (d.cpl || 0) > 0).sort((a, b) => a.cpl - b.cpl)[0] || null
+        const gLabel = (g: string) => g === 'male' ? 'Homens' : g === 'female' ? 'Mulheres' : (g || '—')
+
+        const topGeo = [...geoReal].sort((a, b) => (b.leads || 0) - (a.leads || 0) || (b.spend || 0) - (a.spend || 0)).slice(0, 6)
+
+        if (!hasReal && !ta) {
+          return (
+            <div className="space-y-4 animate-fade-up">
+              {intelLoading
+                ? <Card><div className="text-center py-10 text-ink-3 text-sm">Carregando audiências reais da Meta…</div></Card>
+                : <StrategyEmpty text="Conecte o Meta e sincronize, ou gere a estratégia, para ver públicos, idade/gênero e regiões." />}
+            </div>
+          )
+        }
+
+        return (
+          <div className="space-y-4 animate-fade-up">
+            {intelLoading && !hasReal && <Card><div className="text-center py-8 text-ink-3 text-sm">Carregando audiências reais da Meta…</div></Card>}
+
+            {/* ── Públicos ativos (ad sets reais) com CPL e o que fazer ── */}
+            {topAdsets.length > 0 && (
               <Card>
-                <SectionHead title="Público-alvo" subtitle="Quem converte na sua conta" icon={<Icon name="users" size={17} />} action={<Badge tone="blue" dot>NOUS</Badge>} />
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[['Faixa etária', ta.demographics?.age_range], ['Gênero', ta.demographics?.gender], ['Renda', ta.demographics?.income_range], ['Foco de canal', (ta.channel_focus || [])[0]]].map(([l, v]) => (
-                    <div key={l as string} className="p-3 rounded-sm bg-canvas-2">
-                      <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">{l}</div>
-                      <div className="text-sm font-semibold text-ink">{(v as string) || '—'}</div>
-                    </div>
-                  ))}
+                <SectionHead title="Públicos ativos" subtitle="Cada conjunto de anúncios é um público — CPL real e recomendação" icon={<Icon name="users" size={17} />} action={<SourceBadge source="real" />} />
+                <div className="overflow-x-auto -mx-1">
+                  <table className="w-full text-sm min-w-[560px]">
+                    <thead><tr className="text-left text-[10.5px] font-mono uppercase tracking-wider text-ink-3 border-b border-line">
+                      <th className="py-2 px-1 font-medium">Público</th>
+                      <th className="py-2 px-1 font-medium text-right">Investido</th>
+                      <th className="py-2 px-1 font-medium text-right">Leads</th>
+                      <th className="py-2 px-1 font-medium text-right">CPL</th>
+                      <th className="py-2 px-1 font-medium text-right">Ação</th>
+                    </tr></thead>
+                    <tbody>
+                      {topAdsets.map((a, i) => { const r = recOf(a); return (
+                        <tr key={a.id || i} className="border-b border-line-2 last:border-0">
+                          <td className="py-2.5 px-1">
+                            <div className="font-semibold text-ink truncate max-w-[240px]">{a.name || `Público ${i + 1}`}</div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {a.hasRemarketing && <span className="text-[10px] font-mono uppercase tracking-wide text-blue shrink-0">remarketing</span>}
+                              <span className="text-[11px] text-ink-3 truncate max-w-[220px]">{r.txt}</span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-1 text-right font-mono text-ink-2">{brl(a.spend || 0)}</td>
+                          <td className="py-2.5 px-1 text-right font-mono text-ink-2">{a.leads || 0}</td>
+                          <td className="py-2.5 px-1 text-right font-mono font-semibold text-ink">{(a.leads || 0) > 0 && (a.cpl || 0) > 0 ? brl(a.cpl) : '—'}</td>
+                          <td className="py-2.5 px-1 text-right"><Badge tone={r.tone}>{r.t}</Badge></td>
+                        </tr>
+                      )})}
+                    </tbody>
+                  </table>
                 </div>
               </Card>
+            )}
+
+            {/* ── Quem mais converte: idade × gênero (demografia real) ── */}
+            {topDemo.length > 0 && (
+              <Card>
+                <SectionHead title="Quem mais converte" subtitle="Leads e CPL real por faixa etária e gênero" icon={<Icon name="target" size={17} />} action={<SourceBadge source="real" />} />
+                {bestCohort && <p className="text-sm text-ink-2 mb-3">Melhor coorte: <span className="font-semibold text-ink">{gLabel(bestCohort.gender)} {bestCohort.age}</span> — CPL {brl(bestCohort.cpl)}.</p>}
+                <div className="space-y-2">
+                  {topDemo.map((d, i) => { const w = Math.round(((d.leads || 0) / maxLeads) * 100); return (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-[116px] text-sm text-ink shrink-0 truncate">{gLabel(d.gender)} · {d.age}</div>
+                      <div className="flex-1 h-6 rounded-sm bg-canvas-2 overflow-hidden relative">
+                        <div className="h-full bg-blue/25" style={{ width: `${Math.max(4, w)}%` }} />
+                        <span className="absolute inset-y-0 left-2 flex items-center text-[11px] font-mono text-ink-2">{d.leads || 0} leads</span>
+                      </div>
+                      <div className="w-[78px] text-right font-mono text-sm font-semibold text-ink shrink-0">{(d.cpl || 0) > 0 ? brl(d.cpl) : '—'}</div>
+                    </div>
+                  )})}
+                </div>
+              </Card>
+            )}
+
+            {/* ── Regiões reais (ou recomendação) + público-alvo ideal (persona) ── */}
+            {(topGeo.length > 0 || ta) && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {ta.best_regions?.length > 0 && (
+                {topGeo.length > 0 ? (
                   <Card>
-                    <SectionHead title="Melhores regiões" icon={<Icon name="globe" size={17} />} />
+                    <SectionHead title="Melhores regiões" subtitle="Por leads reais" icon={<Icon name="globe" size={17} />} action={<SourceBadge source="real" />} />
+                    <div className="space-y-2">
+                      {topGeo.map((g, i) => (
+                        <div key={i} className="flex items-center gap-2 p-2.5 rounded-sm bg-canvas-2">
+                          <span className="w-5 h-5 rounded-md bg-paper border border-line text-ink font-mono text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                          <span className="text-sm text-ink flex-1 truncate">{g.region || g.city || g.name || '—'}</span>
+                          <span className="text-xs font-mono text-ink-2">{g.leads || 0} leads</span>
+                          {(g.cpl || 0) > 0 && <span className="text-xs font-mono text-ink-3">CPL {brl(g.cpl)}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ) : (ta?.best_regions?.length > 0 && (
+                  <Card>
+                    <SectionHead title="Melhores regiões" subtitle="Recomendação da estratégia" icon={<Icon name="globe" size={17} />} action={<Badge tone="blue" dot>NOUS</Badge>} />
                     <div className="space-y-2">
                       {ta.best_regions.slice(0, 5).map((r: any, i: number) => (
                         <div key={i} className="flex items-center gap-2 p-2.5 rounded-sm bg-canvas-2">
@@ -646,23 +742,28 @@ export default function DesempenhoPage() {
                       ))}
                     </div>
                   </Card>
-                )}
-                {ta.interests?.length > 0 && (
+                ))}
+
+                {ta && (
                   <Card>
-                    <SectionHead title="Interesses & afinidades" icon={<Icon name="target" size={17} />} />
-                    <div className="flex flex-wrap gap-2">
-                      {ta.interests.map((it: string, i: number) => <Badge key={i} tone="blue">{it}</Badge>)}
+                    <SectionHead title="Público-alvo ideal" subtitle="Recomendação do NOUS" icon={<Icon name="users" size={17} />} action={<Badge tone="blue" dot>NOUS</Badge>} />
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      {[['Faixa etária', ta.demographics?.age_range], ['Gênero', ta.demographics?.gender], ['Renda', ta.demographics?.income_range], ['Foco de canal', (ta.channel_focus || [])[0]]].map(([l, v]) => (
+                        <div key={l as string} className="p-3 rounded-sm bg-canvas-2">
+                          <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">{l}</div>
+                          <div className="text-sm font-semibold text-ink">{(v as string) || '—'}</div>
+                        </div>
+                      ))}
                     </div>
+                    {ta.interests?.length > 0 && <div className="flex flex-wrap gap-2">{ta.interests.map((it: string, i: number) => <Badge key={i} tone="blue">{it}</Badge>)}</div>}
                     {ta.persona_snapshot?.one_liner && <p className="text-sm text-ink-2 mt-3 leading-relaxed">{ta.persona_snapshot.one_liner}</p>}
                   </Card>
                 )}
               </div>
-            </>
-          ) : (
-            <StrategyEmpty text="Gere a estratégia para ver público-alvo, regiões e interesses." />
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )
+      })()}
 
       {tab === 'criativos' && (
         <div className="space-y-4 animate-fade-up">
