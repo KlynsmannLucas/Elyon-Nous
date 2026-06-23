@@ -927,7 +927,7 @@ Fonte dos dados: ${auditSource === 'upload' ? 'arquivo importado' : 'API Meta Ad
 Gasto: R$${(srcMetaTotals?.spend || 0).toFixed(2)} | Impressões: ${(srcMetaTotals?.impressions || 0).toLocaleString('pt-BR')} | Cliques: ${srcMetaTotals?.clicks || 0}
 CTR: ${srcMetaTotals?.ctr || 0}% | CPL: R$${srcMetaTotals?.cpl || 0} | ROAS: ${srcMetaTotals?.roas || 0}× | Leads: ${srcMetaTotals?.leads || 0}
 Campanhas (${srcMetaCampaigns.length}):
-${srcMetaCampaigns.slice(0, 20).map((c: any) =>
+${srcMetaCampaigns.slice(0, 12).map((c: any) =>
   `  [${c.status || 'ACTIVE'}] ${c.name}
    Gasto: R$${(c.spend||0).toFixed(2)} | Leads: ${c.leads||0} | CPL: R$${(c.cpl||0).toFixed(2)} | CTR: ${(c.ctr||0).toFixed(2)}% | ROAS: ${(c.roas||0).toFixed(2)}× | Frequência: ${(c.frequency||0).toFixed(1)}`
 ).join('\n')}` : ''
@@ -939,7 +939,7 @@ Gasto: R$${(srcGoogleTotals?.spend || 0).toFixed(2)} | Impressões: ${(srcGoogle
 CTR: ${srcGoogleTotals?.ctr || 0}% | CPL: R$${srcGoogleTotals?.cpl || 0} | ROAS: ${srcGoogleTotals?.roas || 0}× | Conversões: ${srcGoogleTotals?.leads || 0}
 (ATENÇÃO: conversões no Google Ads podem incluir múltiplas ações configuradas na conta — verificar se o evento otimizado é o correto)
 Campanhas (${srcGoogleCampaigns.length}):
-${srcGoogleCampaigns.slice(0, 20).map((c: any) =>
+${srcGoogleCampaigns.slice(0, 12).map((c: any) =>
   `  [${c.status || 'ACTIVE'}] ${c.name}
    Gasto: R$${(c.spend||0).toFixed(2)} | Conv.: ${c.leads||0} | CPA: R$${(c.cpl||0).toFixed(2)} | CTR: ${(c.ctr||0).toFixed(2)}%`
 ).join('\n')}` : ''
@@ -1235,7 +1235,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
           anthropic.messages.create({
             model: 'claude-sonnet-4-6',
             max_tokens: 8000,
-            system: 'Você é um consultor sênior de tráfego pago com 10+ anos no mercado brasileiro. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois do JSON. Sem ```json. Comece direto com { e termine com }.',
+            system: 'Você é um consultor sênior de tráfego pago com 10+ anos no mercado brasileiro. Responda APENAS com JSON válido e completo. Sem markdown, sem texto antes ou depois do JSON. Sem ```json. Comece direto com { e termine com }. Seja DIRETO e CONCISO: cada campo de texto com no máximo 1-2 frases objetivas, sem repetir o contexto nem encher linguiça — isso mantém a resposta rápida.',
             messages: [{ role: 'user', content: prompt }],
           }),
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 46000)),
