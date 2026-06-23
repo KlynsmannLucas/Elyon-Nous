@@ -22,7 +22,7 @@ export interface PulseData {
 const DASH_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.elyonnous.com'
 const DAY = 86400000
 
-export async function buildPulseData(userId: string, clientName: string): Promise<PulseData> {
+export async function buildPulseData(userId: string, clientName: string, niche?: string): Promise<PulseData> {
   const dateLabel = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
   const out: PulseData = {
     clientName, dateLabel: dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1),
@@ -111,6 +111,20 @@ export async function buildPulseData(userId: string, clientName: string): Promis
       }
     }
   } catch { /* sem ações — segue sem vitória específica */ }
+
+  // ── RADAR ao vivo (Meta+Google, últimos 7d) — substitui as urgências da auditoria ──
+  // quando há sinais reais agora. É mais atual e ranqueado por dinheiro.
+  try {
+    const { buildRadar } = await import('@/lib/radar')
+    const { alerts } = await buildRadar({ userId, niche })
+    if (alerts.length > 0) {
+      out.hasData = true
+      const leaksRisks = alerts.filter(a => a.severity !== 'opportunity')
+      if (leaksRisks.length > 0) out.urgent = leaksRisks.slice(0, 3).map(a => a.title)
+      const opp = alerts.find(a => a.severity === 'opportunity')
+      if (!out.win && opp) out.win = `Oportunidade: ${opp.title}`
+    }
+  } catch { /* radar opcional — mantém as urgências da auditoria */ }
 
   // Fallbacks de vitória vindos da evolução da auditoria
   if (!out.win && out.cplDelta != null && out.cplDelta < 0) out.win = `CPL caiu ${Math.abs(out.cplDelta)}% vs. última auditoria`

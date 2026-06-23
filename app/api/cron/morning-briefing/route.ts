@@ -203,8 +203,8 @@ export async function GET(req: Request) {
       console.warn('[morning-briefing] pulse fetch falhou:', (e as Error).message)
     }
 
-    // Pulse acionável (urgências + 1 vitória) — alimenta e-mail e WhatsApp.
-    const pd = await buildPulseData(sub.user_id, clientName)
+    // Pulse acionável (Radar ao vivo + 1 vitória) — alimenta e-mail e WhatsApp.
+    const pd = await buildPulseData(sub.user_id, clientName, meta.niche)
 
     // ── Canal: e-mail ──
     if (channels.email !== false && emailList.length) {
