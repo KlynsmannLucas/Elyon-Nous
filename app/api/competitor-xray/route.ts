@@ -34,9 +34,12 @@ export async function POST(req: NextRequest) {
     try { accessToken = (await getValidMetaToken(userId)).accessToken } catch {}
     if (!accessToken) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'Conecte uma conta Meta para usar o Raio-X (usamos seu acesso à Biblioteca de Anúncios).' }, { status: 400 }) }
 
-    const fields = ['page_name', 'ad_creative_bodies', 'ad_creative_link_titles', 'ad_creative_link_descriptions', 'ad_delivery_start_time', 'ad_snapshot_url'].join(',')
+    // IMPORTANTE: ad_snapshot_url / impressions / demographics são RESTRITOS a
+    // anúncios políticos — pedir com ad_type=ALL (comercial) faz a chamada inteira
+    // dar erro. ad_active_status default já é ACTIVE. Mantemos só campos liberados.
+    const fields = ['page_name', 'ad_creative_bodies', 'ad_creative_link_titles', 'ad_creative_link_descriptions', 'ad_delivery_start_time'].join(',')
     const params = new URLSearchParams({
-      ad_type: 'ALL', ad_active_status: 'ACTIVE', ad_reached_countries: JSON.stringify(['BR']),
+      ad_type: 'ALL', ad_reached_countries: JSON.stringify(['BR']),
       search_terms: competitor, fields, limit: '40', access_token: accessToken,
     })
     const res = await fetch(`https://graph.facebook.com/v21.0/ads_archive?${params}`, { signal: AbortSignal.timeout(15000) })
@@ -44,7 +47,11 @@ export async function POST(req: NextRequest) {
       await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'A Biblioteca de Anúncios não respondeu. Tente novamente.' }, { status: 502 })
     }
     const data = await res.json()
-    if (data.error) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'Não foi possível consultar a Biblioteca de Anúncios.' }, { status: 502 }) }
+    if (data.error) {
+      console.error('[competitor-xray] ad_library error:', JSON.stringify(data.error))
+      await refundGate(gate, 'competitor_xray')
+      return NextResponse.json({ error: `Biblioteca de Anúncios: ${data.error.message || 'indisponível no momento'}` }, { status: 502 })
+    }
 
     const ads = (data.data || []).map((ad: any) => ({
       page: ad.page_name || '',
