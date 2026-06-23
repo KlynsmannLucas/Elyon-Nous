@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Sparkline, Delta, HBar, CHART_COLORS } from '@/components/dashboard/v2'
+import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Sparkline, Delta, HBar, CompetitorXray, CHART_COLORS } from '@/components/dashboard/v2'
 import { useBenchmark } from '@/lib/useBenchmark'
 import { TabConcorrentes } from '@/components/dashboard/TabConcorrentes'
 
@@ -169,6 +169,11 @@ export default function MercadoPage() {
           </Card>
         )
       })()}
+
+      {/* Raio-X de Concorrentes — anúncios ativos → ângulos → aposta → contra-ataque */}
+      <div className="animate-fade-up mb-4">
+        <CompetitorXray />
+      </div>
 
       {/* Radar de Concorrentes — ferramenta completa (adicionar, analisar com IA) */}
       <div className="animate-fade-up">
