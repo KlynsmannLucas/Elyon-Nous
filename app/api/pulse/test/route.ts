@@ -3,8 +3,8 @@
 // assim que as credenciais/templates estiverem configurados.
 import { NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { buildPulseData, pulseToEmailBlocks, pulseToWhatsAppParams } from '@/lib/pulse'
-import { sendEmail, sendWhatsAppTemplate, whatsappConfigured, emailConfigured } from '@/lib/notify'
+import { buildPulseData, pulseToEmailBlocks, pulseToWhatsAppParams, pulseToWhatsAppText } from '@/lib/pulse'
+import { sendEmail, sendWhatsAppTemplate, sendWhatsAppText, whatsappConfigured, emailConfigured } from '@/lib/notify'
 
 export async function POST(req: Request) {
   const { userId } = await auth()
@@ -36,9 +36,19 @@ export async function POST(req: Request) {
     }
   }
 
-  // WhatsApp de teste (template aprovado)
+  // WhatsApp de teste: tenta o template aprovado (proativo); se falhar (template
+  // ainda não criado/aprovado, ex.: número de teste), cai em TEXTO LIVRE — que
+  // funciona dentro da janela de conversa de 24h.
   if (channels.whatsapp && phone) {
-    result.sent.whatsapp = await sendWhatsAppTemplate(phone, pulseToWhatsAppParams(pd))
+    const tpl = await sendWhatsAppTemplate(phone, pulseToWhatsAppParams(pd))
+    if (tpl.ok) {
+      result.sent.whatsapp = { ok: true, via: 'template' }
+    } else {
+      const txt = await sendWhatsAppText(phone, pulseToWhatsAppText(pd))
+      result.sent.whatsapp = txt.ok
+        ? { ok: true, via: 'texto' }
+        : { ok: false, error: `template (${tpl.error}); texto (${txt.error})` }
+    }
   } else if (channels.whatsapp && !phone) {
     result.sent.whatsapp = { ok: false, error: 'Informe um número de WhatsApp' }
   }
