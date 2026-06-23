@@ -149,10 +149,10 @@ export default function ConfigPage() {
               <div className="min-w-0"><div className="text-sm text-ink">E-mail</div><div className="text-xs text-ink-3">Enviado para o e-mail da sua conta</div></div>
               <Toggle on={pulse.channels.email} onClick={() => savePulse({ ...pulse, channels: { ...pulse.channels, email: !pulse.channels.email } })} />
             </div>
-            {waAvailable && (
+            {waAvailable ? (
               <>
                 <div className="flex items-center justify-between gap-3 py-2.5 border-t border-line-2">
-                  <div className="min-w-0"><div className="text-sm text-ink">WhatsApp</div><div className="text-xs text-ink-3">Mensagem proativa via WhatsApp (Meta Cloud API)</div></div>
+                  <div className="min-w-0"><div className="text-sm text-ink">WhatsApp <span className="text-[11px] text-green-600 font-mono">credenciais detectadas ✓</span></div><div className="text-xs text-ink-3">Mensagem proativa via WhatsApp (Meta Cloud API)</div></div>
                   <Toggle on={pulse.channels.whatsapp} onClick={() => savePulse({ ...pulse, channels: { ...pulse.channels, whatsapp: !pulse.channels.whatsapp } })} />
                 </div>
                 {pulse.channels.whatsapp && (
@@ -163,6 +163,11 @@ export default function ConfigPage() {
                   </div>
                 )}
               </>
+            ) : (
+              <div className="py-2.5 border-t border-line-2">
+                <div className="text-sm text-ink">WhatsApp <span className="text-[11px] text-amber font-mono">credenciais não detectadas ✗</span></div>
+                <div className="text-xs text-ink-3 mt-0.5">O servidor não está enxergando as variáveis. Confira na Vercel (projeto elyon-nous → Settings → Environment Variables), com escopo <span className="font-mono">Production</span>: <span className="font-mono">WHATSAPP_PHONE_NUMBER_ID</span> e <span className="font-mono">WHATSAPP_ACCESS_TOKEN</span> — e refaça o deploy.</div>
+              </div>
             )}
             <div className="flex items-center gap-2 pt-3 border-t border-line-2">
               <Button size="sm" variant="soft" disabled={pulseTesting} onClick={testPulse}>{pulseTesting ? 'Enviando…' : 'Enviar teste agora'}</Button>
