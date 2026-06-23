@@ -145,6 +145,14 @@ export interface Competitor {
     differentiation: string
     recommendations: string[]
   }
+  // Raio-X (pesquisa web): ângulos/posicionamento + aposta/brecha/contra-ataque.
+  xray?: {
+    angles: { label: string; messaging: string; intensity: 'forte' | 'média' | 'leve' }[]
+    bet: string
+    gap: string
+    counterMove: string
+    hasWeb?: boolean
+  }
 }
 
 export interface GeneratedPersona {

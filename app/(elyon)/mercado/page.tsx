@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Sparkline, Delta, HBar, CompetitorXray, CHART_COLORS } from '@/components/dashboard/v2'
 import { useBenchmark } from '@/lib/useBenchmark'
-import { TabConcorrentes } from '@/components/dashboard/TabConcorrentes'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -170,14 +169,9 @@ export default function MercadoPage() {
         )
       })()}
 
-      {/* Raio-X de Concorrentes — anúncios ativos → ângulos → aposta → contra-ataque */}
-      <div className="animate-fade-up mb-4">
-        <CompetitorXray />
-      </div>
-
-      {/* Radar de Concorrentes — ferramenta completa (adicionar, analisar com IA) */}
+      {/* Raio-X de Concorrentes — tool unificado (pesquisa web + monitoramento) */}
       <div className="animate-fade-up">
-        <TabConcorrentes clientData={clientData ?? null} />
+        <CompetitorXray />
       </div>
     </div>
   )
