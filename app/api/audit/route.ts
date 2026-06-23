@@ -8,9 +8,10 @@ import { saveAuditReport, upsertPriorityActions, upsertHealthScore } from '@/lib
 import { getClientMemoryContext } from '@/lib/memory'
 import { errMsg } from '@/lib/errMsg'
 
-// Auditoria pode chamar Claude + (fallback) Gemini + persistência — dá folga
-// ao tempo de execução para evitar timeout da função ("Internal Server Error").
-export const maxDuration = 60
+// Auditoria pode chamar Claude (bound 46s) + fallback Gemini (12s) + persistência.
+// Com Meta + Google o payload fica maior e o pior caso passava de 60s → 504.
+// 300s dá folga (mesmo teto das rotas pesadas daily-snapshot/briefing).
+export const maxDuration = 300
 
 // ── Salva padrões da auditoria diretamente no Supabase (fire-and-forget) ─────
 async function saveAuditMemory(
