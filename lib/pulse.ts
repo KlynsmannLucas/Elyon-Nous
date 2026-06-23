@@ -86,7 +86,7 @@ export async function buildPulseData(userId: string, clientName: string): Promis
       if (primaryAcc) {
         const { data: m } = await supabaseAdmin
           .from('daily_metrics')
-          .select('cpl, leads').eq('user_id', userId).eq('account_id', primaryAcc).eq('platform', 'meta')
+          .select('cpl, leads').eq('user_id', userId).eq('account_id', primaryAcc)
           .order('date', { ascending: false }).limit(30)
         cplNow = (m || []).find(r => r.cpl != null)?.cpl ?? null
         leads30d = (m || []).reduce((s, r) => s + (r.leads || 0), 0)

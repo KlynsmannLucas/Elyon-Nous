@@ -6,6 +6,8 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getValidMetaToken } from '@/services/meta/token-manager'
+import { getValidGoogleToken } from '@/services/google/token-manager'
+import { gaqlSearch, normalizeCustomerId } from '@/lib/google-ads'
 
 export const maxDuration = 300
 
@@ -90,5 +92,59 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ processed: conns.length, saved, date, errors: errors.length, ts: new Date().toISOString() })
+  // ── Google Ads — mesmo snapshot diário (espelha o Meta) ─────────────────────
+  let savedGoogle = 0
+  let googleProcessed = 0
+  const developerToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN
+  if (developerToken) {
+    const { data: gConns } = await supabaseAdmin
+      .from('ads_connections')
+      .select('user_id, account_id')
+      .eq('platform', 'google')
+      .limit(1000)
+
+    googleProcessed = gConns?.length || 0
+    for (const c of (gConns || [])) {
+      try {
+        const token = await getValidGoogleToken(c.user_id)
+        const accountId = c.account_id || token.accountId
+        if (!accountId) continue
+        const cleanId = normalizeCustomerId(accountId)
+
+        const query = `SELECT metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions FROM campaign WHERE segments.date = '${date}' AND campaign.status != 'REMOVED'`
+        const rows = await gaqlSearch(cleanId, token.accessToken, developerToken, query)
+        if (!rows || rows.length === 0) continue
+
+        let costMicros = 0, impressions = 0, clicks = 0, conversions = 0
+        for (const r of rows) {
+          const m = r.metrics || {}
+          costMicros  += Number(m.costMicros || 0)
+          impressions += Number(m.impressions || 0)
+          clicks      += Number(m.clicks || 0)
+          conversions += Number(m.conversions || 0)
+        }
+        const spend = Math.round(costMicros / 1_000_000)
+        const leads = Math.round(conversions)
+        const cpl   = leads > 0 ? Math.round(spend / leads) : null
+        const ctr   = impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : null
+
+        const { error: upErr } = await supabaseAdmin
+          .from('daily_metrics')
+          .upsert(
+            { user_id: c.user_id, account_id: accountId, platform: 'google', date, spend, leads, impressions, clicks, cpl, ctr },
+            { onConflict: 'user_id,account_id,platform,date' },
+          )
+        if (upErr) { errors.push(upErr.message); continue }
+        savedGoogle++
+      } catch (e) {
+        errors.push((e as Error).message)
+      }
+    }
+  }
+
+  return NextResponse.json({
+    processed: conns.length, saved,
+    googleProcessed, savedGoogle,
+    date, errors: errors.length, ts: new Date().toISOString(),
+  })
 }

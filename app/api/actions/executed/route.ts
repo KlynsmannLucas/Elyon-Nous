@@ -41,8 +41,10 @@ export async function GET(req: NextRequest) {
     const cplByAcc: Record<string, number | null> = {}
     const accountIds = Array.from(new Set(data.map(a => a.account_id).filter(Boolean))) as string[]
     for (const acc of accountIds) {
+      // Sem filtro de plataforma: um account_id pertence a um canal (Meta OU Google);
+      // assim o Impacto mede tanto Meta quanto Google (daily_metrics agora cobre os dois).
       const { data: m } = await supabaseAdmin.from('daily_metrics')
-        .select('date, cpl, leads, spend').eq('user_id', userId).eq('account_id', acc).eq('platform', 'meta')
+        .select('date, cpl, leads, spend').eq('user_id', userId).eq('account_id', acc)
         .order('date', { ascending: false }).limit(30)
       const latestCpl = (m || []).find(r => r.cpl != null)?.cpl ?? null
       cplByAcc[acc] = latestCpl
