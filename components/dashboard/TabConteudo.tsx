@@ -1,7 +1,7 @@
 // components/dashboard/TabConteudo.tsx — Gerador de Conteúdo para Redes Sociais
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import type { ClientData } from '@/lib/store'
 
@@ -260,6 +260,14 @@ export function TabConteudo({ clientData }: Props) {
   const [posts, setPosts]         = useState<Post[]>([])
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState('')
+
+  // Fecha o fluxo do Raio-X: o contra-ataque chega como tema pré-preenchido.
+  useEffect(() => {
+    try {
+      const t = sessionStorage.getItem('elyon_xray_theme')
+      if (t) { setTheme(t); sessionStorage.removeItem('elyon_xray_theme') }
+    } catch {}
+  }, [])
 
   const handleGenerate = async () => {
     if (!clientData || !theme.trim()) return

@@ -127,7 +127,11 @@ export function CompetitorXray() {
               <div className="text-[10px] font-mono uppercase tracking-wider text-blue mb-1">⚡ Contra-ataque do NOUS</div>
               <div className="text-[13px] text-ink leading-relaxed">{a.counterMove}</div>
               <Button size="sm" variant="soft" className="mt-2.5" icon={<Icon name="spark" size={14} />}
-                onClick={() => { if (typeof window !== 'undefined') window.toast?.({ tone: 'blue', title: 'Estúdio de Criação', body: 'Use o contra-ataque como tema do conteúdo.' }); router.push('/conteudo') }}>
+                onClick={() => {
+                  try { sessionStorage.setItem('elyon_xray_theme', a.counterMove) } catch {}
+                  if (typeof window !== 'undefined') window.toast?.({ tone: 'blue', title: 'Tema preenchido', body: 'O contra-ataque já está no gerador — é só escolher a plataforma e gerar.' })
+                  router.push('/conteudo')
+                }}>
                 Gerar criativo de resposta
               </Button>
             </div>
