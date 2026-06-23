@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { sanitizeText } from '@/lib/sanitize'
+import { safeExtractJson } from '@/lib/aiJson'
 
 export interface CampaignAllocation {
   id: string
@@ -323,10 +324,8 @@ Responda APENAS com JSON válido:
         })
 
         const raw = (msg.content[0] as any).text?.trim() || ''
-        const jsonMatch = raw.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const aiData = JSON.parse(jsonMatch[0])
-
+        const aiData = safeExtractJson<any>(raw)
+        if (aiData) {
           // Mescla as ações da IA com o cálculo base
           const base = buildAllocations(campaigns, budget, sanitizedNiche)
 

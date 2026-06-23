@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { sanitizeText } from '@/lib/sanitize'
+import { extractJson } from '@/lib/aiJson'
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -111,20 +112,7 @@ Retorne APENAS um JSON válido, sem texto antes ou depois, com exatamente esta e
     })
 
     const text = (response.content[0] as any).text?.trim() || ''
-
-    // Try direct parse first, then extract JSON object
-    let persona: any
-    try {
-      persona = JSON.parse(text)
-    } catch {
-      const jsonMatch = text.match(/(\{[\s\S]*\})/)
-      if (!jsonMatch) throw new Error('Resposta inválida da IA — tente novamente.')
-      try {
-        persona = JSON.parse(jsonMatch[1])
-      } catch {
-        throw new Error('JSON malformado na resposta — tente novamente.')
-      }
-    }
+    const persona: any = extractJson(text)
 
     return NextResponse.json({ success: true, persona })
   } catch (e: any) {

@@ -6,6 +6,7 @@ import { buildNichePromptContext } from '@/lib/niche_prompts'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
 import { getClientMemoryContext } from '@/lib/memory'
 import { sanitizeText } from '@/lib/sanitize'
+import { extractJson } from '@/lib/aiJson'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -766,8 +767,7 @@ Para "next_moves" (Plano de Ação) e "plan_7_30_90" (caminho de 90 dias): SEJA 
       if (!aiResult) throw new Error('AI timeout — usando benchmark')
 
       const raw     = (aiResult.content[0] as any).text.trim()
-      const jsonStr = raw.startsWith('```') ? raw.split('```')[1].replace(/^json\n/, '') : raw
-      const strategy = JSON.parse(jsonStr)
+      const strategy = extractJson<any>(raw)
       strategy._schemaVersion = STRATEGY_SCHEMA_VERSION
       return { success: true, strategy, source: 'ai' }
 

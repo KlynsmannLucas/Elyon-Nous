@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { sanitizeText } from '@/lib/sanitize'
+import { safeExtractJson } from '@/lib/aiJson'
 
 export type Channel =
   | 'meta'
@@ -353,9 +354,8 @@ Gere uma recomendação de mix de canais no JSON abaixo. Seja específico para o
         })
 
         const raw = (msg.content[0] as any).text?.trim() || ''
-        const jsonMatch = raw.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const aiData = JSON.parse(jsonMatch[0])
+        const aiData = safeExtractJson<any>(raw)
+        if (aiData) {
           // Usa cálculo base e enriquece com IA
           const base = buildChannelMix(sanitizedNiche, totalBudget, objective, clientData, realMetrics)
           if (aiData.strategy) base.strategy = aiData.strategy

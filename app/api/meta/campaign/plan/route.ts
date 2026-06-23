@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { getValidMetaToken } from '@/services/meta/token-manager'
+import { safeExtractJson } from '@/lib/aiJson'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const META_BASE = 'https://graph.facebook.com/v21.0'
@@ -100,11 +101,8 @@ Responda SOMENTE com um JSON válido no formato abaixo (sem markdown, sem texto 
     })
 
     const text = response.content.find(b => b.type === 'text')?.text || ''
-    // Extrai JSON mesmo se vier com markdown
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return NextResponse.json({ error: 'Claude não retornou JSON válido' }, { status: 500 })
-
-    const plan = JSON.parse(jsonMatch[0])
+    const plan = safeExtractJson<any>(text)
+    if (!plan) return NextResponse.json({ error: 'Claude não retornou JSON válido' }, { status: 500 })
     return NextResponse.json({ plan, pages })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

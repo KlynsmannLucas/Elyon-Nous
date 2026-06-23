@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { sanitizeText } from '@/lib/sanitize'
 import { gateAndCharge, refundGate } from '@/lib/gate'
+import { safeExtractJson } from '@/lib/aiJson'
 
 interface CRORecommendation {
   priority: 'urgent' | 'high' | 'medium' | 'low'
@@ -296,9 +297,8 @@ Com base nesses dados, gere uma análise de CRO detalhada no formato JSON abaixo
         })
 
         const raw = (msg.content[0] as any).text?.trim() || ''
-        const jsonMatch = raw.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0])
+        const parsed = safeExtractJson<any>(raw)
+        if (parsed) {
           return NextResponse.json({ cro: parsed, source: 'ai' })
         }
         await refundGate(croGate, 'cro')

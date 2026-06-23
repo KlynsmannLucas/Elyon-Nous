@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { sanitizeText } from '@/lib/sanitize'
+import { extractJson } from '@/lib/aiJson'
 
 async function fetchCompetitorAds(
   accessToken: string,
@@ -101,12 +102,7 @@ Retorne APENAS JSON válido com esta estrutura:
     })
 
     const text = (response.content[0] as any).text?.trim() || ''
-    let analysis: any
-    try { analysis = JSON.parse(text) } catch {
-      const m = text.match(/(\{[\s\S]*\})/)
-      if (!m) throw new Error('Resposta inválida da IA')
-      analysis = JSON.parse(m[1])
-    }
+    const analysis: any = extractJson(text)
 
     return NextResponse.json({ success: true, ads, analysis })
   } catch (e: any) {

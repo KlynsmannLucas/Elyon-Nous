@@ -1,6 +1,7 @@
 // app/api/action-plan/route.ts — Plano de ações consolidado com IA
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { extractJson } from '@/lib/aiJson'
 
 export async function POST(req: NextRequest) {
   try {
@@ -123,28 +124,14 @@ Responda APENAS com JSON válido (array), sem markdown:
     })
 
     const raw = (message.content[0] as any).text.trim()
-    // Strip markdown fences if present
-    const jsonStr = raw.startsWith('```')
-      ? raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
-      : raw
-
     let items: any[]
     try {
-      items = JSON.parse(jsonStr)
+      items = extractJson<any[]>(raw)
     } catch {
-      // Try to extract a valid JSON array even if the response was slightly truncated
-      const match = jsonStr.match(/^\s*(\[[\s\S]*\])\s*$/)
-      if (match) {
-        items = JSON.parse(match[1])
-      } else {
-        // Find the last complete object and close the array
-        const lastComplete = jsonStr.lastIndexOf('},')
-        if (lastComplete > 0) {
-          items = JSON.parse(jsonStr.slice(0, lastComplete + 1) + ']')
-        } else {
-          throw new Error('Resposta da IA inválida — tente novamente.')
-        }
-      }
+      // Resposta possivelmente truncada: fecha o array no último objeto completo.
+      const lastComplete = raw.lastIndexOf('},')
+      if (lastComplete > 0) items = extractJson<any[]>(raw.slice(0, lastComplete + 1) + ']')
+      else throw new Error('Resposta da IA inválida — tente novamente.')
     }
 
     // Adiciona id e status padrão
