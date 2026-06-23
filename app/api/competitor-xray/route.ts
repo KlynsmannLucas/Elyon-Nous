@@ -1,92 +1,60 @@
-// app/api/competitor-xray/route.ts — RAIO-X DE CONCORRENTES.
-// Puxa os anúncios ATIVOS de um concorrente na Biblioteca de Anúncios da Meta,
-// calcula há quanto tempo cada um roda (longevidade = está funcionando) e usa IA
-// para agrupar em ÂNGULOS com intensidade de aposta (nº de variações), a brecha
-// que você não explora e o contra-ataque. Engenharia reversa do que dá certo no
-// seu mercado.
+// app/api/competitor-xray/route.ts — RAIO-X DE CONCORRENTES (pesquisa web + IA).
+// A API da Biblioteca de Anúncios da Meta NÃO entrega anúncios comerciais no Brasil
+// (só políticos), então o Raio-X usa PESQUISA WEB (Tavily + grounding do Gemini)
+// sobre o concorrente — site, ofertas, redes, reputação — e o NOUS sintetiza:
+// ângulos/posicionamento, a aposta, a brecha e o contra-ataque.
 import { NextRequest, NextResponse } from 'next/server'
-import { getValidMetaToken } from '@/services/meta/token-manager'
 import { gateAndCharge, refundGate } from '@/lib/gate'
 import { sanitizeText } from '@/lib/sanitize'
 
-export const maxDuration = 40
-
-const daysSince = (iso?: string): number => {
-  if (!iso) return 0
-  const t = new Date(iso).getTime()
-  return Number.isFinite(t) ? Math.max(0, Math.floor((Date.now() - t) / 86400000)) : 0
-}
+export const maxDuration = 45
 
 export async function POST(req: NextRequest) {
   const gate = await gateAndCharge('competitor_xray')
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
-  const userId = gate.userId!
 
   try {
     const body = await req.json().catch(() => ({}))
     const competitor = sanitizeText(body.competitor, 80)
     const niche = sanitizeText(body.niche, 120)
-    const myAngles = sanitizeText(body.myAngles, 400) // ângulos que o usuário já roda (opcional)
+    const city = sanitizeText(body.city, 80)
+    const myAngles = sanitizeText(body.myAngles, 400)
     if (!competitor) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'Informe o nome do concorrente.' }, { status: 400 }) }
 
-    // ── Token Meta + Biblioteca de Anúncios (anúncios ATIVOS no Brasil) ────────
-    // A Ad Library API é acessada com APP ACCESS TOKEN (app_id|app_secret) — é o jeito
-    // documentado. O token de usuário costuma dar "Application does not have permission".
-    const appId = process.env.META_APP_ID
-    const appSecret = process.env.META_APP_SECRET
-    let accessToken = appId && appSecret ? `${appId}|${appSecret}` : ''
-    if (!accessToken) { try { accessToken = (await getValidMetaToken(userId)).accessToken } catch {} }
-    if (!accessToken) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'Configuração da Meta ausente para o Raio-X.' }, { status: 400 }) }
-
-    // IMPORTANTE: ad_snapshot_url / impressions / demographics são RESTRITOS a
-    // anúncios políticos — pedir com ad_type=ALL (comercial) faz a chamada inteira
-    // dar erro. ad_active_status default já é ACTIVE. Mantemos só campos liberados.
-    const fields = ['page_name', 'ad_creative_bodies', 'ad_creative_link_titles', 'ad_creative_link_descriptions', 'ad_delivery_start_time'].join(',')
-    const params = new URLSearchParams({
-      ad_type: 'ALL', ad_reached_countries: JSON.stringify(['BR']),
-      search_terms: competitor, fields, limit: '40', access_token: accessToken,
-    })
-    const res = await fetch(`https://graph.facebook.com/v21.0/ads_archive?${params}`, { signal: AbortSignal.timeout(15000) })
-    if (!(res.headers.get('content-type') || '').includes('application/json')) {
-      await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'A Biblioteca de Anúncios não respondeu. Tente novamente.' }, { status: 502 })
+    // ── 1) Pesquisa web sobre o concorrente ───────────────────────────────────
+    let webContext = ''
+    try {
+      const tvKey = process.env.TAVILY_API_KEY
+      if (tvKey) {
+        const { searchTavily } = await import('@/lib/tavily')
+        const queries = [
+          `${competitor} ${niche} ${city} ofertas promoções diferenciais site`,
+          `${competitor} avaliações reputação reclame aqui redes sociais`,
+        ]
+        const r = await Promise.all(queries.map(q => searchTavily(q, tvKey).catch(() => '')))
+        webContext = r.filter(Boolean).join('\n\n')
+      }
+    } catch { /* segue sem Tavily */ }
+    if (!webContext) {
+      try {
+        const { fetchFocusedGrounded, isGeminiEnabled } = await import('@/lib/gemini')
+        if (isGeminiEnabled()) webContext = await fetchFocusedGrounded(niche || 'mercado', competitor, city)
+      } catch { /* segue sem grounding */ }
     }
-    const data = await res.json()
-    if (data.error) {
-      console.error('[competitor-xray] ad_library error:', JSON.stringify(data.error))
-      await refundGate(gate, 'competitor_xray')
-      return NextResponse.json({ error: `Biblioteca de Anúncios: ${data.error.message || 'indisponível no momento'}` }, { status: 502 })
-    }
+    const hasWeb = webContext.trim().length > 40
 
-    const ads = (data.data || []).map((ad: any) => ({
-      page: ad.page_name || '',
-      hook: ((ad.ad_creative_link_titles || [])[0] || (ad.ad_creative_bodies || [])[0] || '').slice(0, 200),
-      body: ((ad.ad_creative_bodies || [])[0] || '').slice(0, 300),
-      days: daysSince(ad.ad_delivery_start_time),
-    })).filter((a: any) => a.hook || a.body)
-
-    // Foca nos anúncios DO concorrente quando o nome bate na página; senão usa todos (mencionam ele).
-    const lc = competitor.toLowerCase()
-    const own = ads.filter((a: any) => a.page && a.page.toLowerCase().includes(lc))
-    const pool = (own.length >= 3 ? own : ads).slice(0, 30)
-
-    if (pool.length === 0) {
-      await refundGate(gate, 'competitor_xray')
-      return NextResponse.json({ success: true, competitor, totalAds: 0, analysis: null, reason: 'no_ads' })
-    }
-
-    // ── IA agrupa em ângulos + aposta + brecha + contra-ataque (saída estruturada) ──
+    // ── 2) IA sintetiza a inteligência competitiva (structured output) ─────────
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'IA não configurada.' }, { status: 500 }) }
 
-    const adList = pool.map((a: any, i: number) => `${i + 1}. [há ${a.days}d] ${a.hook}${a.body ? ` — ${a.body.slice(0, 120)}` : ''}`).join('\n')
-    const prompt = `Você é um analista sênior de inteligência competitiva de tráfego pago no Brasil.
-Concorrente analisado: "${competitor}"${niche ? ` · nicho: ${niche}` : ''}.
-${myAngles ? `Ângulos que MEU cliente já roda: ${myAngles}\n` : ''}
-Abaixo estão ${pool.length} anúncios ATIVOS do concorrente (com há quantos dias cada um roda — quanto mais tempo + mais variações do mesmo tema, mais forte a aposta, porque ele só mantém no ar o que converte):
+    const prompt = `Você é um analista sênior de inteligência competitiva de marketing no Brasil.
+Concorrente analisado: "${competitor}"${niche ? ` · nicho: ${niche}` : ''}${city ? ` · região: ${city}` : ''}.
+${myAngles ? `Ângulos/ofertas que MEU cliente já usa: ${myAngles}\n` : ''}
+${hasWeb
+  ? `Pesquisa na web sobre o concorrente (use como base factual):\n${webContext.slice(0, 2800)}`
+  : 'NÃO foi encontrada informação pública relevante sobre este concorrente. Baseie a análise nos padrões TÍPICOS desse nicho/região no Brasil e deixe claro (no texto) que são hipóteses a validar.'}
 
-${adList}
-
-Agrupe em 2 a 4 ÂNGULOS/ofertas distintos. Para cada ângulo conte quantos anúncios (variações) e o maior tempo rodando. Identifique a APOSTA principal (mais variações × mais tempo), a BRECHA (ângulo forte que meu cliente NÃO explora) e o CONTRA-ATAQUE acionável. Use a ferramenta emit_xray.`
+Identifique de 2 a 4 ÂNGULOS/posicionamentos que esse concorrente provavelmente usa (oferta principal, mensagem/promessa, diferencial percebido), cada um com a intensidade (forte/média/leve) com que ele aposta nisso. Depois aponte: a APOSTA principal dele, a BRECHA (ângulo forte que meu cliente NÃO explora) e o CONTRA-ATAQUE acionável. Use a ferramenta emit_xray.`
 
     const { default: Anthropic } = await import('@anthropic-ai/sdk')
     const anthropic = new Anthropic({ apiKey })
@@ -106,12 +74,10 @@ Agrupe em 2 a 4 ÂNGULOS/ofertas distintos. Para cada ângulo conte quantos anú
                   type: 'object',
                   properties: {
                     label: { type: 'string', description: 'nome curto do ângulo/oferta' },
-                    variations: { type: 'integer' },
-                    maxDays: { type: 'integer' },
-                    intensity: { type: 'string', enum: ['alta', 'média', 'baixa'] },
-                    sampleHook: { type: 'string' },
+                    messaging: { type: 'string', description: 'a mensagem/promessa que ele usa' },
+                    intensity: { type: 'string', enum: ['forte', 'média', 'leve'] },
                   },
-                  required: ['label', 'variations', 'maxDays', 'intensity', 'sampleHook'],
+                  required: ['label', 'messaging', 'intensity'],
                 },
               },
               bet: { type: 'string', description: 'a aposta principal do concorrente (1 frase)' },
@@ -124,21 +90,15 @@ Agrupe em 2 a 4 ÂNGULOS/ofertas distintos. Para cada ângulo conte quantos anú
         tool_choice: { type: 'tool', name: 'emit_xray' },
         messages: [{ role: 'user', content: prompt }],
       }),
-      new Promise<null>(resolve => setTimeout(() => resolve(null), 32000)),
+      new Promise<null>(resolve => setTimeout(() => resolve(null), 34000)),
     ])
 
     if (!message) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'A análise demorou demais — tente novamente.' }, { status: 504 }) }
     const tool = (message.content as any[]).find(b => b.type === 'tool_use') as any
     const analysis = tool?.input
-    if (!analysis?.angles) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'Não consegui analisar os anúncios — tente novamente.' }, { status: 500 }) }
+    if (!analysis?.angles) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'Não consegui montar a análise — tente novamente.' }, { status: 500 }) }
 
-    return NextResponse.json({
-      success: true, competitor,
-      totalAds: pool.length,
-      oldestDays: Math.max(0, ...pool.map((a: any) => a.days)),
-      analysis,
-      sampleAds: pool.slice(0, 6).map((a: any) => ({ hook: a.hook, days: a.days })),
-    })
+    return NextResponse.json({ success: true, competitor, hasWeb, analysis })
   } catch (e: any) {
     await refundGate(gate, 'competitor_xray')
     console.error('[competitor-xray]', e?.message)

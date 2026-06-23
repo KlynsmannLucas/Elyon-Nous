@@ -79,7 +79,7 @@ export async function fetchFocusedBenchmark(
   }
 }
 
-async function searchTavily(query: string, apiKey: string): Promise<string> {
+export async function searchTavily(query: string, apiKey: string): Promise<string> {
   const res = await fetch('https://api.tavily.com/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

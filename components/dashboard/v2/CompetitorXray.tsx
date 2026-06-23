@@ -1,7 +1,7 @@
 // components/dashboard/v2/CompetitorXray.tsx
-// RAIO-X DE CONCORRENTES — vê os anúncios ativos de um concorrente, agrupa em
-// ângulos com intensidade de APOSTA (nº de variações × dias rodando), mostra a
-// brecha que você não explora e o contra-ataque do NOUS.
+// RAIO-X DE CONCORRENTES — pesquisa a presença do concorrente na web (site, ofertas,
+// redes, reputação) e o NOUS aponta os ângulos, a aposta, a brecha e o contra-ataque.
+// (A Ad Library da Meta não entrega anúncios comerciais no BR, então usamos web.)
 'use client'
 
 import { useState } from 'react'
@@ -10,21 +10,18 @@ import { useAppStore } from '@/lib/store'
 import { Icon } from './Icon'
 import { Card } from './Card'
 import { Button } from './Button'
-import { Badge } from './Badge'
 
-interface Angle { label: string; variations: number; maxDays: number; intensity: 'alta' | 'média' | 'baixa'; sampleHook: string }
+interface Angle { label: string; messaging: string; intensity: 'forte' | 'média' | 'leve' }
 interface XrayResult {
   competitor: string
-  totalAds: number
-  oldestDays?: number
+  hasWeb?: boolean
   analysis: { angles: Angle[]; bet: string; gap: string; counterMove: string } | null
-  reason?: string
 }
 
 const INT: Record<Angle['intensity'], { dot: string; label: string }> = {
-  alta:  { dot: '#E1483F', label: '🔥 aposta forte' },
-  média: { dot: '#E08B0B', label: 'testando' },
-  baixa: { dot: '#8A93A3', label: 'leve' },
+  forte: { dot: '#E1483F', label: '🔥 aposta forte' },
+  média: { dot: '#E08B0B', label: 'presente' },
+  leve:  { dot: '#8A93A3', label: 'leve' },
 }
 
 export function CompetitorXray() {
@@ -32,6 +29,7 @@ export function CompetitorXray() {
   const clientData = useAppStore(s => s.clientData)
   const strategyData = useAppStore(s => s.strategyData)
   const niche = clientData?.niche || ''
+  const city = clientData?.city || ''
   const myAngles = (strategyData?.strategy?.target_audience?.interests || []).slice(0, 5).join(', ')
 
   const [competitor, setCompetitor] = useState('')
@@ -46,7 +44,7 @@ export function CompetitorXray() {
     try {
       const res = await fetch('/api/competitor-xray', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ competitor: c, niche, myAngles }),
+        body: JSON.stringify({ competitor: c, niche, city, myAngles }),
       })
       const d = await res.json()
       if (!res.ok || d.error) { setError(d.error || 'Falha ao analisar.'); return }
@@ -63,40 +61,32 @@ export function CompetitorXray() {
         <span className="w-9 h-9 rounded-lg bg-ink flex items-center justify-center text-white shrink-0"><Icon name="eye" size={18} /></span>
         <div className="flex-1">
           <div className="text-[15px] font-bold text-ink" style={{ letterSpacing: '-0.01em' }}>Raio-X de Concorrentes</div>
-          <p className="text-[12.5px] text-ink-2 mt-0.5">Veja os anúncios ativos de um concorrente e descubra a aposta dele — o que está funcionando no seu mercado agora.</p>
+          <p className="text-[12.5px] text-ink-2 mt-0.5">Pesquisamos a presença do concorrente na web (site, ofertas, redes, reputação) e o NOUS aponta a aposta dele, a sua brecha e o contra-ataque.</p>
         </div>
       </div>
 
       <div className="flex gap-2 mb-1">
         <input value={competitor} onChange={e => setCompetitor(e.target.value)} onKeyDown={e => e.key === 'Enter' && run()}
-          placeholder="Nome do concorrente (ex: Móveis Premium SP)"
+          placeholder="Nome ou site do concorrente (ex: Móveis Premium SP)"
           className="flex-1 bg-paper border border-line rounded-sm px-3 py-2.5 text-sm text-ink focus:border-blue focus:outline-none" />
-        <Button onClick={run} disabled={loading || !competitor.trim()} icon={<Icon name="search" size={15} />}>{loading ? 'Vasculhando…' : 'Raio-X'}</Button>
+        <Button onClick={run} disabled={loading || !competitor.trim()} icon={<Icon name="search" size={15} />}>{loading ? 'Pesquisando…' : 'Raio-X'}</Button>
       </div>
-      <p className="text-[11px] text-ink-3 mb-1">Consultamos a Biblioteca de Anúncios da Meta (anúncios ativos no Brasil). Custa 2 créditos.</p>
+      <p className="text-[11px] text-ink-3 mb-1">Pesquisa na web + IA. Custa 2 créditos.</p>
 
       {error && <div className="text-sm text-red mt-3 p-3 rounded-sm bg-red-soft">{error}</div>}
 
-      {loading && <div className="text-center py-8 text-ink-3 text-sm">Vasculhando os anúncios ativos de "{competitor}"…</div>}
-
-      {result && result.totalAds === 0 && (
-        <div className="mt-3 p-4 rounded-sm bg-canvas-2 text-center">
-          <div className="text-sm font-semibold text-ink">Nenhum anúncio ativo encontrado</div>
-          <div className="text-[12.5px] text-ink-3 mt-1">Esse concorrente pode não estar anunciando agora, ou o nome não bate com a página. Tente o nome exato da página no Facebook.</div>
-        </div>
-      )}
+      {loading && <div className="text-center py-8 text-ink-3 text-sm">Pesquisando "{competitor}" na web e montando o Raio-X…</div>}
 
       {a && (
         <div className="mt-4 space-y-4 animate-fade-up">
-          <div className="flex items-center gap-2 text-[12.5px] text-ink-2">
-            <Badge tone="neutral">{result!.totalAds} anúncios ativos</Badge>
-            {result!.oldestDays ? <span className="text-ink-3">o mais antigo roda há {result!.oldestDays} dias</span> : null}
+          <div className="text-[11.5px] text-ink-3">
+            {result!.hasWeb ? 'Análise baseada em pesquisa web sobre o concorrente.' : 'Pouca informação pública encontrada — análise baseada nos padrões típicos do nicho (hipóteses a validar).'}
           </div>
 
-          {/* Ângulos detectados */}
+          {/* Ângulos / posicionamento detectados */}
           <div className="space-y-2">
             {a.angles.map((ang, i) => {
-              const it = INT[ang.intensity] || INT.baixa
+              const it = INT[ang.intensity] || INT.leve
               return (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-md bg-canvas-2">
                   <span className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: it.dot }} />
@@ -105,8 +95,7 @@ export function CompetitorXray() {
                       <span className="text-sm font-semibold text-ink">{ang.label}</span>
                       <span className="text-[10.5px] font-mono uppercase tracking-wide" style={{ color: it.dot }}>{it.label}</span>
                     </div>
-                    <div className="text-[12px] text-ink-3 mt-0.5">{ang.variations} {ang.variations === 1 ? 'variação' : 'variações'} · roda há até {ang.maxDays}d</div>
-                    {ang.sampleHook && <div className="text-[12px] text-ink-2 mt-1 italic">"{ang.sampleHook}"</div>}
+                    {ang.messaging && <div className="text-[12.5px] text-ink-2 mt-1 italic">"{ang.messaging}"</div>}
                   </div>
                 </div>
               )
