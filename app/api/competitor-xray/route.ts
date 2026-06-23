@@ -30,9 +30,13 @@ export async function POST(req: NextRequest) {
     if (!competitor) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'Informe o nome do concorrente.' }, { status: 400 }) }
 
     // ── Token Meta + Biblioteca de Anúncios (anúncios ATIVOS no Brasil) ────────
-    let accessToken = ''
-    try { accessToken = (await getValidMetaToken(userId)).accessToken } catch {}
-    if (!accessToken) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'Conecte uma conta Meta para usar o Raio-X (usamos seu acesso à Biblioteca de Anúncios).' }, { status: 400 }) }
+    // A Ad Library API é acessada com APP ACCESS TOKEN (app_id|app_secret) — é o jeito
+    // documentado. O token de usuário costuma dar "Application does not have permission".
+    const appId = process.env.META_APP_ID
+    const appSecret = process.env.META_APP_SECRET
+    let accessToken = appId && appSecret ? `${appId}|${appSecret}` : ''
+    if (!accessToken) { try { accessToken = (await getValidMetaToken(userId)).accessToken } catch {} }
+    if (!accessToken) { await refundGate(gate, 'competitor_xray'); return NextResponse.json({ error: 'Configuração da Meta ausente para o Raio-X.' }, { status: 400 }) }
 
     // IMPORTANTE: ad_snapshot_url / impressions / demographics são RESTRITOS a
     // anúncios políticos — pedir com ad_type=ALL (comercial) faz a chamada inteira
