@@ -832,9 +832,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
 
             {/* Situação atual — enriquece o diagnóstico de crescimento */}
             <div className="pt-2 border-t border-line">
-              <p className="text-[10px] text-ink-2 uppercase tracking-wider mb-3">
+              <p className="text-[10px] text-ink-2 uppercase tracking-wider mb-1">
                 Situação atual (opcional · diagnóstico mais preciso)
               </p>
+              <p className="text-[11px] text-[#2C5FE0] font-medium mb-3">→ CPL e origem entram no diagnóstico de canais; o desafio vira o foco do plano de ação.</p>
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-ink-2 uppercase tracking-wider mb-1.5 block">
@@ -892,9 +893,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Financeiro do negócio
             </h2>
-            <p className="text-ink-2 text-sm mb-2">
+            <p className="text-ink-2 text-sm mb-1.5">
               Com esses dados calculamos seu <strong className="text-ink">ROAS break-even real</strong>, CPL máximo lucrativo e retorno sobre investimento.
             </p>
+            <p className="text-[11.5px] text-[#2C5FE0] font-medium mb-4">→ é o que decide se cada lead dá lucro ou prejuízo — usado no Radar diário, nos insights e no CRO.</p>
             {bench && (
               <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl text-xs"
                 style={{ background: 'rgba(44,95,224,0.06)', border: '1px solid rgba(44,95,224,0.2)' }}>
@@ -1179,91 +1181,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Quem é o cliente ideal?
             </h2>
-            <p className="text-ink-2 text-sm mb-6">
-              Essas informações vão gerar a persona do seu cliente e personalizar toda a estratégia de comunicação.
+            <p className="text-ink-2 text-sm mb-1.5">
+              Só o que a IA <strong>não adivinha sozinha</strong>. O resto da persona — idade, gênero, renda e canais — o NOUS gera a partir do seu nicho e região.
             </p>
-
-            {/* Faixa etária */}
-            <div className="mb-5">
-              <label className="block text-xs font-semibold text-ink-2 mb-2">Faixa etária predominante</label>
-              <div className="flex flex-wrap gap-2">
-                {['18–24', '25–34', '35–44', '45–54', '55+', 'Variado'].map((age) => (
-                  <button key={age} type="button"
-                    onClick={() => setForm((f) => ({ ...f, targetAge: f.targetAge === age ? '' : age }))}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                    style={{
-                      background: form.targetAge === age ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
-                      border: form.targetAge === age ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
-                      color: form.targetAge === age ? '#2C5FE0' : '#5A6473',
-                    }}>
-                    {age}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Gênero */}
-            <div className="mb-5">
-              <label className="block text-xs font-semibold text-ink-2 mb-2">Gênero predominante</label>
-              <div className="flex gap-2">
-                {['Majoritariamente feminino', 'Majoritariamente masculino', 'Equilibrado'].map((g) => (
-                  <button key={g} type="button"
-                    onClick={() => setForm((f) => ({ ...f, targetGender: f.targetGender === g ? '' : g }))}
-                    className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all"
-                    style={{
-                      background: form.targetGender === g ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
-                      border: form.targetGender === g ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
-                      color: form.targetGender === g ? '#2C5FE0' : '#5A6473',
-                    }}>
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Renda */}
-            <div className="mb-5">
-              <label className="block text-xs font-semibold text-ink-2 mb-2">Renda mensal aproximada</label>
-              <div className="flex flex-wrap gap-2">
-                {['Até R$2k', 'R$2k–5k', 'R$5k–10k', 'R$10k–20k', 'Acima de R$20k', 'Variada'].map((inc) => (
-                  <button key={inc} type="button"
-                    onClick={() => setForm((f) => ({ ...f, targetIncome: f.targetIncome === inc ? '' : inc }))}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                    style={{
-                      background: form.targetIncome === inc ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
-                      border: form.targetIncome === inc ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
-                      color: form.targetIncome === inc ? '#2C5FE0' : '#5A6473',
-                    }}>
-                    {inc}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Canais online */}
-            <div className="mb-5">
-              <label className="block text-xs font-semibold text-ink-2 mb-2">Onde passa o tempo online? <span className="text-ink-2">(múltiplos)</span></label>
-              <div className="flex flex-wrap gap-2">
-                {['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google', 'LinkedIn', 'WhatsApp', 'Twitter/X', 'Pinterest'].map((ch) => {
-                  const active = form.onlineChannels.includes(ch)
-                  return (
-                    <button key={ch} type="button"
-                      onClick={() => setForm((f) => ({
-                        ...f,
-                        onlineChannels: active ? f.onlineChannels.filter((c) => c !== ch) : [...f.onlineChannels, ch],
-                      }))}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                      style={{
-                        background: active ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
-                        border: active ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
-                        color: active ? '#2C5FE0' : '#5A6473',
-                      }}>
-                      {ch}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <p className="text-[11.5px] text-[#2C5FE0] font-medium mb-6">→ usado para gerar a persona e calibrar a comunicação de toda a estratégia.</p>
 
             {/* Dores */}
             <div className="mb-4">
@@ -1294,7 +1215,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             </div>
 
             <div className="text-center text-xs text-ink-2 pt-3">
-              Todos os campos são opcionais — quanto mais você preencher, mais precisa será a persona gerada.
+              Os dois são opcionais — se deixar em branco, o NOUS infere a partir do nicho.
             </div>
           </div>
         )}
