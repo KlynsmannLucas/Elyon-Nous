@@ -22,7 +22,12 @@ export default function NovoClientePage() {
   const onComplete = async (importData?: WizardImportData[]) => {
     setPhase('generating'); setErr('')
     const r = await generateStrategyForActiveClient(importData, setStep)
-    if (r.ok) router.push('/hoje')
+    if (r.ok) {
+      // Iniciante ("não anuncio"): fecha o ciclo levando direto ao Primeiro Anúncio.
+      let beginner = false
+      try { beginner = sessionStorage.getItem('elyon_beginner') === '1'; sessionStorage.removeItem('elyon_beginner') } catch {}
+      router.push(beginner ? '/primeiro-anuncio' : '/hoje')
+    }
     else { setErr(r.error || 'Falha ao gerar estratégia.'); setPhase('error') }
   }
 

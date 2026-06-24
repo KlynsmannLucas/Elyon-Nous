@@ -357,7 +357,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <button
-              onClick={() => { setAdvertisingExp('yes'); setUserExperience('experienced'); if (!initialData) setFastLane(true) }}
+              onClick={() => { setAdvertisingExp('yes'); setUserExperience('experienced'); try { sessionStorage.removeItem('elyon_beginner') } catch {}; if (!initialData) setFastLane(true) }}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: '16px',
                 padding: '20px 22px', borderRadius: '14px', cursor: 'pointer',
@@ -378,7 +378,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               </div>
             </button>
             <button
-              onClick={() => { setAdvertisingExp('no'); setUserExperience('beginner') }}
+              onClick={() => { setAdvertisingExp('no'); setUserExperience('beginner'); try { sessionStorage.setItem('elyon_beginner', '1') } catch {} }}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: '16px',
                 padding: '20px 22px', borderRadius: '14px', cursor: 'pointer',
