@@ -109,7 +109,7 @@ const OBJECTIVES = [
   { value: 'retencao', label: 'Reter e fidelizar clientes',            icon: '❤️' },
 ]
 
-const TOTAL_STEPS = 9
+const TOTAL_STEPS = 8
 
 export interface WizardImportData {
   platform: 'meta' | 'google' | 'unknown'
@@ -229,10 +229,9 @@ export function SetupWizard({ onComplete, initialData }: Props) {
     if (step === 1) return form.niche.length > 0
     if (step === 2) return true
     if (step === 3) return form.products.trim().length > 3
-    if (step === 4) return Number(form.budget) >= 500
-    if (step === 5) return true // unit economics opcional
-    if (step === 6) return true // import é opcional
-    if (step === 7) return true // persona é opcional
+    if (step === 4) return Number(form.budget) >= 500 // orçamento + financeiro (unit economics)
+    if (step === 5) return true // import é opcional
+    if (step === 6) return true // persona é opcional
     return true
   }
 
@@ -885,18 +884,11 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         )}
 
         {/* ── Step 5: Unit Economics / Financeiro ── */}
-        {step === 5 && (
-          <div className="animate-fade-up">
-            <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
-              Passo 6 de {TOTAL_STEPS}
-            </p>
-            <h2 className="font-display text-3xl font-bold text-ink mb-2">
-              Financeiro do negócio
-            </h2>
-            <p className="text-ink-2 text-sm mb-1.5">
-              Com esses dados calculamos seu <strong className="text-ink">ROAS break-even real</strong>, CPL máximo lucrativo e retorno sobre investimento.
-            </p>
-            <p className="text-[11.5px] text-[#2C5FE0] font-medium mb-4">→ é o que decide se cada lead dá lucro ou prejuízo — usado no Radar diário, nos insights e no CRO.</p>
+        {/* Financeiro (unit economics) — mesma tela do orçamento (step 4) */}
+        {step === 4 && (
+          <div className="animate-fade-up pt-5 mt-5 border-t border-line">
+            <h3 className="font-display text-xl font-bold text-ink mb-1">Financeiro do negócio <span className="text-xs font-normal text-ink-2">(opcional)</span></h3>
+            <p className="text-[11.5px] text-[#2C5FE0] font-medium mb-4">→ calcula seu ROAS break-even e CPL máximo lucrativo — usado no Radar diário, nos insights e no CRO.</p>
             {bench && (
               <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl text-xs"
                 style={{ background: 'rgba(44,95,224,0.06)', border: '1px solid rgba(44,95,224,0.2)' }}>
@@ -1056,10 +1048,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         )}
 
         {/* ── Step 6: Import de CSV (opcional) ── */}
-        {step === 6 && (
+        {step === 5 && (
           <div className="animate-fade-up">
             <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
-              Passo 7 de {TOTAL_STEPS} · Opcional
+              Passo 6 de {TOTAL_STEPS} · Opcional
             </p>
             <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Importar dados de campanhas
@@ -1173,10 +1165,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         )}
 
         {/* ── Step 7: Cliente Ideal / Persona ── */}
-        {step === 7 && (
+        {step === 6 && (
           <div className="animate-fade-up">
             <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
-              Passo 8 de {TOTAL_STEPS} · Opcional
+              Passo 7 de {TOTAL_STEPS} · Opcional
             </p>
             <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Quem é o cliente ideal?
@@ -1221,10 +1213,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         )}
 
         {/* ── Step 8: Objetivo + Gerar ── */}
-        {step === 8 && (
+        {step === 7 && (
           <div className="animate-fade-up">
             <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
-              Passo 9 de {TOTAL_STEPS} · Último passo
+              Passo 8 de {TOTAL_STEPS} · Último passo
             </p>
             <h2 className="font-display text-3xl font-bold text-ink mb-2">
               Objetivo principal?
@@ -1288,7 +1280,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
           >
             ← Voltar
           </button>
-          {step < 8 && (
+          {step < 7 && (
             <button
               onClick={() => setWizardStep(step + 1)}
               disabled={!canNext()}
@@ -1299,7 +1291,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                 color: '#2C5FE0',
               }}
             >
-              {(step === 6 && importedFiles.length === 0) || step === 7 ? 'Pular →' : 'Próximo →'}
+              {(step === 5 && importedFiles.length === 0) || step === 6 ? 'Pular →' : 'Próximo →'}
             </button>
           )}
         </div>
