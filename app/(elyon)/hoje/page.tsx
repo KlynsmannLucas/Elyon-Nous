@@ -177,6 +177,22 @@ export default function HojePage() {
       {/* Onboarding guiado — some sozinho quando os primeiros passos estão completos */}
       <OnboardingChecklist />
 
+      {/* Iniciante (sem conta conectada): criar o primeiro anúncio */}
+      {!metaAccount && (
+        <section className="mb-4 animate-fade-up">
+          <Card className="bg-gradient-to-br from-blue-soft to-paper border-blue-line">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="w-11 h-11 rounded-lg bg-blue flex items-center justify-center text-white shrink-0"><Icon name="rocket" size={22} /></span>
+              <div className="flex-1 min-w-[220px]">
+                <div className="text-[15px] font-bold text-ink" style={{ letterSpacing: '-0.01em' }}>Nunca anunciou? Comece por aqui.</div>
+                <p className="text-[12.5px] text-ink-2 mt-0.5">O NOUS monta seu primeiro anúncio pronto (texto, imagem, público e orçamento) e te ensina a publicar — sem precisar conectar nada.</p>
+              </div>
+              <Button onClick={() => (window.location.href = '/primeiro-anuncio')} icon={<Icon name="spark" size={15} />}>Criar meu primeiro anúncio</Button>
+            </div>
+          </Card>
+        </section>
+      )}
+
       {/* Radar de hoje — o motivo de abrir o Elyon: o que precisa de você agora, em R$ */}
       <RadarToday />
 

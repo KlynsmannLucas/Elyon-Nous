@@ -168,9 +168,10 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   // Insights de campanha (tempo real) primeiro; depois as ações pendentes.
   const notifications = [...insightNotifs, ...pendingNotifs].slice(0, 8)
 
-  // O wizard de criação (/novo) tem TELA PRÓPRIA — sem sidebar/topbar/NOUS rail.
-  const isWizard = pathname === '/novo'
-  if (isWizard) {
+  // Rotas com TELA PRÓPRIA (full-screen, sem sidebar/topbar/NOUS rail): wizard de
+  // criação e o "Meu primeiro anúncio".
+  const BARE_ROUTES = ['/novo', '/primeiro-anuncio']
+  if (BARE_ROUTES.includes(pathname || '')) {
     return (
       <ToastProvider>
         <div className="elyon-v2 min-h-screen bg-canvas text-ink overflow-y-auto">{children}</div>
