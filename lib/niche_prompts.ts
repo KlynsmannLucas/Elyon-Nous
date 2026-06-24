@@ -599,6 +599,7 @@ const NICHE_KEYWORD_MAP: Record<string, string> = {
   // Serviço local
   'advocacia': 'servico_local', 'jurídico': 'servico_local', 'contabilidade': 'servico_local',
   'construção': 'servico_local', 'reforma': 'servico_local', 'arquitetura': 'servico_local',
+  'calhas e rufos': 'servico_local', 'calhas': 'servico_local', 'calha': 'servico_local', 'rufos': 'servico_local', 'rufo': 'servico_local',
   'fotografia': 'servico_local', 'consultoria': 'servico_local',
 
   // Auditoria / Compliance
