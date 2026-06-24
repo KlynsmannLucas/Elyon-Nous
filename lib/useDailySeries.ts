@@ -24,18 +24,18 @@ const fmtDay = (iso: string) => {
 export function useDailySeries(avgROAS?: number | null): DailySeries | null {
   const clientData = useAppStore(s => s.clientData)
   const savedClients = useAppStore(s => s.savedClients)
-  const connectedAccounts = useAppStore(s => s.connectedAccounts)
   const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
   const [series, setSeries] = useState<DailySeries | null>(null)
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
-  const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
-  const accountId = selectedMetaAccountByClient[key] || metaAccount?.accountId
+  // Isolamento por cliente: SÓ a conta que ESTE cliente selecionou (sem fallback pra
+  // conta padrão do usuário, que é de outro cliente).
+  const accountId = (key && selectedMetaAccountByClient[key]) || ''
 
   useEffect(() => {
-    if (!key || !metaAccount) { setSeries(null); return }
+    if (!key || !accountId) { setSeries(null); return }
     let active = true
-    fetch(`/api/metrics/daily${accountId ? `?accountId=${encodeURIComponent(accountId)}` : ''}`)
+    fetch(`/api/metrics/daily?accountId=${encodeURIComponent(accountId)}`)
       .then(r => (r.ok ? r.json() : { days: [] }))
       .then(d => {
         if (!active) return
@@ -52,7 +52,7 @@ export function useDailySeries(avgROAS?: number | null): DailySeries | null {
       })
       .catch(() => { if (active) setSeries(null) })
     return () => { active = false }
-  }, [key, accountId, metaAccount, avgROAS])
+  }, [key, accountId, avgROAS])
 
   return series
 }

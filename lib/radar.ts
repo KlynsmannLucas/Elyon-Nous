@@ -27,6 +27,10 @@ export interface BuildRadarOpts {
   ticket?: number
   margin?: number
   convRate?: number
+  // Isolamento por cliente: quando true, usa SOMENTE as contas passadas (meta/google).
+  // Sem conta explícita, NÃO cai na conta padrão do usuário (que é de outro cliente).
+  // O Pulse (cron, por usuário) não passa esse flag e mantém o comportamento antigo.
+  strictAccounts?: boolean
 }
 
 const LEAD_RE = /lead|complete_registration|onsite_conversion\.messaging|purchase|offsite_conversion\.fb_pixel_(lead|purchase|complete_registration)/i
@@ -54,7 +58,7 @@ export async function buildRadar(opts: BuildRadarOpts): Promise<{ alerts: RadarA
   let camps: { id: string; name: string; spend: number; leads: number; cpl: number; freq: number }[] = []
   try {
     const t = await getValidMetaToken(userId)
-    metaAccountId = opts.metaAccountId || t.accountId
+    metaAccountId = opts.strictAccounts ? (opts.metaAccountId || null) : (opts.metaAccountId || t.accountId)
     if (metaAccountId) {
       const token = encodeURIComponent(t.accessToken)
       const fields = 'campaign_id,campaign_name,spend,frequency,actions'
@@ -135,7 +139,7 @@ export async function buildRadar(opts: BuildRadarOpts): Promise<{ alerts: RadarA
       const { getValidGoogleToken } = await import('@/services/google/token-manager')
       const { gaqlSearch, normalizeCustomerId } = await import('@/lib/google-ads')
       const gt = await getValidGoogleToken(userId)
-      const cid = normalizeCustomerId(opts.googleAccountId || gt.accountId || '')
+      const cid = normalizeCustomerId(opts.strictAccounts ? (opts.googleAccountId || '') : (opts.googleAccountId || gt.accountId || ''))
       if (cid) {
         const results = await gaqlSearch(cid, gt.accessToken, devToken, `
           SELECT campaign.id, campaign.name, metrics.cost_micros, metrics.conversions, metrics.conversions_value

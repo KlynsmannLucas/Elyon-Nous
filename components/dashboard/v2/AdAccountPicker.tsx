@@ -36,7 +36,10 @@ export function AdAccountPicker({ platform, clientKey, compact }: { platform: 'm
       if (!active) return
       if (d.success && Array.isArray(d.accounts) && d.accounts.length > 0) {
         setAccts(d.accounts)
-        if (clientKey && !selected && d.accounts[0]) setSelected(d.accounts[0].id)
+        // Isolamento: auto-seleciona SÓ quando há uma única conta (sem ambiguidade).
+        // Com várias contas (agência), o usuário escolhe explicitamente qual é a deste
+        // cliente — senão um cliente herdaria a conta de anúncio de outro por engano.
+        if (clientKey && !selected && d.accounts.length === 1) setSelected(d.accounts[0].id)
       } else if (d.success) {
         setErr('Nenhuma conta de anúncio encontrada nesta conexão.')
       } else setErr(d.error || 'Não foi possível listar as contas.')
@@ -56,8 +59,9 @@ export function AdAccountPicker({ platform, clientKey, compact }: { platform: 'm
         <div className="text-sm text-ink-3 px-3 py-2 bg-canvas-2 rounded-sm">Carregando contas…</div>
       ) : accts && accts.length > 0 ? (
         <div className="relative">
-          <select value={selected || ''} onChange={(e) => { setSelected(e.target.value); if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Conta selecionada', body: accts.find(a => a.id === e.target.value)?.name || e.target.value }) }}
+          <select value={selected || ''} onChange={(e) => { if (!e.target.value) return; setSelected(e.target.value); if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Conta selecionada', body: accts.find(a => a.id === e.target.value)?.name || e.target.value }) }}
             className="w-full appearance-none bg-paper border border-line rounded-sm pl-3 pr-9 py-2.5 text-sm text-ink focus:border-blue focus:outline-none cursor-pointer">
+            {!selected && <option value="">Selecione a conta deste cliente…</option>}
             {accts.map(a => (
               <option key={a.id} value={a.id}>{a.name}{a.accountStatus && a.accountStatus !== 'ACTIVE' ? ` (${a.accountStatus})` : ''} — {a.id}</option>
             ))}

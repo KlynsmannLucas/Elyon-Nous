@@ -148,10 +148,13 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const [insightNotifs, setInsightNotifs] = useState<any[]>([])
   useEffect(() => {
     const metaConn = connectedAccounts.some(a => a.platform === 'meta')
-    if (!metaConn || !nkey) { setInsightNotifs([]); return }
-    const accId = selectedMetaAccountByClient[nkey] || connectedAccounts.find(a => a.platform === 'meta')?.accountId
+    // Isolamento por cliente: usa SÓ a conta de anúncio que ESTE cliente selecionou.
+    // Sem conta própria selecionada, não busca nada — senão o servidor cairia na conta
+    // padrão do usuário (que pertence a outro cliente) e vazaria dados cruzados.
+    const accId = nkey ? selectedMetaAccountByClient[nkey] : ''
+    if (!metaConn || !nkey || !accId) { setInsightNotifs([]); return }
     let active = true
-    fetch('/api/insights', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: clientData?.niche, accountId: accId || undefined, ticket: clientData?.ticketPrice, margin: clientData?.grossMargin, convRate: clientData?.conversionRate }) })
+    fetch('/api/insights', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: clientData?.niche, accountId: accId, strict: true, ticket: clientData?.ticketPrice, margin: clientData?.grossMargin, convRate: clientData?.conversionRate }) })
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
         if (!active || !d?.success) return
@@ -163,7 +166,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
       .catch(() => {})
     return () => { active = false }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nkey, clientData?.niche, connectedAccounts.length])
+  }, [nkey, clientData?.niche, connectedAccounts.length, nkey ? selectedMetaAccountByClient[nkey] : ''])
 
   // Insights de campanha (tempo real) primeiro; depois as ações pendentes.
   const notifications = [...insightNotifs, ...pendingNotifs].slice(0, 8)

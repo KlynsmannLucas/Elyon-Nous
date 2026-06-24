@@ -120,14 +120,16 @@ export default function DesempenhoPage() {
     </div></Card>
   )
 
-  const hasMeta = connectedAccounts.some(a => a.platform === 'meta')
   const acctKey = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
-  const metaAcctId = selectedMetaAccountByClient[acctKey] || connectedAccounts.find(a => a.platform === 'meta')?.accountId
+  // Isolamento por cliente: SÓ a conta que ESTE cliente selecionou (sem fallback pra
+  // conta padrão do usuário, que é de outro cliente).
+  const metaAcctId = (acctKey && selectedMetaAccountByClient[acctKey]) || ''
+  const hasMeta = !!metaAcctId
   // Inteligência da conta (criativos, geo, posicionamentos, ad sets, pixel) sob demanda.
   const loadIntel = useCallback(() => {
     if (intel !== null || intelLoading || !hasMeta) return
     setIntelLoading(true)
-    fetch(`/api/ads-data/meta-intelligence${metaAcctId ? `?accountId=${encodeURIComponent(metaAcctId)}` : ''}`, { signal: AbortSignal.timeout(45000) })
+    fetch(`/api/ads-data/meta-intelligence?accountId=${encodeURIComponent(metaAcctId)}`, { signal: AbortSignal.timeout(45000) })
       .then(r => r.json()).then(d => setIntel(d?.success ? d : {})).catch(() => setIntel({})).finally(() => setIntelLoading(false))
   }, [intel, intelLoading, hasMeta, metaAcctId])
   useEffect(() => { if (tab === 'criativos' || tab === 'audiencias') loadIntel() }, [tab, loadIntel])

@@ -98,8 +98,9 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
       .map((a: any) => ({ tone: a.prioridade === 'P1' ? 'bad' as const : a.prioridade === 'P2' ? 'warn' as const : 'blue' as const, title: a.titulo, tag: a.prioridade, body: a.motivo || a.evidencia }))
 
   // Insights ao vivo — lê as campanhas reais do Meta (sem precisar rodar a Análise Profunda).
-  const metaConnected = connectedAccounts.some(a => a.platform === 'meta')
-  const metaAccountId = (key && selectedMetaAccountByClient[key]) || connectedAccounts.find(a => a.platform === 'meta')?.accountId || ''
+  // Isolamento: SÓ a conta que ESTE cliente selecionou (sem fallback pra conta padrão do usuário).
+  const metaAccountId = (key && selectedMetaAccountByClient[key]) || ''
+  const metaConnected = !!metaAccountId
   const [liveInsights, setLiveInsights] = useState<InsightItem[]>([])
   const [liveLoading, setLiveLoading] = useState(false)
   const [executingId, setExecutingId] = useState<string | null>(null)
@@ -152,7 +153,7 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
     setLiveLoading(true)
     fetch('/api/insights', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ niche: clientData?.niche, accountId: metaAccountId || undefined, ticket: clientData?.ticketPrice, margin: clientData?.grossMargin, convRate: clientData?.conversionRate }),
+      body: JSON.stringify({ niche: clientData?.niche, accountId: metaAccountId, strict: true, ticket: clientData?.ticketPrice, margin: clientData?.grossMargin, convRate: clientData?.conversionRate }),
     })
       .then(r => (r.ok ? r.json() : null))
       .then(d => {

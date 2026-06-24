@@ -892,6 +892,10 @@ export const useAppStore = create<AppStore>()(
         // refreshToken do Google não vai para o localStorage — fica apenas no Supabase criptografado.
         connectedAccounts: state.connectedAccounts,
         clientConnectedAccounts: state.clientConnectedAccounts,
+        // Isolamento por cliente: a conta de anúncio escolhida POR cliente precisa
+        // sobreviver a reloads — senão todo cliente cairia na conta padrão do usuário.
+        selectedMetaAccountByClient:   state.selectedMetaAccountByClient,
+        selectedGoogleAccountByClient: state.selectedGoogleAccountByClient,
         strategyTimestamps:       state.strategyTimestamps,
         auditCache:               state.auditCache,
         actionPlanCache:          state.actionPlanCache,

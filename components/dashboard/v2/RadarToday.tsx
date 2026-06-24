@@ -40,10 +40,12 @@ export function RadarToday() {
   const selectedGoogleAccountByClient = useAppStore(s => s.selectedGoogleAccountByClient)
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
-  const hasMeta = connectedAccounts.some(a => a.platform === 'meta')
-  const hasGoogle = connectedAccounts.some(a => a.platform === 'google')
-  const metaAccountId = (key && selectedMetaAccountByClient[key]) || connectedAccounts.find(a => a.platform === 'meta')?.accountId || ''
-  const googleAccountId = (key && selectedGoogleAccountByClient[key]) || connectedAccounts.find(a => a.platform === 'google')?.accountId || ''
+  // Isolamento por cliente: SÓ a conta de anúncio que ESTE cliente selecionou.
+  // Nada de fallback pra conta padrão do usuário (que é de outro cliente).
+  const metaAccountId = (key && selectedMetaAccountByClient[key]) || ''
+  const googleAccountId = (key && selectedGoogleAccountByClient[key]) || ''
+  const hasMeta = !!metaAccountId
+  const hasGoogle = !!googleAccountId
 
   const [alerts, setAlerts] = useState<RadarAlert[] | null>(null)
   const [moneyAtRisk, setMoneyAtRisk] = useState(0)

@@ -11,22 +11,22 @@ export async function runAuditForActiveClient(opts?: { datePreset?: string; onSt
   const datePreset = opts?.datePreset || 'last_30d'
   const step = opts?.onStep || (() => {})
 
-  const metaAccount = s.connectedAccounts.find(a => a.platform === 'meta')
-  const googleAccount = s.connectedAccounts.find(a => a.platform === 'google')
-  if (!metaAccount && !googleAccount) {
-    return { ok: false, error: 'Conecte uma conta (Meta ou Google) em Integrações para rodar a auditoria.' }
+  // Isolamento por cliente: usa SÓ as contas que ESTE cliente selecionou — sem fallback
+  // pra conta padrão do usuário (que é de outro cliente). Sem conta selecionada, não audita.
+  const selMeta = s.selectedMetaAccountByClient[clientData.clientName] || ''
+  const selGoogle = s.selectedGoogleAccountByClient[clientData.clientName] || ''
+  if (!selMeta && !selGoogle) {
+    return { ok: false, error: 'Selecione a conta de anúncio deste cliente (em Diagnóstico ou Integrações) antes de rodar a análise.' }
   }
-  const selMeta = s.selectedMetaAccountByClient[clientData.clientName] || metaAccount?.accountId
-  const selGoogle = s.selectedGoogleAccountByClient[clientData.clientName] || googleAccount?.accountId
 
   try {
     step('Buscando dados das plataformas…')
     const [metaResult, googleResult] = await Promise.all([
-      metaAccount
-        ? fetch('/api/ads-data/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: selMeta || undefined, datePreset }) }).then(r => r.json()).catch(() => null)
+      selMeta
+        ? fetch('/api/ads-data/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: selMeta, datePreset }) }).then(r => r.json()).catch(() => null)
         : Promise.resolve(null),
-      googleAccount
-        ? fetch('/api/ads-data/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: selGoogle || undefined, datePreset }) }).then(r => r.json()).catch(() => null)
+      selGoogle
+        ? fetch('/api/ads-data/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: selGoogle, datePreset }) }).then(r => r.json()).catch(() => null)
         : Promise.resolve(null),
     ])
 

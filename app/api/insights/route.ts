@@ -35,12 +35,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}))
     const niche = (body.niche as string) || ''
     const bodyAccountId = body.accountId as string | undefined
+    // Isolamento por cliente: quando strict, usa SÓ as contas passadas — sem cair na
+    // conta padrão do usuário (que pertence a outro cliente). Default false p/ retrocompat.
+    const strict = body.strict === true
 
     // ── META (opcional — se não conectado, seguimos só com Google) ───────────
     let camps: { id: string; name: string; spend: number; leads: number; cpl: number; ctr: number; freq: number; impressions: number }[] = []
     try {
       const t = await getValidMetaToken(userId)
-      const accountId = bodyAccountId || t.accountId
+      const accountId = strict ? (bodyAccountId || '') : (bodyAccountId || t.accountId)
       if (accountId) {
         const act = `act_${accountId}`
         const token = encodeURIComponent(t.accessToken)
@@ -146,7 +149,7 @@ export async function POST(req: NextRequest) {
         const { getValidGoogleToken } = await import('@/services/google/token-manager')
         const { gaqlSearch, normalizeCustomerId } = await import('@/lib/google-ads')
         const gt = await getValidGoogleToken(userId)
-        const cid = normalizeCustomerId((body.googleAccountId as string) || gt.accountId || '')
+        const cid = normalizeCustomerId(strict ? ((body.googleAccountId as string) || '') : ((body.googleAccountId as string) || gt.accountId || ''))
         if (cid) {
           const results = await gaqlSearch(cid, gt.accessToken, devToken, `
             SELECT campaign.id, campaign.name, metrics.cost_micros, metrics.conversions, metrics.conversions_value, metrics.ctr, metrics.cost_per_conversion

@@ -52,6 +52,7 @@ export default function HojePage() {
   const dashboardMode = useAppStore(s => s.dashboardMode)
   const connectedAccounts = useAppStore(s => s.connectedAccounts)
   const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
+  const selectedGoogleAccountByClient = useAppStore(s => s.selectedGoogleAccountByClient)
 
   const [mounted, setMounted] = useState(false)
   const [daily, setDaily] = useState<any>(null)
@@ -65,14 +66,16 @@ export default function HojePage() {
   const bench = useBenchmark(niche)
 
   const metaAccount = connectedAccounts.find(a => a.platform === 'meta')
-  const dailyAccountId = selectedMetaAccountByClient[key] || metaAccount?.accountId
+  // Isolamento por cliente: SÓ a conta que ESTE cliente selecionou (sem fallback pra
+  // conta padrão do usuário, que é de outro cliente).
+  const dailyAccountId = (key && selectedMetaAccountByClient[key]) || ''
   useEffect(() => {
-    if (!key || !metaAccount) { setDaily(null); return }
+    if (!key || !dailyAccountId) { setDaily(null); return }
     let active = true
-    fetch(`/api/metrics/daily${dailyAccountId ? `?accountId=${encodeURIComponent(dailyAccountId)}` : ''}`)
+    fetch(`/api/metrics/daily?accountId=${encodeURIComponent(dailyAccountId)}`)
       .then(r => r.ok ? r.json() : { delta: null }).then(d => { if (active) setDaily(d?.delta ?? null) }).catch(() => { if (active) setDaily(null) })
     return () => { active = false }
-  }, [key, dailyAccountId, metaAccount])
+  }, [key, dailyAccountId])
 
   // Impacto ELYON — valor já entregue pelo NOUS (ações executadas + efeito real no CPL).
   useEffect(() => {
@@ -85,6 +88,14 @@ export default function HojePage() {
 
   if (!mounted) return <Loading />
   if (!key) return <Empty />
+
+  // Isolamento por cliente: tem acesso (Meta/Google conectado) mas ainda NÃO escolheu a
+  // conta de anúncio DESTE cliente → os dados ficam vazios de propósito (não herdam outro
+  // cliente). Mostra um aviso claro pra selecionar a conta, em vez de tela vazia silenciosa.
+  const googleAccount = connectedAccounts.find(a => a.platform === 'google')
+  const hasAnyConn = !!metaAccount || !!googleAccount
+  const hasAnySelected = !!(selectedMetaAccountByClient[key] || selectedGoogleAccountByClient[key])
+  const needsAccountPick = hasAnyConn && !hasAnySelected
 
   const latestAudit: any = auditCache[key]?.[0]?.audit
   const rm = latestAudit?._realMetrics
@@ -177,8 +188,24 @@ export default function HojePage() {
       {/* Onboarding guiado — some sozinho quando os primeiros passos estão completos */}
       <OnboardingChecklist />
 
-      {/* Iniciante (sem conta conectada): criar o primeiro anúncio */}
-      {!metaAccount && (
+      {/* Tem acesso conectado, mas falta escolher a conta de anúncio DESTE cliente */}
+      {needsAccountPick && (
+        <section className="mb-4 animate-fade-up">
+          <Card className="bg-amber-soft border-amber/30">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="w-11 h-11 rounded-lg bg-amber flex items-center justify-center text-white shrink-0"><Icon name="alert" size={20} /></span>
+              <div className="flex-1 min-w-[220px]">
+                <div className="text-[15px] font-bold text-ink" style={{ letterSpacing: '-0.01em' }}>Selecione a conta de anúncio de {key}</div>
+                <p className="text-[12.5px] text-ink-2 mt-0.5">Cada cliente usa a própria conta de anúncio. Escolha a conta deste cliente para o NOUS mostrar os dados certos — sem misturar com outros clientes.</p>
+              </div>
+              <Button onClick={() => (window.location.href = '/diagnostico')} icon={<Icon name="spark" size={15} />}>Selecionar conta</Button>
+            </div>
+          </Card>
+        </section>
+      )}
+
+      {/* Iniciante (sem nenhuma conta conectada): criar o primeiro anúncio */}
+      {!metaAccount && !googleAccount && (
         <section className="mb-4 animate-fade-up">
           <Card className="bg-gradient-to-br from-blue-soft to-paper border-blue-line">
             <div className="flex items-center gap-4 flex-wrap">

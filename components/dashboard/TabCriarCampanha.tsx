@@ -113,8 +113,9 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
   const selectedMetaAccountByClient = useAppStore((s) => s.selectedMetaAccountByClient)
   const metaAccount       = connectedAccounts.find((a) => a.platform === 'meta')
   const clientKey         = (clientData as any)?.clientName || ''
-  // Conta efetiva: a selecionada pelo usuário (seletor) ou a 1ª conectada.
-  const effectiveAccountId = (clientKey && selectedMetaAccountByClient[clientKey]) || metaAccount?.accountId || ''
+  // Isolamento por cliente: cria SÓ na conta que ESTE cliente selecionou — nunca cai na
+  // conta padrão do usuário (que é de outro cliente). Criar campanha na conta errada é grave.
+  const effectiveAccountId = (clientKey && selectedMetaAccountByClient[clientKey]) || ''
 
   const [step,        setStep]        = useState<Step>('input')
   const [intent,      setIntent]      = useState('')

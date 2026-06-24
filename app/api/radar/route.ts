@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
       ticket: body.ticket,
       margin: body.margin,
       convRate: body.convRate,
+      strictAccounts: true, // isolamento: só as contas deste cliente, sem cair na padrão do usuário
     })
     return NextResponse.json({ success: true, alerts: alerts.slice(0, 5), moneyAtRisk, analyzed })
   } catch (e: any) {
