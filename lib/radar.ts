@@ -39,8 +39,12 @@ export async function buildRadar(opts: BuildRadarOpts): Promise<{ alerts: RadarA
   const ticket = Number(opts.ticket) || 0
   const margin = Number(opts.margin) || 0
   const convRate = Number(opts.convRate) || 0
-  const breakeven = ticket > 0 && margin > 0 && convRate > 0 ? Math.round(ticket * (margin / 100) * (convRate / 100)) : null
   const bench = getBenchmark(niche)
+  // E-commerce/varejo (compra direta): break-even = ticket × margem (o CPL já é o CPA,
+  // não se multiplica pela conversão lead→venda). Lead-gen: ticket × margem × conversão.
+  const breakeven = bench?.directPurchase
+    ? (ticket > 0 && margin > 0 ? Math.round(ticket * (margin / 100)) : null)
+    : (ticket > 0 && margin > 0 && convRate > 0 ? Math.round(ticket * (margin / 100) * (convRate / 100)) : null)
   const cplMin = bench?.cpl_min ?? null
 
   const alerts: RadarAlert[] = []

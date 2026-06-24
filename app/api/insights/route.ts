@@ -68,9 +68,10 @@ export async function POST(req: NextRequest) {
     const ticket = Number(body.ticket) || 0
     const margin = Number(body.margin) || 0     // %
     const convRate = Number(body.convRate) || 0 // % lead -> venda
-    const breakeven = ticket > 0 && margin > 0 && convRate > 0
-      ? Math.round(ticket * (margin / 100) * (convRate / 100))
-      : null
+    // E-commerce/varejo (compra direta): break-even = ticket × margem (o CPL já é CPA).
+    const breakeven = bench?.directPurchase
+      ? (ticket > 0 && margin > 0 ? Math.round(ticket * (margin / 100)) : null)
+      : (ticket > 0 && margin > 0 && convRate > 0 ? Math.round(ticket * (margin / 100) * (convRate / 100)) : null)
 
     const insights: Insight[] = []
 
@@ -177,7 +178,7 @@ export async function POST(req: NextRequest) {
             insights.push({ tone: 'bad', tag: 'Google · Desperdício', title: `"${c.name}" gastou ${brl(c.cost)} sem conversão`, body: gWaste.length > 1 ? `${gWaste.length} campanhas Google sem resultado somam ${brl(wt)} — adicione negativas/pause.` : 'Adicione palavras-chave negativas ou pause.', campaignId: c.id || undefined, campaignName: c.name, platform: 'google', action: c.id ? 'pause' : undefined })
           }
           // CPA acima do equilíbrio (prejuízo por lead)
-          const be2 = ticket > 0 && margin > 0 && convRate > 0 ? Math.round(ticket * (margin / 100) * (convRate / 100)) : null
+          const be2 = breakeven // já considera compra direta (e-commerce) vs lead-gen
           if (be2) {
             const gOver = gcamps.filter((c: any) => c.conv > 0 && c.cpa > be2).sort((a: any, b: any) => b.cpa - a.cpa)
             if (gOver.length && insights.length < 8) {

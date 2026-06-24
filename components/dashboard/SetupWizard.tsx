@@ -1012,7 +1012,8 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               const margin = Number(form.grossMargin) / 100
               const cvr    = Number(form.conversionRate) / 100
               const breakEvenROAS = margin > 0 ? (1 / margin).toFixed(2) : '—'
-              const maxCPL = cvr > 0 ? (ticket * margin * cvr).toFixed(0) : '—'
+              // E-commerce/varejo (compra direta): CPL máximo = ticket × margem (o CPL já é o CPA).
+              const maxCPL = bench?.directPurchase ? (ticket * margin).toFixed(0) : (cvr > 0 ? (ticket * margin * cvr).toFixed(0) : '—')
               const ltv = form.isRecurring ? (ticket / 0.05).toFixed(0) : ticket.toFixed(0)
               return (
                 <div className="mt-5 p-4 rounded-2xl" style={{ background: 'rgba(44,95,224,0.05)', border: '1px solid rgba(44,95,224,0.2)' }}>

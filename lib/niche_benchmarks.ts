@@ -20,6 +20,14 @@ export interface NicheBenchmark {
   }
   seasonality: string[]      // meses de pico (ex: ['Jan', 'Jul'])
   insights: string[]
+  // E-commerce/varejo: compra é DIRETA (ROAS-first). O "CPL" já é o custo por venda,
+  // então o break-even é ticket × margem (não multiplica pela conversão lead→venda).
+  directPurchase?: boolean
+}
+
+// Nichos de compra direta (ROAS/CPA), onde não se aplica o funil lead→venda.
+export function isDirectPurchaseNiche(nicheRaw: string): boolean {
+  return getBenchmark(nicheRaw)?.directPurchase === true
 }
 
 /** KPIs calculados a partir de budget + benchmark */
@@ -191,6 +199,7 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
   },
   ecommerce: {
     name: 'E-commerce / Varejo',
+    directPurchase: true,
     cpl_min: 12, cpl_max: 55,
     cpl_by_channel: {
       'Meta Ads': 'R$12–45',
@@ -530,6 +539,7 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
   },
   moda: {
     name: 'Moda / Vestuário',
+    directPurchase: true,
     cpl_min: 10, cpl_max: 50,
     cpl_by_channel: {
       'Instagram': 'R$10–35',
@@ -1766,6 +1776,7 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
   },
   ecommerce_cosmeticos: {
     name: 'E-commerce de Cosméticos',
+    directPurchase: true,
     cpl_min: 12, cpl_max: 35,
     cpl_by_channel: { 'Instagram Ads': 'R$10–28', 'TikTok': 'R$8–22', 'Meta Ads': 'R$11–30', 'Google Shopping': 'R$14–38' },
     cvr_lead_to_sale: 0.035, avg_ticket: 180, ltv_multiplier: 5.0,
@@ -1782,6 +1793,7 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
   },
   ecommerce_moda: {
     name: 'E-commerce de Moda',
+    directPurchase: true,
     cpl_min: 10, cpl_max: 30,
     cpl_by_channel: { 'Instagram Ads': 'R$9–26', 'TikTok': 'R$7–20', 'Meta Ads': 'R$10–28', 'Google Shopping': 'R$12–32' },
     cvr_lead_to_sale: 0.025, avg_ticket: 220, ltv_multiplier: 3.5,

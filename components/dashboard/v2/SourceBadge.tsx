@@ -7,7 +7,7 @@ type SourceType = 'real' | 'estimate' | 'benchmark' | 'ai'
 const LABELS: Record<SourceType, { label: string; tone: 'good' | 'warn' | 'neutral' }> = {
   real:      { label: 'Dados reais', tone: 'good' },
   estimate:  { label: 'Estimativa', tone: 'warn' },
-  benchmark: { label: 'Benchmark', tone: 'warn' },
+  benchmark: { label: 'Estimativa do nicho', tone: 'warn' },
   ai:        { label: 'Fallback IA', tone: 'neutral' },
 }
 
