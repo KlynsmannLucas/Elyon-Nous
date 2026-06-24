@@ -27,7 +27,9 @@ export async function generateStrategyForActiveClient(
     onStep?.('Analisando o nicho e o mercado…')
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 58000)
+    // 150s: cobre o pior caso da cadeia de fallback do servidor (IA 42s + Gemini 40s
+    // + RAG/processamento), agora que o /api/strategy tem maxDuration 300.
+    const timeout = setTimeout(() => controller.abort(), 150000)
     const { auditCache: ac, campaignHistory: ch, generatedPersona: gp, connectedAccounts: ca } = useAppStore.getState()
 
     const res = await fetch('/api/strategy', {
