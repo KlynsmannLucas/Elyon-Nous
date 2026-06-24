@@ -146,29 +146,9 @@ export default function ConfigPage() {
         {pulse.enabled ? (
           <div className="space-y-1 mt-1">
             <div className="flex items-center justify-between gap-3 py-2.5">
-              <div className="min-w-0"><div className="text-sm text-ink">E-mail</div><div className="text-xs text-ink-3">Enviado para o e-mail da sua conta</div></div>
+              <div className="min-w-0"><div className="text-sm text-ink">E-mail</div><div className="text-xs text-ink-3">Enviado para o e-mail da sua conta todo dia de manhã</div></div>
               <Toggle on={pulse.channels.email} onClick={() => savePulse({ ...pulse, channels: { ...pulse.channels, email: !pulse.channels.email } })} />
             </div>
-            {waAvailable ? (
-              <>
-                <div className="flex items-center justify-between gap-3 py-2.5 border-t border-line-2">
-                  <div className="min-w-0"><div className="text-sm text-ink">WhatsApp <span className="text-[11px] text-green-600 font-mono">credenciais detectadas ✓</span></div><div className="text-xs text-ink-3">Mensagem proativa via WhatsApp (Meta Cloud API)</div></div>
-                  <Toggle on={pulse.channels.whatsapp} onClick={() => savePulse({ ...pulse, channels: { ...pulse.channels, whatsapp: !pulse.channels.whatsapp } })} />
-                </div>
-                {pulse.channels.whatsapp && (
-                  <div className="pt-2 border-t border-line-2">
-                    <label className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">Número do WhatsApp (com DDD)</label>
-                    <input value={pulse.phone} onChange={e => setPulse({ ...pulse, phone: e.target.value })} onBlur={() => savePulse(pulse)} placeholder="(41) 99999-8888"
-                      className="w-full mt-1 bg-paper border border-line rounded-sm px-3 py-2 text-sm text-ink focus:border-blue focus:outline-none" />
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="py-2.5 border-t border-line-2">
-                <div className="text-sm text-ink">WhatsApp <span className="text-[11px] text-amber font-mono">credenciais não detectadas ✗</span></div>
-                <div className="text-xs text-ink-3 mt-0.5">O servidor não está enxergando as variáveis. Confira na Vercel (projeto elyon-nous → Settings → Environment Variables), com escopo <span className="font-mono">Production</span>: <span className="font-mono">WHATSAPP_PHONE_NUMBER_ID</span> e <span className="font-mono">WHATSAPP_ACCESS_TOKEN</span> — e refaça o deploy.</div>
-              </div>
-            )}
             <div className="flex items-center gap-2 pt-3 border-t border-line-2">
               <Button size="sm" variant="soft" disabled={pulseTesting} onClick={testPulse}>{pulseTesting ? 'Enviando…' : 'Enviar teste agora'}</Button>
               {pulseSaving && <span className="text-xs text-ink-3">salvando…</span>}
