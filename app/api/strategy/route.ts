@@ -8,7 +8,10 @@ import { getClientMemoryContext } from '@/lib/memory'
 import { sanitizeText } from '@/lib/sanitize'
 import { extractJson } from '@/lib/aiJson'
 
-export const maxDuration = 60
+// A cadeia de fallback (IA Anthropic até 42s + Gemini até 40s) pode passar de 60s
+// e a função era morta antes de emitir o resultado → "Resposta vazia do servidor".
+// 300s dá folga (rota é SSE com keepalive; mesmo teto das outras rotas pesadas).
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 // Versão do schema da estratégia. Suba quando adicionar/alterar seções (tese, matriz,
