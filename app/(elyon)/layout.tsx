@@ -168,6 +168,23 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   // Insights de campanha (tempo real) primeiro; depois as ações pendentes.
   const notifications = [...insightNotifs, ...pendingNotifs].slice(0, 8)
 
+  // Apagar cliente: remove do servidor (não volta na hidratação) + do store; se era
+  // o ativo, troca pro primeiro restante (ou vai criar um novo se não sobrar nenhum).
+  const onDeleteClient = (id: string) => {
+    const st = useAppStore.getState()
+    const target = st.savedClients.find(c => c.id === id)
+    if (!target) return
+    const wasActive = st.clientData?.clientName === target.clientData.clientName
+    fetch('/api/clients', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => {})
+    st.deleteSavedClient(id)
+    if (wasActive) {
+      const remaining = useAppStore.getState().savedClients
+      if (remaining[0]) st.loadSavedClient(remaining[0].id)
+      else router.push('/novo')
+    }
+    if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Cliente apagado', body: target.clientData.clientName })
+  }
+
   // Rotas com TELA PRÓPRIA (full-screen, sem sidebar/topbar/NOUS rail): wizard de
   // criação e o "Meu primeiro anúncio".
   const BARE_ROUTES = ['/novo', '/primeiro-anuncio']
@@ -191,6 +208,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
           activeClientId={activeId}
           onClientChange={(id) => loadSavedClient(id)}
           onNewClient={() => router.push('/novo')}
+          onDeleteClient={onDeleteClient}
           userName={userName}
           userPlan={plan}
           onLogout={() => signOut(() => router.push('/'))}

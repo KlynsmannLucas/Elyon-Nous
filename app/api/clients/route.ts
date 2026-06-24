@@ -154,3 +154,20 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ success: true })
 }
+
+// DELETE /api/clients — apaga um cliente do usuário (por id). Escopo por user_id.
+export async function DELETE(req: Request) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!supabaseAdmin) return NextResponse.json({ success: true })
+
+  const { id } = await req.json().catch(() => ({}))
+  if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
+
+  const { error } = await supabaseAdmin.from('clients').delete().eq('user_id', userId).eq('id', String(id))
+  if (error) {
+    console.error('[clients DELETE]', error.message)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+  return NextResponse.json({ success: true })
+}

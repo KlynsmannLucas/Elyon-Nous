@@ -39,6 +39,7 @@ interface SidebarProps {
   activeClientId?: string
   onClientChange?: (id: string) => void
   onNewClient?: () => void
+  onDeleteClient?: (id: string) => void
   userName?: string
   userPlan?: string
   onLogout?: () => void
@@ -57,7 +58,7 @@ function Avatar({ name, size = 30 }: { name: string; size?: number }) {
   )
 }
 
-function ClientSwitcher({ clients, activeId, onChange, onNew }: { clients: Client[]; activeId?: string; onChange?: (id: string) => void; onNew?: () => void }) {
+function ClientSwitcher({ clients, activeId, onChange, onNew, onDelete }: { clients: Client[]; activeId?: string; onChange?: (id: string) => void; onNew?: () => void; onDelete?: (id: string) => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -81,12 +82,19 @@ function ClientSwitcher({ clients, activeId, onChange, onNew }: { clients: Clien
         <div className="scale-in absolute left-0 right-0 bottom-[calc(100%+6px)] min-w-[240px] bg-paper border border-line rounded-md shadow-pop p-1.5 z-[120]">
           <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-ink-3 px-2 pt-1.5 pb-1">Trocar cliente</div>
           {clients.map(c => (
-            <button key={c.id} onClick={() => { onChange?.(c.id); setOpen(false) }}
-              className={`flex items-center gap-2.5 w-full px-2 py-2 rounded-sm text-left transition-colors ${c.id === active?.id ? 'bg-blue-soft' : 'hover:bg-canvas-2'}`}>
-              <Avatar name={c.name} size={30} />
-              <span className="text-[13px] font-semibold text-ink truncate flex-1">{c.name}</span>
-              {c.id === active?.id && <Icon name="check" size={14} className="text-blue" />}
-            </button>
+            <div key={c.id}
+              className={`flex items-center gap-2.5 w-full px-2 py-2 rounded-sm transition-colors ${c.id === active?.id ? 'bg-blue-soft' : 'hover:bg-canvas-2'}`}>
+              <button onClick={() => { onChange?.(c.id); setOpen(false) }} className="flex items-center gap-2.5 flex-1 min-w-0 text-left">
+                <Avatar name={c.name} size={30} />
+                <span className="text-[13px] font-semibold text-ink truncate flex-1">{c.name}</span>
+              </button>
+              {c.id === active?.id && <Icon name="check" size={14} className="text-blue shrink-0" />}
+              {onDelete && (
+                <button title="Apagar cliente"
+                  onClick={() => { if (typeof window !== 'undefined' && window.confirm(`Apagar "${c.name}"? Essa ação não pode ser desfeita.`)) onDelete(c.id) }}
+                  className="text-ink-4 hover:text-red p-1 shrink-0 transition-colors"><Icon name="x" size={14} /></button>
+              )}
+            </div>
           ))}
           {onNew && (
             <button onClick={() => { onNew(); setOpen(false) }}
@@ -102,7 +110,7 @@ function ClientSwitcher({ clients, activeId, onChange, onNew }: { clients: Clien
 
 export function SidebarV2({
   activeArea, onChangeArea, collapsed: collapsedProp = false, onToggleCollapse,
-  clients = [], activeClientId, onClientChange, onNewClient, userName, userPlan, onLogout,
+  clients = [], activeClientId, onClientChange, onNewClient, onDeleteClient, userName, userPlan, onLogout,
   mobileOpen = false, onMobileClose,
 }: SidebarProps) {
   // No mobile (<1024px) a sidebar vira drawer e SEMPRE renderiza expandida (ignora o collapse do desktop).
@@ -184,7 +192,7 @@ export function SidebarV2({
       {/* Footer — cliente ativo + usuário */}
       {!collapsed ? (
         <div className="p-3 border-t border-line">
-          {clients.length > 0 && <div className="mb-2.5"><ClientSwitcher clients={clients} activeId={activeClientId} onChange={onClientChange} onNew={onNewClient} /></div>}
+          {clients.length > 0 && <div className="mb-2.5"><ClientSwitcher clients={clients} activeId={activeClientId} onChange={onClientChange} onNew={onNewClient} onDelete={onDeleteClient} /></div>}
           <div className="flex items-center gap-2.5">
             <Avatar name={userName || 'Você'} size={34} />
             <div className="flex-1 min-w-0">
