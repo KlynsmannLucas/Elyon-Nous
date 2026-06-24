@@ -44,7 +44,7 @@ const NICHE_GROUPS: { label: string; niches: string[] }[] = [
     label: '🏗️ Construção e Casa',
     niches: [
       'Construção Civil', 'Reformas', 'Pintura Residencial', 'Marcenaria / Móveis Planejados',
-      'Vidraçaria', 'Serralheria', 'Eletricista', 'Encanador',
+      'Vidraçaria', 'Serralheria', 'Calhas e Rufos', 'Eletricista', 'Encanador',
       'Limpeza Residencial', 'Dedetização',
     ],
   },

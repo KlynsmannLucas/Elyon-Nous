@@ -505,6 +505,29 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
       'Instagram stories mostrando o dia a dia da obra geram credibilidade',
     ],
   },
+  calhas_rufos: {
+    name: 'Calhas e Rufos',
+    cpl_min: 40, cpl_max: 110,
+    cpl_by_channel: {
+      'Google Search': 'R$45–100',
+      'Meta Ads': 'R$40–95',
+      'Instagram': 'R$45–100',
+    },
+    cvr_lead_to_sale: 0.15,
+    avg_ticket: 2500,
+    ltv_multiplier: 1.3,
+    best_channels: ['Google Search', 'Meta Ads', 'Instagram'],
+    budget_floor: 1500,
+    budget_ideal: 5000,
+    kpi_thresholds: { cpl_good: 55, cpl_bad: 100, roas_good: 4.0, cvr_good: 0.18 },
+    seasonality: ['Set', 'Jan'],
+    insights: [
+      'Google Search com intenção "conserto de calha" ou "calha + cidade" capta quem já tem o problema (vazamento) — leads quentes e prontos para orçar.',
+      'Antes/depois de instalação e fotos de telhado com calha nova têm CTR alto; vídeo curto da equipe instalando gera confiança.',
+      'A demanda dispara com as chuvas — antecipe orçamento e criativos no início da estação chuvosa (set–out) e reforce no verão.',
+      'Orçamento rápido e visita técnica sem custo são o maior diferencial; responda em menos de 1h para não perder o lead.',
+    ],
+  },
   moda: {
     name: 'Moda / Vestuário',
     cpl_min: 10, cpl_max: 50,
@@ -1862,6 +1885,8 @@ const KEY_MAP: Record<string, string> = {
   encanador: 'servicos_residenciais', encanamento: 'servicos_residenciais', hidráulica: 'servicos_residenciais', hidraulica: 'servicos_residenciais',
   serralheria: 'servicos_residenciais', serralheiro: 'servicos_residenciais',
   vidraçaria: 'servicos_residenciais', vidracaria: 'servicos_residenciais',
+  'calhas e rufos': 'calhas_rufos', calhas: 'calhas_rufos', calha: 'calhas_rufos',
+  rufos: 'calhas_rufos', rufo: 'calhas_rufos', calheiro: 'calhas_rufos',
 
   // ── Arquitetura / Design ──────────────────────────────────────────────────
   'design de interiores': 'arquitetura_design', 'interiores': 'arquitetura_design',
