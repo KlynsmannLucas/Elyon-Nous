@@ -32,6 +32,19 @@ export async function buildPulseData(userId: string, clientName: string, niche?:
   }
   if (!supabaseAdmin) return out
 
+  // ── Conta de anúncio DESTE cliente (isolamento) ────────────────────────────
+  // Salva em clients.extra_data pelo /api/clients/account. Sem ela, o radar do Pulse
+  // cairia na conta padrão do usuário (que é de outro cliente).
+  let selMeta: string | null = null
+  let selGoogle: string | null = null
+  try {
+    const { data: cr } = await supabaseAdmin
+      .from('clients').select('extra_data, client_data').eq('user_id', userId)
+    const row = (cr || []).find((r: any) => r?.client_data?.clientName === clientName)
+    selMeta = (row?.extra_data as any)?.selectedMetaAccountId || null
+    selGoogle = (row?.extra_data as any)?.selectedGoogleAccountId || null
+  } catch { /* sem seleção salva — radar fica vazio (não vaza outro cliente) */ }
+
   // ── Sinais de URGÊNCIA — da última auditoria ───────────────────────────────
   try {
     const { data: la } = await supabaseAdmin
@@ -116,7 +129,11 @@ export async function buildPulseData(userId: string, clientName: string, niche?:
   // quando há sinais reais agora. É mais atual e ranqueado por dinheiro.
   try {
     const { buildRadar } = await import('@/lib/radar')
-    const { alerts } = await buildRadar({ userId, niche })
+    // strictAccounts: usa SÓ a conta deste cliente; sem conta selecionada, não roda radar
+    // (não cai na conta padrão do usuário, que pertence a outro cliente).
+    const { alerts } = (selMeta || selGoogle)
+      ? await buildRadar({ userId, niche, metaAccountId: selMeta || undefined, googleAccountId: selGoogle || undefined, strictAccounts: true })
+      : { alerts: [] as Awaited<ReturnType<typeof buildRadar>>['alerts'] }
     if (alerts.length > 0) {
       out.hasData = true
       const leaksRisks = alerts.filter(a => a.severity !== 'opportunity')

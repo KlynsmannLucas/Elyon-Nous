@@ -40,11 +40,26 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const auditCache = useAppStore(s => s.auditCache)
   const connectedAccounts = useAppStore(s => s.connectedAccounts)
   const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
+  const selectedGoogleAccountByClient = useAppStore(s => s.selectedGoogleAccountByClient)
   const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta Ads', google: 'Google Ads' }
   const syncPlatforms = Array.from(new Set(connectedAccounts.map(a => PLATFORM_LABEL[a.platform] || a.platform)))
   // Modo compartilhado com o app (persistido no store): pro↔avançado, simple↔simplificado
   const dashboardMode = useAppStore(s => s.dashboardMode)
   const setDashboardMode = useAppStore(s => s.setDashboardMode)
+
+  // Sincroniza a conta de anúncio escolhida POR cliente para o servidor (extra_data do
+  // client). A seleção vive no localStorage; o cron do Pulse/daily-snapshot precisa dela
+  // para isolar os dados por cliente. Roda na carga (migra seleções antigas) e a cada mudança.
+  useEffect(() => {
+    const names = Array.from(new Set([...Object.keys(selectedMetaAccountByClient), ...Object.keys(selectedGoogleAccountByClient)]))
+    if (!names.length) return
+    const selections: Record<string, { meta: string | null; google: string | null }> = {}
+    for (const n of names) selections[n] = { meta: selectedMetaAccountByClient[n] || null, google: selectedGoogleAccountByClient[n] || null }
+    const t = setTimeout(() => {
+      fetch('/api/clients/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ selections }) }).catch(() => {})
+    }, 900)
+    return () => clearTimeout(t)
+  }, [selectedMetaAccountByClient, selectedGoogleAccountByClient])
   const mode: 'simplified' | 'advanced' = dashboardMode === 'pro' ? 'advanced' : 'simplified'
 
   const area = (pathname?.split('/')[1] || 'hoje') as AreaKey
