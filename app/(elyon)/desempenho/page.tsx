@@ -129,9 +129,14 @@ export default function DesempenhoPage() {
   const loadIntel = useCallback(() => {
     if (intel !== null || intelLoading || !hasMeta) return
     setIntelLoading(true)
-    // O endpoint é pesado (até ~60s em contas grandes). Não mascarar falha como {} —
-    // senão a UI mostra "conta errada" quando na verdade deu timeout/erro.
-    fetch(`/api/ads-data/meta-intelligence?accountId=${encodeURIComponent(metaAcctId)}`, { signal: AbortSignal.timeout(120000) })
+    // O endpoint é POST (lê accountId no corpo) e pesado (até ~60s em contas grandes).
+    // Antes chamávamos via GET → 405. Não mascarar falha como {} — mostra o motivo real.
+    fetch('/api/ads-data/meta-intelligence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId: metaAcctId, niche: clientData?.niche }),
+      signal: AbortSignal.timeout(120000),
+    })
       .then(async r => {
         const d = await r.json().catch(() => null)
         if (!r.ok || !d) { setIntel({ _error: `Falha ao carregar (HTTP ${r.status}). Conta grande — tente recarregar.` }); return }
