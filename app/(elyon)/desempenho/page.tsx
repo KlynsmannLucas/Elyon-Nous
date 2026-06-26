@@ -84,6 +84,9 @@ export default function DesempenhoPage() {
   const [crIntelLoading, setCrIntelLoading] = useState(false)
   const [crIntelErr, setCrIntelErr] = useState('')
   const [openCre, setOpenCre] = useState<any | null>(null)
+  const [crDetail, setCrDetail] = useState<Record<string, any>>({})
+  const [crDetailLoad, setCrDetailLoad] = useState<string>('')
+  const [crDetailErr, setCrDetailErr] = useState<string>('')
   const [detailCamp, setDetailCamp] = useState<any | null>(null)
   const [stratGen, setStratGen] = useState(false)
   const [execId, setExecId] = useState<string | null>(null)
@@ -181,6 +184,23 @@ export default function DesempenhoPage() {
     if (ctr > 0 && ctr < 0.8 && spend > 30) return { label: 'Gancho fraco', tone: 'warn', action: `CTR ${ctr}% — o gancho dos 3 primeiros segundos não prende. Teste outra abertura.`, replace: true }
     if (spend < 30) return { label: 'Aprendendo', tone: 'warn', action: 'Ainda em aprendizado — pouca verba pra concluir. Dê mais tempo antes de decidir.' }
     return { label: 'Saudável', tone: 'good', action: 'Performance ok. Mantenha rodando e fique de olho na frequência.' }
+  }
+  // Análise individual sob demanda (no clique do card). Cacheia por id — re-abrir é grátis.
+  const analyzeCreative = (c: any) => {
+    const id = c.id
+    if (!id || crDetail[id] || crDetailLoad === id) return
+    setCrDetailLoad(id); setCrDetailErr('')
+    fetch('/api/creative-detail', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ niche: clientData?.niche, creative: { name: c.name, title: c.title, body: c.body, format: c.format, ctr: c.ctr, cpl: c.cpl, frequency: c.frequency, leads: c.leads, ageDays: c.ageDays } }),
+    })
+      .then(async r => {
+        const d = await r.json().catch(() => null)
+        if (!r.ok || !d?.success) { setCrDetailErr(d?.error || 'Não foi possível analisar agora.'); return }
+        setCrDetail(prev => ({ ...prev, [id]: d.detail }))
+      })
+      .catch(() => setCrDetailErr('Falha de conexão.'))
+      .finally(() => setCrDetailLoad(''))
   }
   const replaceInStudio = (c: any) => {
     const brief = `Criar um substituto para o anúncio "${c.title || c.name || ''}" de ${clientData?.clientName || 'meu negócio'} (${clientData?.niche || ''}). Manter o ângulo que funciona, com gancho e criativo NOVOS (o atual está saturado/fraco). Formato sugerido: ${c.format || 'vídeo'}.`
@@ -978,6 +998,10 @@ export default function DesempenhoPage() {
         const v = verdictFor(c)
         const fmtLabel: Record<string, string> = { video: 'Vídeo', carousel: 'Carrossel', image: 'Imagem' }
         const toneCls = v.tone === 'good' ? 'text-green-600 bg-green-soft' : v.tone === 'bad' ? 'text-red bg-red-soft' : 'text-amber bg-amber-soft'
+        const adSet = (intel?.adSets || []).find((a: any) => a.id === c.adsetId)
+        const campName = adSet?.campaignName || (intel?.campaigns || []).find((cm: any) => cm.id === c.campaignId)?.name || ''
+        const adSetName = adSet?.name || ''
+        const ai = crDetail[c.id]
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm" onClick={() => setOpenCre(null)}>
             <div className="bg-paper rounded-lg border border-line max-w-md w-full max-h-[88vh] overflow-y-auto shadow-xl animate-fade-up" onClick={e => e.stopPropagation()}>
@@ -991,7 +1015,13 @@ export default function DesempenhoPage() {
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${toneCls}`}>{v.label}</span>
                   {c.ageDays != null && <span className="text-[11px] text-ink-3">há {c.ageDays}d no ar</span>}
                 </div>
-                <div className="text-[14px] font-semibold text-ink mb-3 leading-snug">&ldquo;{(c.title || c.body || c.name || '').slice(0, 120)}&rdquo;</div>
+                <div className="text-[14px] font-semibold text-ink mb-2.5 leading-snug">&ldquo;{(c.title || c.body || c.name || '').slice(0, 120)}&rdquo;</div>
+                {(campName || adSetName) && (
+                  <div className="flex flex-col gap-0.5 mb-3 text-[11.5px]">
+                    {campName && <div><span className="text-ink-3">Campanha:</span> <span className="text-ink-2 font-medium">{campName}</span></div>}
+                    {adSetName && <div><span className="text-ink-3">Conjunto:</span> <span className="text-ink-2 font-medium">{adSetName}</span></div>}
+                  </div>
+                )}
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   {([['CTR', c.ctr ? `${(+c.ctr).toFixed(2)}%` : '—'], ['Freq.', c.frequency ? `${(+c.frequency).toFixed(1)}×` : '—'], ['CPL', c.cpl > 0 ? brl(c.cpl) : '—'], ['Leads', String(c.leads ?? 0)], ['Gasto', brl(c.spend || 0)], ['Cliques', String(c.clicks ?? '—')]] as [string, string][]).map(([l, val], i) => (
                     <div key={i} className="bg-canvas-2 rounded-sm p-2 text-center">
@@ -1000,29 +1030,31 @@ export default function DesempenhoPage() {
                     </div>
                   ))}
                 </div>
-                {(() => {
-                  const ai = (crIntel?.per_creative || []).find((p: any) => p.id === c.id)
-                  if (!ai) {
-                    return crIntel ? null : (
-                      <div className="text-[11.5px] text-ink-3 mb-3 p-2.5 rounded-sm bg-canvas-2">💡 Rode <strong>&ldquo;Analisar com o NOUS&rdquo;</strong> no topo da aba pra ver ângulo, gancho e tom deste criativo.</div>
-                    )
-                  }
-                  return (
-                    <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
-                      <div><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">Ângulo</div><div className="font-medium text-ink">{ai.angle}</div></div>
-                      <div><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">Tom</div><div className="font-medium text-ink">{ai.tone}</div></div>
-                      <div className="col-span-2"><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">Gancho</div><div className="text-ink-2">{ai.hook}</div></div>
-                      <div className="col-span-2 flex items-center gap-2">
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${ai.fatigued ? 'text-red bg-red-soft' : 'text-green-600 bg-green-soft'}`}>{ai.fatigued ? 'Fatigado' : 'Sem fadiga'}</span>
-                        {ai.fatigue_note && <span className="text-[11px] text-ink-3">{ai.fatigue_note}</span>}
-                      </div>
+                {/* Inteligência do NOUS sobre ESTE criativo — sob demanda (1 crédito), cacheada */}
+                {ai ? (
+                  <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
+                    <div><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">Ângulo</div><div className="font-medium text-ink">{ai.angle}</div></div>
+                    <div><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">Tom</div><div className="font-medium text-ink">{ai.tone}</div></div>
+                    <div className="col-span-2"><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">Gancho</div><div className="text-ink-2">{ai.hook}</div></div>
+                    {ai.what_works && <div className="col-span-2"><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">O que funciona</div><div className="text-ink-2">{ai.what_works}</div></div>}
+                    <div className="col-span-2 flex items-center gap-2">
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${ai.fatigued ? 'text-red bg-red-soft' : 'text-green-600 bg-green-soft'}`}>{ai.fatigued ? 'Fatigado' : 'Sem fadiga'}</span>
+                      {ai.fatigue_note && <span className="text-[11px] text-ink-3">{ai.fatigue_note}</span>}
                     </div>
-                  )
-                })()}
+                  </div>
+                ) : (
+                  <div className="mb-3">
+                    <Button size="sm" variant="soft" onClick={() => analyzeCreative(c)} disabled={crDetailLoad === c.id} icon={<Icon name="spark" size={13} />}>
+                      {crDetailLoad === c.id ? 'Analisando…' : 'Analisar este criativo (1 crédito)'}
+                    </Button>
+                    <div className="text-[11px] text-ink-3 mt-1.5">Ângulo, gancho, tom e fadiga deste anúncio — pelo NOUS.</div>
+                    {crDetailErr && crDetailLoad !== c.id && <div className="text-[11.5px] text-amber mt-1">{crDetailErr}</div>}
+                  </div>
+                )}
                 <div className="rounded-md p-3 border border-line bg-blue-soft">
                   <div className="text-[10.5px] font-mono uppercase tracking-wider text-blue mb-1">O que fazer</div>
                   <div className="text-[13px] text-ink-2 leading-relaxed">{v.action}</div>
-                  {(() => { const ai = (crIntel?.per_creative || []).find((p: any) => p.id === c.id); return ai?.tip ? <div className="text-[12px] text-ink-3 mt-1.5"><span className="text-ink-2 font-medium">Dica:</span> {ai.tip}</div> : null })()}
+                  {ai?.tip && <div className="text-[12px] text-ink-3 mt-1.5"><span className="text-ink-2 font-medium">Dica do NOUS:</span> {ai.tip}</div>}
                   {v.replace && <Button size="sm" variant="primary" className="mt-2.5" onClick={() => replaceInStudio(c)} icon={<Icon name="spark" size={13} />}>Gerar substituto no Estúdio</Button>}
                 </div>
               </div>

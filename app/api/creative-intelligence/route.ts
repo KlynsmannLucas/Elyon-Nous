@@ -63,7 +63,6 @@ Analise com base SÓ nestes dados reais (não invente métricas):
 1) ÂNGULO VENCEDOR: que mensagem/gancho/formato está convertendo melhor (menor CPL / maior CTR) — agrupe os vencedores num padrão, com evidência (cite o criativo e o número).
 2) O QUE NÃO ESTÁ FUNCIONANDO: o padrão dos que gastam e não convertem ou estão fatigando.
 3) PRÓXIMO CRIATIVO A TESTAR: um criativo concreto e pronto pra briefar, que DOBRE a aposta no ângulo vencedor (ou explore a brecha), diferente do que já está saturado. Dê formato, gancho (primeiros 3s), texto principal, headline e CTA — em português, prontos pra usar.
-4) POR CRIATIVO (per_creative): para CADA criativo da lista acima, pelo número (ref), leia a cópia e classifique de forma específica e curta: o ângulo, o gancho (a abertura/promessa), o tom (1-2 palavras: ex. urgência, emocional, racional, promocional, institucional, prova social), se está fatigado (use freq ≥3.5× e CTR/CPL como sinal) e 1 dica curta de melhoria pra ESSE criativo.
 Use a ferramenta emit_creative_intel.`
 
     const { default: Anthropic } = await import('@anthropic-ai/sdk')
@@ -71,7 +70,7 @@ Use a ferramenta emit_creative_intel.`
     const message = await Promise.race([
       anthropic.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 3200,
+        max_tokens: 1500,
         tools: [{
           name: 'emit_creative_intel',
           description: 'Retorna a inteligência de criativo a partir dos dados reais.',
@@ -106,23 +105,6 @@ Use a ferramenta emit_creative_intel.`
                 },
                 required: ['format', 'angle', 'hook', 'primary_text', 'headline', 'cta', 'rationale'],
               },
-              per_creative: {
-                type: 'array',
-                description: 'Análise específica de cada criativo da lista (pelo número ref).',
-                items: {
-                  type: 'object',
-                  properties: {
-                    ref: { type: 'integer', description: 'o número do criativo na lista (1, 2, 3…)' },
-                    angle: { type: 'string', description: 'o ângulo deste criativo (curto)' },
-                    hook: { type: 'string', description: 'o gancho/abertura que ele usa (curto)' },
-                    tone: { type: 'string', description: 'o tom em 1-2 palavras' },
-                    fatigued: { type: 'boolean', description: 'se está fatigado' },
-                    fatigue_note: { type: 'string', description: 'por que está (ou não) fatigado, curtíssimo' },
-                    tip: { type: 'string', description: '1 dica curta de melhoria pra ESTE criativo' },
-                  },
-                  required: ['ref', 'angle', 'hook', 'tone', 'fatigued', 'tip'],
-                },
-              },
             },
             required: ['winning_angles', 'not_working', 'next_creative'],
           },
@@ -130,7 +112,7 @@ Use a ferramenta emit_creative_intel.`
         tool_choice: { type: 'tool', name: 'emit_creative_intel' },
         messages: [{ role: 'user', content: prompt }],
       }),
-      new Promise<null>(resolve => setTimeout(() => resolve(null), 42000)),
+      new Promise<null>(resolve => setTimeout(() => resolve(null), 34000)),
     ])
 
     if (!message) { await refundGate(gate, 'creative_intelligence'); return NextResponse.json({ error: 'A análise demorou demais — tente novamente.' }, { status: 504 }) }
@@ -139,18 +121,6 @@ Use a ferramenta emit_creative_intel.`
     if (!analysis?.winning_angles || !analysis?.next_creative) {
       await refundGate(gate, 'creative_intelligence')
       return NextResponse.json({ error: 'Não consegui montar a análise — tente novamente.' }, { status: 500 })
-    }
-
-    // Casa cada per_creative (ref = nº na lista) com o id real do criativo, pro front
-    // mostrar a análise no clique do card.
-    if (Array.isArray(analysis.per_creative)) {
-      analysis.per_creative = analysis.per_creative
-        .map((p: any) => {
-          const ref = Number(p?.ref)
-          const id = list[ref - 1]?.id || ''
-          return id ? { ...p, id } : null
-        })
-        .filter(Boolean)
     }
 
     return NextResponse.json({ success: true, analyzed: list.length, analysis })

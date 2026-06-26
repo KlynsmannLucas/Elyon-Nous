@@ -30,6 +30,7 @@ export const OPERATION_COSTS: Record<string, number> = {
   gemini_vision:    3,
   gemini_crosscheck:4,
   creative_intelligence: 4,
+  creative_detail:       1,
 }
 
 function getLimit(plan: string): number {
