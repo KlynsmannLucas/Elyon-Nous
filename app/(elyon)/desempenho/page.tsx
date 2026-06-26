@@ -83,6 +83,7 @@ export default function DesempenhoPage() {
   const [crIntel, setCrIntel] = useState<any | null>(null)
   const [crIntelLoading, setCrIntelLoading] = useState(false)
   const [crIntelErr, setCrIntelErr] = useState('')
+  const [openCre, setOpenCre] = useState<any | null>(null)
   const [detailCamp, setDetailCamp] = useState<any | null>(null)
   const [stratGen, setStratGen] = useState(false)
   const [execId, setExecId] = useState<string | null>(null)
@@ -169,6 +170,21 @@ export default function DesempenhoPage() {
       })
       .catch(() => setCrIntelErr('Falha de conexão.'))
       .finally(() => setCrIntelLoading(false))
+  }
+  // Veredito por criativo (determinístico, dos números reais) — o "o que fazer" do clique.
+  const verdictFor = (c: any): { label: string; tone: 'good' | 'warn' | 'bad'; action: string; replace?: boolean } => {
+    const freq = +(c.frequency || 0), cpl = +(c.cpl || 0), ctr = +(c.ctr || 0), leads = +(c.leads || 0), spend = +(c.spend || 0)
+    if (freq >= 3.5 && spend > 0) return { label: 'Fadiga', tone: 'bad', action: `Frequência ${freq.toFixed(1)}× — o público já viu demais. Troque por um criativo novo no mesmo ângulo antes do CPL subir.`, replace: true }
+    if (spend > 100 && leads === 0) return { label: 'Desperdício', tone: 'bad', action: `Gastou ${brl(spend)} sem 1 lead. Pause este criativo e realoque a verba.` }
+    if (c.tag === 'winner' || (leads >= 3 && cpl > 0)) return { label: 'Vencedor', tone: 'good', action: `CPL ${brl(cpl)} com ${leads} leads. Escale: suba o orçamento ~20% enquanto o CPL segurar.` }
+    if (ctr >= 1.2 && leads < 3 && spend > 50) return { label: 'Revisar oferta', tone: 'warn', action: `CTR ${ctr}% é bom, mas converte pouco — o gargalo é a oferta/landing, não o criativo.` }
+    if (ctr > 0 && ctr < 0.8 && spend > 30) return { label: 'Gancho fraco', tone: 'warn', action: `CTR ${ctr}% — o gancho dos 3 primeiros segundos não prende. Teste outra abertura.`, replace: true }
+    if (spend < 30) return { label: 'Aprendendo', tone: 'warn', action: 'Ainda em aprendizado — pouca verba pra concluir. Dê mais tempo antes de decidir.' }
+    return { label: 'Saudável', tone: 'good', action: 'Performance ok. Mantenha rodando e fique de olho na frequência.' }
+  }
+  const replaceInStudio = (c: any) => {
+    const brief = `Criar um substituto para o anúncio "${c.title || c.name || ''}" de ${clientData?.clientName || 'meu negócio'} (${clientData?.niche || ''}). Manter o ângulo que funciona, com gancho e criativo NOVOS (o atual está saturado/fraco). Formato sugerido: ${c.format || 'vídeo'}.`
+    if (typeof window !== 'undefined') window.location.href = `/criar?intent=${encodeURIComponent(brief)}`
   }
   // Briefa o próximo criativo no Estúdio (mesma rota do hub: /criar?intent=…).
   const sendNextToStudio = (nc: any) => {
@@ -902,7 +918,8 @@ export default function DesempenhoPage() {
                     const fmtLabel: Record<string, string> = { video: 'Vídeo', carousel: 'Carrossel', image: 'Imagem' }
                     const fatigued = (c.frequency || 0) >= 3.5
                     return (
-                      <div key={c.id || i} className="rounded-md border border-line overflow-hidden bg-paper">
+                      <div key={c.id || i} onClick={() => setOpenCre(c)} role="button" tabIndex={0}
+                        className="rounded-md border border-line overflow-hidden bg-paper cursor-pointer hover:border-blue hover:shadow-md transition-all">
                         <div className="h-[150px] relative border-b border-line flex items-center justify-center"
                           style={c.imageUrl ? { backgroundImage: `url(${c.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'repeating-linear-gradient(135deg, var(--canvas) 0 10px, var(--canvas-2) 10px 20px)' }}>
                           {!c.imageUrl && <span className="font-mono text-[10.5px] text-ink-4">prévia indisponível</span>}
@@ -952,43 +969,47 @@ export default function DesempenhoPage() {
             )
           })()}
 
-          {criativos ? (
-            <>
-              <Card>
-                <SectionHead title="Análise de criativos" subtitle="Diagnóstico do NOUS sobre os anúncios" icon={<Icon name="spark" size={17} />} action={<SourceBadge source={rm ? 'real' : 'ai'} />} />
-                <div className="grid md:grid-cols-2 gap-3">
-                  {[['Ganchos', criativos.qualidade_ganchos], ['Clareza da oferta', criativos.clareza_oferta], ['Prova social', criativos.prova_social], ['Ângulo', criativos.angulo], ['Teste A/B', criativos.teste_ab], ['Quantidade', criativos.quantidade]].filter(([, v]) => v).map(([l, v]) => (
-                    <div key={l as string} className="p-3 rounded-sm bg-canvas-2">
-                      <div className="text-[11px] font-semibold text-ink mb-1">{l}</div>
-                      <p className="text-xs text-ink-2 leading-relaxed">{v as string}</p>
+        </div>
+      )}
+
+      {/* Detalhe do criativo (clique no card) — veredito + o que fazer, específico */}
+      {openCre && (() => {
+        const c = openCre
+        const v = verdictFor(c)
+        const fmtLabel: Record<string, string> = { video: 'Vídeo', carousel: 'Carrossel', image: 'Imagem' }
+        const toneCls = v.tone === 'good' ? 'text-green-600 bg-green-soft' : v.tone === 'bad' ? 'text-red bg-red-soft' : 'text-amber bg-amber-soft'
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm" onClick={() => setOpenCre(null)}>
+            <div className="bg-paper rounded-lg border border-line max-w-md w-full max-h-[88vh] overflow-y-auto shadow-xl animate-fade-up" onClick={e => e.stopPropagation()}>
+              <div className="h-[200px] relative bg-canvas-2"
+                style={c.imageUrl ? { backgroundImage: `url(${c.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
+                <button onClick={() => setOpenCre(null)} className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-ink/60 text-white flex items-center justify-center hover:bg-ink transition-colors"><Icon name="x" size={14} /></button>
+                <span className="absolute top-2.5 left-2.5 text-[9.5px] font-mono uppercase tracking-wider bg-ink/75 text-white px-1.5 py-0.5 rounded-sm">{fmtLabel[c.format] || 'Imagem'}</span>
+              </div>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${toneCls}`}>{v.label}</span>
+                  {c.ageDays != null && <span className="text-[11px] text-ink-3">há {c.ageDays}d no ar</span>}
+                </div>
+                <div className="text-[14px] font-semibold text-ink mb-3 leading-snug">&ldquo;{(c.title || c.body || c.name || '').slice(0, 120)}&rdquo;</div>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {([['CTR', c.ctr ? `${(+c.ctr).toFixed(2)}%` : '—'], ['Freq.', c.frequency ? `${(+c.frequency).toFixed(1)}×` : '—'], ['CPL', c.cpl > 0 ? brl(c.cpl) : '—'], ['Leads', String(c.leads ?? 0)], ['Gasto', brl(c.spend || 0)], ['Cliques', String(c.clicks ?? '—')]] as [string, string][]).map(([l, val], i) => (
+                    <div key={i} className="bg-canvas-2 rounded-sm p-2 text-center">
+                      <div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">{l}</div>
+                      <div className={`text-[14px] font-mono font-bold ${l === 'Freq.' && (c.frequency || 0) >= 3.5 ? 'text-red' : 'text-ink'}`}>{val}</div>
                     </div>
                   ))}
                 </div>
-              </Card>
-              {criativos.fadiga && (
-                <Card className="border-amber/30" >
-                  <SectionHead title="Curva de fadiga" subtitle="Risco de saturação criativa" icon={<Icon name="pulse" size={17} />} action={<Badge tone="warn" dot>Atenção</Badge>} />
-                  <p className="text-sm text-ink-2 leading-relaxed">{criativos.fadiga}</p>
-                </Card>
-              )}
-              {criativos.problemas?.length > 0 && (
-                <Card>
-                  <SectionHead title="Problemas que custam dinheiro" icon={<Icon name="alert" size={17} />} />
-                  <div className="space-y-2">
-                    {criativos.problemas.map((p: string, i: number) => (
-                      <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-sm" style={{ background: '#FCEBEA', border: '1px solid #F3CFCC' }}>
-                        <span className="text-red shrink-0 mt-0.5">⚠</span><span className="text-sm text-ink-2">{p}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-            </>
-          ) : (
-            <Card><div className="text-center py-8 text-ink-3"><p className="text-sm">Rode a Análise Profunda (com Meta conectado) para a análise de criativos.</p><Button variant="soft" size="sm" className="mt-3" onClick={() => (window.location.href = '/diagnostico')}>Rodar Análise Profunda</Button></div></Card>
-          )}
-        </div>
-      )}
+                <div className="rounded-md p-3 border border-line bg-blue-soft">
+                  <div className="text-[10.5px] font-mono uppercase tracking-wider text-blue mb-1">O que fazer</div>
+                  <div className="text-[13px] text-ink-2 leading-relaxed">{v.action}</div>
+                  {v.replace && <Button size="sm" variant="primary" className="mt-2.5" onClick={() => replaceInStudio(c)} icon={<Icon name="spark" size={13} />}>Gerar substituto no Estúdio</Button>}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {tab === 'alocador' && (() => {
         // Alocador = RECOMENDAÇÃO pura (não executa nada). Realoca verba dos que perdem
