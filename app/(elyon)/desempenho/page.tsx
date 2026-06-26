@@ -737,10 +737,16 @@ export default function DesempenhoPage() {
         }
         const topAdsets = [...adsets].sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8)
 
-        const demoLeads = demo.filter(d => (d.leads || 0) > 0)
+        // Ignora o bucket "unknown/Unknown" que o Meta às vezes devolve (sem idade/gênero).
+        const validCohort = (d: any) => d.gender && !/unknown/i.test(String(d.gender)) && d.age && !/unknown/i.test(String(d.age))
+        const demoLeads = demo.filter(d => (d.leads || 0) > 0 && validCohort(d))
         const maxLeads = Math.max(1, ...demoLeads.map(d => d.leads || 0))
         const topDemo = [...demoLeads].sort((a, b) => (b.leads || 0) - (a.leads || 0)).slice(0, 6)
-        const bestCohort = demoLeads.filter(d => (d.cpl || 0) > 0).sort((a, b) => a.cpl - b.cpl)[0] || null
+        // Melhor coorte = menor CPL entre os coortes com VOLUME relevante (≥15% do maior),
+        // pra não eleger um coorte de pouquíssimos leads. Cai pra qualquer válido se preciso.
+        const withCpl = demoLeads.filter(d => (d.cpl || 0) > 0)
+        const substantial = withCpl.filter(d => (d.leads || 0) >= maxLeads * 0.15)
+        const bestCohort = (substantial.length ? substantial : withCpl).sort((a, b) => a.cpl - b.cpl)[0] || null
         const gLabel = (g: string) => g === 'male' ? 'Homens' : g === 'female' ? 'Mulheres' : (g || '—')
 
         const topGeo = [...geoReal].sort((a, b) => (b.leads || 0) - (a.leads || 0) || (b.spend || 0) - (a.spend || 0)).slice(0, 6)
