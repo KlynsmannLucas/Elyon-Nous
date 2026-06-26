@@ -380,6 +380,7 @@ export default function DesempenhoPage() {
     const placements: any[] = cd?.placements || []
     const geo: any[] = cd?.geo || []
     const demo: any[] = cd?.demo || []
+    const hourly: any[] = cd?.hourly || []
     const placeTotal = placements.reduce((s, p) => s + (p.spend || 0), 0) || 1
     const geoTotal = geo.reduce((s, g) => s + (g.spend || 0), 0) || 1
     const cpaC = c.leads > 0 ? Math.round(c.spend / c.leads) : null
@@ -499,6 +500,32 @@ export default function DesempenhoPage() {
               </Card>
             )}
 
+            {hourly.length > 0 && (() => {
+              const maxH = Math.max(1, ...hourly.map((h: any) => h.leads || 0))
+              const byHour: Record<number, any> = {}; hourly.forEach((h: any) => { byHour[h.hour] = h })
+              const withLeads = hourly.filter((h: any) => (h.leads || 0) > 0)
+              const best = [...withLeads].sort((a, b) => b.leads - a.leads)[0]
+              const bestCpl = [...withLeads].filter((h: any) => h.cpl > 0 && h.leads >= 3).sort((a, b) => a.cpl - b.cpl)[0]
+              return (
+                <Card>
+                  <SectionHead title="Melhores horários" subtitle="Leads por hora do dia · esta campanha" icon={<Icon name="calendar" size={17} />} action={<SourceBadge source="real" />} />
+                  {best && <p className="text-[13px] text-ink-2 mb-3">Pico de conversão às <strong className="text-ink">{best.hour}h</strong> ({int(best.leads)} leads).{bestCpl ? <> Menor CPL às <strong className="text-ink">{bestCpl.hour}h</strong> ({brl(bestCpl.cpl)}) — concentre verba nas melhores faixas.</> : ''}</p>}
+                  <div className="flex items-end gap-[3px]" style={{ height: 92 }}>
+                    {Array.from({ length: 24 }, (_, h) => {
+                      const v = byHour[h]?.leads || 0
+                      const isBest = best && h === best.hour
+                      return (
+                        <div key={h} className="flex-1 flex flex-col items-center justify-end gap-1" title={`${h}h · ${int(v)} leads${byHour[h]?.cpl ? ` · CPL ${brl(byHour[h].cpl)}` : ''}`}>
+                          <div className="w-full rounded-sm" style={{ height: Math.max(2, (v / maxH) * 70), background: isBest ? CHART_COLORS.green : CHART_COLORS.blue, opacity: isBest ? 1 : 0.6 }} />
+                          {h % 6 === 0 && <span className="text-[8.5px] font-mono text-ink-3">{h}h</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Card>
+              )
+            })()}
+
             {adsets.length > 0 && (
               <Card>
                 <SectionHead title={isGoogleCamp ? 'Grupos de anúncios' : 'Conjuntos de anúncios (ad sets)'} subtitle={`${adsets.length} ${isGoogleCamp ? 'grupos' : 'ad sets'} desta campanha`} icon={<Icon name="grid" size={17} />} action={<SourceBadge source="real" />} />
@@ -556,7 +583,7 @@ export default function DesempenhoPage() {
                 </Card>
               )}
             </div>
-            {placements.length === 0 && adsets.length === 0 && demo.length === 0 && geo.length === 0 && (
+            {placements.length === 0 && adsets.length === 0 && demo.length === 0 && geo.length === 0 && hourly.length === 0 && (
               <Card><div className="text-center py-6 text-ink-3 text-sm">Sem detalhamento por grupo/posicionamento para esta campanha no período.</div></Card>
             )}
           </>

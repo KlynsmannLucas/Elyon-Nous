@@ -34,11 +34,12 @@ export async function POST(req: NextRequest) {
       const base = `https://graph.facebook.com/v21.0/${act}/insights`
       const q = (extra: string) => `${base}?${extra}&filtering=${filt}&date_preset=${datePreset}&access_token=${token}`
 
-      const [adsetRes, placeRes, geoRes, demoRes] = await Promise.allSettled([
+      const [adsetRes, placeRes, geoRes, demoRes, hourRes] = await Promise.allSettled([
         fetch(q('level=adset&fields=adset_id,adset_name,spend,impressions,clicks,frequency,actions&limit=50'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
         fetch(q('fields=spend,actions,impressions&breakdowns=publisher_platform,platform_position&limit=50'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
         fetch(q('fields=spend,actions&breakdowns=region&limit=40'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
         fetch(q('fields=spend,actions&breakdowns=age,gender&limit=100'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+        fetch(q('fields=spend,actions&breakdowns=hourly_stats_aggregated_by_advertiser_time_zone&limit=30'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
       ])
       const val = (r: any) => (r.status === 'fulfilled' && !r.value?.error ? (r.value.data || []) : [])
 
@@ -61,7 +62,15 @@ export async function POST(req: NextRequest) {
         return { age: d.age || '', gender: d.gender || '', spend, leads, cpl: leads > 0 ? Math.round(spend / leads) : 0 }
       }).filter((d: any) => d.leads > 0).sort((a: any, b: any) => b.leads - a.leads).slice(0, 8)
 
-      return NextResponse.json({ success: true, platform, adsets, placements, geo, demo })
+      // Por HORA do dia (0-23, fuso do anunciante) — dayparting.
+      const hourly = val(hourRes).map((h: any) => {
+        const raw = String(h.hourly_stats_aggregated_by_advertiser_time_zone || '')
+        const hour = parseInt(raw.slice(0, 2), 10)
+        const spend = Number(h.spend || 0); const leads = leadsFromActions(h.actions)
+        return { hour: isNaN(hour) ? -1 : hour, spend, leads, cpl: leads > 0 ? Math.round(spend / leads) : 0 }
+      }).filter((h: any) => h.hour >= 0).sort((a: any, b: any) => a.hour - b.hour)
+
+      return NextResponse.json({ success: true, platform, adsets, placements, geo, demo, hourly })
     }
 
     // ── GOOGLE ────────────────────────────────────────────────────────────────
@@ -78,12 +87,14 @@ export async function POST(req: NextRequest) {
       SEARCH: 'Pesquisa', SEARCH_PARTNERS: 'Parceiros de pesquisa', CONTENT: 'Display', YOUTUBE_SEARCH: 'YouTube (busca)', YOUTUBE_WATCH: 'YouTube', MIXED: 'Misto',
     }
 
-    const [groupsR, netsR] = await Promise.allSettled([
+    const [groupsR, netsR, hourR] = await Promise.allSettled([
       gaqlSearch(cid, gt.accessToken, devToken, `SELECT ad_group.name, metrics.cost_micros, metrics.conversions FROM ad_group WHERE campaign.id = ${campaignId} AND segments.date DURING ${DURING} AND ad_group.status != 'REMOVED' ORDER BY metrics.cost_micros DESC LIMIT 50`),
       gaqlSearch(cid, gt.accessToken, devToken, `SELECT segments.ad_network_type, metrics.cost_micros, metrics.conversions FROM campaign WHERE campaign.id = ${campaignId} AND segments.date DURING ${DURING}`),
+      gaqlSearch(cid, gt.accessToken, devToken, `SELECT segments.hour, metrics.cost_micros, metrics.conversions FROM campaign WHERE campaign.id = ${campaignId} AND segments.date DURING ${DURING}`),
     ])
     const grows = groupsR.status === 'fulfilled' ? (groupsR.value || []) : []
     const nrows = netsR.status === 'fulfilled' ? (netsR.value || []) : []
+    const hrows = hourR.status === 'fulfilled' ? (hourR.value || []) : []
 
     const adsets = grows.map((r: any) => {
       const spend = Math.round(Number(r.metrics?.costMicros || 0) / 1e6); const leads = Math.round(Number(r.metrics?.conversions || 0))
@@ -101,7 +112,19 @@ export async function POST(req: NextRequest) {
     const placements = [...netMap.entries()].map(([net, v]) => ({ platform: NETWORK_LABEL[net] || net, position: '', spend: v.spend, leads: v.leads }))
       .filter(p => p.spend > 0).sort((a, b) => b.spend - a.spend)
 
-    return NextResponse.json({ success: true, platform, adsets, placements, geo: [], demo: [] })
+    const hourAgg = new Map<number, { spend: number; leads: number }>()
+    for (const r of hrows) {
+      const hour = Number(r.segments?.hour)
+      if (isNaN(hour)) continue
+      const cur = hourAgg.get(hour) || { spend: 0, leads: 0 }
+      cur.spend += Math.round(Number(r.metrics?.costMicros || 0) / 1e6)
+      cur.leads += Math.round(Number(r.metrics?.conversions || 0))
+      hourAgg.set(hour, cur)
+    }
+    const hourly = [...hourAgg.entries()].map(([hour, v]) => ({ hour, spend: v.spend, leads: v.leads, cpl: v.leads > 0 ? Math.round(v.spend / v.leads) : 0 }))
+      .sort((a, b) => a.hour - b.hour)
+
+    return NextResponse.json({ success: true, platform, adsets, placements, geo: [], demo: [], hourly })
   } catch (e: any) {
     console.error('[campaign-breakdown]', e?.message)
     return NextResponse.json({ success: false, error: e?.message || 'Erro ao buscar a campanha.' }, { status: 500 })
