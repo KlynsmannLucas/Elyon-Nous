@@ -115,38 +115,6 @@ export default function MercadoPage() {
         </Card>
       ) : null}
 
-      {/* Share of Voice — presença competitiva (proxy por volume de anúncios) */}
-      {competitors.length > 0 && (() => {
-        const cleanName = (n: any) => String(n || 'Concorrente')
-          .replace(/^https?:\/\//, '').replace(/^www\./, '')
-          .replace(/^(facebook|instagram|linkedin|tiktok)\.com\//i, '@')
-          .replace(/\/.*$/, '').replace(/[-_]/g, ' ').trim() || 'Concorrente'
-        const compRows = competitors.map(c => ({ name: cleanName(c.name), weight: Math.max(1, c.ads?.length || 1), you: false }))
-        // "Você" entra par com a média dos concorrentes (não temos contagem real dos seus anúncios).
-        const avgComp = compRows.length ? compRows.reduce((s, r) => s + r.weight, 0) / compRows.length : 1
-        const rows = [...compRows, { name: 'Sua Empresa', weight: Math.max(1, Math.round(avgComp)), you: true }]
-        const total = rows.reduce((s, r) => s + r.weight, 0) || 1
-        const ranked = rows.map(r => ({ ...r, pct: (r.weight / total) * 100 })).sort((a, b) => b.pct - a.pct)
-        const maxPct = ranked[0].pct || 1
-        return (
-          <Card className="mb-4 animate-fade-up">
-            <SectionHead title="Share of Voice" subtitle="Presença competitiva (proxy por volume de anúncios)" icon={<Icon name="users" size={17} />} action={<SourceBadge source="ai" />} />
-            <div className="space-y-3">
-              {ranked.map((r, i) => (
-                <div key={i}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`text-sm ${r.you ? 'font-bold text-blue' : 'font-medium text-ink'}`}>{r.name}</span>
-                    {r.you && <Badge tone="blue">Você</Badge>}
-                    <span className="ml-auto font-mono text-sm text-ink">{r.pct.toFixed(1)}%</span>
-                  </div>
-                  <HBar value={r.pct} max={maxPct} color={r.you ? CHART_COLORS.blue : CHART_COLORS.slate} h={8} />
-                </div>
-              ))}
-            </div>
-          </Card>
-        )
-      })()}
-
       {/* Oportunidades de mercado */}
       {(() => {
         const mr = marketResearch[key]
