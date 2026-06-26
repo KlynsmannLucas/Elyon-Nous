@@ -79,6 +79,7 @@ export default function DesempenhoPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [intel, setIntel] = useState<any | null>(null)
   const [intelLoading, setIntelLoading] = useState(false)
+  const [creativeSort, setCreativeSort] = useState<'spend' | 'recent' | 'cpl'>('spend')
   const [detailCamp, setDetailCamp] = useState<any | null>(null)
   const [stratGen, setStratGen] = useState(false)
   const [execId, setExecId] = useState<string | null>(null)
@@ -790,10 +791,27 @@ export default function DesempenhoPage() {
               winner: { label: 'saudável', tone: 'good' }, ok: { label: 'saudável', tone: 'good' },
               learning: { label: 'monitorar', tone: 'warn' }, waste: { label: 'fadiga', tone: 'bad' },
             }
-            const top = [...creatives].sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8)
+            const sorters: Record<typeof creativeSort, (a: any, b: any) => number> = {
+              spend:  (a, b) => (b.spend || 0) - (a.spend || 0),
+              recent: (a, b) => (a.ageDays ?? 99999) - (b.ageDays ?? 99999),
+              cpl:    (a, b) => (a.cpl > 0 ? a.cpl : Infinity) - (b.cpl > 0 ? b.cpl : Infinity),
+            }
+            const active = creatives.filter((c: any) => c.status === 'ACTIVE' || (c.spend || 0) > 0)
+            const top = [...active].sort(sorters[creativeSort]).slice(0, 60)
+            const SORT_LABELS: Record<typeof creativeSort, string> = { spend: 'Maior gasto', recent: 'Mais recentes', cpl: 'Melhor CPL' }
             return (
               <Card>
-                <SectionHead title="Top criativos" subtitle="O que está funcionando agora · dados reais" icon={<Icon name="image" size={17} />} action={<SourceBadge source="real" />} />
+                <SectionHead title="Todos os criativos" subtitle={`${active.length} anúncios ativos · dados reais`} icon={<Icon name="image" size={17} />}
+                  action={
+                    <div className="flex items-center gap-1 bg-canvas-2 rounded-md p-0.5">
+                      {(['spend', 'recent', 'cpl'] as const).map(s => (
+                        <button key={s} onClick={() => setCreativeSort(s)}
+                          className={`text-[11px] font-medium px-2 py-1 rounded-sm transition-colors ${creativeSort === s ? 'bg-paper text-ink shadow-sm' : 'text-ink-3 hover:text-ink'}`}>
+                          {SORT_LABELS[s]}
+                        </button>
+                      ))}
+                    </div>
+                  } />
                 <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
                   {top.map((c, i) => {
                     const ft = FT[c.tag] || FT.ok
