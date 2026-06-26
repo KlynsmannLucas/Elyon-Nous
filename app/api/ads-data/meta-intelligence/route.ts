@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
       // 6 - insights de ad sets
       fetch(`${baseUrl}/${act}/insights?fields=${adsetInsightFields}&date_preset=last_30d&level=adset&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 7 - ads/criativos (metadados)
-      fetch(`${baseUrl}/${act}/ads?fields=id,name,status,effective_status,campaign_id,adset_id,created_time,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,object_story_spec,asset_feed_spec}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/ads?fields=id,name,status,effective_status,campaign_id,adset_id,created_time,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,object_story_spec{link_data{picture,child_attachments{picture}},video_data{image_url}},asset_feed_spec{images{url},videos{thumbnail_url}}}&limit=80&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
       // 8 - insights de ads
       fetch(`${baseUrl}/${act}/insights?fields=${adInsightFields}&date_preset=last_30d&level=ad&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 9 - pixels (endpoint correto: adspixels)
@@ -378,6 +378,11 @@ export async function POST(req: NextRequest) {
     // ── Criativos (Ads) ──────────────────────────────────────────────────────
     const adsData    = adsRes.status    === 'fulfilled' ? adsRes.value    : { data: [] }
     const adsInsData = adsInsRes.status === 'fulfilled' ? adsInsRes.value : { data: [] }
+    // Distingue "zero criativos" de "a busca falhou" (timeout/erro do Meta) — senão a UI
+    // mostra "nenhum criativo" quando na verdade deu erro.
+    const adsError: string | null = adsRes.status === 'rejected'
+      ? (adsRes.reason?.name === 'TimeoutError' ? 'Tempo esgotado ao buscar os criativos. Tente recarregar.' : 'Falha ao buscar os criativos no Meta.')
+      : (adsData?.error?.message || null)
 
     const adInsMap: Record<string, any> = {}
     for (const r of (adsInsData.data || [])) adInsMap[r.ad_id] = r
@@ -613,7 +618,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true, score, scoreGrade,
       campaigns, byObjective,
-      adSets, ads,
+      adSets, ads, adsError,
       pixel,
       geoBreakdown, platformBreakdown, demoBreakdown,
       totals: {

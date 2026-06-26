@@ -814,7 +814,11 @@ export default function DesempenhoPage() {
             )
           })()}
           {creatives && creatives.length === 0 && !creLoading && hasMeta && (
-            <Card><div className="text-center py-6 text-ink-3 text-sm">Nenhum criativo ativo retornado pela Meta nesta conta/período.</div></Card>
+            <Card><div className="text-center py-6 text-sm">
+              {intel?.adsError
+                ? <><span className="text-amber font-medium">{intel.adsError}</span><button onClick={() => { setIntel(null) }} className="block mx-auto mt-2 text-[12px] text-blue hover:underline">Recarregar</button></>
+                : <span className="text-ink-3">Nenhum criativo ativo retornado pela Meta nesta conta/período.</span>}
+            </div></Card>
           )}
 
           {criativos ? (
