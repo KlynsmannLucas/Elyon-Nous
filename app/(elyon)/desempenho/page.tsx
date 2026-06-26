@@ -1335,22 +1335,29 @@ export default function DesempenhoPage() {
                       <th className="text-left py-2.5 px-2 font-semibold">Etapa</th>
                       <th className="text-right py-2.5 px-2 font-semibold">Volume</th>
                       <th className="text-right py-2.5 px-2 font-semibold">% topo</th>
-                      <th className="text-right py-2.5 px-2 font-semibold">Queda</th>
+                      <th className="text-right py-2.5 px-2 font-semibold">Conversão</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {stages.map((s, i, arr) => {
-                      const top = arr[0].v || 1
-                      const drop = i > 0 && arr[i - 1].v > 0 ? Math.round((1 - s.v / arr[i - 1].v) * 100) : null
-                      return (
-                        <tr key={s.stage} className="border-b border-line-2">
-                          <td className="py-2.5 px-2 text-ink font-medium">{s.stage}</td>
-                          <td className="py-2.5 px-2 text-right font-mono text-ink">{int(s.v)}</td>
-                          <td className="py-2.5 px-2 text-right font-mono text-ink-2">{(() => { const p = (s.v / top) * 100; return p === 0 ? '0' : p >= 10 ? String(Math.round(p)) : p >= 1 ? p.toFixed(1) : p.toFixed(2) })()}%</td>
-                          <td className="py-2.5 px-2 text-right font-mono text-red">{drop != null ? `−${drop}%` : '—'}</td>
-                        </tr>
-                      )
-                    })}
+                    {(() => {
+                      const fmtPct = (p: number) => p === 0 ? '0' : p >= 10 ? String(Math.round(p)) : p >= 1 ? p.toFixed(1) : p.toFixed(2)
+                      const convLabel = ['', 'CTR', 'clique→lead'] // rótulo da conversão de cada etapa
+                      const top = stages[0].v || 1
+                      return stages.map((s, i, arr) => {
+                        const prev = i > 0 ? arr[i - 1].v : 0
+                        const conv = i > 0 && prev > 0 ? (s.v / prev) * 100 : null
+                        return (
+                          <tr key={s.stage} className="border-b border-line-2">
+                            <td className="py-2.5 px-2 text-ink font-medium">{s.stage}</td>
+                            <td className="py-2.5 px-2 text-right font-mono text-ink">{int(s.v)}</td>
+                            <td className="py-2.5 px-2 text-right font-mono text-ink-2">{fmtPct((s.v / top) * 100)}%</td>
+                            <td className="py-2.5 px-2 text-right font-mono text-ink">
+                              {conv != null ? <>{fmtPct(conv)}%{convLabel[i] ? <span className="text-ink-3 text-[11px] ml-1">{convLabel[i]}</span> : null}</> : '—'}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    })()}
                   </tbody>
                 </table>
               </div>
