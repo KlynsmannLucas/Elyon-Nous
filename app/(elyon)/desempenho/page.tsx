@@ -1346,7 +1346,7 @@ export default function DesempenhoPage() {
                         <tr key={s.stage} className="border-b border-line-2">
                           <td className="py-2.5 px-2 text-ink font-medium">{s.stage}</td>
                           <td className="py-2.5 px-2 text-right font-mono text-ink">{int(s.v)}</td>
-                          <td className="py-2.5 px-2 text-right font-mono text-ink-2">{(() => { const p = (s.v / top) * 100; return p >= 1 || p === 0 ? Math.round(p) : p.toFixed(2) })()}%</td>
+                          <td className="py-2.5 px-2 text-right font-mono text-ink-2">{(() => { const p = (s.v / top) * 100; return p === 0 ? '0' : p >= 10 ? String(Math.round(p)) : p >= 1 ? p.toFixed(1) : p.toFixed(2) })()}%</td>
                           <td className="py-2.5 px-2 text-right font-mono text-red">{drop != null ? `−${drop}%` : '—'}</td>
                         </tr>
                       )
