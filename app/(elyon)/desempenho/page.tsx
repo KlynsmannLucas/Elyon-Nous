@@ -784,18 +784,26 @@ export default function DesempenhoPage() {
                   {top.map((c, i) => {
                     const ft = FT[c.tag] || FT.ok
                     const hook = (c.title || c.body || c.name || `Criativo ${i + 1}`).slice(0, 80)
+                    const fmtLabel: Record<string, string> = { video: 'Vídeo', carousel: 'Carrossel', image: 'Imagem' }
+                    const fatigued = (c.frequency || 0) >= 3.5
                     return (
                       <div key={c.id || i} className="rounded-md border border-line overflow-hidden bg-paper">
-                        <div className="h-[120px] relative border-b border-line flex items-center justify-center"
+                        <div className="h-[150px] relative border-b border-line flex items-center justify-center"
                           style={c.imageUrl ? { backgroundImage: `url(${c.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'repeating-linear-gradient(135deg, var(--canvas) 0 10px, var(--canvas-2) 10px 20px)' }}>
-                          {!c.imageUrl && <span className="font-mono text-[10.5px] text-ink-4">criativo #{i + 1}</span>}
+                          {!c.imageUrl && <span className="font-mono text-[10.5px] text-ink-4">prévia indisponível</span>}
+                          {c.format && <span className="absolute top-2 left-2 text-[9.5px] font-mono uppercase tracking-wider bg-ink/75 text-white px-1.5 py-0.5 rounded-sm">{fmtLabel[c.format] || c.format}</span>}
                           <span className="absolute top-2 right-2"><Badge tone={ft.tone}>{ft.label}</Badge></span>
                         </div>
                         <div className="p-3">
                           <div className="text-[12.5px] font-semibold leading-snug mb-2.5 line-clamp-2 min-h-[34px] text-ink">"{hook}"</div>
-                          <div className="flex justify-between text-[11.5px]">
+                          <div className="flex justify-between text-[11.5px] mb-2">
                             <div><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CTR</div><div className="font-mono font-bold text-[14px] text-ink">{c.ctr ? `${Number(c.ctr).toFixed(2)}%` : '—'}</div></div>
+                            <div className="text-center"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Freq.</div><div className={`font-mono font-bold text-[14px] ${fatigued ? 'text-red' : 'text-ink'}`}>{c.frequency ? `${Number(c.frequency).toFixed(1)}×` : '—'}</div></div>
                             <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPL</div><div className="font-mono font-bold text-[14px] text-green-600">{c.cpl > 0 ? brl(c.cpl) : '—'}</div></div>
+                          </div>
+                          <div className="flex items-center justify-between text-[10.5px] text-ink-3 pt-2 border-t border-line">
+                            <span>{c.ageDays != null ? `há ${c.ageDays}d no ar` : 'ativo'}</span>
+                            {fatigued && <span className="text-red font-semibold">fadiga · freq alta</span>}
                           </div>
                         </div>
                       </div>

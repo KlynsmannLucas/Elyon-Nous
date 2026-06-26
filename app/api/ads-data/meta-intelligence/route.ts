@@ -62,9 +62,36 @@ interface AdCreative {
   campaignId: string; adsetId: string
   title: string; body: string; callToAction: string
   imageUrl: string
+  format: 'image' | 'video' | 'carousel'
+  createdTime: string | null
+  ageDays: number | null
   spend: number; impressions: number; clicks: number
   leads: number; cpl: number; ctr: number; frequency: number
   tag: 'winner' | 'waste' | 'learning' | 'ok'
+}
+
+// Meta devolve image_url/thumbnail_url nulo p/ vídeo, carrossel e criativo dinâmico
+// (Advantage+). Resolve a MELHOR imagem disponível pra exibir o criativo de verdade.
+function resolveCreativeImage(creative: any): { url: string; format: AdCreative['format'] } {
+  const oss = creative?.object_story_spec || {}
+  const afs = creative?.asset_feed_spec || {}
+  // Carrossel
+  const cards = oss?.link_data?.child_attachments
+  if (Array.isArray(cards) && cards.length > 1) {
+    const pic = cards.find((c: any) => c?.picture || c?.image_url)
+    if (pic) return { url: pic.picture || pic.image_url, format: 'carousel' }
+  }
+  // Vídeo (object_story_spec ou asset_feed)
+  const vidThumb = oss?.video_data?.image_url || (Array.isArray(afs?.videos) && afs.videos.find((v: any) => v?.thumbnail_url)?.thumbnail_url)
+  if (vidThumb) return { url: vidThumb, format: 'video' }
+  // Imagem única
+  const img = oss?.link_data?.picture
+    || (Array.isArray(afs?.images) && afs.images.find((i: any) => i?.url)?.url)
+    || creative?.image_url
+    || creative?.thumbnail_url
+  if (img) return { url: img, format: 'image' }
+  // Sem imagem direta — usa thumbnail como último recurso
+  return { url: creative?.thumbnail_url || '', format: 'image' }
 }
 
 interface PixelInfo {
@@ -193,7 +220,7 @@ export async function POST(req: NextRequest) {
       // 6 - insights de ad sets
       fetch(`${baseUrl}/${act}/insights?fields=${adsetInsightFields}&date_preset=last_30d&level=adset&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 7 - ads/criativos (metadados)
-      fetch(`${baseUrl}/${act}/ads?fields=id,name,status,effective_status,campaign_id,adset_id,creative{id,title,body,call_to_action_type,image_url,thumbnail_url}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/ads?fields=id,name,status,effective_status,campaign_id,adset_id,created_time,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,object_story_spec,asset_feed_spec}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 8 - insights de ads
       fetch(`${baseUrl}/${act}/insights?fields=${adInsightFields}&date_preset=last_30d&level=ad&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 9 - pixels (endpoint correto: adspixels)
@@ -375,6 +402,10 @@ export async function POST(req: NextRequest) {
       else if (spend > 100 && leads === 0)         tag = 'waste'
       else if (spend < 30)                          tag = 'learning'
 
+      const { url: imageUrl, format } = resolveCreativeImage(creative)
+      const createdTime = ad.created_time || null
+      const ageDays = createdTime ? Math.floor((Date.now() - new Date(createdTime).getTime()) / 86400000) : null
+
       return {
         id: ad.id, name: ad.name,
         status: ad.effective_status || ad.status || 'ACTIVE',
@@ -383,7 +414,10 @@ export async function POST(req: NextRequest) {
         title:         creative.title         || '',
         body:          creative.body          || '',
         callToAction:  creative.call_to_action_type || '',
-        imageUrl:      creative.image_url || creative.thumbnail_url || '',
+        imageUrl,
+        format,
+        createdTime,
+        ageDays,
         spend, impressions, clicks, frequency,
         leads, cpl, ctr, tag,
       }
