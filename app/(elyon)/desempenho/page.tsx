@@ -1,7 +1,7 @@
 // app/(elyon)/desempenho/page.tsx — Desempenho com DADOS REAIS (auditoria + estratégia).
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Delta, Sparkline, Donut, BarChart, Funnel, LineChart, LegendDot, HBar, ChannelMark, platformName, Modal, CHART_COLORS } from '@/components/dashboard/v2'
 import { useDailySeries } from '@/lib/useDailySeries'
@@ -140,8 +140,11 @@ export default function DesempenhoPage() {
   const googleAcctId = (acctKey && selectedGoogleAccountByClient[acctKey]) || ''
   const hasMeta = !!metaAcctId
   // Inteligência da conta (criativos, geo, posicionamentos, ad sets, pixel) sob demanda.
+  const intelReqRef = useRef('')
   const loadIntel = useCallback(() => {
     if (intel !== null || intelLoading || !hasMeta) return
+    const reqAcct = metaAcctId
+    intelReqRef.current = reqAcct
     setIntelLoading(true)
     // O endpoint é POST (lê accountId no corpo) e pesado (até ~60s em contas grandes).
     // Antes chamávamos via GET → 405. Não mascarar falha como {} — mostra o motivo real.
@@ -153,13 +156,22 @@ export default function DesempenhoPage() {
     })
       .then(async r => {
         const d = await r.json().catch(() => null)
+        if (intelReqRef.current !== reqAcct) return // trocou de cliente/conta — ignora resposta velha
         if (!r.ok || !d) { setIntel({ _error: `Falha ao carregar (HTTP ${r.status}). Conta grande — tente recarregar.` }); return }
         if (!d.success) { setIntel({ _error: d.error || 'Falha ao carregar os dados da conta.' }); return }
         setIntel(d)
       })
-      .catch((e: any) => setIntel({ _error: e?.name === 'TimeoutError' ? 'Tempo esgotado ao carregar a conta (muito grande). Tente recarregar.' : 'Falha de conexão ao carregar a conta.' }))
-      .finally(() => setIntelLoading(false))
+      .catch((e: any) => { if (intelReqRef.current === reqAcct) setIntel({ _error: e?.name === 'TimeoutError' ? 'Tempo esgotado ao carregar a conta (muito grande). Tente recarregar.' : 'Falha de conexão ao carregar a conta.' }) })
+      .finally(() => { if (intelReqRef.current === reqAcct) setIntelLoading(false) })
   }, [intel, intelLoading, hasMeta, metaAcctId])
+  // Trocou de cliente OU de conta de anúncio → descarta o cache do cliente anterior e
+  // refaz a busca (senão criativos/campanhas/audiências ficam mostrando o cliente antigo).
+  useEffect(() => {
+    intelReqRef.current = metaAcctId // invalida resposta em voo do cliente anterior
+    setIntel(null); setIntelLoading(false)
+    setCrIntel(null); setCrIntelErr(''); setCrDetail({}); setCrDetailErr('')
+    setDetailCamp(null); setOpenCre(null)
+  }, [clientData?.clientName, metaAcctId])
   useEffect(() => { if (tab === 'criativos' || tab === 'audiencias') loadIntel() }, [tab, loadIntel])
   // Drill-down: busca os breakdowns DESTA campanha (não da conta), na plataforma dela.
   useEffect(() => {
