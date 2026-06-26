@@ -80,6 +80,9 @@ export default function DesempenhoPage() {
   const [intel, setIntel] = useState<any | null>(null)
   const [intelLoading, setIntelLoading] = useState(false)
   const [creativeSort, setCreativeSort] = useState<'spend' | 'recent' | 'cpl'>('spend')
+  const [crIntel, setCrIntel] = useState<any | null>(null)
+  const [crIntelLoading, setCrIntelLoading] = useState(false)
+  const [crIntelErr, setCrIntelErr] = useState('')
   const [detailCamp, setDetailCamp] = useState<any | null>(null)
   const [stratGen, setStratGen] = useState(false)
   const [execId, setExecId] = useState<string | null>(null)
@@ -150,6 +153,28 @@ export default function DesempenhoPage() {
   useEffect(() => { if (tab === 'criativos' || tab === 'audiencias') loadIntel() }, [tab, loadIntel])
   const creatives: any[] | null = intel ? (Array.isArray(intel.ads) ? intel.ads : []) : null
   const creLoading = intelLoading
+
+  // Inteligência de criativo (IA): ângulo vencedor + o que não funciona + próximo a testar.
+  const runCreativeIntel = () => {
+    if (crIntelLoading || !creatives || creatives.length === 0) return
+    setCrIntelLoading(true); setCrIntelErr('')
+    fetch('/api/creative-intelligence', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ niche: clientData?.niche, creatives }),
+    })
+      .then(async r => {
+        const d = await r.json().catch(() => null)
+        if (!r.ok || !d?.success) { setCrIntelErr(d?.error || 'Não foi possível analisar agora.'); return }
+        setCrIntel(d.analysis)
+      })
+      .catch(() => setCrIntelErr('Falha de conexão.'))
+      .finally(() => setCrIntelLoading(false))
+  }
+  // Briefa o próximo criativo no Estúdio (mesma rota do hub: /criar?intent=…).
+  const sendNextToStudio = (nc: any) => {
+    const brief = `Criar um anúncio de ${nc.format} para ${clientData?.clientName || 'meu negócio'} (${clientData?.niche || ''}).\nÂngulo: ${nc.angle}\nGancho (3s): ${nc.hook}\nTexto principal: ${nc.primary_text}\nHeadline: ${nc.headline}\nCTA: ${nc.cta}`
+    if (typeof window !== 'undefined') window.location.href = `/criar?intent=${encodeURIComponent(brief)}`
+  }
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const daily = useDailySeries(auditCache[key]?.[0]?.audit?._realMetrics?.avgROAS ?? null)
@@ -784,6 +809,64 @@ export default function DesempenhoPage() {
 
       {tab === 'criativos' && (
         <div className="space-y-4 animate-fade-up">
+          {/* Inteligência de criativo — ângulo vencedor + próximo a testar (IA sobre os dados reais) */}
+          {creatives && creatives.length > 0 && (() => {
+            const fatigued = creatives.filter((c: any) => (c.frequency || 0) >= 3.5 && (c.spend || 0) > 0)
+            return (
+              <Card className="bg-gradient-to-br from-blue-soft to-paper border-blue-line">
+                <SectionHead title="Inteligência de criativo" subtitle="O ângulo que converte + o próximo criativo a testar" icon={<Icon name="spark" size={17} />}
+                  action={!crIntel && <Button size="sm" onClick={runCreativeIntel} disabled={crIntelLoading} icon={<Icon name="spark" size={14} />}>{crIntelLoading ? 'Analisando…' : 'Analisar com o NOUS'}</Button>} />
+                {!crIntel && !crIntelLoading && (
+                  <p className="text-[12.5px] text-ink-2">
+                    O NOUS lê seus {creatives.length} criativos reais e diz qual <strong>ângulo está vencendo</strong>, o que não funciona, e desenha o <strong>próximo criativo a testar</strong> — pronto pro Estúdio.
+                    {fatigued.length > 0 && <span className="text-red font-medium"> · {fatigued.length} criativo(s) com fadiga (freq ≥3.5×).</span>}
+                  </p>
+                )}
+                {crIntelErr && <div className="text-[12.5px] text-amber mt-1">{crIntelErr} <button onClick={runCreativeIntel} className="text-blue hover:underline ml-1">Tentar de novo</button></div>}
+                {crIntel && (
+                  <div className="space-y-3.5 mt-1">
+                    {/* Ângulo vencedor */}
+                    <div>
+                      <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1.5">Ângulo vencedor</div>
+                      <div className="space-y-1.5">
+                        {(crIntel.winning_angles || []).map((a: any, i: number) => (
+                          <div key={i} className="p-2.5 rounded-md bg-paper border border-line">
+                            <div className="text-[13px] font-semibold text-ink">{a.angle}</div>
+                            <div className="text-[12px] text-ink-2 mt-0.5">{a.why}</div>
+                            {a.evidence && <div className="text-[11px] font-mono text-green-600 mt-1">↳ {a.evidence}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* O que não funciona */}
+                    {crIntel.not_working && (
+                      <div>
+                        <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-1">O que não está funcionando</div>
+                        <div className="text-[12.5px] text-ink-2">{crIntel.not_working}</div>
+                      </div>
+                    )}
+                    {/* Próximo criativo a testar */}
+                    {crIntel.next_creative && (
+                      <div className="p-3 rounded-md bg-ink/[0.03] border border-line">
+                        <div className="flex items-center justify-between gap-2 flex-wrap mb-1.5">
+                          <div className="text-[10.5px] font-mono uppercase tracking-wider text-blue">Próximo criativo a testar · {crIntel.next_creative.format}</div>
+                          <Button size="sm" variant="primary" onClick={() => sendNextToStudio(crIntel.next_creative)} icon={<Icon name="spark" size={13} />}>Gerar no Estúdio</Button>
+                        </div>
+                        <div className="text-[13px] font-semibold text-ink mb-1">{crIntel.next_creative.angle}</div>
+                        <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[12px]">
+                          <div><span className="text-ink-3">Gancho (3s):</span> <span className="text-ink-2">{crIntel.next_creative.hook}</span></div>
+                          <div><span className="text-ink-3">Headline:</span> <span className="text-ink-2">{crIntel.next_creative.headline}</span></div>
+                          <div className="sm:col-span-2"><span className="text-ink-3">Texto:</span> <span className="text-ink-2">{crIntel.next_creative.primary_text}</span></div>
+                          <div><span className="text-ink-3">CTA:</span> <span className="text-ink-2">{crIntel.next_creative.cta}</span></div>
+                        </div>
+                        {crIntel.next_creative.rationale && <div className="text-[11.5px] text-ink-3 mt-1.5 italic">{crIntel.next_creative.rationale}</div>}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Card>
+            )
+          })()}
           {/* Top criativos — métricas reais por anúncio (Meta) */}
           {creLoading && <Card><div className="text-center py-10 text-ink-3 text-sm">Carregando criativos da Meta…</div></Card>}
           {creatives && creatives.length > 0 && (() => {
