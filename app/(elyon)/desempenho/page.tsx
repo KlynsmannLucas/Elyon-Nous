@@ -85,6 +85,7 @@ export default function DesempenhoPage() {
   const [crIntelLoading, setCrIntelLoading] = useState(false)
   const [crIntelErr, setCrIntelErr] = useState('')
   const [openCre, setOpenCre] = useState<any | null>(null)
+  const [nousAdIds, setNousAdIds] = useState<string[]>([])
   const [crDetail, setCrDetail] = useState<Record<string, any>>({})
   const [crDetailLoad, setCrDetailLoad] = useState<string>('')
   const [crDetailErr, setCrDetailErr] = useState<string>('')
@@ -156,6 +157,15 @@ export default function DesempenhoPage() {
       .finally(() => setIntelLoading(false))
   }, [intel, intelLoading, hasMeta, metaAcctId])
   useEffect(() => { if (tab === 'criativos' || tab === 'audiencias') loadIntel() }, [tab, loadIntel])
+  // Criativos marcados como "criado pelo NOUS" (Fase 2c) — por cliente.
+  useEffect(() => {
+    const cn = clientData?.clientName
+    if (!cn) { setNousAdIds([]); return }
+    let active = true
+    fetch(`/api/nous-creatives?clientName=${encodeURIComponent(cn)}`)
+      .then(r => r.ok ? r.json() : { adIds: [] }).then(d => { if (active) setNousAdIds(Array.isArray(d.adIds) ? d.adIds : []) }).catch(() => {})
+    return () => { active = false }
+  }, [clientData?.clientName])
   const creatives: any[] | null = intel ? (Array.isArray(intel.ads) ? intel.ads : []) : null
   const creLoading = intelLoading
 
@@ -189,6 +199,16 @@ export default function DesempenhoPage() {
     if (spend < 30) return { label: 'Aprendendo', tone: 'warn', action: 'Ainda em aprendizado — pouca verba pra concluir. Dê mais tempo antes de decidir.' }
     return { label: 'Saudável', tone: 'good', action: 'Performance ok. Mantenha rodando e fique de olho na frequência.' }
   }
+  // Fase 2c: este criativo nasceu de uma sugestão do NOUS? (marca explícita por id OU tag [NOUS] no nome)
+  const isNous = (c: any) => nousAdIds.includes(c.id) || /\[nous\]/i.test(c.name || '')
+  const markNous = (c: any, mark: boolean) => {
+    const cn = clientData?.clientName || ''
+    if (!cn || !c.id) return
+    setNousAdIds(prev => mark ? Array.from(new Set([...prev, c.id])) : prev.filter(x => x !== c.id))
+    fetch('/api/nous-creatives', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientName: cn, adId: c.id, adName: c.name, niche: clientData?.niche, mark }) }).catch(() => {})
+    if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: mark ? 'Marcado como criado pelo NOUS' : 'Desmarcado', body: mark ? 'Vou medir o resultado dele vs os demais.' : '' })
+  }
+
   // Análise individual sob demanda (no clique do card). Cacheia por id — re-abrir é grátis.
   const analyzeCreative = (c: any) => {
     const id = c.id
@@ -207,12 +227,12 @@ export default function DesempenhoPage() {
       .finally(() => setCrDetailLoad(''))
   }
   const replaceInStudio = (c: any) => {
-    const brief = `Criar um substituto para o anúncio "${c.title || c.name || ''}" de ${clientData?.clientName || 'meu negócio'} (${clientData?.niche || ''}). Manter o ângulo que funciona, com gancho e criativo NOVOS (o atual está saturado/fraco). Formato sugerido: ${c.format || 'vídeo'}.`
+    const brief = `Criar um substituto para o anúncio "${c.title || c.name || ''}" de ${clientData?.clientName || 'meu negócio'} (${clientData?.niche || ''}). Manter o ângulo que funciona, com gancho e criativo NOVOS (o atual está saturado/fraco). Formato sugerido: ${c.format || 'vídeo'}.\n\nAo publicar no Meta, inclua [NOUS] no NOME do anúncio para o ELYON medir o resultado automaticamente.`
     if (typeof window !== 'undefined') window.location.href = `/criar?intent=${encodeURIComponent(brief)}`
   }
   // Briefa o próximo criativo no Estúdio (mesma rota do hub: /criar?intent=…).
   const sendNextToStudio = (nc: any) => {
-    const brief = `Criar um anúncio de ${nc.format} para ${clientData?.clientName || 'meu negócio'} (${clientData?.niche || ''}).\nÂngulo: ${nc.angle}\nGancho (3s): ${nc.hook}\nTexto principal: ${nc.primary_text}\nHeadline: ${nc.headline}\nCTA: ${nc.cta}`
+    const brief = `Criar um anúncio de ${nc.format} para ${clientData?.clientName || 'meu negócio'} (${clientData?.niche || ''}).\nÂngulo: ${nc.angle}\nGancho (3s): ${nc.hook}\nTexto principal: ${nc.primary_text}\nHeadline: ${nc.headline}\nCTA: ${nc.cta}\n\nAo publicar no Meta, inclua [NOUS] no NOME do anúncio para o ELYON medir o resultado automaticamente.`
     if (typeof window !== 'undefined') window.location.href = `/criar?intent=${encodeURIComponent(brief)}`
   }
 
@@ -849,6 +869,32 @@ export default function DesempenhoPage() {
 
       {tab === 'criativos' && (
         <div className="space-y-4 animate-fade-up">
+          {/* Fase 2c — Impacto dos criativos criados pelo NOUS (vs os demais) */}
+          {creatives && creatives.some(isNous) && (() => {
+            const nousCr = creatives.filter(isNous)
+            const otherCr = creatives.filter((c: any) => !isNous(c) && (c.spend || 0) > 0)
+            const avgCpl = (arr: any[]) => { const w = arr.filter((c: any) => c.cpl > 0); return w.length ? Math.round(w.reduce((s: number, c: any) => s + c.cpl, 0) / w.length) : null }
+            const nCpl = avgCpl(nousCr), oCpl = avgCpl(otherCr)
+            const nLeads = nousCr.reduce((s: number, c: any) => s + (c.leads || 0), 0)
+            const better = nCpl != null && oCpl != null && nCpl < oCpl
+            const diff = (nCpl != null && oCpl != null && oCpl > 0) ? Math.round((1 - nCpl / oCpl) * 100) : null
+            return (
+              <Card className={better ? 'bg-green-soft border-green/30' : ''}>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="w-9 h-9 rounded-lg bg-ink flex items-center justify-center text-white shrink-0"><Icon name="spark" size={17} /></span>
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="text-[14px] font-bold text-ink">Impacto dos criativos do NOUS</div>
+                    <div className="text-[12.5px] text-ink-2 mt-0.5">
+                      {nousCr.length} criativo{nousCr.length > 1 ? 's' : ''} criado{nousCr.length > 1 ? 's' : ''} com o NOUS{nLeads > 0 ? ` · ${nLeads} leads` : ''}.{' '}
+                      {nCpl != null && oCpl != null
+                        ? <>CPL médio <strong className={better ? 'text-green-600' : 'text-ink'}>{brl(nCpl)}</strong> vs <strong>{brl(oCpl)}</strong> dos demais{diff != null && diff > 0 ? ` — ${diff}% mais barato` : diff != null && diff < 0 ? ` — ${Math.abs(diff)}% mais caro` : ''}.</>
+                        : nCpl != null ? <>CPL médio <strong>{brl(nCpl)}</strong>.</> : <span className="text-ink-3">Aguardando entrega pra medir o resultado.</span>}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )
+          })()}
           {/* Inteligência de criativo — ângulo vencedor + próximo a testar (IA sobre os dados reais) */}
           {creatives && creatives.length > 0 && (() => {
             const fatigued = creatives.filter((c: any) => (c.frequency || 0) >= 3.5 && (c.spend || 0) > 0)
@@ -953,6 +999,7 @@ export default function DesempenhoPage() {
                           {!c.imageUrl && <span className="font-mono text-[10.5px] text-ink-4">prévia indisponível</span>}
                           {c.format && <span className="absolute top-2 left-2 text-[9.5px] font-mono uppercase tracking-wider bg-ink/75 text-white px-1.5 py-0.5 rounded-sm">{fmtLabel[c.format] || c.format}</span>}
                           <span className="absolute top-2 right-2"><Badge tone={ft.tone}>{ft.label}</Badge></span>
+                          {isNous(c) && <span className="absolute bottom-2 left-2 text-[9.5px] font-bold bg-blue text-white px-1.5 py-0.5 rounded-sm shadow-sm">✦ NOUS</span>}
                         </div>
                         <div className="p-3">
                           <div className="text-[12.5px] font-semibold leading-snug mb-2.5 line-clamp-2 min-h-[34px] text-ink">"{hook}"</div>
@@ -1065,6 +1112,11 @@ export default function DesempenhoPage() {
                   {ai?.tip && <div className="text-[12px] text-ink-3 mt-1.5"><span className="text-ink-2 font-medium">Dica do NOUS:</span> {ai.tip}</div>}
                   {v.replace && <Button size="sm" variant="primary" className="mt-2.5" onClick={() => replaceInStudio(c)} icon={<Icon name="spark" size={13} />}>Gerar substituto no Estúdio</Button>}
                 </div>
+                {/* Fase 2c — marcar este anúncio como criado pelo NOUS (mede vs os demais) */}
+                <button onClick={() => markNous(c, !isNous(c))}
+                  className={`mt-3 w-full text-[12px] font-medium rounded-md py-2 border transition-colors ${isNous(c) ? 'border-blue text-blue bg-blue-soft' : 'border-line text-ink-3 hover:text-ink hover:border-ink-4'}`}>
+                  {isNous(c) ? '✦ Criado pelo NOUS — clique para desmarcar' : 'Marcar como criado pelo NOUS'}
+                </button>
               </div>
             </div>
           </div>
