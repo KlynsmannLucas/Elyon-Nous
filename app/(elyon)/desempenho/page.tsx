@@ -1000,9 +1000,29 @@ export default function DesempenhoPage() {
                     </div>
                   ))}
                 </div>
+                {(() => {
+                  const ai = (crIntel?.per_creative || []).find((p: any) => p.id === c.id)
+                  if (!ai) {
+                    return crIntel ? null : (
+                      <div className="text-[11.5px] text-ink-3 mb-3 p-2.5 rounded-sm bg-canvas-2">💡 Rode <strong>&ldquo;Analisar com o NOUS&rdquo;</strong> no topo da aba pra ver ângulo, gancho e tom deste criativo.</div>
+                    )
+                  }
+                  return (
+                    <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
+                      <div><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">Ângulo</div><div className="font-medium text-ink">{ai.angle}</div></div>
+                      <div><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">Tom</div><div className="font-medium text-ink">{ai.tone}</div></div>
+                      <div className="col-span-2"><div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">Gancho</div><div className="text-ink-2">{ai.hook}</div></div>
+                      <div className="col-span-2 flex items-center gap-2">
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${ai.fatigued ? 'text-red bg-red-soft' : 'text-green-600 bg-green-soft'}`}>{ai.fatigued ? 'Fatigado' : 'Sem fadiga'}</span>
+                        {ai.fatigue_note && <span className="text-[11px] text-ink-3">{ai.fatigue_note}</span>}
+                      </div>
+                    </div>
+                  )
+                })()}
                 <div className="rounded-md p-3 border border-line bg-blue-soft">
                   <div className="text-[10.5px] font-mono uppercase tracking-wider text-blue mb-1">O que fazer</div>
                   <div className="text-[13px] text-ink-2 leading-relaxed">{v.action}</div>
+                  {(() => { const ai = (crIntel?.per_creative || []).find((p: any) => p.id === c.id); return ai?.tip ? <div className="text-[12px] text-ink-3 mt-1.5"><span className="text-ink-2 font-medium">Dica:</span> {ai.tip}</div> : null })()}
                   {v.replace && <Button size="sm" variant="primary" className="mt-2.5" onClick={() => replaceInStudio(c)} icon={<Icon name="spark" size={13} />}>Gerar substituto no Estúdio</Button>}
                 </div>
               </div>
