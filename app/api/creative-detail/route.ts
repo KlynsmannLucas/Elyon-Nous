@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { gateAndCharge, refundGate } from '@/lib/gate'
 import { sanitizeText } from '@/lib/sanitize'
+import { getClientMemoryContext } from '@/lib/memory'
 
 export const maxDuration = 30
 
@@ -14,6 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
     const niche = sanitizeText(body.niche, 120)
+    const clientName = sanitizeText(body.clientName, 120)
     const c = body.creative || {}
     const copy = sanitizeText([c.title, c.body].filter(Boolean).join(' — '), 280)
     const name = sanitizeText(c.name || c.title || '', 80)
@@ -26,11 +28,13 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) { await refundGate(gate, 'creative_detail'); return NextResponse.json({ error: 'IA não configurada.' }, { status: 500 }) }
 
+    const memory = clientName ? await getClientMemoryContext(gate.userId!, clientName, niche).catch(() => '') : ''
+
     const prompt = `Você é um diretor de criação de tráfego pago no Brasil${niche ? ` (nicho: ${niche})` : ''}. Analise ESTE criativo de Meta Ads de forma específica e curta (sem encher de texto):
 Criativo: "${copy || name}"
 Métricas (30d): ${metrics}
-
-Frequência ≥3.5× indica fadiga (público saturado). CPL menor e CTR maior = melhor.
+${memory}
+Frequência ≥3.5× indica fadiga (público saturado). CPL menor e CTR maior = melhor.${memory ? ' Considere a memória do histórico deste cliente ao avaliar (ângulos que já vencem/falham).' : ''}
 Diga: o ângulo, o gancho (a abertura/promessa), o tom (1-2 palavras), se está fatigado (e por quê, curtíssimo), o que funciona nele, e 1 dica acionável de melhoria. Use a ferramenta emit_detail.`
 
     const { default: Anthropic } = await import('@anthropic-ai/sdk')

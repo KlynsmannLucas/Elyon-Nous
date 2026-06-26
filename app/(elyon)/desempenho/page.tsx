@@ -80,6 +80,7 @@ export default function DesempenhoPage() {
   const [intel, setIntel] = useState<any | null>(null)
   const [intelLoading, setIntelLoading] = useState(false)
   const [creativeSort, setCreativeSort] = useState<'spend' | 'recent' | 'cpl'>('spend')
+  const competitors = useAppStore(s => s.competitors)
   const [crIntel, setCrIntel] = useState<any | null>(null)
   const [crIntelLoading, setCrIntelLoading] = useState(false)
   const [crIntelErr, setCrIntelErr] = useState('')
@@ -162,9 +163,12 @@ export default function DesempenhoPage() {
   const runCreativeIntel = () => {
     if (crIntelLoading || !creatives || creatives.length === 0) return
     setCrIntelLoading(true); setCrIntelErr('')
+    // Brecha do concorrente (Raio-X) p/ o NOUS explorar no próximo criativo.
+    const cn = clientData?.clientName || ''
+    const competitorGap = (competitors[cn] || []).map((c: any) => c.xray?.gap).filter(Boolean).slice(0, 2).join(' · ')
     fetch('/api/creative-intelligence', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ niche: clientData?.niche, creatives }),
+      body: JSON.stringify({ niche: clientData?.niche, clientName: cn, competitorGap, creatives }),
     })
       .then(async r => {
         const d = await r.json().catch(() => null)
@@ -192,7 +196,7 @@ export default function DesempenhoPage() {
     setCrDetailLoad(id); setCrDetailErr('')
     fetch('/api/creative-detail', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ niche: clientData?.niche, creative: { name: c.name, title: c.title, body: c.body, format: c.format, ctr: c.ctr, cpl: c.cpl, frequency: c.frequency, leads: c.leads, ageDays: c.ageDays } }),
+      body: JSON.stringify({ niche: clientData?.niche, clientName: clientData?.clientName, creative: { name: c.name, title: c.title, body: c.body, format: c.format, ctr: c.ctr, cpl: c.cpl, frequency: c.frequency, leads: c.leads, ageDays: c.ageDays } }),
     })
       .then(async r => {
         const d = await r.json().catch(() => null)
@@ -898,6 +902,10 @@ export default function DesempenhoPage() {
                         {crIntel.next_creative.rationale && <div className="text-[11.5px] text-ink-3 mt-1.5 italic">{crIntel.next_creative.rationale}</div>}
                       </div>
                     )}
+                    <div className="flex items-center gap-1.5 text-[11px] text-ink-3 pt-1">
+                      <Icon name="check" size={12} className="text-green-600" />
+                      O NOUS guardou estes aprendizados na memória deste cliente — as próximas análises constroem em cima.
+                    </div>
                   </div>
                 )}
               </Card>

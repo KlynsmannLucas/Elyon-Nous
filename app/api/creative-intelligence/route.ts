@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { gateAndCharge, refundGate } from '@/lib/gate'
 import { sanitizeText } from '@/lib/sanitize'
+import { getClientMemoryContext } from '@/lib/memory'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export const maxDuration = 45
 
@@ -21,6 +23,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
     const niche = sanitizeText(body.niche, 120)
+    const clientName = sanitizeText(body.clientName, 120)
     const competitorGap = sanitizeText(body.competitorGap, 400) // brecha do Raio-X (opcional)
     const raw: InCreative[] = Array.isArray(body.creatives) ? body.creatives : []
     if (raw.length === 0) {
@@ -53,13 +56,18 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) { await refundGate(gate, 'creative_intelligence'); return NextResponse.json({ error: 'IA não configurada.' }, { status: 500 }) }
 
+    // Memória do cliente (aprendizados de análises/auditorias anteriores) — faz o NOUS
+    // construir sobre o histórico deste cliente, não começar do zero.
+    const memory = clientName ? await getClientMemoryContext(gate.userId!, clientName, niche).catch(() => '') : ''
+
     const prompt = `Você é um diretor de criação e performance de tráfego pago no Brasil, especialista em criativos de Meta Ads${niche ? ` no nicho "${niche}"` : ''}. Pós-iOS, o CRIATIVO é o principal lever de performance.
 
 Aqui estão os criativos REAIS que estão rodando nesta conta (com métricas dos últimos 30 dias). CPL menor = melhor; CTR maior = melhor; frequência alta (≥3.5×) indica saturação/fadiga.
 ${list.map((c, i) => `${i + 1}. [${c.formato}] "${c.copy || c.nome}" — CTR ${c.ctr}% · CPL R$${c.cpl} · freq ${c.freq}× · ${c.leads} leads${c.idadeDias != null ? ` · ${c.idadeDias}d no ar` : ''}`).join('\n')}
-${competitorGap ? `\nBrecha do concorrente (do Raio-X), considere ao propor o próximo criativo: ${competitorGap}` : ''}
+${competitorGap ? `\nBrecha do concorrente (do Raio-X) — explore-a ao propor o próximo criativo: ${competitorGap}` : ''}
+${memory}
 
-Analise com base SÓ nestes dados reais (não invente métricas):
+Analise com base SÓ nestes dados reais (não invente métricas)${memory ? ', e LEVE EM CONTA a memória do histórico acima (priorize o que já funcionou, evite o que já falhou)' : ''}:
 1) ÂNGULO VENCEDOR: que mensagem/gancho/formato está convertendo melhor (menor CPL / maior CTR) — agrupe os vencedores num padrão, com evidência (cite o criativo e o número).
 2) O QUE NÃO ESTÁ FUNCIONANDO: o padrão dos que gastam e não convertem ou estão fatigando.
 3) PRÓXIMO CRIATIVO A TESTAR: um criativo concreto e pronto pra briefar, que DOBRE a aposta no ângulo vencedor (ou explore a brecha), diferente do que já está saturado. Dê formato, gancho (primeiros 3s), texto principal, headline e CTA — em português, prontos pra usar.
@@ -123,7 +131,21 @@ Use a ferramenta emit_creative_intel.`
       return NextResponse.json({ error: 'Não consegui montar a análise — tente novamente.' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, analyzed: list.length, analysis })
+    // Grava os aprendizados na memória do cliente (reusa campaign_memory — também alimenta
+    // audit/estratégia). Best-effort: nunca quebra a resposta.
+    try {
+      if (supabaseAdmin && gate.userId && clientName) {
+        const base = { user_id: gate.userId, client_name: clientName, niche: niche || null }
+        const rows: any[] = []
+        for (const a of (analysis.winning_angles || []).slice(0, 3)) {
+          if (a?.angle) rows.push({ ...base, memory_type: 'winning_creative', title: String(a.angle).slice(0, 120), description: String(a.why || a.evidence || a.angle).slice(0, 300), metrics: {}, confidence: 0.7 })
+        }
+        if (analysis.not_working) rows.push({ ...base, memory_type: 'losing_pattern', title: 'Padrão de criativo que não converte', description: String(analysis.not_working).slice(0, 300), metrics: {}, confidence: 0.6 })
+        if (rows.length) await supabaseAdmin.from('campaign_memory').insert(rows)
+      }
+    } catch { /* silencioso */ }
+
+    return NextResponse.json({ success: true, analyzed: list.length, analysis, learned: true })
   } catch (e: any) {
     await refundGate(gate, 'creative_intelligence')
     console.error('[creative-intelligence]', e?.message)
