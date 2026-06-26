@@ -813,13 +813,27 @@ export default function DesempenhoPage() {
               </Card>
             )
           })()}
-          {creatives && creatives.length === 0 && !creLoading && hasMeta && (
+          {creatives && creatives.length === 0 && !creLoading && hasMeta && (() => {
+            const liveCamps = Array.isArray(intel?.campaigns) ? intel.campaigns.length : 0
+            return (
             <Card><div className="text-center py-6 text-sm">
-              {intel?.adsError
-                ? <><span className="text-amber font-medium">{intel.adsError}</span><button onClick={() => { setIntel(null) }} className="block mx-auto mt-2 text-[12px] text-blue hover:underline">Recarregar</button></>
-                : <span className="text-ink-3">Nenhum criativo ativo retornado pela Meta nesta conta/período.</span>}
+              {intel?.adsError ? (
+                <><span className="text-amber font-medium">{intel.adsError}</span><button onClick={() => setIntel(null)} className="block mx-auto mt-2 text-[12px] text-blue hover:underline">Recarregar</button></>
+              ) : liveCamps === 0 ? (
+                <>
+                  <div className="text-ink font-medium">A conta selecionada não retornou campanhas nem anúncios ao vivo.</div>
+                  <div className="text-[12px] text-ink-3 mt-1">Conta consultada: <span className="font-mono">act_{metaAcctId || '—'}</span>. Provavelmente não é a conta de anúncio certa deste cliente.</div>
+                  <button onClick={() => (window.location.href = '/diagnostico')} className="mt-2 text-[12px] text-blue hover:underline">Conferir a conta em Diagnóstico</button>
+                </>
+              ) : (
+                <>
+                  <div className="text-ink-3">A conta tem {liveCamps} campanha(s) ao vivo, mas o Meta não retornou anúncios no período.</div>
+                  <div className="text-[12px] text-ink-3 mt-1">Conta: <span className="font-mono">act_{metaAcctId || '—'}</span> · pode ser anúncios pausados/sem entrega nos últimos 30 dias.</div>
+                </>
+              )}
             </div></Card>
-          )}
+            )
+          })()}
 
           {criativos ? (
             <>
