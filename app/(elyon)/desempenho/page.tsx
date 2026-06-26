@@ -129,8 +129,17 @@ export default function DesempenhoPage() {
   const loadIntel = useCallback(() => {
     if (intel !== null || intelLoading || !hasMeta) return
     setIntelLoading(true)
-    fetch(`/api/ads-data/meta-intelligence?accountId=${encodeURIComponent(metaAcctId)}`, { signal: AbortSignal.timeout(45000) })
-      .then(r => r.json()).then(d => setIntel(d?.success ? d : {})).catch(() => setIntel({})).finally(() => setIntelLoading(false))
+    // O endpoint é pesado (até ~60s em contas grandes). Não mascarar falha como {} —
+    // senão a UI mostra "conta errada" quando na verdade deu timeout/erro.
+    fetch(`/api/ads-data/meta-intelligence?accountId=${encodeURIComponent(metaAcctId)}`, { signal: AbortSignal.timeout(120000) })
+      .then(async r => {
+        const d = await r.json().catch(() => null)
+        if (!r.ok || !d) { setIntel({ _error: `Falha ao carregar (HTTP ${r.status}). Conta grande — tente recarregar.` }); return }
+        if (!d.success) { setIntel({ _error: d.error || 'Falha ao carregar os dados da conta.' }); return }
+        setIntel(d)
+      })
+      .catch((e: any) => setIntel({ _error: e?.name === 'TimeoutError' ? 'Tempo esgotado ao carregar a conta (muito grande). Tente recarregar.' : 'Falha de conexão ao carregar a conta.' }))
+      .finally(() => setIntelLoading(false))
   }, [intel, intelLoading, hasMeta, metaAcctId])
   useEffect(() => { if (tab === 'criativos' || tab === 'audiencias') loadIntel() }, [tab, loadIntel])
   const creatives: any[] | null = intel ? (Array.isArray(intel.ads) ? intel.ads : []) : null
@@ -817,7 +826,9 @@ export default function DesempenhoPage() {
             const liveCamps = Array.isArray(intel?.campaigns) ? intel.campaigns.length : 0
             return (
             <Card><div className="text-center py-6 text-sm">
-              {intel?.adsError ? (
+              {intel?._error ? (
+                <><span className="text-amber font-medium">{intel._error}</span><button onClick={() => setIntel(null)} className="block mx-auto mt-2 text-[12px] text-blue hover:underline">Recarregar</button></>
+              ) : intel?.adsError ? (
                 <><span className="text-amber font-medium">{intel.adsError}</span><button onClick={() => setIntel(null)} className="block mx-auto mt-2 text-[12px] text-blue hover:underline">Recarregar</button></>
               ) : liveCamps === 0 ? (
                 <>

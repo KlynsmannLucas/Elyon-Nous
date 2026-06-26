@@ -4,6 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
 
+// ~13 chamadas paralelas ao Meta (cada uma até 20s) + breakdowns. Sem maxDuration a
+// função caía no limite padrão e dava 504 em contas grandes (ex.: 50 campanhas/100 ads),
+// voltando vazio. Igual às outras rotas pesadas do projeto.
+export const maxDuration = 300
+
 const OBJECTIVE_LABELS: Record<string, string> = {
   OUTCOME_LEADS:          'Geração de Leads',
   OUTCOME_TRAFFIC:        'Tráfego',
