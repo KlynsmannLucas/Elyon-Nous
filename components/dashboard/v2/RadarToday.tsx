@@ -38,6 +38,8 @@ export function RadarToday() {
   const connectedAccounts = useAppStore(s => s.connectedAccounts)
   const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
   const selectedGoogleAccountByClient = useAppStore(s => s.selectedGoogleAccountByClient)
+  const radarDismissed = useAppStore(s => s.radarDismissed)
+  const dismissRadarAlert = useAppStore(s => s.dismissRadarAlert)
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   // Isolamento por cliente: SÓ a conta de anúncio que ESTE cliente selecionou.
@@ -96,6 +98,16 @@ export function RadarToday() {
     finally { setExecId(null) }
   }
 
+  // Ignorar alerta: some por ~7 dias; se o problema persistir, o radar o traz de volta.
+  const DISMISS_TTL = 7 * 86400000
+  const dismissKey = (a: RadarAlert) => `${key}|${a.platform || ''}|${a.campaignId || a.title}|${a.severity}`
+  const dismiss = (a: RadarAlert) => {
+    dismissRadarAlert(dismissKey(a))
+    if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Alerta ignorado', body: 'Não vai te incomodar por 7 dias. Se o problema persistir, ele volta.' })
+  }
+  const visible = (alerts || []).filter(a => { const ts = radarDismissed[dismissKey(a)]; return !ts || (Date.now() - ts) > DISMISS_TTL })
+  const visibleMoney = visible.filter(a => a.severity !== 'opportunity').reduce((s, a) => s + (a.money || 0), 0)
+
   if (!key || (!hasMeta && !hasGoogle)) return null
   if (alerts === null && !loading) return null
 
@@ -110,17 +122,17 @@ export function RadarToday() {
               <div className="text-[12px] text-ink-3">O que precisa de você agora · últimos 7 dias</div>
             </div>
           </div>
-          {moneyAtRisk > 0 && (
+          {visibleMoney > 0 && (
             <div className="text-right">
               <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Em risco</div>
-              <div className="text-lg font-bold font-mono text-red">{brl(moneyAtRisk)}</div>
+              <div className="text-lg font-bold font-mono text-red">{brl(visibleMoney)}</div>
             </div>
           )}
         </div>
 
         {loading && <div className="text-center py-6 text-ink-3 text-sm">Vigiando suas contas…</div>}
 
-        {!loading && alerts && alerts.length === 0 && (
+        {!loading && visible.length === 0 && (
           <div className="flex items-center gap-3 py-4 px-1">
             <span className="w-9 h-9 rounded-full bg-green-soft flex items-center justify-center text-green-600 shrink-0"><Icon name="check" size={18} /></span>
             <div>
@@ -130,9 +142,9 @@ export function RadarToday() {
           </div>
         )}
 
-        {!loading && alerts && alerts.length > 0 && (
+        {!loading && visible.length > 0 && (
           <div className="space-y-2.5">
-            {alerts.map((a, i) => {
+            {visible.map((a, i) => {
               const s = SEV[a.severity]
               return (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-md" style={{ background: s.bg, border: `1px solid ${s.border}` }}>
@@ -146,14 +158,20 @@ export function RadarToday() {
                     <div className="text-[13.5px] font-semibold text-ink mt-0.5">{a.title}</div>
                     <div className="text-[12px] text-ink-2 mt-0.5 leading-relaxed">{a.detail}</div>
                   </div>
-                  {a.action && a.campaignId && (
-                    <button onClick={() => exec(a)} disabled={execId === a.campaignId}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-white text-[12px] font-semibold shrink-0 self-center disabled:opacity-60"
-                      style={{ background: a.action === 'pause' ? '#E1483F' : '#0E9E6E' }}>
-                      <Icon name={a.action === 'pause' ? 'alert' : 'arrowUp'} size={13} />
-                      {execId === a.campaignId ? 'Aguarde…' : a.action === 'pause' ? 'Pausar' : 'Escalar'}
+                  <div className="flex flex-col items-end gap-1.5 shrink-0 self-center">
+                    {a.action && a.campaignId && (
+                      <button onClick={() => exec(a)} disabled={execId === a.campaignId}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-white text-[12px] font-semibold disabled:opacity-60"
+                        style={{ background: a.action === 'pause' ? '#E1483F' : '#0E9E6E' }}>
+                        <Icon name={a.action === 'pause' ? 'alert' : 'arrowUp'} size={13} />
+                        {execId === a.campaignId ? 'Aguarde…' : a.action === 'pause' ? 'Pausar' : 'Escalar'}
+                      </button>
+                    )}
+                    <button onClick={() => dismiss(a)} title="Ignorar por 7 dias"
+                      className="text-[11px] font-medium text-ink-4 hover:text-ink transition-colors px-1">
+                      Ignorar
                     </button>
-                  )}
+                  </div>
                 </div>
               )
             })}

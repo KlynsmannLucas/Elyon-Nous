@@ -323,6 +323,11 @@ interface AppStore {
   setSelectedMetaAccountId:   (clientKey: string, id: string) => void
   setSelectedGoogleAccountId: (clientKey: string, id: string) => void
 
+  // Alertas do Radar de hoje que o usuário ignorou (key → timestamp). Some por ~7 dias;
+  // se o problema persistir, volta a aparecer (não esconde dinheiro real pra sempre).
+  radarDismissed: Record<string, number>
+  dismissRadarAlert: (key: string) => void
+
   // Histórico de campanhas por cliente
   campaignHistory: CampaignRecord[]
   addCampaign: (record: Omit<CampaignRecord, 'id' | 'createdAt'>) => void
@@ -503,6 +508,9 @@ export const useAppStore = create<AppStore>()(
       selectedGoogleAccountByClient: {},
       setSelectedMetaAccountId:   (clientKey, id) => set(s => ({ selectedMetaAccountByClient: { ...s.selectedMetaAccountByClient, [clientKey]: id } })),
       setSelectedGoogleAccountId: (clientKey, id) => set(s => ({ selectedGoogleAccountByClient: { ...s.selectedGoogleAccountByClient, [clientKey]: id } })),
+
+      radarDismissed: {},
+      dismissRadarAlert: (key) => set(s => ({ radarDismissed: { ...s.radarDismissed, [key]: Date.now() } })),
 
       campaignHistory: [],
 
@@ -896,6 +904,7 @@ export const useAppStore = create<AppStore>()(
         // sobreviver a reloads — senão todo cliente cairia na conta padrão do usuário.
         selectedMetaAccountByClient:   state.selectedMetaAccountByClient,
         selectedGoogleAccountByClient: state.selectedGoogleAccountByClient,
+        radarDismissed:                state.radarDismissed,
         strategyTimestamps:       state.strategyTimestamps,
         auditCache:               state.auditCache,
         actionPlanCache:          state.actionPlanCache,
