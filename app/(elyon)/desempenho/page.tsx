@@ -71,6 +71,7 @@ export default function DesempenhoPage() {
   const strategyData = useAppStore(s => s.strategyData)
   const connectedAccounts = useAppStore(s => s.connectedAccounts)
   const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
+  const selectedGoogleAccountByClient = useAppStore(s => s.selectedGoogleAccountByClient)
   const [mounted, setMounted] = useState(false)
   const [tab, setTab] = useState<SubTab>('visao')
   const [filterOpen, setFilterOpen] = useState(false)
@@ -90,6 +91,8 @@ export default function DesempenhoPage() {
   const [crDetailLoad, setCrDetailLoad] = useState<string>('')
   const [crDetailErr, setCrDetailErr] = useState<string>('')
   const [detailCamp, setDetailCamp] = useState<any | null>(null)
+  const [campBreakdown, setCampBreakdown] = useState<any | null>(null)
+  const [campBreakdownLoading, setCampBreakdownLoading] = useState(false)
   const [stratGen, setStratGen] = useState(false)
   const [execId, setExecId] = useState<string | null>(null)
 
@@ -134,6 +137,7 @@ export default function DesempenhoPage() {
   // Isolamento por cliente: SÓ a conta que ESTE cliente selecionou (sem fallback pra
   // conta padrão do usuário, que é de outro cliente).
   const metaAcctId = (acctKey && selectedMetaAccountByClient[acctKey]) || ''
+  const googleAcctId = (acctKey && selectedGoogleAccountByClient[acctKey]) || ''
   const hasMeta = !!metaAcctId
   // Inteligência da conta (criativos, geo, posicionamentos, ad sets, pixel) sob demanda.
   const loadIntel = useCallback(() => {
@@ -157,6 +161,24 @@ export default function DesempenhoPage() {
       .finally(() => setIntelLoading(false))
   }, [intel, intelLoading, hasMeta, metaAcctId])
   useEffect(() => { if (tab === 'criativos' || tab === 'audiencias') loadIntel() }, [tab, loadIntel])
+  // Drill-down: busca os breakdowns DESTA campanha (não da conta), na plataforma dela.
+  useEffect(() => {
+    const c = detailCamp
+    if (!c?.id) { setCampBreakdown(null); return }
+    const isG = c.platform === 'google'
+    let active = true
+    setCampBreakdownLoading(true); setCampBreakdown(null)
+    fetch('/api/ads-data/campaign-breakdown', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campaignId: String(c.id), platform: isG ? 'google' : 'meta', accountId: isG ? (googleAcctId || undefined) : (metaAcctId || undefined) }),
+      signal: AbortSignal.timeout(60000),
+    })
+      .then(r => r.json()).then(d => { if (active) setCampBreakdown(d?.success ? d : { _err: d?.error || true }) })
+      .catch((e: any) => { if (active) setCampBreakdown({ _err: e?.name === 'TimeoutError' ? 'Tempo esgotado' : true }) })
+      .finally(() => { if (active) setCampBreakdownLoading(false) })
+    return () => { active = false }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailCamp?.id])
   // Criativos marcados como "criado pelo NOUS" (Fase 2c) — por cliente.
   useEffect(() => {
     const cn = clientData?.clientName
@@ -324,7 +346,7 @@ export default function DesempenhoPage() {
               const roas = Number(c.roas || 0)
               const td = 'py-[11px] px-3 border-b border-line-2 whitespace-nowrap font-mono'
               return (
-                <tr key={id} className="hover:bg-canvas transition-colors cursor-pointer" onClick={() => { setDetailCamp(c); loadIntel() }}>
+                <tr key={id} className="hover:bg-canvas transition-colors cursor-pointer" onClick={() => setDetailCamp(c)}>
                   <td className="py-[11px] px-3 border-b border-line-2 max-w-[300px]">
                     <div className="flex items-center gap-2.5">
                       <ChannelMark name={platformName(c.platform)} size={20} />
@@ -348,17 +370,20 @@ export default function DesempenhoPage() {
     )
   }
 
-  // Drill-down de campanha — breakdowns reais da conta (geo/posicionamentos/ad sets/pixel).
+  // Drill-down de campanha — breakdowns reais DESTA campanha (não da conta), na plataforma dela.
   const CampanhaDetalhe = ({ c }: { c: any }) => {
     const dv = [CHART_COLORS.blue, CHART_COLORS.green, CHART_COLORS.teal, CHART_COLORS.amber, CHART_COLORS.red, CHART_COLORS.slate]
-    const objs: any[] = intel?.byObjective ? Object.values(intel.byObjective) : []
-    const placements: any[] = (intel?.platformBreakdown || []).slice(0, 6)
-    const adsets: any[] = intel?.adSets || []
-    const geo: any[] = intel?.intelligenceData?.geoBreakdown || intel?.geoBreakdown || []
-    const pixel = intel?.pixel
+    const isGoogleCamp = c.platform === 'google'
+    const cd = campBreakdown
+    const cdLoading = campBreakdownLoading
+    const adsets: any[] = cd?.adsets || []
+    const placements: any[] = cd?.placements || []
+    const geo: any[] = cd?.geo || []
+    const demo: any[] = cd?.demo || []
     const placeTotal = placements.reduce((s, p) => s + (p.spend || 0), 0) || 1
     const geoTotal = geo.reduce((s, g) => s + (g.spend || 0), 0) || 1
     const cpaC = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+    const gLabel = (g: string) => g === 'male' ? 'Homens' : g === 'female' ? 'Mulheres' : (g || '—')
     return (
       <div className="space-y-4 animate-fade-up">
         <button onClick={() => setDetailCamp(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-ink">
@@ -453,55 +478,45 @@ export default function DesempenhoPage() {
           )
         })()}
 
-        {intelLoading && <Card><div className="text-center py-10 text-ink-3 text-sm">Carregando detalhes da conta…</div></Card>}
-        {!intelLoading && intel && (
+        {cdLoading && <Card><div className="text-center py-10 text-ink-3 text-sm">Carregando os detalhes desta campanha…</div></Card>}
+        {!cdLoading && cd && !cd._err && (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {objs.length > 0 && (
-                <Card>
-                  <SectionHead title="CPL por objetivo" subtitle="Contexto da conta" icon={<Icon name="target" size={17} />} action={<SourceBadge source="real" />} />
-                  <BarChart height={180} data={objs.map((o, i) => ({ label: (o.label || 'Obj').slice(0, 10), value: Math.round(o.avgCPL || 0), color: dv[i % dv.length] }))} valueFmt={(v) => brl(v)} />
-                </Card>
-              )}
-              {placements.length > 0 && (
-                <Card>
-                  <SectionHead title="Posicionamentos" subtitle="Distribuição de entrega" icon={<Icon name="layers" size={17} />} action={<SourceBadge source="real" />} />
-                  <div className="flex gap-4 items-center">
-                    <Donut data={placements.map((p, i) => ({ label: p.platform, value: p.spend, color: dv[i % dv.length] }))} centerLabel={placements[0]?.platform || ''} centerSub="top" />
-                    <div className="flex-1 space-y-2">
-                      {placements.map((p, i) => (
-                        <div key={i} className="flex items-center gap-2 text-[12.5px]">
-                          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: dv[i % dv.length] }} />
-                          <span className="flex-1 text-ink capitalize truncate">{p.platform}{p.position ? ` · ${p.position}` : ''}</span>
-                          <span className="font-mono text-ink-2">{Math.round((p.spend / placeTotal) * 100)}%</span>
-                        </div>
-                      ))}
-                    </div>
+            {placements.length > 0 && (
+              <Card>
+                <SectionHead title={isGoogleCamp ? 'Redes' : 'Posicionamentos'} subtitle={`Distribuição de entrega · esta campanha`} icon={<Icon name="layers" size={17} />} action={<SourceBadge source="real" />} />
+                <div className="flex gap-4 items-center">
+                  <Donut data={placements.map((p, i) => ({ label: p.platform, value: p.spend, color: dv[i % dv.length] }))} centerLabel={placements[0]?.platform || ''} centerSub="top" />
+                  <div className="flex-1 space-y-2">
+                    {placements.map((p, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[12.5px]">
+                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: dv[i % dv.length] }} />
+                        <span className="flex-1 text-ink capitalize truncate">{p.platform}{p.position ? ` · ${p.position}` : ''}</span>
+                        <span className="font-mono text-ink-2">{Math.round((p.spend / placeTotal) * 100)}%</span>
+                      </div>
+                    ))}
                   </div>
-                </Card>
-              )}
-            </div>
+                </div>
+              </Card>
+            )}
 
             {adsets.length > 0 && (
               <Card>
-                <SectionHead title="Conjuntos de anúncios (ad sets)" subtitle={`${adsets.length} ad sets`} icon={<Icon name="grid" size={17} />} action={<SourceBadge source="real" />} />
+                <SectionHead title={isGoogleCamp ? 'Grupos de anúncios' : 'Conjuntos de anúncios (ad sets)'} subtitle={`${adsets.length} ${isGoogleCamp ? 'grupos' : 'ad sets'} desta campanha`} icon={<Icon name="grid" size={17} />} action={<SourceBadge source="real" />} />
                 <div className="overflow-x-auto no-sb">
                   <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse' }}>
                     <thead><tr className="text-[10.5px] font-mono uppercase tracking-[0.06em] text-ink-3">
-                      <th className="text-left py-2.5 px-3 font-semibold border-b border-line">Ad set</th>
+                      <th className="text-left py-2.5 px-3 font-semibold border-b border-line">{isGoogleCamp ? 'Grupo' : 'Ad set'}</th>
                       <th className="text-right py-2.5 px-3 font-semibold border-b border-line">Investido</th>
                       <th className="text-right py-2.5 px-3 font-semibold border-b border-line">Leads</th>
                       <th className="text-right py-2.5 px-3 font-semibold border-b border-line">CPL</th>
-                      <th className="text-center py-2.5 px-3 font-semibold border-b border-line">Sinais</th>
                     </tr></thead>
                     <tbody>
-                      {adsets.slice(0, 12).map((a, i) => (
+                      {adsets.slice(0, 15).map((a, i) => (
                         <tr key={a.id || i} className="hover:bg-canvas">
                           <td className="py-[11px] px-3 border-b border-line-2 max-w-[280px]"><span className="text-ink font-medium truncate block">{a.name}</span></td>
                           <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{brl(a.spend || 0)}</td>
                           <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{int(a.leads || 0)}</td>
                           <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{a.cpl > 0 ? brl(a.cpl) : '—'}</td>
-                          <td className="py-[11px] px-3 border-b border-line-2 text-center">{a.issues?.length ? <Badge tone="warn" dot>{a.issues.length}</Badge> : <Badge tone="good" dot>ok</Badge>}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -511,9 +526,23 @@ export default function DesempenhoPage() {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {demo.length > 0 && (
+                <Card>
+                  <SectionHead title="Quem mais converte" subtitle="Idade × gênero · esta campanha" icon={<Icon name="target" size={17} />} action={<SourceBadge source="real" />} />
+                  <div className="space-y-2">
+                    {demo.slice(0, 6).map((d, i) => (
+                      <div key={i} className="flex items-center gap-2.5 text-[12.5px]">
+                        <span className="text-ink w-[120px] shrink-0 truncate">{gLabel(d.gender)} · {d.age || '—'}</span>
+                        <span className="flex-1 font-mono text-ink-3">{int(d.leads)} leads</span>
+                        <span className="font-mono text-ink-2 w-14 text-right">{d.cpl > 0 ? brl(d.cpl) : '—'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
               {geo.length > 0 && (
                 <Card>
-                  <SectionHead title="Geografia" subtitle="Top regiões por investimento" icon={<Icon name="globe" size={17} />} action={<SourceBadge source="real" />} />
+                  <SectionHead title="Geografia" subtitle="Top regiões · esta campanha" icon={<Icon name="globe" size={17} />} action={<SourceBadge source="real" />} />
                   <div className="space-y-2.5">
                     {geo.slice(0, 8).map((g, i) => (
                       <div key={i} className="flex items-center gap-2.5">
@@ -526,22 +555,13 @@ export default function DesempenhoPage() {
                   </div>
                 </Card>
               )}
-              <Card>
-                <SectionHead title="Saúde do pixel & tracking" icon={<Icon name="pulse" size={17} />} action={<SourceBadge source="real" />} />
-                {pixel ? (
-                  <div className="space-y-3">
-                    {[['Pixel', pixel.name || 'Meta Pixel'], ['Status', pixel.isActive ? 'Ativo (disparou < 48h)' : 'Inativo'], ['Último disparo', pixel.lastFiredTime ? new Date(pixel.lastFiredTime).toLocaleString('pt-BR') : '—']].map(([k, v]) => (
-                      <div key={k} className="flex items-center justify-between text-[13px]"><span className="text-ink-2">{k}</span><span className="font-mono font-semibold text-ink">{v}</span></div>
-                    ))}
-                    <div className="h-px bg-line-2" />
-                    <div className={`flex items-center gap-2 text-[12.5px] ${pixel.isActive ? 'text-green-600' : 'text-amber'}`}><Icon name={pixel.isActive ? 'check' : 'alert'} size={15} /> {pixel.isActive ? 'Tracking saudável — dados confiáveis' : 'Pixel sem disparo recente — verifique a instalação'}</div>
-                  </div>
-                ) : <p className="text-center py-6 text-ink-3 text-sm">Sem pixel detectado nesta conta.</p>}
-              </Card>
             </div>
+            {placements.length === 0 && adsets.length === 0 && demo.length === 0 && geo.length === 0 && (
+              <Card><div className="text-center py-6 text-ink-3 text-sm">Sem detalhamento por grupo/posicionamento para esta campanha no período.</div></Card>
+            )}
           </>
         )}
-        {!intelLoading && !hasMeta && <Card><div className="text-center py-6 text-ink-3 text-sm">Conecte o Meta Ads para ver os detalhes da conta.</div></Card>}
+        {!cdLoading && cd?._err && <Card><div className="text-center py-6 text-sm text-amber">Não consegui carregar os detalhes desta campanha. {typeof cd._err === 'string' ? cd._err : ''}</div></Card>}
       </div>
     )
   }
