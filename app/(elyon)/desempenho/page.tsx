@@ -397,6 +397,10 @@ export default function DesempenhoPage() {
     const geoTotal = geo.reduce((s, g) => s + (g.spend || 0), 0) || 1
     const cpaC = c.leads > 0 ? Math.round(c.spend / c.leads) : null
     const gLabel = (g: string) => g === 'male' ? 'Homens' : g === 'female' ? 'Mulheres' : (g || '—')
+    const fmtDate = (s: any) => { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) }
+    const startStr = fmtDate(cd?.dates?.start)
+    const stopStr = fmtDate(cd?.dates?.stop)
+    const runningDays = cd?.dates?.start ? Math.max(0, Math.floor((Date.now() - new Date(cd.dates.start).getTime()) / 86400000)) : null
     return (
       <div className="space-y-4 animate-fade-up">
         <button onClick={() => setDetailCamp(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-ink">
@@ -408,6 +412,12 @@ export default function DesempenhoPage() {
             <div className="flex-1 min-w-[200px]">
               <div className="text-[17px] font-bold text-ink" style={{ letterSpacing: '-0.01em' }}>{c.name || 'Campanha'}</div>
               <div className="text-[12.5px] text-ink-3">{c.objective || (c.name?.toLowerCase().includes('lead') ? 'Geração de leads' : 'Conversões')}</div>
+              <div className="text-[11.5px] text-ink-3 mt-1 flex items-center gap-1.5 flex-wrap">
+                <Icon name="calendar" size={12} className="text-ink-4" />
+                {cdLoading && !cd?.dates ? 'Buscando datas…'
+                  : startStr ? <>Início <span className="text-ink-2 font-medium">{startStr}</span> · Término <span className="text-ink-2 font-medium">{stopStr || 'sem data definida (em andamento)'}</span>{!stopStr && runningDays != null ? ` · ${runningDays}d no ar` : ''}</>
+                  : <span className="text-ink-4">Datas não disponíveis</span>}
+              </div>
             </div>
             <Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge>
             <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Investido</div><div className="font-mono font-bold text-ink">{brl(c.spend || 0)}</div></div>

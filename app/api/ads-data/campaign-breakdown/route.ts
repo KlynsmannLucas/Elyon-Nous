@@ -34,14 +34,18 @@ export async function POST(req: NextRequest) {
       const base = `https://graph.facebook.com/v21.0/${act}/insights`
       const q = (extra: string) => `${base}?${extra}&filtering=${filt}&date_preset=${datePreset}&access_token=${token}`
 
-      const [adsetRes, placeRes, geoRes, demoRes, hourRes] = await Promise.allSettled([
+      const [adsetRes, placeRes, geoRes, demoRes, hourRes, campRes] = await Promise.allSettled([
         fetch(q('level=adset&fields=adset_id,adset_name,spend,impressions,clicks,frequency,actions&limit=50'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
         fetch(q('fields=spend,actions,impressions&breakdowns=publisher_platform,platform_position&limit=50'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
         fetch(q('fields=spend,actions&breakdowns=region&limit=40'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
         fetch(q('fields=spend,actions&breakdowns=age,gender&limit=100'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
         fetch(q('fields=spend,actions&breakdowns=hourly_stats_aggregated_by_advertiser_time_zone&limit=30'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+        // Nó da campanha (datas de início/término agendadas) — não vem nos insights.
+        fetch(`https://graph.facebook.com/v21.0/${campaignId}?fields=start_time,stop_time,created_time&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       ])
       const val = (r: any) => (r.status === 'fulfilled' && !r.value?.error ? (r.value.data || []) : [])
+      const campObj = campRes.status === 'fulfilled' && !campRes.value?.error ? campRes.value : {}
+      const dates = { start: campObj.start_time || null, stop: campObj.stop_time || null, created: campObj.created_time || null }
 
       const adsets = val(adsetRes).map((a: any) => {
         const spend = Number(a.spend || 0); const leads = leadsFromActions(a.actions)
@@ -70,7 +74,7 @@ export async function POST(req: NextRequest) {
         return { hour: isNaN(hour) ? -1 : hour, spend, leads, cpl: leads > 0 ? Math.round(spend / leads) : 0 }
       }).filter((h: any) => h.hour >= 0).sort((a: any, b: any) => a.hour - b.hour)
 
-      return NextResponse.json({ success: true, platform, adsets, placements, geo, demo, hourly })
+      return NextResponse.json({ success: true, platform, adsets, placements, geo, demo, hourly, dates })
     }
 
     // ── GOOGLE ────────────────────────────────────────────────────────────────
@@ -87,14 +91,19 @@ export async function POST(req: NextRequest) {
       SEARCH: 'Pesquisa', SEARCH_PARTNERS: 'Parceiros de pesquisa', CONTENT: 'Display', YOUTUBE_SEARCH: 'YouTube (busca)', YOUTUBE_WATCH: 'YouTube', MIXED: 'Misto',
     }
 
-    const [groupsR, netsR, hourR] = await Promise.allSettled([
+    const [groupsR, netsR, hourR, datesR] = await Promise.allSettled([
       gaqlSearch(cid, gt.accessToken, devToken, `SELECT ad_group.name, metrics.cost_micros, metrics.conversions FROM ad_group WHERE campaign.id = ${campaignId} AND segments.date DURING ${DURING} AND ad_group.status != 'REMOVED' ORDER BY metrics.cost_micros DESC LIMIT 50`),
       gaqlSearch(cid, gt.accessToken, devToken, `SELECT segments.ad_network_type, metrics.cost_micros, metrics.conversions FROM campaign WHERE campaign.id = ${campaignId} AND segments.date DURING ${DURING}`),
       gaqlSearch(cid, gt.accessToken, devToken, `SELECT segments.hour, metrics.cost_micros, metrics.conversions FROM campaign WHERE campaign.id = ${campaignId} AND segments.date DURING ${DURING}`),
+      gaqlSearch(cid, gt.accessToken, devToken, `SELECT campaign.start_date, campaign.end_date FROM campaign WHERE campaign.id = ${campaignId} LIMIT 1`),
     ])
     const grows = groupsR.status === 'fulfilled' ? (groupsR.value || []) : []
     const nrows = netsR.status === 'fulfilled' ? (netsR.value || []) : []
     const hrows = hourR.status === 'fulfilled' ? (hourR.value || []) : []
+    // Datas da campanha; Google usa 2037-12-30 como "sem término" → vira null.
+    const dRow = (datesR.status === 'fulfilled' ? (datesR.value || []) : [])[0]?.campaign || {}
+    const gEnd = dRow.endDate && !String(dRow.endDate).startsWith('2037') ? dRow.endDate : null
+    const dates = { start: dRow.startDate || null, stop: gEnd, created: null }
 
     const adsets = grows.map((r: any) => {
       const spend = Math.round(Number(r.metrics?.costMicros || 0) / 1e6); const leads = Math.round(Number(r.metrics?.conversions || 0))
@@ -124,7 +133,7 @@ export async function POST(req: NextRequest) {
     const hourly = [...hourAgg.entries()].map(([hour, v]) => ({ hour, spend: v.spend, leads: v.leads, cpl: v.leads > 0 ? Math.round(v.spend / v.leads) : 0 }))
       .sort((a, b) => a.hour - b.hour)
 
-    return NextResponse.json({ success: true, platform, adsets, placements, geo: [], demo: [], hourly })
+    return NextResponse.json({ success: true, platform, adsets, placements, geo: [], demo: [], hourly, dates })
   } catch (e: any) {
     console.error('[campaign-breakdown]', e?.message)
     return NextResponse.json({ success: false, error: e?.message || 'Erro ao buscar a campanha.' }, { status: 500 })
