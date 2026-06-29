@@ -49,6 +49,16 @@ type SubTab = 'visao' | 'campanhas' | 'audiencias' | 'canais' | 'criativos' | 'f
 const STATUS_TONE: Record<string, 'good' | 'warn' | 'bad'> = { vencedora: 'good', atencao: 'warn', critica: 'bad' }
 const STATUS_LABEL: Record<string, string> = { vencedora: 'Escalar', atencao: 'Otimizar', critica: 'Revisar' }
 
+// Status de ENTREGA real da campanha (Meta status / Google campaign.status) → rótulo + cor.
+const DELIVERY: Record<string, { label: string; color: string }> = {
+  ACTIVE: { label: 'Ativa', color: '#0E9E6E' }, ENABLED: { label: 'Ativa', color: '#0E9E6E' },
+  PAUSED: { label: 'Pausada', color: '#D9870B' }, CAMPAIGN_PAUSED: { label: 'Pausada', color: '#D9870B' }, ADSET_PAUSED: { label: 'Pausada', color: '#D9870B' },
+  ARCHIVED: { label: 'Arquivada', color: '#64748B' }, DISABLED: { label: 'Desativada', color: '#64748B' },
+  DELETED: { label: 'Removida', color: '#E1483F' }, REMOVED: { label: 'Removida', color: '#E1483F' },
+}
+const deliveryOf = (c: any): { label: string; color: string } =>
+  DELIVERY[String(c?.status || c?.effective_status || '').toUpperCase()] || { label: 'Ativa', color: '#0E9E6E' }
+
 function Empty() {
   return (
     <div className="p-4 md:p-6">
@@ -78,6 +88,7 @@ export default function DesempenhoPage() {
   const [exportOpen, setExportOpen] = useState(false)
   const [channelFilter, setChannelFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [deliveryFilter, setDeliveryFilter] = useState('all')
   const [intel, setIntel] = useState<any | null>(null)
   const [intelLoading, setIntelLoading] = useState(false)
   const [creativeSort, setCreativeSort] = useState<'spend' | 'recent' | 'cpl'>('spend')
@@ -362,7 +373,10 @@ export default function DesempenhoPage() {
                   <td className="py-[11px] px-3 border-b border-line-2 max-w-[300px]">
                     <div className="flex items-center gap-2.5">
                       <ChannelMark name={platformName(c.platform)} size={20} />
-                      <span className="text-ink font-medium truncate">{c.name || 'Sem nome'}</span>
+                      <div className="min-w-0">
+                        <span className="text-ink font-medium truncate block">{c.name || 'Sem nome'}</span>
+                        {(() => { const d = deliveryOf(c); return <span className="inline-flex items-center gap-1 text-[10.5px] text-ink-3 mt-0.5"><span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: d.color }} />{d.label}</span> })()}
+                      </div>
                     </div>
                   </td>
                   <td className={`text-right text-ink ${td}`}>{brl(c.spend || 0)}</td>
@@ -419,6 +433,7 @@ export default function DesempenhoPage() {
                   : <span className="text-ink-4">Datas não disponíveis</span>}
               </div>
             </div>
+            {(() => { const d = deliveryOf(c); return <span className="text-[11px] font-bold px-2.5 py-1 rounded-pill inline-flex items-center gap-1.5" style={{ color: d.color, background: `${d.color}1A` }}><span className="w-1.5 h-1.5 rounded-full" style={{ background: d.color }} />{d.label}</span> })()}
             <Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge>
             <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Investido</div><div className="font-mono font-bold text-ink">{brl(c.spend || 0)}</div></div>
             <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPA</div><div className="font-mono font-bold text-ink">{cpaC != null ? brl(cpaC) : '—'}</div></div>
@@ -682,8 +697,10 @@ export default function DesempenhoPage() {
         const channels = Array.from(new Set(camps.map((c: any) => platformName(c.platform))))
         const filtered = camps.filter((c: any) =>
           (channelFilter === 'all' || platformName(c.platform) === channelFilter) &&
-          (statusFilter === 'all' || c._s === statusFilter))
-        const activeFilters = (channelFilter !== 'all' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0)
+          (statusFilter === 'all' || c._s === statusFilter) &&
+          (deliveryFilter === 'all' || deliveryOf(c).label === deliveryFilter))
+        const activeFilters = (channelFilter !== 'all' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0) + (deliveryFilter !== 'all' ? 1 : 0)
+        const deliveryOpts = Array.from(new Set(camps.map((c: any) => deliveryOf(c).label)))
         const pill = (active: boolean) => `px-3 py-1.5 text-[12.5px] font-semibold rounded-pill border-[1.5px] ${active ? 'border-blue bg-blue-soft text-blue-600' : 'border-line bg-paper text-ink-2 hover:border-line-strong'}`
         return (
           <div className="animate-fade-up">
@@ -698,13 +715,18 @@ export default function DesempenhoPage() {
               {filtered.length > 0 ? <CampTable rows={filtered} /> : <p className="text-center py-8 text-ink-3 text-sm">Nenhuma campanha{activeFilters ? ' com esses filtros' : ''}.</p>}
             </Card>
 
-            <Modal open={filterOpen} onClose={() => setFilterOpen(false)} icon="filter" title="Filtrar campanhas" sub="Refine a lista por canal e status"
-              footer={<><Button variant="ghost" onClick={() => { setChannelFilter('all'); setStatusFilter('all') }}>Limpar</Button><Button onClick={() => setFilterOpen(false)}>Aplicar</Button></>}>
+            <Modal open={filterOpen} onClose={() => setFilterOpen(false)} icon="filter" title="Filtrar campanhas" sub="Refine a lista por canal, entrega e recomendação"
+              footer={<><Button variant="ghost" onClick={() => { setChannelFilter('all'); setStatusFilter('all'); setDeliveryFilter('all') }}>Limpar</Button><Button onClick={() => setFilterOpen(false)}>Aplicar</Button></>}>
               <div className="text-xs font-semibold text-ink-2 mb-2">Canal</div>
               <div className="flex flex-wrap gap-2 mb-4">
                 {['all', ...channels].map(c => <button key={c} onClick={() => setChannelFilter(c)} className={pill(channelFilter === c)}>{c === 'all' ? 'Todos' : c}</button>)}
               </div>
-              <div className="text-xs font-semibold text-ink-2 mb-2">Status</div>
+              <div className="text-xs font-semibold text-ink-2 mb-2">Entrega</div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button onClick={() => setDeliveryFilter('all')} className={pill(deliveryFilter === 'all')}>Todas</button>
+                {deliveryOpts.map(d => <button key={d} onClick={() => setDeliveryFilter(d)} className={pill(deliveryFilter === d)}>{d}</button>)}
+              </div>
+              <div className="text-xs font-semibold text-ink-2 mb-2">Recomendação do NOUS</div>
               <div className="flex flex-wrap gap-2">
                 {[['all', 'Todos'], ['vencedora', 'Escalar'], ['atencao', 'Otimizar'], ['critica', 'Revisar']].map(([k, l]) => <button key={k} onClick={() => setStatusFilter(k)} className={pill(statusFilter === k)}>{l}</button>)}
               </div>
