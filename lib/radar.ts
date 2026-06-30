@@ -177,8 +177,23 @@ export async function buildRadar(opts: BuildRadarOpts): Promise<{ alerts: RadarA
     }
   } catch { /* Google não conectado */ }
 
+  // Não repetir: suprime recomendações de ações já EXECUTADAS nos últimos 7 dias
+  // (ex.: já escalei essa campanha → não recomendar escalar de novo até a ação fazer efeito).
+  let actioned = new Set<string>()
+  if (supabaseAdmin && userId) {
+    try {
+      const since = new Date(Date.now() - 7 * 86400000).toISOString()
+      const { data } = await supabaseAdmin.from('executed_actions')
+        .select('campaign_id, action, executed_at').eq('user_id', userId).gte('executed_at', since)
+      actioned = new Set((data || []).map((a: any) => `${a.campaign_id}|${a.action}`))
+    } catch { /* sem tabela — segue sem suprimir */ }
+  }
+  const visible = actioned.size
+    ? alerts.filter(a => !(a.action && a.campaignId && actioned.has(`${a.campaignId}|${a.action}`)))
+    : alerts
+
   const sev: Record<Severity, number> = { leak: 0, risk: 1, opportunity: 2 }
-  alerts.sort((a, b) => sev[a.severity] - sev[b.severity] || b.money - a.money)
-  const moneyAtRisk = alerts.filter(a => a.severity !== 'opportunity').reduce((s, a) => s + (a.money || 0), 0)
-  return { alerts, moneyAtRisk, analyzed: camps.length }
+  visible.sort((a, b) => sev[a.severity] - sev[b.severity] || b.money - a.money)
+  const moneyAtRisk = visible.filter(a => a.severity !== 'opportunity').reduce((s, a) => s + (a.money || 0), 0)
+  return { alerts: visible, moneyAtRisk, analyzed: camps.length }
 }
