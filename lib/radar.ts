@@ -182,6 +182,22 @@ export async function buildRadar(opts: BuildRadarOpts): Promise<{ alerts: RadarA
         }).filter((c: any) => c.cost > 0)
         const gTotal = gcamps.reduce((s: number, c: any) => s + c.cost, 0)
 
+        // Mudanças de orçamento feitas no Google Ads (fora do ELYON) nos últimos 7 dias → não recomendar escalar.
+        try {
+          const fmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
+          const since = fmt(new Date(Date.now() - 7 * 86400000)); const until = fmt(new Date())
+          const ce = await gaqlSearch(cid, gt.accessToken, devToken, `
+            SELECT change_event.campaign, change_event.change_resource_type, change_event.change_date_time
+            FROM change_event
+            WHERE change_event.change_date_time >= '${since}' AND change_event.change_date_time <= '${until}' AND change_event.change_resource_type = 'CAMPAIGN_BUDGET'
+            ORDER BY change_event.change_date_time DESC LIMIT 1000
+          `)
+          for (const r of (ce || [])) {
+            const id = String(r.changeEvent?.campaign || '').split('/').pop()
+            if (id) budgetChanged.add(id)
+          }
+        } catch { /* change_event indisponível — segue sem suprimir por orçamento */ }
+
         const gLoss = gcamps.filter((c: any) => c.hasRev && c.roas < 1).sort((a: any, b: any) => a.roas - b.roas)
         if (gLoss.length) {
           const c = gLoss[0]
