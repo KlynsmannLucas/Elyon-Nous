@@ -52,6 +52,8 @@ export async function buildRadar(opts: BuildRadarOpts): Promise<{ alerts: RadarA
   const cplMin = bench?.cpl_min ?? null
 
   const alerts: RadarAlert[] = []
+  // Campanhas cujo ORÇAMENTO mudou recentemente FORA do ELYON (Gerenciador) → não recomendar escalar.
+  const budgetChanged = new Set<string>()
 
   // ── META (últimos 7 dias) ────────────────────────────────────────────────
   let metaAccountId: string | null = null
@@ -72,6 +74,30 @@ export async function buildRadar(opts: BuildRadarOpts): Promise<{ alerts: RadarA
           return { id: String(r.campaign_id || ''), name: r.campaign_name || 'Campanha', spend, leads, cpl: leads > 0 ? spend / leads : Infinity, freq: Number(r.frequency || 0) }
         }).filter((c: any) => c.spend > 0)
       }
+
+      // Mudanças de orçamento feitas no Gerenciador (qualquer pessoa) nos últimos 7 dias.
+      try {
+        const since = Math.floor((Date.now() - 7 * 86400000) / 1000)
+        const aRes = await fetch(`https://graph.facebook.com/v21.0/act_${metaAccountId}/activities?fields=event_type,object_id,object_type&since=${since}&limit=300&access_token=${token}`, { signal: AbortSignal.timeout(12000) })
+        const aJson = await aRes.json()
+        if (!aJson?.error && Array.isArray(aJson.data)) {
+          const adsetChanged = new Set<string>()
+          for (const ev of aJson.data) {
+            const et = String(ev.event_type || '').toLowerCase()
+            if (!et.includes('budget')) continue
+            const ot = String(ev.object_type || '').toUpperCase()
+            if (ot.includes('CAMPAIGN') || et.includes('campaign')) budgetChanged.add(String(ev.object_id))
+            else if (ot.includes('ADSET') || ot.includes('AD_SET') || et.includes('ad_set')) adsetChanged.add(String(ev.object_id))
+          }
+          // ABO: mapeia ad set alterado → campanha.
+          if (adsetChanged.size) {
+            const ids = [...adsetChanged].slice(0, 50).join(',')
+            const mRes = await fetch(`https://graph.facebook.com/v21.0/?ids=${ids}&fields=campaign_id&access_token=${token}`, { signal: AbortSignal.timeout(10000) })
+            const mJson = await mRes.json()
+            if (!mJson?.error) for (const v of Object.values(mJson as Record<string, any>)) { if (v?.campaign_id) budgetChanged.add(String(v.campaign_id)) }
+          }
+        }
+      } catch { /* activities indisponível — segue sem suprimir por orçamento */ }
     }
   } catch { /* Meta não conectado */ }
 
@@ -188,9 +214,13 @@ export async function buildRadar(opts: BuildRadarOpts): Promise<{ alerts: RadarA
       actioned = new Set((data || []).map((a: any) => `${a.campaign_id}|${a.action}`))
     } catch { /* sem tabela — segue sem suprimir */ }
   }
-  const visible = actioned.size
-    ? alerts.filter(a => !(a.action && a.campaignId && actioned.has(`${a.campaignId}|${a.action}`)))
-    : alerts
+  const visible = alerts.filter(a => {
+    // já executei essa ação pelo ELYON (escalar/pausar) nos últimos 7 dias
+    if (a.action && a.campaignId && actioned.has(`${a.campaignId}|${a.action}`)) return false
+    // já mexi no orçamento dessa campanha no Gerenciador (fora do ELYON) → não recomendar escalar
+    if (a.action === 'scale' && a.campaignId && budgetChanged.has(a.campaignId)) return false
+    return true
+  })
 
   const sev: Record<Severity, number> = { leak: 0, risk: 1, opportunity: 2 }
   visible.sort((a, b) => sev[a.severity] - sev[b.severity] || b.money - a.money)
