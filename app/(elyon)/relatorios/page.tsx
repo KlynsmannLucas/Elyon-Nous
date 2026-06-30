@@ -46,13 +46,31 @@ export default function RelatoriosPage() {
     setPortalBusy(true)
     try {
       const s = slug || (typeof crypto !== 'undefined' ? crypto.randomUUID().replace(/-/g, '').slice(0, 16) : String(Date.now()))
-      // Snapshot dos KPIs REAIS da última auditoria (com tendência vs período anterior).
-      const rm: any = auditCache[key]?.[0]?.audit?._realMetrics
-      const prev: any = auditCache[key]?.[0]?.audit?._previousTotals
-      const kpis = rm ? {
-        spend: rm.totalSpend, leads: rm.totalLeads, cpl: rm.avgCPL, roas: rm.avgROAS, revenue: rm.totalRevenue, ctr: rm.avgCTR,
-        spendDelta: prev?.spendDelta ?? null, leadsDelta: prev?.leadsDelta ?? null, cplDelta: prev?.cplDelta ?? null, revenueDelta: prev?.revenueDelta ?? null,
-      } : null
+      // Snapshot dos KPIs REAIS — auditoria primeiro (tem tendência + saúde); senão, a série
+      // diária real (soma + tendência 2ª metade vs 1ª). Sem nenhum dos dois → null (cai no cadastro).
+      const audit: any = auditCache[key]?.[0]?.audit
+      const rm: any = audit?._realMetrics
+      const prev: any = audit?._previousTotals
+      let kpis: any = null
+      if (rm) {
+        kpis = {
+          spend: rm.totalSpend, leads: rm.totalLeads, cpl: rm.avgCPL, roas: rm.avgROAS, revenue: rm.totalRevenue, ctr: rm.avgCTR,
+          score: audit?.health_score ?? null,
+          spendDelta: prev?.spendDelta ?? null, leadsDelta: prev?.leadsDelta ?? null, cplDelta: prev?.cplDelta ?? null, revenueDelta: prev?.revenueDelta ?? null,
+        }
+      } else if (daily && Array.isArray(daily.spend) && daily.spend.length >= 2) {
+        const sum = (a: number[]) => a.reduce((x, y) => x + (y || 0), 0)
+        const h = Math.floor(daily.spend.length / 2)
+        const delta = (a: number[]) => { const p = sum(a.slice(0, h)), q = sum(a.slice(h)); return p > 0 ? Math.round((q / p - 1) * 100) : null }
+        const spend = sum(daily.spend), leads = sum(daily.leads)
+        kpis = {
+          spend, leads, cpl: leads > 0 ? Math.round(spend / leads) : 0, roas: 0,
+          revenue: daily.hasRevenue ? sum(daily.revenue || []) : 0, ctr: 0, score: null,
+          spendDelta: delta(daily.spend), leadsDelta: delta(daily.leads),
+          cplDelta: (() => { const cplA = sum(daily.spend.slice(0, h)) / Math.max(1, sum(daily.leads.slice(0, h))); const cplB = sum(daily.spend.slice(h)) / Math.max(1, sum(daily.leads.slice(h))); return cplA > 0 ? Math.round((cplB / cplA - 1) * 100) : null })(),
+          revenueDelta: null,
+        }
+      }
       const res = await fetch('/api/portal', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -146,12 +164,15 @@ export default function RelatoriosPage() {
             const fullUrl = portalSlug ? `${origin}/portal/${portalSlug}` : ''
             const display = fullUrl.replace(/^https?:\/\//, '')
             const copy = () => { try { navigator.clipboard?.writeText(fullUrl) } catch {}; if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Link copiado', body: display }) }
+            const hasRealForPortal = !!(auditCache[key]?.[0]?.audit?._realMetrics) || !!(daily && Array.isArray(daily.spend) && daily.spend.length >= 2)
+            const refresh = async () => { await savePortal(portal, portalSlug); if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Portal atualizado', body: 'Com os números reais mais recentes.' }) }
             return (
               <>
                 {portalSlug ? (
                   <div className="flex items-center gap-2 p-2.5 rounded-sm bg-canvas-2 border border-line mb-3">
                     <Icon name="link" size={15} /><span className="flex-1 text-sm font-mono text-ink-2 truncate">{display}</span>
                     <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] text-blue hover:underline px-1">Abrir</a>
+                    <Button size="sm" variant="ghost" disabled={portalBusy} onClick={refresh}>{portalBusy ? '…' : 'Atualizar dados'}</Button>
                     <Button size="sm" variant="soft" onClick={copy}>Copiar</Button>
                   </div>
                 ) : (
@@ -160,6 +181,11 @@ export default function RelatoriosPage() {
                       {portalBusy ? 'Gerando…' : 'Gerar link do portal'}
                     </Button>
                     <p className="text-[11.5px] text-ink-3 mt-1.5">Cria uma página pública (sem login) com os resultados de {key || 'este cliente'} pra você enviar.</p>
+                  </div>
+                )}
+                {!hasRealForPortal && (
+                  <div className="text-[11.5px] text-amber bg-amber-soft border border-amber/30 rounded-sm px-2.5 py-2 mb-3">
+                    O portal vai mostrar só os dados do cadastro. Rode a <strong>Análise Profunda</strong> deste cliente pra ele exibir os números reais (investimento, contatos, custo por contato) com tendência{portalSlug ? ' — depois clique em “Atualizar dados”' : ''}.
                   </div>
                 )}
                 <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-2">Seções visíveis para o cliente</div>

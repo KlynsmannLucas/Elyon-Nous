@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase'
 
 interface PortalKpis {
-  spend?: number; leads?: number; cpl?: number; roas?: number; revenue?: number; ctr?: number
+  spend?: number; leads?: number; cpl?: number; roas?: number; revenue?: number; ctr?: number; score?: number | null
   spendDelta?: number | null; leadsDelta?: number | null; cplDelta?: number | null; revenueDelta?: number | null
 }
 interface PortalData {
@@ -88,6 +88,19 @@ export default async function PortalPage({ params, searchParams }: { params: { s
         { label: 'Status', value: 'Ativa', hint: '', t: null },
       ]
 
+  // Resumo em 1 frase — responde "como vão as coisas" sem o cliente precisar perguntar.
+  const summary = hasReal ? (() => {
+    const parts: string[] = []
+    if ((k!.leads || 0) > 0) parts.push(`geramos ${int(k!.leads || 0)} contatos${(k!.cpl || 0) > 0 ? ` a ${brl(k!.cpl || 0)} cada` : ''}`)
+    if ((k!.spend || 0) > 0) { const d = k!.spendDelta; parts.push(`investimos ${brl(k!.spend || 0)}${d != null && d !== 0 ? ` (${Math.abs(Math.round(d))}% ${d > 0 ? 'a mais' : 'a menos'})` : ''}`) }
+    const l = k!.leadsDelta
+    const tail = l != null && l !== 0 ? ` Os resultados ${l > 0 ? 'melhoraram' : 'caíram'} ${Math.abs(Math.round(l))}% em relação ao período anterior.` : ''
+    return parts.length ? `No período, ${parts.join(' e ')}.${tail}` : ''
+  })() : ''
+  const health = (k?.score != null)
+    ? (k.score >= 70 ? { txt: 'Tudo saudável', color: C.green } : k.score >= 50 ? { txt: 'Indo bem, com pontos a melhorar', color: '#D9870B' } : { txt: 'Precisa de atenção', color: C.red })
+    : null
+
   const card: CSSProperties = { padding: '18px', borderRadius: '14px', background: C.paper, border: `1px solid ${C.line}`, boxShadow: '0 1px 2px rgba(15,24,40,0.04)' }
   const sectionLabel: CSSProperties = { fontSize: '11px', fontWeight: 700, color: C.ink3, letterSpacing: '0.08em', marginBottom: '12px', textTransform: 'uppercase' }
 
@@ -117,6 +130,19 @@ export default async function PortalPage({ params, searchParams }: { params: { s
             Como estão seus resultados · {new Date(createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
+
+        {/* Resumo em linguagem simples (só quando há dado real) */}
+        {showMetrics && (summary || health) && (
+          <div style={{ ...card, marginBottom: '20px', background: 'rgba(43,91,227,0.04)', borderColor: 'rgba(43,91,227,0.18)' }}>
+            {health && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: health.color, marginBottom: summary ? '8px' : 0 }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: health.color, display: 'inline-block' }} />
+                Como estão as campanhas: {health.txt}
+              </div>
+            )}
+            {summary && <p style={{ fontSize: '14px', color: C.ink2, lineHeight: 1.6, margin: 0 }}>{summary}</p>}
+          </div>
+        )}
 
         {/* KPIs */}
         {showMetrics && (
