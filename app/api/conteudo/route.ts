@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sanitizeText } from '@/lib/sanitize'
 import { gateAndCharge, refundGate } from '@/lib/gate'
+import { getClientMemoryContext } from '@/lib/memory'
 
 const PLATFORM_GUIDE: Record<string, string> = {
   instagram: 'Instagram Feed/Reels — legendas de até 2200 chars, hashtags ao final, gancho forte nos primeiros 2 segundos do Reels',
@@ -55,6 +56,12 @@ export async function POST(req: NextRequest) {
   }
   const roleLabel = roleMap[role] || 'Criador de Conteúdo'
 
+  // Ângulos que já FUNCIONARAM pra este cliente (gravados pela Inteligência de Criativo /
+  // auditoria em campaign_memory) — pra o conteúdo construir sobre o que converte, não genérico.
+  const memory = (gate.userId && (clientData.clientName || clientData.name))
+    ? await getClientMemoryContext(gate.userId, clientData.clientName || clientData.name, clientData.niche).catch(() => '')
+    : ''
+
   const prompt = `Você é um especialista em marketing de conteúdo digital brasileiro.
 
 CONTEXTO:
@@ -63,9 +70,9 @@ CONTEXTO:
 - Plataforma: ${platformGuide}
 - Tema solicitado: ${theme}
 - Quem vai criar: ${roleLabel}
-
+${memory ? `${memory}\nUSE OS ÂNGULOS QUE JÁ FUNCIONARAM acima como base — o conteúdo deve reforçar o que já converte pra este cliente, não recomeçar do zero.\n` : ''}
 Crie 3 ideias de conteúdo distintas para ${platform} sobre "${theme}".
-Cada ideia deve ser pronta para usar — não genérica, específica para o nicho e a persona.
+Cada ideia deve ser pronta para usar — ESPECÍFICA para o nicho e a persona. PROIBIDO genérico ("seja autêntico", "poste com frequência", "mostre os bastidores" sem aterrissar no negócio): dê o gancho exato, o exemplo concreto, a frase pronta.
 
 Use a ferramenta "emit_posts" para retornar as 3 ideias. Cada post precisa de:
 - tipo: tipo do conteúdo (Reels, Carrossel, Stories, Post, Vídeo, etc.)

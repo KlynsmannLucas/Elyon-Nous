@@ -71,6 +71,7 @@ REGRAS DE PRECISÃO — SIGA OBRIGATORIAMENTE:
 - ${channelInstruction}
 - Quanto menos dados reais disponíveis, use perfis MAIS AMPLOS e representativos. Nunca invente especificidades pessoais (estado civil, filhos, hobbies pessoais) que não tenham fonte.
 - Profissão: use cargo genérico do segmento (ex: "Profissional liberal", "Empresária de médio porte"), não profissões ultra-específicas sem evidência.
+- ANCORAGEM: dores, objeções e desejos devem refletir o que foi informado no cadastro (maior dor, principal objeção) e ser coerentes com o nicho/cidade — não clichês de marketing. PROIBIDO genérico vazio do tipo "quer qualidade" ou "tem medo de errar"; seja concreto e do mundo real desse público.
 
 Crie uma persona estratégica e representativa baseada nesses dados. Útil para um ${roleLabel}.
 

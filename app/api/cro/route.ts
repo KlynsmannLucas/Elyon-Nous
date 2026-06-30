@@ -266,7 +266,12 @@ ${realMetrics ? `
 AUDITORIA (resumo por seção):
 ${auditSections ? JSON.stringify(auditSections, null, 2).slice(0, 2000) : 'Sem dados de auditoria.'}
 
-Com base nesses dados, gere uma análise de CRO detalhada e acionável. Use a ferramenta emit_cro.`
+Com base nesses dados, gere uma análise de CRO detalhada e acionável. Use a ferramenta emit_cro.
+
+REGRAS DE QUALIDADE (obrigatórias):
+- Cada recomendação deve ser ESPECÍFICA pra este cliente. PROIBIDO conselho genérico ("melhore o criativo", "otimize a landing", "conheça seu público", "poste com consistência").
+- No campo "problem", cite a EVIDÊNCIA real (a métrica/sinal que comprova): ex. "CTR 0,7% vs 1,4% da média da conta", "CPL R$${realMetrics?.avgCPL || '?'} acima do benchmark". Se não houver métrica real pra sustentar, não invente o problema.
+- No "solution", diga a ação exata (o quê mudar, como), não a direção vaga.`
 
         const msg = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
