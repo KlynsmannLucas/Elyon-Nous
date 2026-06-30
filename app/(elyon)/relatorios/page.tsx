@@ -46,12 +46,19 @@ export default function RelatoriosPage() {
     setPortalBusy(true)
     try {
       const s = slug || (typeof crypto !== 'undefined' ? crypto.randomUUID().replace(/-/g, '').slice(0, 16) : String(Date.now()))
+      // Snapshot dos KPIs REAIS da última auditoria (com tendência vs período anterior).
+      const rm: any = auditCache[key]?.[0]?.audit?._realMetrics
+      const prev: any = auditCache[key]?.[0]?.audit?._previousTotals
+      const kpis = rm ? {
+        spend: rm.totalSpend, leads: rm.totalLeads, cpl: rm.avgCPL, roas: rm.avgROAS, revenue: rm.totalRevenue, ctr: rm.avgCTR,
+        spendDelta: prev?.spendDelta ?? null, leadsDelta: prev?.leadsDelta ?? null, cplDelta: prev?.cplDelta ?? null, revenueDelta: prev?.revenueDelta ?? null,
+      } : null
       const res = await fetch('/api/portal', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug: s, clientName: key, agencyName: (clientData as any)?.agencyName || key || 'Agência',
           showMetrics: sections.metrics, showStrategy: sections.strategy, showActions: sections.actions,
-          niche: clientData.niche, budget: clientData.budget, revenue: (clientData as any).monthlyRevenue,
+          niche: clientData.niche, budget: clientData.budget, revenue: (clientData as any).monthlyRevenue, kpis,
         }),
       })
       const d = await res.json().catch(() => ({}))

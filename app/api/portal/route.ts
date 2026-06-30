@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const body = await req.json()
-  const { slug, clientName, agencyName, showMetrics, showStrategy, showActions, niche, budget, revenue } = body
+  const { slug, clientName, agencyName, showMetrics, showStrategy, showActions, niche, budget, revenue, kpis } = body
 
   if (!slug || !clientName || !agencyName) {
     return NextResponse.json({ error: 'Campos obrigatórios ausentes' }, { status: 400 })
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       client_name:  clientName,
       report_data: {
         type: 'portal',
-        agencyName, showMetrics, showStrategy, showActions, niche, budget, revenue,
+        agencyName, showMetrics, showStrategy, showActions, niche, budget, revenue, kpis: kpis || null,
       },
     }, { onConflict: 'token' })
 
