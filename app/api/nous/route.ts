@@ -335,7 +335,8 @@ COMPLIANCE — OBRIGATÓRIO: nunca prometa aprovação, preço final ou ausênci
           if (isGeminiEnabled()) {
             const reply = await callGemini({
               model: geminiModel('FALLBACK'),
-              system: `Você é o Nous, consultor sênior de growth e tráfego pago no Brasil. Responda em português, direto ao ponto, usando o contexto abaixo.\n\n${context}`,
+              system: systemPrompt, // fallback mantém as MESMAS travas anti-alucinação e rótulos de origem
+
               user: message,
               maxTokens: 800,
               timeoutMs: 18000,

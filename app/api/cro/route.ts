@@ -266,39 +266,51 @@ ${realMetrics ? `
 AUDITORIA (resumo por seção):
 ${auditSections ? JSON.stringify(auditSections, null, 2).slice(0, 2000) : 'Sem dados de auditoria.'}
 
-Com base nesses dados, gere uma análise de CRO detalhada no formato JSON abaixo. RESPONDA APENAS COM O JSON, sem markdown:
-
-{
-  "score": <0-100>,
-  "grade": "<A|B+|B|C+|C|D>",
-  "summary": "<resumo de 1-2 frases>",
-  "bottleneck": "<principal gargalo do funil em 1 frase>",
-  "recommendations": [
-    {
-      "priority": "<urgent|high|medium|low>",
-      "area": "<landing_page|creative|audience|funnel|bid|budget|copy>",
-      "title": "<título curto>",
-      "problem": "<descrição do problema>",
-      "solution": "<solução concreta e acionável>",
-      "expectedImpact": "<impacto esperado>",
-      "estimatedCPLReduction": <número em %>,
-      "effort": "<baixo|médio|alto>",
-      "timeframe": "<ex: 7-14 dias>"
-    }
-  ],
-  "quickWins": ["<ação rápida 1>", "<ação rápida 2>", "<ação rápida 3>"],
-  "estimatedCPLWithOptimization": <número ou null>
-}`
+Com base nesses dados, gere uma análise de CRO detalhada e acionável. Use a ferramenta emit_cro.`
 
         const msg = await anthropic.messages.create({
-          model: 'claude-opus-4-7',
+          model: 'claude-sonnet-4-6',
           max_tokens: 2500,
+          tools: [{
+            name: 'emit_cro',
+            description: 'Retorna a análise de CRO (Conversion Rate Optimization) estruturada.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                score: { type: 'number', description: '0-100' },
+                grade: { type: 'string', enum: ['A', 'B+', 'B', 'C+', 'C', 'D'] },
+                summary: { type: 'string', description: 'resumo de 1-2 frases' },
+                bottleneck: { type: 'string', description: 'principal gargalo do funil em 1 frase' },
+                recommendations: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      priority: { type: 'string', enum: ['urgent', 'high', 'medium', 'low'] },
+                      area: { type: 'string', enum: ['landing_page', 'creative', 'audience', 'funnel', 'bid', 'budget', 'copy'] },
+                      title: { type: 'string' },
+                      problem: { type: 'string' },
+                      solution: { type: 'string', description: 'solução concreta e acionável' },
+                      expectedImpact: { type: 'string' },
+                      estimatedCPLReduction: { type: 'number', description: 'em %' },
+                      effort: { type: 'string', enum: ['baixo', 'médio', 'alto'] },
+                      timeframe: { type: 'string', description: 'ex: 7-14 dias' },
+                    },
+                    required: ['priority', 'area', 'title', 'problem', 'solution'],
+                  },
+                },
+                quickWins: { type: 'array', items: { type: 'string' }, description: '3 ações rápidas' },
+                estimatedCPLWithOptimization: { type: 'number', description: 'CPL estimado pós-otimização (omita se não der pra estimar)' },
+              },
+              required: ['score', 'grade', 'summary', 'recommendations', 'quickWins'],
+            },
+          }],
+          tool_choice: { type: 'tool', name: 'emit_cro' },
           messages: [{ role: 'user', content: prompt }],
         })
 
-        const raw = (msg.content[0] as any).text?.trim() || ''
-        const parsed = safeExtractJson<any>(raw)
-        if (parsed) {
+        const parsed = (msg.content as any[]).find((b: any) => b.type === 'tool_use')?.input
+        if (parsed?.recommendations) {
           return NextResponse.json({ cro: parsed, source: 'ai' })
         }
         await refundGate(croGate, 'cro')

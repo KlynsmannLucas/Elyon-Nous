@@ -79,23 +79,8 @@ ${isGestor ? `IMPORTANTE: Como o usuário é Gestor de Tráfego, inclua OBRIGATO
 - googleAdsKeywords: lista de 10-15 palavras-chave de intenção de compra para Google Ads, mix de broad/exact, em português, com modificadores (ex: "móveis planejados Curitiba", "orçamento cozinha planejada", "+marcenaria +curitiba")
 - Seja hiper-específico: não "fitness" mas "Academia Smart Fit", não "beleza" mas "Sephora Brasil"` : ''}
 
-Retorne APENAS um JSON válido, sem texto antes ou depois, com exatamente esta estrutura:
-{
-  "name": "nome fictício brasileiro (primeiro nome + sobrenome)",
-  "age": "${hasTargetAge ? 'faixa baseada nos dados confirmados' : 'FAIXA etária, ex: entre 30 e 45 anos'}",
-  "profession": "${hasTargetAge || hasTargetIncome ? 'profissão plausível' : 'perfil profissional genérico do segmento'}",
-  "income": "${hasTargetIncome ? 'renda baseada nos dados confirmados' : 'FAIXA de renda, ex: R$5.000–R$10.000/mês'}",
-  "pains": ["dor 1 específica e emocional", "dor 2", "dor 3", "dor 4"],
-  "desires": ["desejo 1 específico e aspiracional", "desejo 2", "desejo 3", "desejo 4"],
-  "fears": ["medo 1 específico", "medo 2", "medo 3"],
-  "objections": ["objeção 1 com linguagem real", "objeção 2", "objeção 3"],
-  "favoriteChannels": ["canal 1", "canal 2", "canal 3"],
-  "buyingBehavior": "descrição de 2-3 frases sobre como essa persona toma decisões de compra",
-  "strategySummary": "resumo de 3-4 frases da melhor estratégia para converter essa persona para o papel de ${roleLabel}",
-  ${isGestor ? '"facebookInterests": ["interesse 1 específico", "interesse 2", "interesse 3", "interesse 4", "interesse 5", "interesse 6", "interesse 7", "interesse 8"],' : ''}
-  ${isGestor ? '"googleAdsKeywords": ["palavra-chave 1", "palavra-chave 2", "palavra-chave 3", "palavra-chave 4", "palavra-chave 5", "palavra-chave 6", "palavra-chave 7", "palavra-chave 8", "palavra-chave 9", "palavra-chave 10"],' : ''}
-  "contentAngles": ["ângulo de conteúdo 1 que ressoa com essa persona", "ângulo 2", "ângulo 3"]
-}`
+${isGestor ? 'IMPORTANTE: preencha facebookInterests (8-10 interesses específicos do Meta Ads) e googleAdsKeywords (10-15 palavras-chave de intenção pro Google Ads).' : 'Não preencha facebookInterests nem googleAdsKeywords.'}
+Use a ferramenta emit_persona para retornar a persona.`
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'API key não configurada' }, { status: 500 })
@@ -107,12 +92,36 @@ Retorne APENAS um JSON válido, sem texto antes ou depois, com exatamente esta e
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
-      system: 'Você é um estrategista de marketing digital brasileiro. Responda APENAS com JSON válido e completo, sem texto antes ou depois, sem markdown, sem ```.',
+      tools: [{
+        name: 'emit_persona',
+        description: 'Retorna a persona estratégica estruturada.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'nome fictício brasileiro (primeiro + sobrenome)' },
+            age: { type: 'string', description: 'faixa etária, ex: entre 30 e 45 anos' },
+            profession: { type: 'string' },
+            income: { type: 'string', description: 'faixa de renda, ex: R$5.000–R$10.000/mês' },
+            pains: { type: 'array', items: { type: 'string' }, description: '3-4 dores específicas e emocionais' },
+            desires: { type: 'array', items: { type: 'string' } },
+            fears: { type: 'array', items: { type: 'string' } },
+            objections: { type: 'array', items: { type: 'string' } },
+            favoriteChannels: { type: 'array', items: { type: 'string' } },
+            buyingBehavior: { type: 'string', description: '2-3 frases sobre como decide a compra' },
+            strategySummary: { type: 'string', description: `3-4 frases da melhor estratégia para o papel de ${roleLabel}` },
+            facebookInterests: { type: 'array', items: { type: 'string' }, description: 'SÓ p/ Gestor de Tráfego: 8-10 interesses específicos do Meta Ads' },
+            googleAdsKeywords: { type: 'array', items: { type: 'string' }, description: 'SÓ p/ Gestor: 10-15 palavras-chave de intenção pro Google Ads' },
+            contentAngles: { type: 'array', items: { type: 'string' }, description: '3 ângulos de conteúdo' },
+          },
+          required: ['name', 'age', 'profession', 'income', 'pains', 'desires', 'fears', 'objections', 'favoriteChannels', 'buyingBehavior', 'strategySummary', 'contentAngles'],
+        },
+      }],
+      tool_choice: { type: 'tool', name: 'emit_persona' },
       messages: [{ role: 'user', content: prompt }],
     })
 
-    const text = (response.content[0] as any).text?.trim() || ''
-    const persona: any = extractJson(text)
+    const persona: any = (response.content as any[]).find((b: any) => b.type === 'tool_use')?.input
+    if (!persona?.name) return NextResponse.json({ error: 'Não consegui gerar a persona — tente novamente.' }, { status: 500 })
 
     return NextResponse.json({ success: true, persona })
   } catch (e: any) {

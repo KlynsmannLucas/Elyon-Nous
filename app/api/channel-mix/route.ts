@@ -329,33 +329,45 @@ Ticket médio: R$${clientData?.ticketPrice || '?'}
 Benchmark CPL do nicho: R$${bench?.cpl_min}–R$${bench?.cpl_max}
 ${realMetrics ? `Dados reais: gasto R$${realMetrics.totalSpend}, leads ${realMetrics.totalLeads}, CPL R$${realMetrics.avgCPL}` : ''}
 
-Gere uma recomendação de mix de canais no JSON abaixo. Seja específico para o nicho. Responda APENAS JSON válido:
-
-{
-  "strategy": "<estratégia em 2-3 frases>",
-  "maturityNote": "<nota sobre maturidade da conta em 1 frase>",
-  "channels": [
-    {
-      "channel": "<meta|google_search|google_display|youtube|tiktok|linkedin|pinterest|email>",
-      "allocationPct": <número>,
-      "priority": "<primary|secondary|test|avoid>",
-      "expectedCPL": <número ou null>,
-      "expectedLeadsPerMonth": <número ou null>,
-      "bestFor": "<uso ideal em 1 frase>",
-      "setup": "<como configurar em 1 frase>"
-    }
-  ]
-}`
+Gere uma recomendação de mix de canais específica para o nicho. Use a ferramenta emit_channel_mix.`
 
         const msg = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1200,
+          tools: [{
+            name: 'emit_channel_mix',
+            description: 'Retorna a recomendação de mix de canais.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                strategy: { type: 'string', description: 'estratégia em 2-3 frases' },
+                maturityNote: { type: 'string', description: 'maturidade da conta em 1 frase' },
+                channels: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      channel: { type: 'string', enum: ['meta', 'google_search', 'google_display', 'youtube', 'tiktok', 'linkedin', 'pinterest', 'email'] },
+                      allocationPct: { type: 'number' },
+                      priority: { type: 'string', enum: ['primary', 'secondary', 'test', 'avoid'] },
+                      expectedCPL: { type: 'number', description: 'CPL esperado (omita se não der pra estimar)' },
+                      expectedLeadsPerMonth: { type: 'number', description: 'leads/mês esperados (omita se não der)' },
+                      bestFor: { type: 'string', description: 'uso ideal em 1 frase' },
+                      setup: { type: 'string', description: 'como configurar em 1 frase' },
+                    },
+                    required: ['channel', 'allocationPct', 'priority', 'bestFor', 'setup'],
+                  },
+                },
+              },
+              required: ['strategy', 'channels'],
+            },
+          }],
+          tool_choice: { type: 'tool', name: 'emit_channel_mix' },
           messages: [{ role: 'user', content: prompt }],
         })
 
-        const raw = (msg.content[0] as any).text?.trim() || ''
-        const aiData = safeExtractJson<any>(raw)
-        if (aiData) {
+        const aiData = (msg.content as any[]).find((b: any) => b.type === 'tool_use')?.input
+        if (aiData?.channels) {
           // Usa cálculo base e enriquece com IA
           const base = buildChannelMix(sanitizedNiche, totalBudget, objective, clientData, realMetrics)
           if (aiData.strategy) base.strategy = aiData.strategy

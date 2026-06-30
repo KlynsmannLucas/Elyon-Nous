@@ -302,30 +302,43 @@ ${campSummary}
 
 Gere uma análise de alocação de budget no JSON abaixo. Para cada campanha, defina action (scale/maintain/reduce/pause/test) e proposedBudget (diário em R$). A soma dos proposedBudget deve aproximar R$${(budget/30).toFixed(2)}/dia.
 
-Responda APENAS com JSON válido:
-{
-  "allocations": [
-    {
-      "name": "<nome exato da campanha>",
-      "action": "<scale|maintain|reduce|pause|test>",
-      "proposedBudget": <número>,
-      "actionReason": "<justificativa de 1 linha>",
-      "projectedCPL": <número>
-    }
-  ],
-  "strategy": "<estratégia geral em 2 linhas>",
-  "topInsight": "<insight principal em 1 linha>"
-}`
+Use a ferramenta emit_allocation para retornar a realocação.`
 
         const msg = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
+          tools: [{
+            name: 'emit_allocation',
+            description: 'Retorna a realocação de orçamento por campanha.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                allocations: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string', description: 'nome EXATO da campanha' },
+                      action: { type: 'string', enum: ['scale', 'maintain', 'reduce', 'pause', 'test'] },
+                      proposedBudget: { type: 'number' },
+                      actionReason: { type: 'string', description: 'justificativa de 1 linha' },
+                      projectedCPL: { type: 'number' },
+                    },
+                    required: ['name', 'action', 'proposedBudget', 'actionReason'],
+                  },
+                },
+                strategy: { type: 'string', description: 'estratégia geral em 2 linhas' },
+                topInsight: { type: 'string', description: 'insight principal em 1 linha' },
+              },
+              required: ['allocations', 'strategy'],
+            },
+          }],
+          tool_choice: { type: 'tool', name: 'emit_allocation' },
           messages: [{ role: 'user', content: prompt }],
         })
 
-        const raw = (msg.content[0] as any).text?.trim() || ''
-        const aiData = safeExtractJson<any>(raw)
-        if (aiData) {
+        const aiData = (msg.content as any[]).find((b: any) => b.type === 'tool_use')?.input
+        if (aiData?.allocations) {
           // Mescla as ações da IA com o cálculo base
           const base = buildAllocations(campaigns, budget, sanitizedNiche)
 
