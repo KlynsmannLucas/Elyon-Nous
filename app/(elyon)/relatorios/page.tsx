@@ -15,15 +15,57 @@ export default function RelatoriosPage() {
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState<'full' | 'executive' | null>(null)
   const [err, setErr] = useState('')
-  const [portal, setPortal] = useState({ resumo: true, kpis: true, plano: true, campanhas: false, custos: false })
+  // Portal do cliente — seções que a página pública /portal/[slug] realmente renderiza.
+  const [portal, setPortal] = useState({ metrics: true, strategy: true, actions: false })
+  const [portalSlug, setPortalSlug] = useState('')
+  const [portalBusy, setPortalBusy] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const daily = useDailySeries(auditCache[key]?.[0]?.audit?._realMetrics?.avgROAS ?? null)
+  // Carrega o portal já existente deste cliente (reusa o slug + restaura as seções).
+  useEffect(() => {
+    if (!key) { setPortalSlug(''); return }
+    let active = true
+    fetch('/api/portal').then(r => r.ok ? r.json() : { portals: [] }).then(d => {
+      if (!active) return
+      const p = (d.portals || []).find((x: any) => x.clientName === key)
+      if (p) { setPortalSlug(p.slug); setPortal({ metrics: p.showMetrics ?? true, strategy: p.showStrategy ?? true, actions: p.showActions ?? false }) }
+      else setPortalSlug('')
+    }).catch(() => {})
+    return () => { active = false }
+  }, [key])
   if (!mounted) return null
 
   const latestAudit = auditCache[key]?.[0]?.audit
   const hasData = !!(clientData && (latestAudit || strategyData))
+
+  // Cria/atualiza o portal no servidor (upsert) e devolve o slug. Mesma URL ao editar seções.
+  const savePortal = async (sections: typeof portal = portal, slug: string = portalSlug): Promise<string> => {
+    if (!clientData || !key) return ''
+    setPortalBusy(true)
+    try {
+      const s = slug || (typeof crypto !== 'undefined' ? crypto.randomUUID().replace(/-/g, '').slice(0, 16) : String(Date.now()))
+      const res = await fetch('/api/portal', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: s, clientName: key, agencyName: (clientData as any)?.agencyName || key || 'Agência',
+          showMetrics: sections.metrics, showStrategy: sections.strategy, showActions: sections.actions,
+          niche: clientData.niche, budget: clientData.budget, revenue: (clientData as any).monthlyRevenue,
+        }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok && d.success) { setPortalSlug(s); return s }
+      if (typeof window !== 'undefined') window.toast?.({ tone: 'bad', title: 'Não foi possível', body: d?.error || 'Tente novamente.' })
+    } catch { if (typeof window !== 'undefined') window.toast?.({ tone: 'bad', title: 'Falha de conexão' }) }
+    finally { setPortalBusy(false) }
+    return ''
+  }
+  const toggleSection = (k: keyof typeof portal) => {
+    const next = { ...portal, [k]: !portal[k] }
+    setPortal(next)
+    if (portalSlug) savePortal(next, portalSlug) // já ativo → persiste a mudança (URL não muda)
+  }
 
   const exportPDF = async (mode: 'full' | 'executive') => {
     if (!clientData) { window.location.href = '/novo'; return }
@@ -91,22 +133,33 @@ export default function RelatoriosPage() {
         {/* Portal do cliente */}
         <Card>
           <SectionHead title="Portal do cliente" subtitle="Compartilhe resultados por link, sem login" icon={<Icon name="link" size={17} />}
-            action={<Badge tone="good" dot>Ativo</Badge>} />
+            action={<Badge tone={portalSlug ? 'good' : 'neutral'} dot>{portalSlug ? 'Ativo' : 'Inativo'}</Badge>} />
           {(() => {
-            const slug = (key || 'cliente').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'cliente'
-            const url = `elyon.app/p/${slug}`
-            const copy = () => { try { navigator.clipboard?.writeText(`https://${url}`) } catch {}; if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Link copiado', body: url }) }
+            const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.elyonnous.com'
+            const fullUrl = portalSlug ? `${origin}/portal/${portalSlug}` : ''
+            const display = fullUrl.replace(/^https?:\/\//, '')
+            const copy = () => { try { navigator.clipboard?.writeText(fullUrl) } catch {}; if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'Link copiado', body: display }) }
             return (
               <>
-                <div className="flex items-center gap-2 p-2.5 rounded-sm bg-canvas-2 border border-line mb-3">
-                  <Icon name="link" size={15} /><span className="flex-1 text-sm font-mono text-ink-2 truncate">{url}</span>
-                  <Button size="sm" variant="soft" onClick={copy}>Copiar</Button>
-                </div>
+                {portalSlug ? (
+                  <div className="flex items-center gap-2 p-2.5 rounded-sm bg-canvas-2 border border-line mb-3">
+                    <Icon name="link" size={15} /><span className="flex-1 text-sm font-mono text-ink-2 truncate">{display}</span>
+                    <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] text-blue hover:underline px-1">Abrir</a>
+                    <Button size="sm" variant="soft" onClick={copy}>Copiar</Button>
+                  </div>
+                ) : (
+                  <div className="mb-3">
+                    <Button size="sm" variant="primary" disabled={portalBusy || !clientData} icon={<Icon name="link" size={14} />} onClick={() => savePortal()}>
+                      {portalBusy ? 'Gerando…' : 'Gerar link do portal'}
+                    </Button>
+                    <p className="text-[11.5px] text-ink-3 mt-1.5">Cria uma página pública (sem login) com os resultados de {key || 'este cliente'} pra você enviar.</p>
+                  </div>
+                )}
                 <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-2">Seções visíveis para o cliente</div>
                 <div className="space-y-1">
-                  {([['resumo', 'Resumo executivo'], ['kpis', 'KPIs principais'], ['plano', 'Plano de ação'], ['campanhas', 'Detalhe de campanhas'], ['custos', 'Custos e verba']] as const).map(([k, label]) => (
-                    <button key={k} onClick={() => setPortal(p => ({ ...p, [k]: !p[k] }))}
-                      className="w-full flex items-center justify-between py-2 text-left">
+                  {([['metrics', 'Resumo & KPIs'], ['strategy', 'Estratégia'], ['actions', 'Plano de ação']] as const).map(([k, label]) => (
+                    <button key={k} onClick={() => toggleSection(k)} disabled={portalBusy}
+                      className="w-full flex items-center justify-between py-2 text-left disabled:opacity-60">
                       <span className="text-sm text-ink">{label}</span>
                       <span className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${portal[k] ? 'bg-blue' : 'bg-canvas-2 border border-line'}`}>
                         <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${portal[k] ? 'left-[18px]' : 'left-0.5'}`} />

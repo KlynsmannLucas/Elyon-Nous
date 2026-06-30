@@ -45,9 +45,16 @@ export async function POST(req: Request) {
 
   if (!supabaseAdmin) return NextResponse.json({ success: true, slug })
 
+  // Guarda de dono: não deixa sobrescrever um portal de outro usuário (upsert por token).
+  const { data: owner } = await supabaseAdmin
+    .from('report_shares').select('user_id').eq('token', slug).maybeSingle()
+  if (owner && owner.user_id !== userId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { error } = await supabaseAdmin
     .from('report_shares')
-    .insert({
+    .upsert({
       token:        slug,
       user_id:      userId,
       client_name:  clientName,
@@ -55,10 +62,11 @@ export async function POST(req: Request) {
         type: 'portal',
         agencyName, showMetrics, showStrategy, showActions, niche, budget, revenue,
       },
-    })
+    }, { onConflict: 'token' })
 
   if (error) {
-    console.warn('[portal] Supabase insert warning:', error.message)
+    console.warn('[portal] Supabase upsert warning:', error.message)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({ success: true, slug })
