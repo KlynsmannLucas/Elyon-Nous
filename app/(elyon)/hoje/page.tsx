@@ -263,67 +263,109 @@ export default function HojePage() {
         </section>
       )}
 
-      {/* Resumo simples — visível na home principal para donos/operadores não técnicos */}
-      <section className="mb-4 animate-fade-up">
-        <Card className="overflow-hidden border-green-line bg-paper" padding="none">
-          <div className="grid gap-0 lg:grid-cols-[1.15fr_.85fr]">
-            <div className="p-5 md:p-6" style={{ background: `linear-gradient(135deg, ${simpleBg}, #FFFFFF 58%)` }}>
-              <div className="flex items-start gap-4">
-                <span className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 text-white" style={{ background: simpleColor }}>
-                  <Icon name={simpleTone === 'good' ? 'check' : simpleTone === 'warn' ? 'flag' : 'alert'} size={22} w={2.2} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] font-semibold" style={{ color: simpleColor }}>Resumo simples da conta</span>
-                    <Badge tone="good">Novo</Badge>
-                  </div>
-                  <h2 className="text-[23px] md:text-[28px] font-bold text-ink leading-tight" style={{ letterSpacing: '-0.035em' }}>{simpleHeadline}</h2>
-                  <p className="text-[13.5px] text-ink-2 leading-relaxed mt-2 max-w-[660px]">
-                    Aqui você vê o que importa sem termos técnicos: se estão chegando contatos, se cada contato está caro ou barato e qual decisão tomar agora.
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    <Button onClick={() => (window.location.href = simpleDecision.href)} icon={<Icon name="target" size={15} />}>{simpleDecision.cta}</Button>
-                    <Button variant="soft" onClick={() => (window.location.href = '/plano')} icon={<Icon name="clipboard" size={15} />}>O que fazer agora</Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-5 md:p-6 border-t lg:border-t-0 lg:border-l border-line bg-paper">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <div>
-                  <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Saúde da conta</div>
-                  <div className="text-[13px] text-ink-2 mt-0.5">nota simples para decidir rápido</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[34px] font-bold font-mono leading-none" style={{ color: simpleColor, letterSpacing: '-0.04em' }}>{Math.round(simpleScore)}</div>
-                  <div className="text-[11px] font-mono text-ink-3">/100</div>
-                </div>
-              </div>
-              <div className="h-2 rounded-full bg-canvas-2 overflow-hidden mb-4">
-                <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(8, Math.min(100, simpleScore))}%`, background: simpleColor }} />
-              </div>
-              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
-                {simpleSignals.map((s) => {
-                  const col = s.tone === 'good' ? '#0E9E6E' : s.tone === 'bad' ? '#E1483F' : s.tone === 'warn' ? '#E08B0B' : '#2B5BE3'
-                  const bg = s.tone === 'good' ? '#E3F6EE' : s.tone === 'bad' ? '#FCEBE9' : s.tone === 'warn' ? '#FBF0D9' : '#EBF0FE'
-                  return (
-                    <div key={s.label} className="rounded-md p-3 border" style={{ background: bg, borderColor: `${col}33` }}>
-                      <div className="text-[10.5px] text-ink-3 mb-1">{s.label}</div>
-                      <div className="text-[17px] font-bold font-mono" style={{ color: col }}>{s.value}</div>
-                      <div className="text-[10.5px] text-ink-3 mt-1 leading-snug">{s.hint}</div>
+      {/* Modo simplificado: leitura para donos/operadores não técnicos */}
+      {!pro && (
+        <section className="mb-4 animate-fade-up">
+          <Card className="overflow-hidden border-green-line bg-paper" padding="none">
+            <div className="grid gap-0 lg:grid-cols-[1.15fr_.85fr]">
+              <div className="p-5 md:p-6" style={{ background: `linear-gradient(135deg, ${simpleBg}, #FFFFFF 58%)` }}>
+                <div className="flex items-start gap-4">
+                  <span className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 text-white" style={{ background: simpleColor }}>
+                    <Icon name={simpleTone === 'good' ? 'check' : simpleTone === 'warn' ? 'flag' : 'alert'} size={22} w={2.2} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] font-semibold" style={{ color: simpleColor }}>Resumo simples da conta</span>
+                      <Badge tone="good">Novo</Badge>
                     </div>
-                  )
-                })}
+                    <h2 className="text-[23px] md:text-[28px] font-bold text-ink leading-tight" style={{ letterSpacing: '-0.035em' }}>{simpleHeadline}</h2>
+                    <p className="text-[13.5px] text-ink-2 leading-relaxed mt-2 max-w-[660px]">
+                      Aqui você vê o que importa sem termos técnicos: se estão chegando contatos, se cada contato está caro ou barato e qual decisão tomar agora.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button onClick={() => (window.location.href = simpleDecision.href)} icon={<Icon name="target" size={15} />}>{simpleDecision.cta}</Button>
+                      <Button variant="soft" onClick={() => (window.location.href = '/plano')} icon={<Icon name="clipboard" size={15} />}>O que fazer agora</Button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="mt-4 p-3 rounded-md bg-blue-soft border border-blue-line">
-                <div className="text-[12.5px] font-bold text-blue mb-1">{simpleDecision.title}</div>
-                <div className="text-[12px] text-ink-2 leading-relaxed">{simpleDecision.body}</div>
+
+              <div className="p-5 md:p-6 border-t lg:border-t-0 lg:border-l border-line bg-paper">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <div>
+                    <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Saúde da conta</div>
+                    <div className="text-[13px] text-ink-2 mt-0.5">nota simples para decidir rápido</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[34px] font-bold font-mono leading-none" style={{ color: simpleColor, letterSpacing: '-0.04em' }}>{Math.round(simpleScore)}</div>
+                    <div className="text-[11px] font-mono text-ink-3">/100</div>
+                  </div>
+                </div>
+                <div className="h-2 rounded-full bg-canvas-2 overflow-hidden mb-4">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(8, Math.min(100, simpleScore))}%`, background: simpleColor }} />
+                </div>
+                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+                  {simpleSignals.map((s) => {
+                    const col = s.tone === 'good' ? '#0E9E6E' : s.tone === 'bad' ? '#E1483F' : s.tone === 'warn' ? '#E08B0B' : '#2B5BE3'
+                    const bg = s.tone === 'good' ? '#E3F6EE' : s.tone === 'bad' ? '#FCEBE9' : s.tone === 'warn' ? '#FBF0D9' : '#EBF0FE'
+                    return (
+                      <div key={s.label} className="rounded-md p-3 border" style={{ background: bg, borderColor: `${col}33` }}>
+                        <div className="text-[10.5px] text-ink-3 mb-1">{s.label}</div>
+                        <div className="text-[17px] font-bold font-mono" style={{ color: col }}>{s.value}</div>
+                        <div className="text-[10.5px] text-ink-3 mt-1 leading-snug">{s.hint}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="mt-4 p-3 rounded-md bg-blue-soft border border-blue-line">
+                  <div className="text-[12.5px] font-bold text-blue mb-1">{simpleDecision.title}</div>
+                  <div className="text-[12px] text-ink-2 leading-relaxed">{simpleDecision.body}</div>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-      </section>
+          </Card>
+        </section>
+      )}
+
+      {/* Modo avançado: leitura operacional, sem repetir o card simplificado */}
+      {pro && (
+        <section className="mb-4 animate-fade-up">
+          <Card>
+            <SectionHead
+              title="Painel avançado da conta"
+              subtitle="Visão operacional com KPIs, benchmark e sinais para decisão técnica"
+              icon={<Icon name="grid" size={18} />}
+              action={<SourceBadge source={rm ? 'real' : 'benchmark'} />}
+            />
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
+              <div className="rounded-md bg-canvas-2 border border-line p-3">
+                <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Spend analisado</div>
+                <div className="text-xl font-bold font-mono text-ink mt-1">{rm ? brl(rm.totalSpend) : '—'}</div>
+                <div className="text-xs text-ink-3 mt-0.5">{prev?.spendDelta != null ? `${prev.spendDelta > 0 ? '+' : ''}${prev.spendDelta}% vs anterior` : 'sem delta'}</div>
+              </div>
+              <div className="rounded-md bg-canvas-2 border border-line p-3">
+                <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPL real</div>
+                <div className="text-xl font-bold font-mono mt-1" style={{ color: cplBad ? '#E1483F' : cplGood ? '#0E9E6E' : '#E08B0B' }}>{rm?.avgCPL ? brl(rm.avgCPL) : '—'}</div>
+                <div className="text-xs text-ink-3 mt-0.5">benchmark {bench?.cpl_min && bench?.cpl_max ? `${brl(bench.cpl_min)}-${brl(bench.cpl_max)}` : 'indisponível'}</div>
+              </div>
+              <div className="rounded-md bg-canvas-2 border border-line p-3">
+                <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Conversões</div>
+                <div className="text-xl font-bold font-mono text-ink mt-1">{rm ? int(rm.totalLeads) : '—'}</div>
+                <div className="text-xs text-ink-3 mt-0.5">{prev?.leadsDelta != null ? `${prev.leadsDelta > 0 ? '+' : ''}${prev.leadsDelta}% vs anterior` : 'sem delta'}</div>
+              </div>
+              <div className="rounded-md bg-canvas-2 border border-line p-3">
+                <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Fila crítica</div>
+                <div className="text-xl font-bold font-mono text-ink mt-1">{urgentCount}</div>
+                <div className="text-xs text-ink-3 mt-0.5">{actions.length} ações priorizadas</div>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => (window.location.href = '/diagnostico')} icon={<Icon name="pulse" size={14} />}>Abrir diagnóstico</Button>
+              <Button size="sm" variant="soft" onClick={() => (window.location.href = '/plano')} icon={<Icon name="clipboard" size={14} />}>Abrir plano avançado</Button>
+            </div>
+          </Card>
+        </section>
+      )}
 
       {/* Radar de hoje — o motivo de abrir o Elyon: o que precisa de você agora, em R$ */}
       <RadarToday />
