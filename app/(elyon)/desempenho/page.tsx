@@ -1097,6 +1097,18 @@ export default function DesempenhoPage() {
                           {c.format && <span className="absolute top-2 left-2 text-[9.5px] font-mono uppercase tracking-wider bg-ink/75 text-white px-1.5 py-0.5 rounded-sm">{fmtLabel[c.format] || c.format}</span>}
                           <span className="absolute top-2 right-2"><Badge tone={ft.tone}>{ft.label}</Badge></span>
                           {isNous(c) && <span className="absolute bottom-2 left-2 text-[9.5px] font-bold bg-blue text-white px-1.5 py-0.5 rounded-sm shadow-sm">✦ NOUS</span>}
+                          {c.creativeUrl && (
+                            <a
+                              href={c.creativeUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-sm bg-paper/95 border border-line px-2 py-1 text-[10.5px] font-semibold text-blue shadow-card hover:border-blue transition-colors"
+                              title={c.creativeUrlLabel || 'Abrir criativo'}
+                            >
+                              <Icon name="link" size={11} /> Abrir
+                            </a>
+                          )}
                         </div>
                         <div className="p-3">
                           <div className="text-[12.5px] font-semibold leading-snug mb-2.5 line-clamp-2 min-h-[34px] text-ink">"{hook}"</div>
@@ -1107,7 +1119,7 @@ export default function DesempenhoPage() {
                           </div>
                           <div className="flex items-center justify-between text-[10.5px] text-ink-3 pt-2 border-t border-line">
                             <span>{c.ageDays != null ? `há ${c.ageDays}d no ar` : 'ativo'}</span>
-                            {fatigued && <span className="text-red font-semibold">fadiga · freq alta</span>}
+                            {fatigued ? <span className="text-red font-semibold">fadiga · freq alta</span> : c.creativeUrl ? <span className="text-blue font-semibold">{c.creativeUrlLabel || 'link disponível'}</span> : null}
                           </div>
                         </div>
                       </div>
@@ -1173,6 +1185,18 @@ export default function DesempenhoPage() {
                     {campName && <div><span className="text-ink-3">Campanha:</span> <span className="text-ink-2 font-medium">{campName}</span></div>}
                     {adSetName && <div><span className="text-ink-3">Conjunto:</span> <span className="text-ink-2 font-medium">{adSetName}</span></div>}
                   </div>
+                )}
+                {c.creativeUrl && (
+                  <a
+                    href={c.creativeUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mb-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-line bg-blue-soft px-3 py-2 text-[12.5px] font-semibold text-blue hover:border-blue transition-colors"
+                  >
+                    <Icon name="link" size={14} />
+                    {c.creativeUrlLabel || 'Abrir criativo'}
+                    <Icon name="arrowR" size={13} />
+                  </a>
                 )}
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   {([['CTR', c.ctr ? `${(+c.ctr).toFixed(2)}%` : '—'], ['Freq.', c.frequency ? `${(+c.frequency).toFixed(1)}×` : '—'], ['CPL', c.cpl > 0 ? brl(c.cpl) : '—'], ['Leads', String(c.leads ?? 0)], ['Gasto', brl(c.spend || 0)], ['Cliques', String(c.clicks ?? '—')]] as [string, string][]).map(([l, val], i) => (

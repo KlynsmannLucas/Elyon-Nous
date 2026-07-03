@@ -65,8 +65,15 @@ interface AdSet {
 interface AdCreative {
   id: string; name: string; status: string
   campaignId: string; adsetId: string
+  creativeId: string
   title: string; body: string; callToAction: string
   imageUrl: string
+  creativeUrl: string
+  creativeUrlLabel: string
+  creativeUrlSource: 'preview' | 'instagram' | 'post' | 'destination' | 'none'
+  previewUrl: string
+  destinationUrl: string
+  objectStoryId: string
   format: 'image' | 'video' | 'carousel'
   createdTime: string | null
   ageDays: number | null
@@ -97,6 +104,39 @@ function resolveCreativeImage(creative: any): { url: string; format: AdCreative[
   if (img) return { url: img, format: 'image' }
   // Sem imagem direta — usa thumbnail como último recurso
   return { url: creative?.thumbnail_url || '', format: 'image' }
+}
+
+function cleanUrl(value: any): string {
+  const url = typeof value === 'string' ? value.trim() : ''
+  return /^https?:\/\//i.test(url) ? url : ''
+}
+
+function storyPermalink(storyId: any): string {
+  const raw = typeof storyId === 'string' ? storyId.trim() : ''
+  const [pageId, postId] = raw.split('_')
+  if (!pageId || !postId) return ''
+  return `https://www.facebook.com/${pageId}/posts/${postId}`
+}
+
+function resolveCreativeUrl(ad: any, creative: any): Pick<AdCreative, 'creativeUrl' | 'creativeUrlLabel' | 'creativeUrlSource' | 'previewUrl' | 'destinationUrl' | 'objectStoryId'> {
+  const oss = creative?.object_story_spec || {}
+  const previewUrl = cleanUrl(ad?.preview_shareable_link)
+  const instagramUrl = cleanUrl(creative?.instagram_permalink_url)
+  const objectStoryId = String(creative?.effective_object_story_id || creative?.object_story_id || '')
+  const postUrl = storyPermalink(objectStoryId)
+  const destinationUrl = cleanUrl(
+    creative?.object_url ||
+    oss?.link_data?.link ||
+    oss?.video_data?.call_to_action?.value?.link ||
+    oss?.link_data?.child_attachments?.find?.((c: any) => cleanUrl(c?.link))?.link
+  )
+
+  if (previewUrl) return { creativeUrl: previewUrl, creativeUrlLabel: 'Prévia do anúncio', creativeUrlSource: 'preview', previewUrl, destinationUrl, objectStoryId }
+  if (instagramUrl) return { creativeUrl: instagramUrl, creativeUrlLabel: 'Post do Instagram', creativeUrlSource: 'instagram', previewUrl, destinationUrl, objectStoryId }
+  if (postUrl) return { creativeUrl: postUrl, creativeUrlLabel: 'Post do Facebook', creativeUrlSource: 'post', previewUrl, destinationUrl, objectStoryId }
+  if (destinationUrl) return { creativeUrl: destinationUrl, creativeUrlLabel: 'Destino do anúncio', creativeUrlSource: 'destination', previewUrl, destinationUrl, objectStoryId }
+
+  return { creativeUrl: '', creativeUrlLabel: '', creativeUrlSource: 'none', previewUrl, destinationUrl, objectStoryId }
 }
 
 interface PixelInfo {
@@ -203,6 +243,8 @@ export async function POST(req: NextRequest) {
     const insightFields = 'campaign_id,campaign_name,spend,impressions,clicks,reach,frequency,actions,cost_per_action_type'
     const adsetInsightFields = 'adset_id,adset_name,campaign_id,spend,impressions,clicks,reach,frequency,actions'
     const adInsightFields    = 'ad_id,ad_name,campaign_id,adset_id,spend,impressions,clicks,reach,frequency,actions'
+    const adFieldsBase       = 'id,name,status,effective_status,campaign_id,adset_id,created_time,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,object_story_spec{link_data{picture,child_attachments{picture}},video_data{image_url}},asset_feed_spec{images{url},videos{thumbnail_url}}}'
+    const adFieldsWithLinks  = 'id,name,status,effective_status,campaign_id,adset_id,created_time,preview_shareable_link,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,effective_object_story_id,object_story_id,instagram_permalink_url,object_url,object_story_spec{link_data{link,picture,child_attachments{link,picture}},video_data{image_url,call_to_action{value{link}}}},asset_feed_spec{images{url},videos{thumbnail_url}}}'
 
     // ── 9 chamadas paralelas ─────────────────────────────────────────────────
     const [
@@ -225,7 +267,7 @@ export async function POST(req: NextRequest) {
       // 6 - insights de ad sets
       fetch(`${baseUrl}/${act}/insights?fields=${adsetInsightFields}&date_preset=last_30d&level=adset&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 7 - ads/criativos (metadados)
-      fetch(`${baseUrl}/${act}/ads?fields=id,name,status,effective_status,campaign_id,adset_id,created_time,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,object_story_spec{link_data{picture,child_attachments{picture}},video_data{image_url}},asset_feed_spec{images{url},videos{thumbnail_url}}}&limit=80&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/ads?fields=${adFieldsWithLinks}&limit=80&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
       // 8 - insights de ads
       fetch(`${baseUrl}/${act}/insights?fields=${adInsightFields}&date_preset=last_30d&level=ad&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
       // 9 - pixels (endpoint correto: adspixels)
@@ -381,13 +423,27 @@ export async function POST(req: NextRequest) {
     })
 
     // ── Criativos (Ads) ──────────────────────────────────────────────────────
-    const adsData    = adsRes.status    === 'fulfilled' ? adsRes.value    : { data: [] }
+    let adsData      = adsRes.status    === 'fulfilled' ? adsRes.value    : { data: [] }
     const adsInsData = adsInsRes.status === 'fulfilled' ? adsInsRes.value : { data: [] }
     // Distingue "zero criativos" de "a busca falhou" (timeout/erro do Meta) — senão a UI
     // mostra "nenhum criativo" quando na verdade deu erro.
-    const adsError: string | null = adsRes.status === 'rejected'
+    let adsError: string | null = adsRes.status === 'rejected'
       ? (adsRes.reason?.name === 'TimeoutError' ? 'Tempo esgotado ao buscar os criativos. Tente recarregar.' : 'Falha ao buscar os criativos no Meta.')
       : (adsData?.error?.message || null)
+
+    if (adsError) {
+      try {
+        const fallback = await fetch(`${baseUrl}/${act}/ads?fields=${adFieldsBase}&limit=80&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json())
+        if (!fallback?.error) {
+          adsData = fallback
+          adsError = null
+        } else {
+          adsError = fallback.error.message || adsError
+        }
+      } catch {
+        // Mantém a mensagem original.
+      }
+    }
 
     const adInsMap: Record<string, any> = {}
     for (const r of (adsInsData.data || [])) adInsMap[r.ad_id] = r
@@ -413,6 +469,7 @@ export async function POST(req: NextRequest) {
       else if (spend < 30)                          tag = 'learning'
 
       const { url: imageUrl, format } = resolveCreativeImage(creative)
+      const link = resolveCreativeUrl(ad, creative)
       const createdTime = ad.created_time || null
       const ageDays = createdTime ? Math.floor((Date.now() - new Date(createdTime).getTime()) / 86400000) : null
 
@@ -421,10 +478,12 @@ export async function POST(req: NextRequest) {
         status: ad.effective_status || ad.status || 'ACTIVE',
         campaignId: ad.campaign_id,
         adsetId:    ad.adset_id,
+        creativeId:  creative.id || '',
         title:         creative.title         || '',
         body:          creative.body          || '',
         callToAction:  creative.call_to_action_type || '',
         imageUrl,
+        ...link,
         format,
         createdTime,
         ageDays,

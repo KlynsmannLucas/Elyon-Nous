@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useAppStore } from '@/lib/store'
-import { SidebarV2, TopbarV2, NousRail, NousOrb, StudioTabs, STUDIO_ROUTES, ToastProvider, type AreaKey } from '@/components/dashboard/v2'
+import { SidebarV2, TopbarV2, NousRail, NousOrb, StudioTabs, STUDIO_ROUTES, ToastProvider, VersionSync, type AreaKey } from '@/components/dashboard/v2'
 
 const TITLES: Record<AreaKey, string> = {
   hoje: 'Hoje', desempenho: 'Desempenho', diagnostico: 'Diagnóstico', mercado: 'Mercado',
@@ -200,6 +200,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   if (BARE_ROUTES.includes(pathname || '')) {
     return (
       <ToastProvider>
+        <VersionSync />
         <div className="elyon-v2 min-h-screen bg-canvas text-ink overflow-y-auto">{children}</div>
       </ToastProvider>
     )
@@ -207,6 +208,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
 
   return (
     <ToastProvider>
+      <VersionSync />
       <div className="elyon-v2 flex h-screen overflow-hidden bg-canvas text-ink">
         <SidebarV2
           activeArea={activeArea}
