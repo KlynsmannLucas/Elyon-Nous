@@ -228,18 +228,20 @@ export function NousRail({ open, onClose }: NousRailProps) {
         type="button"
         aria-label="Fechar NOUS"
         onClick={onClose}
-        className="absolute inset-0 bg-ink/35 backdrop-blur-[2px]"
+        className="nous-backdrop-in absolute inset-0 bg-ink/35 backdrop-blur-sm"
       />
       <section
         role="dialog"
         aria-modal="true"
         aria-label="NOUS"
-        className="relative z-10 w-full max-w-[860px] h-[min(760px,calc(100vh-32px))] md:h-[min(760px,calc(100vh-56px))] bg-paper border border-line rounded-lg shadow-pop flex flex-col overflow-hidden scale-in"
+        className="nous-modal-in relative z-10 w-full max-w-[720px] h-[min(620px,calc(100vh-32px))] md:h-[min(660px,calc(100vh-64px))] bg-paper border border-line rounded-lg shadow-pop flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="px-4 pt-4 pb-3 border-b border-line shrink-0">
           <div className="flex items-center gap-3">
-            <NousOrb size={40} thinking={isTyping} />
+            <div className="nous-orb-pop">
+              <NousOrb size={38} thinking={isTyping} />
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[15px] font-bold tracking-wide text-ink">NOUS</span>
