@@ -15,11 +15,21 @@ const URGENCY_ORDER: Record<string, number> = { critica: 0, alta: 1, media: 2, b
 const URGENCY_TONE: Record<string, 'bad' | 'warn' | 'neutral'> = { critica: 'bad', alta: 'warn', media: 'neutral', baixa: 'neutral' }
 const STATUS_LABEL: Record<string, string> = { pendente: 'A fazer', em_andamento: 'Em andamento', concluida: 'Concluida', ignorada: 'Ignorada' }
 const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta', google: 'Google', ambos: 'Meta + Google' }
+const PHASE_LABEL: Record<string, string> = { seven_days: '7 dias', thirty_days: '30 dias', ninety_days: '90 dias' }
+const PHASE_DESC: Record<string, string> = {
+  seven_days: 'Arrumar base, cortar desperdício e liberar execução.',
+  thirty_days: 'Otimizar o que respondeu melhor e provar novos criativos.',
+  ninety_days: 'Escalar com previsibilidade e reduzir dependência de um único caminho.',
+}
 const shortDateTime = (iso?: string | null) => {
   if (!iso) return null
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return null
   return d.toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+const newerThan = (a?: string | null, b?: string | null) => {
+  if (!a || !b) return false
+  return new Date(a).getTime() > new Date(b).getTime()
 }
 // Esforço estimado (1=baixo, 3=alto) por palavra-chave do título da ação.
 const effortOf = (title: string) => {
@@ -87,6 +97,7 @@ export default function PlanoPage() {
   const activeImpact = activeActions.reduce((sum, a) => sum + parseImpact(a.impact), 0)
   const auditHistory: any = key ? auditCache[key] : null
   const latestAuditEntry = Array.isArray(auditHistory) ? auditHistory[0] : auditHistory
+  const latestAudit = latestAuditEntry?.audit
   const lastPlanUpdate = shortDateTime(lastSyncAt || latestAuditEntry?.createdAt || actions[0]?.updatedAt || actions[0]?.createdAt)
   const advanceActionStatus = (a: any) => {
     if (!key) return
@@ -104,6 +115,34 @@ export default function PlanoPage() {
   const matrix = strat?.strategic_matrix
   const plan = strat?.plan_7_30_90
   const ranking: any[] = strat?.priority_ranking || []
+  const strategyGeneratedAt = strategyData?.generatedAt
+  const strategyUpdatedAt = shortDateTime(latestAuditEntry?.createdAt || strategyGeneratedAt || lastSyncAt)
+  const strategyIsStale = newerThan(latestAuditEntry?.createdAt, strategyGeneratedAt)
+  const activeUrgent = activeActions.filter(a => a.urgency === 'critica' || a.urgency === 'alta')
+  const totalTracked = actions.filter(a => a.status !== 'ignorada').length
+  const strategyProgress = totalTracked > 0 ? Math.round((completed.length / totalTracked) * 100) : 0
+  const currentPhase = activeUrgent.length > 0
+    ? 'Correção'
+    : activeActions.length > 0
+      ? 'Otimização'
+      : completed.length > 0
+        ? 'Revisão'
+        : 'Diagnóstico'
+  const currentPhaseCopy = activeUrgent.length > 0
+    ? 'Resolver os sinais mais caros antes de escalar.'
+    : activeActions.length > 0
+      ? 'Executar a fila aberta e medir resposta.'
+      : completed.length > 0
+        ? 'Fila zerada; precisa de nova leitura para definir o próximo ciclo.'
+        : 'Gerar dados suficientes para montar a primeira rota.'
+  const liveSignals = activeActions.length > 0
+    ? activeActions.slice(0, 4)
+    : completedRecent.slice(0, 3)
+  const phaseActions = {
+    seven_days: activeUrgent.slice(0, 3),
+    thirty_days: activeActions.filter(a => !activeUrgent.includes(a)).slice(0, 3),
+    ninety_days: ranking.slice(0, 3),
+  }
 
   const tabs: { key: SubTab; label: string; icon: string }[] = [
     { key: 'execucao', label: 'Execução', icon: 'check' }, { key: 'estrategia', label: 'Estratégia 90 dias', icon: 'scale' },
@@ -388,13 +427,84 @@ export default function PlanoPage() {
       {tab === 'estrategia' && (
         strat ? (
           <div className="space-y-4 animate-fade-up">
-            {(!strat.growth_thesis || !matrix || !ta || (strat._schemaVersion ?? 0) < 2) && (
+            <Card className={strategyIsStale ? 'bg-amber-soft border-[#F2DDB0]' : 'bg-gradient-to-br from-blue-soft to-green-soft border-blue-line'}>
+              <div className="flex items-start gap-3">
+                <span className="w-10 h-10 rounded-md bg-paper flex items-center justify-center text-blue shrink-0">
+                  <Icon name={strategyIsStale ? 'alert' : 'scale'} size={18} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3">Estratégia viva · 90 dias</div>
+                    <Badge tone={strategyIsStale ? 'warn' : 'good'} dot>{strategyIsStale ? 'pedindo atualização' : 'ao vivo'}</Badge>
+                    {strategyUpdatedAt && <span className="text-[11px] text-ink-3">Última leitura: {strategyUpdatedAt}</span>}
+                  </div>
+                  <div className="text-lg font-bold text-ink">Fase atual: {currentPhase}</div>
+                  <p className="text-sm text-ink-2 mt-1 leading-relaxed">{currentPhaseCopy}</p>
+                </div>
+                <Button
+                  variant={strategyIsStale ? 'primary' : 'soft'}
+                  size="sm"
+                  icon={<Icon name="spark" size={14} />}
+                  onClick={genStrat}
+                  disabled={genLoading || !key}
+                  className="shrink-0"
+                >
+                  {genLoading ? 'Recalculando...' : 'Recalcular'}
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                <div className="rounded-md bg-paper/70 border border-line p-3">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Execução</div>
+                  <div className="text-xl font-bold font-mono text-blue mt-1">{strategyProgress}%</div>
+                  <div className="text-xs text-ink-3 mt-0.5">{completed.length}/{totalTracked || 0} ações concluídas</div>
+                </div>
+                <div className="rounded-md bg-paper/70 border border-line p-3">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Sinais abertos</div>
+                  <div className="text-xl font-bold font-mono text-ink mt-1">{activeActions.length}</div>
+                  <div className="text-xs text-ink-3 mt-0.5">{activeUrgent.length} urgentes</div>
+                </div>
+                <div className="rounded-md bg-paper/70 border border-line p-3">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Potencial aberto</div>
+                  <div className="text-xl font-bold font-mono text-green-600 mt-1">{activeImpact > 0 ? `+${brl(activeImpact)}` : '—'}</div>
+                  <div className="text-xs text-ink-3 mt-0.5">ainda na fila</div>
+                </div>
+                <div className="rounded-md bg-paper/70 border border-line p-3">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Base da decisão</div>
+                  <div className="text-xl font-bold font-mono text-ink mt-1">{latestAudit ? 'Radar' : 'Plano'}</div>
+                  <div className="text-xs text-ink-3 mt-0.5">{strategyIsStale ? 'leitura nova disponível' : 'sincronizada'}</div>
+                </div>
+              </div>
+
+              {liveSignals.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-line-2">
+                  <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mb-2">O que está mudando a estratégia agora</div>
+                  <div className="grid md:grid-cols-2 gap-2">
+                    {liveSignals.map((a: any) => (
+                      <div key={a.id} className="rounded-md bg-paper/70 border border-line p-3">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          <Badge tone={a.status === 'concluida' ? 'good' : URGENCY_TONE[a.urgency] || 'neutral'}>{a.status === 'concluida' ? 'concluída' : a.urgency}</Badge>
+                          <span className="text-[11px] text-ink-3">{PLATFORM_LABEL[a.platform] || a.platform}</span>
+                        </div>
+                        <div className="text-xs font-semibold text-ink line-clamp-2">{a.title}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {(!strat.growth_thesis || !matrix || !ta || (strat._schemaVersion ?? 0) < 2 || strategyIsStale) && (
               <Card className="bg-amber-soft border-[#F2DDB0]">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="w-9 h-9 rounded-md bg-paper flex items-center justify-center shrink-0" style={{ color: '#D9870B' }}><Icon name="alert" size={17} /></span>
                   <div className="flex-1 min-w-[220px]">
-                    <div className="text-sm font-bold text-ink">Estratégia desatualizada</div>
-                    <div className="text-xs text-ink-2 mt-0.5">Esta estratégia foi gerada antes da nova inteligência. Gere novamente para ver a <b>tese de crescimento</b>, a <b>matriz Escalar/Corrigir/Testar/Cortar</b> e a <b>persona-alvo</b> com dados reais.</div>
+                    <div className="text-sm font-bold text-ink">Estratégia precisa acompanhar a conta</div>
+                    <div className="text-xs text-ink-2 mt-0.5">
+                      {strategyIsStale
+                        ? 'Existe uma leitura mais nova que esta estratégia. Recalcule para reorganizar tese, matriz e roadmap com os sinais atuais.'
+                        : 'Esta estratégia foi gerada antes da nova inteligência. Gere novamente para ver a tese, matriz e persona com dados reais.'}
+                    </div>
                   </div>
                   <Button variant="primary" size="sm" icon={<Icon name="spark" size={14} />} onClick={genStrat} disabled={genLoading}>{genLoading ? 'Gerando…' : 'Atualizar estratégia'}</Button>
                 </div>
@@ -475,18 +585,46 @@ export default function PlanoPage() {
 
             {plan && (
               <Card>
-                <SectionHead title="Plano 7 / 30 / 90 dias" icon={<Icon name="calendar" size={17} />} />
+                <SectionHead title="Roadmap vivo 90 dias" subtitle="A sequência muda quando a fila anda ou uma nova leitura muda as prioridades" icon={<Icon name="calendar" size={17} />} />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[['7 dias', plan.seven_days, '#2C5FE0'], ['30 dias', plan.thirty_days, '#0E9CB0'], ['90 dias', plan.ninety_days, '#0E9E6E']].map(([label, items, c]: any) => (
-                    <div key={label}>
-                      <div className="flex items-center gap-2 mb-2.5"><span className="w-2 h-2 rounded-full" style={{ background: c }} /><span className="text-sm font-bold text-ink">{label}</span></div>
-                      <div className="space-y-2">
-                        {(items || []).slice(0, 4).map((x: any, i: number) => (
-                          <div key={i} className="flex gap-2 p-2.5 bg-canvas-2 rounded-sm text-xs text-ink-2"><span style={{ color: c }}>✓</span><span className="line-clamp-2">{x.action || x.objective}</span></div>
-                        ))}
+                  {([
+                    ['seven_days', plan.seven_days, '#2C5FE0'],
+                    ['thirty_days', plan.thirty_days, '#0E9CB0'],
+                    ['ninety_days', plan.ninety_days, '#0E9E6E'],
+                  ] as const).map(([phase, items, c]: any) => {
+                    const live = phaseActions[phase as keyof typeof phaseActions] || []
+                    const isCurrent =
+                      (phase === 'seven_days' && activeUrgent.length > 0) ||
+                      (phase === 'thirty_days' && activeActions.length > 0 && activeUrgent.length === 0) ||
+                      (phase === 'ninety_days' && activeActions.length === 0 && completed.length > 0)
+                    return (
+                      <div key={phase} className={`rounded-md border p-3 ${isCurrent ? 'bg-blue-soft border-blue-line' : 'bg-canvas-2/50 border-line'}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full" style={{ background: c }} />
+                          <span className="text-sm font-bold text-ink">{PHASE_LABEL[phase]}</span>
+                          {isCurrent && <Badge tone="blue">foco atual</Badge>}
+                        </div>
+                        <div className="text-xs text-ink-3 mb-3">{PHASE_DESC[phase]}</div>
+                        <div className="space-y-2">
+                          {live.slice(0, 2).map((a: any) => (
+                            <div key={a.id || a.channel} className="flex gap-2 p-2.5 bg-paper rounded-sm text-xs text-ink">
+                              <span style={{ color: c }}>•</span>
+                              <span className="line-clamp-2">{a.title || a.channel}</span>
+                            </div>
+                          ))}
+                          {(items || []).slice(0, live.length ? 2 : 4).map((x: any, i: number) => (
+                            <div key={i} className="flex gap-2 p-2.5 bg-paper/70 rounded-sm text-xs text-ink-2">
+                              <span style={{ color: c }}>•</span>
+                              <span className="line-clamp-2">{x.action || x.objective || x.channel || x.rationale}</span>
+                            </div>
+                          ))}
+                          {!live.length && !(items || []).length && (
+                            <div className="text-xs text-ink-3">Sem sinais suficientes para esta fase.</div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </Card>
             )}
