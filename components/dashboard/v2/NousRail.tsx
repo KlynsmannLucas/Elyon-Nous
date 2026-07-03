@@ -1,5 +1,5 @@
 // components/dashboard/v2/NousRail.tsx
-// NOUS copiloto — rail (>=1280px) ou drawer (<1280px). Abas Insights/Perguntas (fiel ao prototype).
+// NOUS copiloto — modal/popup. Abas Insights/Perguntas (fiel ao prototype, sem roubar largura do dashboard).
 // Chat ligado ao /api/nous real; Insights derivado dos dados reais do cliente.
 'use client'
 
@@ -8,7 +8,7 @@ import { useAppStore } from '@/lib/store'
 import { Icon } from './Icon'
 
 interface Message { role: 'user' | 'assistant'; content: string; proposedAction?: { campaignId: string; campaignName?: string; platform?: 'meta' | 'google'; action: 'pause' | 'scale'; reason?: string } }
-interface NousRailProps { open: boolean; onClose: () => void; docked?: boolean }
+interface NousRailProps { open: boolean; onClose: () => void }
 
 const SUGGESTIONS = ['Como estão meus KPIs?', 'Qual campanha tem melhor ROAS?', 'O que eu faço esta semana?']
 
@@ -70,7 +70,7 @@ function InsightCard({ tone, title, tag, body, action, onAct, onExecute, executi
 // Cache de insights ao vivo por cliente|conta (evita refetch a cada navegação na sessão).
 const INSIGHTS_CACHE = new Map<string, InsightItem[]>()
 
-export function NousRail({ open, onClose, docked = true }: NousRailProps) {
+export function NousRail({ open, onClose }: NousRailProps) {
   const clientData = useAppStore(s => s.clientData)
   const auditCache = useAppStore(s => s.auditCache)
   const strategyData = useAppStore(s => s.strategyData)
@@ -84,6 +84,17 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   const [isTyping, setIsTyping] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, isTyping])
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open, onClose])
 
   const key = clientData?.clientName || ''
   const latestAudit: any = key ? auditCache[key]?.[0]?.audit : null
@@ -212,9 +223,19 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
   if (!open) return null
 
   return (
-    <>
-      {!docked && <div className="fixed inset-0 bg-ink/20 z-40" onClick={onClose} />}
-      <aside className={`${docked ? 'w-[340px] border-l border-line' : 'fixed right-0 top-0 bottom-0 w-[340px] z-50 shadow-card-hover'} h-screen bg-paper flex flex-col`.trim()}>
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 md:p-6">
+      <button
+        type="button"
+        aria-label="Fechar NOUS"
+        onClick={onClose}
+        className="absolute inset-0 bg-ink/35 backdrop-blur-[2px]"
+      />
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label="NOUS"
+        className="relative z-10 w-full max-w-[860px] h-[min(760px,calc(100vh-32px))] md:h-[min(760px,calc(100vh-56px))] bg-paper border border-line rounded-lg shadow-pop flex flex-col overflow-hidden scale-in"
+      >
         {/* Header */}
         <div className="px-4 pt-4 pb-3 border-b border-line shrink-0">
           <div className="flex items-center gap-3">
@@ -226,7 +247,9 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
               </div>
               <div className="text-[11.5px] text-ink-3">Inteligência que decide</div>
             </div>
-            <button onClick={onClose} title="Recolher" aria-label="Recolher o NOUS" className="p-1 text-ink-3 hover:text-ink"><Icon name="chevR" size={18} /></button>
+            <button onClick={onClose} title="Fechar" aria-label="Fechar o NOUS" className="w-8 h-8 rounded-md border border-line bg-paper-2 text-ink-3 hover:text-ink hover:border-line-strong flex items-center justify-center">
+              <Icon name="x" size={16} />
+            </button>
           </div>
           <div className="flex gap-0.5 mt-3 bg-canvas-2 rounded-sm p-0.5">
             {(['insights', 'perguntas'] as const).map(k => (
@@ -240,7 +263,7 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
 
         {/* Body */}
         {tab === 'insights' ? (
-          <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 no-sb">
+          <div className="flex-1 overflow-y-auto p-3.5 md:p-4 space-y-2.5 no-sb">
             <div className="rounded-md p-3.5 border border-blue-line" style={{ background: 'linear-gradient(135deg, var(--blue-soft), var(--green-soft))' }}>
               <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-blue-600 mb-1.5">Briefing de hoje</div>
               <div className="text-[13px] leading-relaxed text-ink line-clamp-5">{briefing}</div>
@@ -249,7 +272,11 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
               <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Insights em destaque</div>
               {liveInsights.length > 0 && <span className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-green-600"><span className="pulse-dot" />ao vivo</span>}
             </div>
-            {insights.length > 0 ? insights.map((a, i) => <InsightCard key={i} {...a} executing={!!a.campaignId && executingId === a.campaignId} onExecute={a.action && a.campaignId ? () => executeInsight(a) : undefined} onAct={() => (window.location.href = liveInsights.length > 0 ? '/desempenho' : '/diagnostico')} />)
+            {insights.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-2.5">
+                {insights.map((a, i) => <InsightCard key={i} {...a} executing={!!a.campaignId && executingId === a.campaignId} onExecute={a.action && a.campaignId ? () => executeInsight(a) : undefined} onAct={() => (window.location.href = liveInsights.length > 0 ? '/desempenho' : '/diagnostico')} />)}
+              </div>
+            )
               : liveLoading ? <p className="text-xs text-ink-3 text-center py-6">Lendo suas campanhas…</p>
               : metaConnected ? <p className="text-xs text-ink-3 text-center py-6">Nenhuma observação crítica nas campanhas agora. 👍</p>
               : <p className="text-xs text-ink-3 text-center py-6">Conecte o Meta Ads para ver insights da sua conta.</p>}
@@ -306,7 +333,7 @@ export function NousRail({ open, onClose, docked = true }: NousRailProps) {
               className="w-8 h-8 rounded-full bg-blue text-white flex items-center justify-center shrink-0 disabled:opacity-50"><Icon name="send" size={15} /></button>
           </div>
         </div>
-      </aside>
-    </>
+      </section>
+    </div>
   )
 }

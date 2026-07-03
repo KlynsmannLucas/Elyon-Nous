@@ -70,7 +70,6 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   const [collapsed, setCollapsed] = useState(false)
   const [mobileNav, setMobileNav] = useState(false)
   const [nousOpen, setNousOpen] = useState(false)
-  const [wide, setWide] = useState(true)
   const [credits, setCredits] = useState<number | undefined>(undefined)
   const [plan, setPlan] = useState<string | undefined>(undefined)
 
@@ -132,14 +131,6 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
         }
       })
       .catch(() => {})
-  }, [])
-
-  // NOUS docked em telas largas (≥1280); drawer abaixo
-  useEffect(() => {
-    const check = () => { const w = window.innerWidth >= 1280; setWide(w); setNousOpen(w) }
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
   }, [])
 
   // Fecha o drawer da sidebar ao navegar (mobile).
@@ -262,7 +253,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
         </main>
         </div>
 
-        <NousRail open={nousOpen} onClose={() => setNousOpen(false)} docked={wide} />
+        <NousRail open={nousOpen} onClose={() => setNousOpen(false)} />
 
         {/* Orb flutuante — reabre o NOUS quando recolhido */}
         {!nousOpen && (
