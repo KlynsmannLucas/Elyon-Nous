@@ -6,10 +6,21 @@ import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, HBar, CHART_COLORS } from '@/components/dashboard/v2'
 import { generateStrategyForActiveClient } from '@/lib/createClientFlow'
 import { TabPersona } from '@/components/dashboard/TabPersona'
+import { syncActionStatus, useClientActions } from '@/hooks/useClientActions'
 
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 type SubTab = 'execucao' | 'estrategia' | 'persona'
 const parseImpact = (s: any) => { const n = Number(String(s || '').replace(/[^\d]/g, '')); return Number.isFinite(n) ? n : 0 }
+const URGENCY_ORDER: Record<string, number> = { critica: 0, alta: 1, media: 2, baixa: 3 }
+const URGENCY_TONE: Record<string, 'bad' | 'warn' | 'neutral'> = { critica: 'bad', alta: 'warn', media: 'neutral', baixa: 'neutral' }
+const STATUS_LABEL: Record<string, string> = { pendente: 'A fazer', em_andamento: 'Em andamento', concluida: 'Concluida', ignorada: 'Ignorada' }
+const PLATFORM_LABEL: Record<string, string> = { meta: 'Meta', google: 'Google', ambos: 'Meta + Google' }
+const shortDateTime = (iso?: string | null) => {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
 // Esforço estimado (1=baixo, 3=alto) por palavra-chave do título da ação.
 const effortOf = (title: string) => {
   const t = (title || '').toLowerCase()
@@ -21,8 +32,10 @@ const effortOf = (title: string) => {
 export default function PlanoPage() {
   const clientData = useAppStore(s => s.clientData)
   const savedClients = useAppStore(s => s.savedClients)
+  const auditCache = useAppStore(s => s.auditCache)
   const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
   const updatePendingActionStatus = useAppStore(s => s.updatePendingActionStatus)
+  const updatePendingActionSyncState = useAppStore(s => s.updatePendingActionSyncState)
   const strategyData = useAppStore(s => s.strategyData)
   const dashboardMode = useAppStore(s => s.dashboardMode)
   const [mounted, setMounted] = useState(false)
@@ -31,6 +44,8 @@ export default function PlanoPage() {
   const [genLoading, setGenLoading] = useState(false)
   const [executed, setExecuted] = useState<any[]>([])
   const [impact, setImpact] = useState<any>(null)
+  const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
+  const { loading: actionsLoading, lastSyncAt } = useClientActions({ clientName: key })
 
   const genStrat = async () => {
     setGenLoading(true)
@@ -40,7 +55,6 @@ export default function PlanoPage() {
   }
   useEffect(() => { setMounted(true) }, [])
 
-  const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   // #2 Medir impacto — ações executadas no Meta e seu efeito no CPL da conta.
   useEffect(() => {
     if (!key) { setExecuted([]); return }
@@ -52,15 +66,39 @@ export default function PlanoPage() {
   if (!mounted) return null
 
   const actions = key ? pendingActionsCache[key] || [] : []
-  const planned = actions.filter(a => a.status === 'pendente')
-  const inProgress = actions.filter(a => a.status === 'em_andamento')
+  const activeActions = actions.filter(a => a.status === 'pendente' || a.status === 'em_andamento')
+  const planned = activeActions.filter(a => a.status === 'pendente')
+  const inProgress = activeActions.filter(a => a.status === 'em_andamento')
   const completed = actions.filter(a => a.status === 'concluida')
+  const ignored = actions.filter(a => a.status === 'ignorada')
   // Checklist funcional: clicar avança pendente → em_andamento → concluída → pendente
   const nextStatus = (s: string): 'pendente' | 'em_andamento' | 'concluida' =>
     s === 'pendente' ? 'em_andamento' : s === 'em_andamento' ? 'concluida' : 'pendente'
-  const rank: Record<string, number> = { pendente: 0, em_andamento: 1, concluida: 2, ignorada: 3 }
-  const orderedActions = [...actions].filter(a => a.status !== 'ignorada').sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9))
+  const rank: Record<string, number> = { em_andamento: 0, pendente: 1, concluida: 2, ignorada: 3 }
+  const sortActions = (a: any, b: any) =>
+    (rank[a.status] ?? 9) - (rank[b.status] ?? 9) ||
+    (URGENCY_ORDER[a.urgency] ?? 9) - (URGENCY_ORDER[b.urgency] ?? 9) ||
+    (a.priority ?? 99) - (b.priority ?? 99)
+  const orderedActions = [...activeActions].sort(sortActions)
+  const completedRecent = [...completed]
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+    .slice(0, 6)
   const impactTotal = actions.reduce((sum, a) => sum + parseImpact(a.impact), 0)
+  const activeImpact = activeActions.reduce((sum, a) => sum + parseImpact(a.impact), 0)
+  const auditHistory: any = key ? auditCache[key] : null
+  const latestAuditEntry = Array.isArray(auditHistory) ? auditHistory[0] : auditHistory
+  const lastPlanUpdate = shortDateTime(lastSyncAt || latestAuditEntry?.createdAt || actions[0]?.updatedAt || actions[0]?.createdAt)
+  const advanceActionStatus = (a: any) => {
+    if (!key) return
+    syncActionStatus(
+      a.dbId,
+      a.id,
+      key,
+      nextStatus(a.status),
+      updatePendingActionStatus,
+      updatePendingActionSyncState,
+    ).catch(() => {})
+  }
   const strat: any = strategyData?.strategy
   const ta = strat?.target_audience
   const matrix = strat?.strategic_matrix
@@ -102,7 +140,7 @@ export default function PlanoPage() {
             {/* ── Cards de status (live) ───────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {([
-                ['Ações planejadas', planned.length,    '#161B26', 'check'],
+                ['A fazer agora', planned.length,       '#161B26', 'check'],
                 ['Em andamento',     inProgress.length, '#1E4FD0', 'pulse'],
                 ['Concluídas',       completed.length,  '#0B855D', 'trophy'],
               ] as const).map(([l, v, c, icon]) => (
@@ -117,7 +155,7 @@ export default function PlanoPage() {
               <Card padding="sm">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="w-7 h-7 rounded-md bg-green-soft flex items-center justify-center text-green-600"><Icon name="bolt" size={15} /></span>
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Impacto total</div>
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Impacto mapeado</div>
                 </div>
                 <div className="text-2xl font-bold font-mono text-green-600">{impactTotal > 0 ? `+${brl(impactTotal)}` : '—'}</div>
               </Card>
@@ -125,35 +163,106 @@ export default function PlanoPage() {
 
             {/* ── Checklist funcional: clique progride o status ────────────── */}
             <Card>
-              <SectionHead title="O que fazer agora" subtitle="Clique para avançar: pendente → em andamento → concluída" icon={<Icon name="check" size={17} />} />
-              <div className="divide-y divide-line-2">
-                {orderedActions.map((a) => {
-                  const st = a.status
-                  const isDone = st === 'concluida'
-                  const isProg = st === 'em_andamento'
-                  return (
-                    <div key={a.id} className="flex items-start gap-3 py-3">
-                      <button
-                        onClick={() => updatePendingActionStatus(key, a.id, nextStatus(st))}
-                        title="Avançar status"
-                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${isDone ? 'bg-green border-green text-white' : isProg ? 'bg-blue border-blue text-white' : 'border-line hover:border-blue'}`}>
-                        {isDone ? <Icon name="check" size={12} w={3} /> : isProg ? <span className="w-2 h-2 rounded-full bg-white" /> : null}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-medium ${isDone ? 'text-ink-3 line-through' : 'text-ink'}`}>{a.title}</div>
-                        {(a.description || (a as any).evidence) && (
-                          <div className="text-xs text-ink-3 mt-0.5">{a.description || (a as any).evidence}</div>
+              <SectionHead
+                title="O que fazer agora"
+                subtitle={orderedActions.length > 0
+                  ? `Fila viva com ${orderedActions.length} ação(ões). Saiu da fila quando concluir; novas ações entram pela análise/radar.`
+                  : 'Fila viva zerada agora. Rode uma nova leitura para buscar o próximo lote conforme a conta mudou.'}
+                icon={<Icon name="pulse" size={17} />}
+                action={
+                  <Button
+                    variant="soft"
+                    size="sm"
+                    icon={<Icon name="spark" size={14} />}
+                    onClick={() => (window.location.href = '/diagnostico')}
+                  >
+                    Atualizar plano
+                  </Button>
+                }
+              />
+
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-ink-3">
+                <Badge tone={actionsLoading ? 'warn' : 'good'} dot>{actionsLoading ? 'sincronizando' : 'ao vivo'}</Badge>
+                {lastPlanUpdate && <span>Última leitura: {lastPlanUpdate}</span>}
+                {activeImpact > 0 && <span>Ganho potencial aberto: <b className="text-green-600 font-mono">+{brl(activeImpact)}</b></span>}
+                {ignored.length > 0 && <span>{ignored.length} ignorada(s)</span>}
+              </div>
+
+              {orderedActions.length > 0 ? (
+                <div className="divide-y divide-line-2">
+                  {orderedActions.map((a) => {
+                    const st = a.status
+                    const isProg = st === 'em_andamento'
+                    return (
+                      <div key={a.id} className="flex items-start gap-3 py-3">
+                        <button
+                          onClick={() => advanceActionStatus(a)}
+                          title={`Status atual: ${STATUS_LABEL[st] || st}. Clique para avançar.`}
+                          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${isProg ? 'bg-blue border-blue text-white' : 'border-line hover:border-blue'}`}>
+                          {isProg ? <span className="w-2 h-2 rounded-full bg-white" /> : null}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                            <Badge tone={isProg ? 'blue' : 'neutral'}>{STATUS_LABEL[st] || st}</Badge>
+                            <Badge tone={URGENCY_TONE[a.urgency] || 'neutral'}>{a.urgency}</Badge>
+                            <span className="text-[11px] text-ink-3">{PLATFORM_LABEL[a.platform] || a.platform}</span>
+                            {a.metric && <span className="text-[11px] text-ink-3">· {a.metric}</span>}
+                          </div>
+                          <div className="text-sm font-semibold text-ink">{a.title}</div>
+                          {(a.description || (a as any).evidence) && (
+                            <div className="text-xs text-ink-3 mt-0.5">{a.description || (a as any).evidence}</div>
+                          )}
+                        </div>
+                        {parseImpact(a.impact) > 0 && (
+                          <div className="text-sm font-bold font-mono shrink-0 text-green-600">+{brl(parseImpact(a.impact))}</div>
                         )}
-                        {isProg && <div className="text-[10px] font-mono uppercase tracking-wider text-blue mt-1">Em andamento</div>}
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-md border border-green-line bg-green-soft p-4 flex items-start gap-3">
+                  <span className="w-9 h-9 rounded-md bg-paper flex items-center justify-center text-green-600 shrink-0">
+                    <Icon name="check" size={18} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-ink">Nada pendente para executar agora.</div>
+                    <p className="text-xs text-ink-2 mt-1 leading-relaxed">
+                      As ações antigas saem daqui quando são concluídas. Para o plano voltar com novas prioridades,
+                      rode a Análise Profunda ou espere o radar detectar mudança relevante na conta.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {completedRecent.length > 0 && (
+              <Card>
+                <SectionHead
+                  title="Concluídas recentemente"
+                  subtitle="Histórico separado do agora, para não parecer que o plano parou."
+                  icon={<Icon name="trophy" size={17} />}
+                />
+                <div className="divide-y divide-line-2">
+                  {completedRecent.map((a) => (
+                    <div key={a.id} className="flex items-start gap-3 py-2.5">
+                      <span className="w-5 h-5 rounded-md bg-green text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <Icon name="check" size={12} w={3} />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-ink-2">{a.title}</div>
+                        <div className="text-xs text-ink-3 mt-0.5">
+                          {shortDateTime(a.updatedAt || a.createdAt) || 'Concluída'} · {PLATFORM_LABEL[a.platform] || a.platform}
+                        </div>
                       </div>
                       {parseImpact(a.impact) > 0 && (
-                        <div className={`text-sm font-bold font-mono shrink-0 ${isDone ? 'text-ink-4 line-through' : 'text-green-600'}`}>+{brl(parseImpact(a.impact))}</div>
+                        <div className="text-sm font-bold font-mono shrink-0 text-green-600">+{brl(parseImpact(a.impact))}</div>
                       )}
                     </div>
-                  )
-                })}
-              </div>
-            </Card>
+                  ))}
+                </div>
+              </Card>
+            )}
 
             {/* #2 Impacto das ações executadas no Meta (antes → depois do CPL da conta) */}
             {executed.length > 0 && (
