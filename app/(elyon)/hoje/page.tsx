@@ -163,6 +163,49 @@ export default function HojePage() {
   const parseImpact = (s: any) => { const n = Number(String(s || '').replace(/[^\d]/g, '')); return Number.isFinite(n) ? n : 0 }
   const quickGain = (pendingActionsCache[key] || []).filter((a: any) => a.status === 'pendente').reduce((t: number, a: any) => t + parseImpact(a.impact), 0)
 
+  // Resumo simples: leitura para quem não vive de marketing digital.
+  const cplGood = rm?.avgCPL && bench?.kpi_thresholds?.cpl_good ? rm.avgCPL <= bench.kpi_thresholds.cpl_good : false
+  const cplBad = rm?.avgCPL && bench?.kpi_thresholds?.cpl_bad ? rm.avgCPL > bench.kpi_thresholds.cpl_bad : false
+  const simpleScore = score ?? (rm ? (cplGood ? 82 : cplBad ? 42 : 64) : 48)
+  const simpleTone = simpleScore >= 70 ? 'good' : simpleScore >= 50 ? 'warn' : 'bad'
+  const simpleColor = simpleTone === 'good' ? '#0E9E6E' : simpleTone === 'warn' ? '#E08B0B' : '#E1483F'
+  const simpleBg = simpleTone === 'good' ? '#E3F6EE' : simpleTone === 'warn' ? '#FBF0D9' : '#FCEBE9'
+  const simpleHeadline = !rm
+    ? 'Ainda faltam dados reais para entender sua conta.'
+    : simpleTone === 'good'
+      ? 'Sua conta está saudável.'
+      : simpleTone === 'warn'
+        ? 'Sua conta está no caminho certo, mas ainda dá para melhorar.'
+        : 'Sua conta precisa de atenção antes de investir mais.'
+  const urgentCount = (pendingActionsCache[key] || []).filter((a: any) => a.status === 'pendente' && (a.urgency === 'critica' || a.urgency === 'alta')).length
+  const simpleSignals = [
+    {
+      label: 'Clientes chegando',
+      value: rm ? int(rm.totalLeads || 0) : 'Aguardando',
+      hint: rm ? 'contatos recebidos no período' : 'conecte Meta ou Google para ver',
+      tone: rm?.totalLeads > 0 ? 'good' : 'neutral',
+    },
+    {
+      label: 'Custo por contato',
+      value: rm?.avgCPL ? brl(rm.avgCPL) : bench?.cpl_min && bench?.cpl_max ? `${brl(bench.cpl_min)}-${brl(bench.cpl_max)}` : 'Sem base',
+      hint: rm ? 'comparado com o seu mercado' : 'estimativa do seu nicho',
+      tone: cplBad ? 'bad' : cplGood ? 'good' : 'warn',
+    },
+    {
+      label: 'Urgências',
+      value: String(urgentCount),
+      hint: urgentCount > 0 ? 'itens para resolver agora' : 'nada crítico pendente',
+      tone: urgentCount > 0 ? 'warn' : 'good',
+    },
+  ]
+  const simpleDecision = !rm
+    ? { title: 'Primeiro passo: conectar seus dados', body: 'Sem dados reais, o Elyon só consegue estimar. Conecte a conta de anúncios ou rode a análise para saber onde está bom, ruim ou caro.', href: '/integracoes', cta: 'Conectar dados' }
+    : simpleTone === 'good'
+      ? { title: 'Decisão: crescer com cuidado', body: 'Os sinais principais estão bons. O próximo passo é aumentar orçamento aos poucos nas campanhas que geram contatos mais baratos.', href: '/plano', cta: 'Ver como crescer' }
+      : simpleTone === 'bad'
+        ? { title: 'Decisão: corrigir antes de investir mais', body: 'Existe algum ponto deixando a conta cara. Antes de colocar mais verba, revise público, anúncios e etapas onde os clientes desistem.', href: '/diagnostico', cta: 'Ver problema principal' }
+        : { title: 'Decisão: otimizar para ganhar eficiência', body: 'A conta não está ruim, mas ainda dá para pagar menos por contato e transformar melhor os interessados em clientes.', href: '/plano', cta: 'Ver melhorias' }
+
   const changes: { text: string; sub: string; tone: 'good' | 'bad' | 'warn'; icon: 'up' | 'down' | 'flag' }[] = []
   if (pro) {
     if (ev?.scoreDelta) changes.push({ text: `Score ${ev.scoreDelta > 0 ? 'subiu' : 'caiu'} ${Math.abs(ev.scoreDelta)} pts`, sub: 'vs última auditoria', tone: ev.scoreDelta > 0 ? 'good' : 'bad', icon: ev.scoreDelta > 0 ? 'up' : 'down' })
@@ -219,6 +262,68 @@ export default function HojePage() {
           </Card>
         </section>
       )}
+
+      {/* Resumo simples — visível na home principal para donos/operadores não técnicos */}
+      <section className="mb-4 animate-fade-up">
+        <Card className="overflow-hidden border-green-line bg-paper" padding="none">
+          <div className="grid gap-0 lg:grid-cols-[1.15fr_.85fr]">
+            <div className="p-5 md:p-6" style={{ background: `linear-gradient(135deg, ${simpleBg}, #FFFFFF 58%)` }}>
+              <div className="flex items-start gap-4">
+                <span className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 text-white" style={{ background: simpleColor }}>
+                  <Icon name={simpleTone === 'good' ? 'check' : simpleTone === 'warn' ? 'flag' : 'alert'} size={22} w={2.2} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] font-semibold" style={{ color: simpleColor }}>Resumo simples da conta</span>
+                    <Badge tone="good">Novo</Badge>
+                  </div>
+                  <h2 className="text-[23px] md:text-[28px] font-bold text-ink leading-tight" style={{ letterSpacing: '-0.035em' }}>{simpleHeadline}</h2>
+                  <p className="text-[13.5px] text-ink-2 leading-relaxed mt-2 max-w-[660px]">
+                    Aqui você vê o que importa sem termos técnicos: se estão chegando contatos, se cada contato está caro ou barato e qual decisão tomar agora.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    <Button onClick={() => (window.location.href = simpleDecision.href)} icon={<Icon name="target" size={15} />}>{simpleDecision.cta}</Button>
+                    <Button variant="soft" onClick={() => (window.location.href = '/plano')} icon={<Icon name="clipboard" size={15} />}>O que fazer agora</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 md:p-6 border-t lg:border-t-0 lg:border-l border-line bg-paper">
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div>
+                  <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-3">Saúde da conta</div>
+                  <div className="text-[13px] text-ink-2 mt-0.5">nota simples para decidir rápido</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[34px] font-bold font-mono leading-none" style={{ color: simpleColor, letterSpacing: '-0.04em' }}>{Math.round(simpleScore)}</div>
+                  <div className="text-[11px] font-mono text-ink-3">/100</div>
+                </div>
+              </div>
+              <div className="h-2 rounded-full bg-canvas-2 overflow-hidden mb-4">
+                <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(8, Math.min(100, simpleScore))}%`, background: simpleColor }} />
+              </div>
+              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+                {simpleSignals.map((s) => {
+                  const col = s.tone === 'good' ? '#0E9E6E' : s.tone === 'bad' ? '#E1483F' : s.tone === 'warn' ? '#E08B0B' : '#2B5BE3'
+                  const bg = s.tone === 'good' ? '#E3F6EE' : s.tone === 'bad' ? '#FCEBE9' : s.tone === 'warn' ? '#FBF0D9' : '#EBF0FE'
+                  return (
+                    <div key={s.label} className="rounded-md p-3 border" style={{ background: bg, borderColor: `${col}33` }}>
+                      <div className="text-[10.5px] text-ink-3 mb-1">{s.label}</div>
+                      <div className="text-[17px] font-bold font-mono" style={{ color: col }}>{s.value}</div>
+                      <div className="text-[10.5px] text-ink-3 mt-1 leading-snug">{s.hint}</div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="mt-4 p-3 rounded-md bg-blue-soft border border-blue-line">
+                <div className="text-[12.5px] font-bold text-blue mb-1">{simpleDecision.title}</div>
+                <div className="text-[12px] text-ink-2 leading-relaxed">{simpleDecision.body}</div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </section>
 
       {/* Radar de hoje — o motivo de abrir o Elyon: o que precisa de você agora, em R$ */}
       <RadarToday />
