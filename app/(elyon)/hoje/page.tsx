@@ -330,41 +330,43 @@ export default function HojePage() {
       {/* Radar de hoje — o motivo de abrir o Elyon: o que precisa de você agora, em R$ */}
       <RadarToday />
 
-      {/* Briefing Hero — command center escuro (CLARITY) */}
-      <section className="mb-4 animate-fade-up sheen rounded-lg overflow-hidden" style={{ boxShadow: 'var(--sh-ink)', border: '1px solid var(--ink-line)', background: 'radial-gradient(135% 130% at 6% -10%, rgba(43,91,227,.34), transparent 46%), radial-gradient(120% 130% at 102% 120%, rgba(14,156,176,.20), transparent 52%), var(--ink-surface)' }}>
-        <div className="flex items-start gap-[22px] flex-wrap" style={{ padding: '24px 26px' }}>
-          <NousOrb size={50} />
-          <div className="flex-1" style={{ minWidth: 280 }}>
-            <div className="flex items-center gap-2.5 mb-2.5 flex-wrap">
-              <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] font-medium" style={{ color: 'var(--blue-500)' }}>Briefing do NOUS</span>
-              <span className="text-[10.5px] font-mono tracking-[0.12em]" style={{ color: 'var(--on-ink-3)' }}>{today().toUpperCase()}</span>
-              <span className="inline-flex items-center gap-1.5"><span className="live-dot" /><span className="text-[10px] font-mono tracking-[0.06em]" style={{ color: 'var(--green-500)' }}>ATUALIZADO AGORA</span></span>
+      {/* Briefing Hero — command center escuro (somente no avançado; no simples o resumo principal já cumpre esse papel) */}
+      {pro && (
+        <section className="mb-4 animate-fade-up sheen rounded-lg overflow-hidden" style={{ boxShadow: 'var(--sh-ink)', border: '1px solid var(--ink-line)', background: 'radial-gradient(135% 130% at 6% -10%, rgba(43,91,227,.34), transparent 46%), radial-gradient(120% 130% at 102% 120%, rgba(14,156,176,.20), transparent 52%), var(--ink-surface)' }}>
+          <div className="flex items-start gap-[22px] flex-wrap" style={{ padding: '24px 26px' }}>
+            <NousOrb size={50} />
+            <div className="flex-1" style={{ minWidth: 280 }}>
+              <div className="flex items-center gap-2.5 mb-2.5 flex-wrap">
+                <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] font-medium" style={{ color: 'var(--blue-500)' }}>Briefing do NOUS</span>
+                <span className="text-[10.5px] font-mono tracking-[0.12em]" style={{ color: 'var(--on-ink-3)' }}>{today().toUpperCase()}</span>
+                <span className="inline-flex items-center gap-1.5"><span className="live-dot" /><span className="text-[10px] font-mono tracking-[0.06em]" style={{ color: 'var(--green-500)' }}>ATUALIZADO AGORA</span></span>
+              </div>
+              <div className="font-bold leading-[1.22]" style={{ fontSize: 21, letterSpacing: '-0.025em', color: 'var(--on-ink)' }}>{headline}</div>
+              <p className="text-sm leading-relaxed mt-3 max-w-[680px]" style={{ color: 'var(--on-ink-2)' }}>{briefing}</p>
+              <div className="flex flex-wrap gap-2.5 mt-[18px]">
+                <Button onClick={() => (window.location.href = '/plano')}>Ver meu plano de hoje</Button>
+                <button onClick={() => (window.location.href = rm ? '/diagnostico' : '/diagnostico')}
+                  className="inline-flex items-center gap-1.5 px-[15px] py-[9px] text-[13.5px] font-semibold rounded-sm transition-colors"
+                  style={{ background: 'rgba(255,255,255,.06)', color: 'var(--on-ink)', border: '1px solid var(--ink-line)' }}>
+                  <Icon name="sparkle2" size={15} /> {rm ? 'Perguntar ao NOUS' : 'Rodar Análise Profunda'}
+                </button>
+              </div>
             </div>
-            <div className="font-bold leading-[1.22]" style={{ fontSize: pro ? 21 : 24, letterSpacing: '-0.025em', color: 'var(--on-ink)' }}>{headline}</div>
-            <p className="text-sm leading-relaxed mt-3 max-w-[680px]" style={{ color: 'var(--on-ink-2)' }}>{briefing}</p>
-            <div className="flex flex-wrap gap-2.5 mt-[18px]">
-              <Button onClick={() => (window.location.href = '/plano')}>Ver meu plano de hoje</Button>
-              <button onClick={() => (window.location.href = rm ? '/diagnostico' : '/diagnostico')}
-                className="inline-flex items-center gap-1.5 px-[15px] py-[9px] text-[13.5px] font-semibold rounded-sm transition-colors"
-                style={{ background: 'rgba(255,255,255,.06)', color: 'var(--on-ink)', border: '1px solid var(--ink-line)' }}>
-                <Icon name="sparkle2" size={15} /> {rm ? 'Perguntar ao NOUS' : 'Rodar Análise Profunda'}
-              </button>
-            </div>
+            {/* Ganhos rápidos — dado virando ação em R$ */}
+            {quickGain > 0 && (
+              <div className="flex flex-col gap-1" style={{ minWidth: 188, flex: '0 1 220px', alignSelf: 'stretch', padding: '15px 16px', borderRadius: 'var(--r-md)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--ink-line)' }}>
+                <span className="text-[10.5px] font-mono uppercase tracking-[0.14em]" style={{ color: 'var(--on-ink-3)' }}>Ganhos rápidos</span>
+                <span className="font-mono font-bold count-up whitespace-nowrap" style={{ fontSize: 25, letterSpacing: '-0.03em', color: 'var(--green-500)' }}>+{brl(quickGain)}</span>
+                <span className="text-[11.5px] leading-snug" style={{ color: 'var(--on-ink-2)' }}>esperando sua aprovação no plano de hoje</span>
+                <button onClick={() => (window.location.href = '/plano')} className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[12.5px] font-semibold rounded-sm transition-colors"
+                  style={{ border: '1px solid var(--ink-line)', background: 'rgba(255,255,255,.06)', color: 'var(--on-ink)' }}>
+                  Revisar e aprovar <Icon name="arrowR" size={14} />
+                </button>
+              </div>
+            )}
           </div>
-          {/* Ganhos rápidos — dado virando ação em R$ */}
-          {quickGain > 0 && (
-            <div className="flex flex-col gap-1" style={{ minWidth: 188, flex: '0 1 220px', alignSelf: 'stretch', padding: '15px 16px', borderRadius: 'var(--r-md)', background: 'rgba(255,255,255,.05)', border: '1px solid var(--ink-line)' }}>
-              <span className="text-[10.5px] font-mono uppercase tracking-[0.14em]" style={{ color: 'var(--on-ink-3)' }}>Ganhos rápidos</span>
-              <span className="font-mono font-bold count-up whitespace-nowrap" style={{ fontSize: 25, letterSpacing: '-0.03em', color: 'var(--green-500)' }}>+{brl(quickGain)}</span>
-              <span className="text-[11.5px] leading-snug" style={{ color: 'var(--on-ink-2)' }}>esperando sua aprovação no plano de hoje</span>
-              <button onClick={() => (window.location.href = '/plano')} className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[12.5px] font-semibold rounded-sm transition-colors"
-                style={{ border: '1px solid var(--ink-line)', background: 'rgba(255,255,255,.06)', color: 'var(--on-ink)' }}>
-                Revisar e aprovar <Icon name="arrowR" size={14} />
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* O que mudou desde ontem — texto completo (CLARITY) */}
       {pro && changes.length > 0 && (
