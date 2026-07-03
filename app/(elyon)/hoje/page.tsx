@@ -327,46 +327,6 @@ export default function HojePage() {
         </section>
       )}
 
-      {/* Modo avançado: leitura operacional, sem repetir o card simplificado */}
-      {pro && (
-        <section className="mb-4 animate-fade-up">
-          <Card>
-            <SectionHead
-              title="Painel avançado da conta"
-              subtitle="Visão operacional com KPIs, benchmark e sinais para decisão técnica"
-              icon={<Icon name="grid" size={18} />}
-              action={<SourceBadge source={rm ? 'real' : 'benchmark'} />}
-            />
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
-              <div className="rounded-md bg-canvas-2 border border-line p-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Spend analisado</div>
-                <div className="text-xl font-bold font-mono text-ink mt-1">{rm ? brl(rm.totalSpend) : '—'}</div>
-                <div className="text-xs text-ink-3 mt-0.5">{prev?.spendDelta != null ? `${prev.spendDelta > 0 ? '+' : ''}${prev.spendDelta}% vs anterior` : 'sem delta'}</div>
-              </div>
-              <div className="rounded-md bg-canvas-2 border border-line p-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPL real</div>
-                <div className="text-xl font-bold font-mono mt-1" style={{ color: cplBad ? '#E1483F' : cplGood ? '#0E9E6E' : '#E08B0B' }}>{rm?.avgCPL ? brl(rm.avgCPL) : '—'}</div>
-                <div className="text-xs text-ink-3 mt-0.5">benchmark {bench?.cpl_min && bench?.cpl_max ? `${brl(bench.cpl_min)}-${brl(bench.cpl_max)}` : 'indisponível'}</div>
-              </div>
-              <div className="rounded-md bg-canvas-2 border border-line p-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Conversões</div>
-                <div className="text-xl font-bold font-mono text-ink mt-1">{rm ? int(rm.totalLeads) : '—'}</div>
-                <div className="text-xs text-ink-3 mt-0.5">{prev?.leadsDelta != null ? `${prev.leadsDelta > 0 ? '+' : ''}${prev.leadsDelta}% vs anterior` : 'sem delta'}</div>
-              </div>
-              <div className="rounded-md bg-canvas-2 border border-line p-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Fila crítica</div>
-                <div className="text-xl font-bold font-mono text-ink mt-1">{urgentCount}</div>
-                <div className="text-xs text-ink-3 mt-0.5">{actions.length} ações priorizadas</div>
-              </div>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button size="sm" onClick={() => (window.location.href = '/diagnostico')} icon={<Icon name="pulse" size={14} />}>Abrir diagnóstico</Button>
-              <Button size="sm" variant="soft" onClick={() => (window.location.href = '/plano')} icon={<Icon name="clipboard" size={14} />}>Abrir plano avançado</Button>
-            </div>
-          </Card>
-        </section>
-      )}
-
       {/* Radar de hoje — o motivo de abrir o Elyon: o que precisa de você agora, em R$ */}
       <RadarToday />
 
