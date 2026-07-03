@@ -17,9 +17,9 @@ interface Props {
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
-  surface:  '#0C1426',
-  elevated: '#111D33',
-  border:   'rgba(255,255,255,0.06)',
+  surface:  '#FFFFFF',
+  elevated: '#FFFFFF',
+  border:   'rgba(22,27,38,0.08)',
   borderHi: 'rgba(124,58,237,0.25)',
   purple:   '#2C5FE0',
   purpleHi: '#2C5FE0',
@@ -32,7 +32,7 @@ const C = {
   redBg:    'rgba(239,68,68,0.08)',
   text1:    '#161B26',
   text2:    '#5A6473',
-  text3:    'rgba(255,255,255,0.32)',
+  text3:    '#8A93A3',
 }
 
 function fmt(n: number) {
@@ -57,6 +57,80 @@ function MetricRow({ icon, label, value, sub, status }: {
       </div>
       <span style={{ fontSize: '16px' }}>{status === 'good' ? '✅' : status === 'warn' ? '⚠️' : '📊'}</span>
     </div>
+  )
+}
+
+function HealthScore({ score, label, color, bg, border }: {
+  score: number; label: string; color: string; bg: string; border: string
+}) {
+  return (
+    <div style={{
+      minWidth: '180px', flex: '0 0 180px',
+      padding: '16px', borderRadius: '14px',
+      background: bg, border: `1px solid ${border}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '10px' }}>
+        <span style={{ fontSize: '34px', fontWeight: 900, color, letterSpacing: '-0.04em', lineHeight: 1 }}>{score}</span>
+        <span style={{ fontSize: '12px', fontWeight: 800, color, opacity: 0.7 }}>/100</span>
+      </div>
+      <div style={{ height: '7px', borderRadius: '99px', background: 'rgba(22,27,38,0.08)', overflow: 'hidden', marginBottom: '9px' }}>
+        <div style={{ width: `${score}%`, height: '100%', borderRadius: '99px', background: color, transition: 'width 0.4s ease' }} />
+      </div>
+      <div style={{ fontSize: '11px', fontWeight: 800, color, textTransform: 'uppercase' as const, letterSpacing: '0.07em' }}>
+        {label}
+      </div>
+    </div>
+  )
+}
+
+function SimpleSignal({ label, value, tone, hint }: {
+  label: string; value: string; tone: 'good' | 'warn' | 'neutral'; hint: string
+}) {
+  const color = tone === 'good' ? C.green : tone === 'warn' ? C.amber : C.purpleHi
+  const bg    = tone === 'good' ? C.greenBg : tone === 'warn' ? C.amberBg : C.purpleBg
+  const border = tone === 'good' ? 'rgba(34,197,94,0.18)' : tone === 'warn' ? 'rgba(245,158,11,0.18)' : 'rgba(124,58,237,0.18)'
+  return (
+    <div style={{
+      flex: '1 1 150px', minWidth: '140px',
+      padding: '13px 14px', borderRadius: '12px',
+      background: bg, border: `1px solid ${border}`,
+    }}>
+      <div style={{ fontSize: '10px', color: C.text3, marginBottom: '5px' }}>{label}</div>
+      <div style={{ fontSize: '17px', fontWeight: 850, color, letterSpacing: '-0.02em' }}>{value}</div>
+      <div style={{ fontSize: '10px', color: C.text3, marginTop: '4px', lineHeight: 1.35 }}>{hint}</div>
+    </div>
+  )
+}
+
+function PathCard({ step, title, desc, onClick, active }: {
+  step: string; title: string; desc: string; onClick?: () => void; active?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'flex-start', gap: '12px', width: '100%',
+        padding: '13px 14px', borderRadius: '12px', textAlign: 'left' as const,
+        background: active ? 'rgba(34,197,94,0.08)' : C.surface,
+        border: `1px solid ${active ? 'rgba(34,197,94,0.22)' : C.border}`,
+        cursor: 'pointer', transition: 'opacity 0.15s, border-color 0.15s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.borderColor = active ? 'rgba(34,197,94,0.32)' : 'rgba(124,58,237,0.28)' }}
+      onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = active ? 'rgba(34,197,94,0.22)' : C.border }}
+    >
+      <span style={{
+        width: '28px', height: '28px', borderRadius: '9px', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: active ? C.greenBg : C.purpleBg,
+        color: active ? C.green : C.purpleHi,
+        fontSize: '12px', fontWeight: 900,
+      }}>{step}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: C.text1, marginBottom: '3px' }}>{title}</span>
+        <span style={{ display: 'block', fontSize: '11px', color: C.text2, lineHeight: 1.5 }}>{desc}</span>
+      </span>
+      <span style={{ color: active ? C.green : C.purpleHi, fontSize: '14px', flexShrink: 0 }}>→</span>
+    </button>
   )
 }
 
@@ -88,6 +162,8 @@ function ActionButton({ label, icon, onClick, primary }: {
 export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Props) {
   const auditCache   = useAppStore(s => s.auditCache)
   const setDashboardMode = useAppStore(s => s.setDashboardMode)
+  const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
+  const funnelEntries = useAppStore(s => s.funnelEntries)
 
   const key          = clientData?.clientName || ''
   const auditHistory = auditCache[key]
@@ -95,6 +171,9 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
   const demo         = isUsingSimpleDemoData()
   const rm           = (latestAudit?._realMetrics as any) || (demo ? getDemoRealMetrics() : null)
   const bench        = clientData ? getBenchmark(clientData.niche) : null
+  const pendingActions = pendingActionsCache[key] || []
+  const urgentActions = pendingActions.filter(a => a.status === 'pendente' && (a.urgency === 'critica' || a.urgency === 'alta'))
+  const latestFunnel = funnelEntries.filter(e => e.clientName === key).sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))[0]
 
   const hasData = !!(rm && rm.totalSpend > 0)
 
@@ -109,10 +188,77 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
   }, [rm, bench, hasData])
 
   const statusCfg = {
-    great: { icon: '🟢', headline: 'Seus anúncios estão funcionando bem!', color: C.green,  bg: C.greenBg,  border: 'rgba(34,197,94,0.2)' },
-    ok:    { icon: '🟡', headline: 'Seus anúncios estão estáveis.',         color: C.amber,  bg: C.amberBg,  border: 'rgba(245,158,11,0.2)' },
-    warn:  { icon: '🔴', headline: 'Seus anúncios precisam de atenção.',     color: C.red,    bg: C.redBg,    border: 'rgba(239,68,68,0.2)' },
+    great: { icon: '🟢', headline: 'Sua conta está saudável.',              label: 'Saudável', color: C.green,  bg: C.greenBg,  border: 'rgba(34,197,94,0.2)' },
+    ok:    { icon: '🟡', headline: 'Sua conta está no caminho certo.',       label: 'Estável', color: C.amber,  bg: C.amberBg,  border: 'rgba(245,158,11,0.2)' },
+    warn:  { icon: '🔴', headline: 'Sua conta precisa de atenção.',          label: 'Atenção', color: C.red,    bg: C.redBg,    border: 'rgba(239,68,68,0.2)' },
   }[overallStatus]
+
+  const healthScore = useMemo(() => {
+    if (!hasData) return 58
+    let score = 68
+    if (overallStatus === 'great') score += 18
+    if (overallStatus === 'warn') score -= 18
+    if (rm.avgCTR >= 1.2) score += 6
+    if (rm.avgCTR > 0 && rm.avgCTR < 0.5) score -= 8
+    if (rm.avgROAS >= 2) score += 8
+    if (rm.avgROAS > 0 && rm.avgROAS < 1) score -= 10
+    score -= Math.min(urgentActions.length * 4, 12)
+    return Math.max(12, Math.min(96, score))
+  }, [hasData, overallStatus, rm, urgentActions.length])
+
+  const decision = useMemo(() => {
+    if (!hasData) return {
+      title: 'Primeiro passo: conectar seus dados',
+      body: 'Sem conexão com anúncios, a plataforma ainda trabalha com estimativas do seu nicho. Conecte Meta ou Google para saber exatamente onde está bom, ruim ou desperdiçando dinheiro.',
+      tab: 'anuncios',
+      cta: 'Conectar anúncios',
+    }
+    if (overallStatus === 'great') return {
+      title: 'Decisão: crescer com cuidado',
+      body: 'Os sinais principais estão bons. O próximo passo é aumentar orçamento aos poucos nas campanhas que geram contatos mais baratos.',
+      tab: 'acoes',
+      cta: 'Ver como crescer',
+    }
+    if (overallStatus === 'warn') return {
+      title: 'Decisão: corrigir antes de investir mais',
+      body: 'Existe algum ponto fazendo a conta ficar cara. Antes de colocar mais verba, revise público, anúncios e etapas onde os clientes desistem.',
+      tab: 'analise',
+      cta: 'Ver problema principal',
+    }
+    return {
+      title: 'Decisão: otimizar para ganhar eficiência',
+      body: 'A conta não está ruim, mas ainda dá para pagar menos por contato e transformar melhor os interessados em clientes.',
+      tab: 'acoes',
+      cta: 'Ver melhorias',
+    }
+  }, [hasData, overallStatus])
+
+  const simpleSignals = useMemo(() => {
+    const cplTone: 'good' | 'warn' | 'neutral' = hasData && bench && rm.avgCPL
+      ? rm.avgCPL <= bench.kpi_thresholds.cpl_good ? 'good' : rm.avgCPL > bench.kpi_thresholds.cpl_bad ? 'warn' : 'neutral'
+      : 'neutral'
+    const leadsValue = hasData ? String(rm.totalLeads || 0) : clientData?.budget && bench ? `~${Math.round(clientData.budget / ((bench.cpl_min + bench.cpl_max) / 2))}` : 'Aguardando'
+    return [
+      {
+        label: 'Clientes chegando',
+        value: leadsValue,
+        tone: hasData && rm.totalLeads > 0 ? 'good' as const : 'neutral' as const,
+        hint: hasData ? 'Contatos recebidos no período' : 'Estimativa até conectar dados',
+      },
+      {
+        label: 'Custo por contato',
+        value: hasData && rm.avgCPL ? `R$${rm.avgCPL}` : bench ? `R$${bench.cpl_min}-${bench.cpl_max}` : 'Sem base',
+        tone: cplTone,
+        hint: bench ? 'Comparado com a média do seu setor' : 'Depende dos dados conectados',
+      },
+      {
+        label: 'Urgências',
+        value: urgentActions.length > 0 ? String(urgentActions.length) : '0',
+        tone: urgentActions.length > 0 ? 'warn' as const : 'good' as const,
+        hint: urgentActions.length > 0 ? 'Itens que merecem atenção agora' : 'Nada crítico pendente',
+      },
+    ]
+  }, [hasData, rm, bench, clientData, urgentActions.length])
 
   type Metric = { icon: string; label: string; value: string; sub: string; status: 'good' | 'warn' | 'neutral' }
 
@@ -212,6 +358,33 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
     return list
   }, [hasData, overallStatus])
 
+  const beginnerPath = useMemo(() => {
+    const hasAudit = Array.isArray(auditHistory) ? auditHistory.length > 0 : !!auditHistory
+    return [
+      {
+        step: '1',
+        title: hasData ? 'Entenda se a conta está bem' : 'Conecte seus anúncios',
+        desc: hasData ? 'Veja o resumo sem termos técnicos e entenda o principal sinal da conta.' : 'Traga dados reais de Meta ou Google para sair das estimativas.',
+        tab: hasData ? 'diagnostic' : 'anuncios',
+        active: !hasData,
+      },
+      {
+        step: '2',
+        title: latestFunnel ? 'Veja onde perde clientes' : 'Mapeie a jornada do cliente',
+        desc: latestFunnel ? 'Confira em qual etapa as pessoas param antes de comprar.' : 'Preencha entradas simples para descobrir onde o dinheiro escapa.',
+        tab: 'funil',
+        active: hasData && !latestFunnel,
+      },
+      {
+        step: '3',
+        title: urgentActions.length > 0 ? 'Resolva as urgências' : 'Siga o plano recomendado',
+        desc: urgentActions.length > 0 ? 'Priorize os ajustes que mais afetam seu dinheiro agora.' : 'Execute as próximas ações em ordem de impacto.',
+        tab: urgentActions.length > 0 || hasAudit ? 'acoes' : 'analise',
+        active: hasData && (urgentActions.length > 0 || overallStatus === 'warn'),
+      },
+    ]
+  }, [hasData, auditHistory, latestFunnel, urgentActions.length, overallStatus])
+
   if (!clientData) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', color: C.text3, fontSize: '13px' }}>
@@ -221,26 +394,62 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
   }
 
   return (
-    <div style={{ maxWidth: '640px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ maxWidth: '1120px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
       {/* Saudação + status geral */}
       <div style={{ padding: '20px 22px', borderRadius: '16px', background: statusCfg.bg, border: `1px solid ${statusCfg.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
-          <span style={{ fontSize: '24px', flexShrink: 0 }}>{statusCfg.icon}</span>
-          <div>
-            <div style={{ fontSize: '17px', fontWeight: 800, color: statusCfg.color, letterSpacing: '-0.02em', lineHeight: 1.3, marginBottom: '4px' }}>
-              {statusCfg.headline}
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: '18px', flexWrap: 'wrap' as const }}>
+          <div style={{ flex: '1 1 360px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
+              <span style={{ fontSize: '24px', flexShrink: 0 }}>{statusCfg.icon}</span>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: statusCfg.color, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '5px' }}>
+                  Resumo simples da conta
+                </div>
+                <div style={{ fontSize: '22px', fontWeight: 900, color: statusCfg.color, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '5px' }}>
+                  {statusCfg.headline}
+                </div>
+                <div style={{ fontSize: '12px', color: C.text3 }}>
+                  {clientData.clientName} · {clientData.niche}{clientData.city ? ` · ${clientData.city}` : ''}
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: '12px', color: C.text3 }}>
-              {clientData.clientName} · {clientData.niche}{clientData.city ? ` · ${clientData.city}` : ''}
+            <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: `1px solid ${statusCfg.border}` }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: statusCfg.color, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '5px' }}>
+                O que isso significa
+              </div>
+              <p style={{ fontSize: '13px', color: C.text2, lineHeight: 1.7, margin: 0 }}>{meaning}</p>
             </div>
+          </div>
+          <HealthScore score={healthScore} label={statusCfg.label} color={statusCfg.color} bg="rgba(255,255,255,0.04)" border={statusCfg.border} />
+        </div>
+      </div>
+
+      {/* Leitura rapida + decisao */}
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'stretch', flexWrap: 'wrap' as const }}>
+        <div style={{ flex: '1 1 520px', minWidth: 0, padding: '16px', borderRadius: '16px', background: C.elevated, border: `1px solid ${C.border}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: C.text3, textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>
+                Conta em 1 minuto
+              </div>
+              <div style={{ fontSize: '13px', color: C.text2, marginTop: '3px' }}>
+                Os 3 sinais que mais importam para quem não vive de métricas.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' as const }}>
+            {simpleSignals.map((s) => <SimpleSignal key={s.label} {...s} />)}
           </div>
         </div>
-        <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: `1px solid ${statusCfg.border}` }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: statusCfg.color, textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '5px' }}>
-            O que isso significa
+
+        <div style={{ flex: '1 1 300px', minWidth: 0, padding: '16px', borderRadius: '16px', background: C.surface, border: `1px solid ${C.borderHi}` }}>
+          <div style={{ fontSize: '10px', fontWeight: 800, color: C.purpleHi, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: '7px' }}>
+            Decisão recomendada
           </div>
-          <p style={{ fontSize: '13px', color: '#CBD5E1', lineHeight: 1.7, margin: 0 }}>{meaning}</p>
+          <div style={{ fontSize: '16px', fontWeight: 850, color: C.text1, letterSpacing: '-0.02em', marginBottom: '7px' }}>{decision.title}</div>
+          <p style={{ fontSize: '12px', color: C.text2, lineHeight: 1.65, margin: '0 0 14px' }}>{decision.body}</p>
+          <ActionButton label={decision.cta} icon="✅" primary onClick={() => onNavigate?.(decision.tab)} />
         </div>
       </div>
 
@@ -259,7 +468,8 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
       )}
 
       {/* O que fazer agora */}
-      <div>
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' as const }}>
+        <div style={{ flex: '1 1 360px', minWidth: 0 }}>
         <div style={{ fontSize: '10px', fontWeight: 700, color: C.text3, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: '10px' }}>
           O que fazer agora
         </div>
@@ -270,6 +480,25 @@ export function TabSimpleOverview({ clientData, onNavigate, onSwitchToPro }: Pro
           {!hasData && !demo && (
             <div style={{ marginTop: '2px' }}><DemoDataButton /></div>
           )}
+        </div>
+        </div>
+
+        <div style={{ flex: '1 1 420px', minWidth: 0 }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: C.text3, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: '10px' }}>
+            Caminho guiado para iniciantes
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {beginnerPath.map((p) => (
+              <PathCard
+                key={p.step}
+                step={p.step}
+                title={p.title}
+                desc={p.desc}
+                active={p.active}
+                onClick={() => onNavigate?.(p.tab)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
