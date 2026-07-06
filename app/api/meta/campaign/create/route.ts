@@ -83,7 +83,7 @@ const TOOLS: Anthropic.Tool[] = [
 ]
 
 // ── Tool executor ──────────────────────────────────────────────────────────────
-async function executeTool(name: string, input: Record<string, any>, accountId: string, token: string): Promise<string> {
+async function executeTool(name: string, input: Record<string, any>, accountId: string, token: string, fallbackImageUrl = ''): Promise<string> {
   const actId = accountId.startsWith('act_') ? accountId : `act_${accountId}`
 
   try {
@@ -127,7 +127,8 @@ async function executeTool(name: string, input: Record<string, any>, accountId: 
         description:     input.description || '',
         call_to_action:  { type: input.call_to_action, value: { link: input.website_url } },
       }
-      if (input.image_url) linkData.picture = input.image_url
+      const imageUrl = input.image_url || fallbackImageUrl
+      if (imageUrl) linkData.picture = imageUrl
 
       const data = await metaPost(`${actId}/adcreatives`, {
         name:               input.name,
@@ -194,6 +195,7 @@ export async function POST(req: NextRequest) {
 Você tem acesso à Página do Facebook com ID: ${pageId}.
 Execute as tools na ordem: create_campaign → create_ad_set → create_ad_creative → create_ad.
 Use exatamente os parâmetros do plano fornecido, ajustando apenas o necessário.
+Se o plano tiver creative.image_url, é OBRIGATÓRIO passar esse mesmo valor no campo image_url da tool create_ad_creative.
 Ao final, confirme o que foi criado com um resumo amigável em português.`
 
       const userMsg = `Crie a campanha com base neste plano:
@@ -234,7 +236,7 @@ ${JSON.stringify(plan, null, 2)}`
           for (const tu of toolUses) {
             send({ type: 'tool_call', tool: tu.name, input: tu.input })
 
-            const resultStr = await executeTool(tu.name, tu.input as Record<string, any>, accountId, accessToken)
+            const resultStr = await executeTool(tu.name, tu.input as Record<string, any>, accountId, accessToken, plan?.creative?.image_url || '')
             const result    = JSON.parse(resultStr)
 
             send({ type: 'tool_result', tool: tu.name, result })

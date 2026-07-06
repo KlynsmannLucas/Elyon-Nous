@@ -31,9 +31,16 @@ type Step = 'input' | 'planning' | 'review' | 'creating' | 'done' | 'error'
 interface CampaignPlan {
   campaign:  { name: string; objective: string; status: string; reasoning: string }
   ad_set:    { name: string; daily_budget_brl: number; optimization_goal: string; age_min: number; age_max: number; genders: number[]; geo_description: string; countries: string[]; reasoning: string }
-  creative:  { primary_text: string; headline: string; description: string; call_to_action: string; website_url: string; reasoning: string }
+  creative:  { primary_text: string; headline: string; description: string; call_to_action: string; website_url: string; reasoning: string; image_url?: string; image_asset_id?: string; image_provider?: string; image_prompt?: string }
   ad:        { name: string; status: string }
   summary:   string
+}
+
+interface GeneratedAsset {
+  id: string
+  name: string
+  public_url: string
+  provider?: string
 }
 
 interface StreamEvent {
@@ -77,6 +84,21 @@ const TOOL_DONE_LABELS: Record<string, string> = {
   create_ad_set:      'Público e orçamento configurados',
   create_ad_creative: 'Criativo montado',
   create_ad:          'Anúncio publicado',
+}
+
+function buildCreativePrompt(plan: CampaignPlan, clientData: ClientData | null, intent: string) {
+  const clientName = (clientData as any)?.clientName || 'marca brasileira'
+  const niche = (clientData as any)?.niche || 'negócio local'
+  const products = Array.isArray((clientData as any)?.products) ? (clientData as any).products.join(', ') : ''
+  return [
+    `Imagem publicitária premium para Meta Ads da marca ${clientName}.`,
+    `Nicho: ${niche}. ${products ? `Produtos/serviços: ${products}.` : ''}`,
+    `Objetivo da campanha: ${plan.campaign.objective}. Pedido do gestor: ${intent}.`,
+    `Conceito do anúncio: ${plan.creative.headline}. Texto base: ${plan.creative.primary_text}.`,
+    'Criar uma cena realista, clara, comercial e confiável, com foco no benefício visual do produto/serviço.',
+    'Não colocar texto, letras, preços, logotipos inventados, marcas d’água ou elementos ilegíveis na imagem.',
+    'Deixar espaço visual limpo para a copy do anúncio no Meta. Qualidade profissional, luz natural, composição de feed 1:1.',
+  ].filter(Boolean).join(' ')
 }
 
 // Linha label↔valor do plano (fiel a screens-studio.jsx › PlanField)
@@ -133,6 +155,54 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
   const [errorMsg,    setErrorMsg]    = useState('')
   const [finalUrl,    setFinalUrl]    = useState('')
   const [editPlan,    setEditPlan]    = useState(false)
+  const [generatedAsset, setGeneratedAsset] = useState<GeneratedAsset | null>(null)
+  const [imageGenerating, setImageGenerating] = useState(false)
+  const [imageError, setImageError] = useState('')
+  const [imageApproved, setImageApproved] = useState(false)
+
+  const generateCreativeImage = async (targetPlan: CampaignPlan, force = false) => {
+    if (!clientData?.clientName || imageGenerating) return
+    if (!force && targetPlan.creative.image_url) return
+    setImageGenerating(true)
+    setImageError('')
+    setImageApproved(false)
+    if (force) setGeneratedAsset(null)
+    try {
+      const prompt = buildCreativePrompt(targetPlan, clientData, intent)
+      const res = await fetch('/api/assets/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          clientName: clientData.clientName,
+          niche: (clientData as any).niche,
+          type: 'banner',
+          format: 'square',
+        }),
+      })
+      const json = await res.json().catch(() => null)
+      if (!res.ok || !json?.asset?.public_url) throw new Error(json?.error || 'Não consegui gerar o criativo visual agora.')
+      const asset: GeneratedAsset = { ...json.asset, provider: json.provider }
+      setGeneratedAsset(asset)
+      setPlan((current) => current ? ({
+        ...current,
+        creative: {
+          ...current.creative,
+          image_url: asset.public_url,
+          image_asset_id: asset.id,
+          image_provider: json.provider || 'ia',
+          image_prompt: prompt,
+        },
+      }) : current)
+      fetch('/api/logs', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ module: 'campaign_creator', action: 'generate_creative', clientName: clientData.clientName,
+          detail: `Criativo visual gerado para campanha`, metadata: { provider: json.provider, assetId: asset.id } }) }).catch(() => {})
+    } catch (e: any) {
+      setImageError(e.message || 'Erro ao gerar criativo visual.')
+    } finally {
+      setImageGenerating(false)
+    }
+  }
 
   if (!metaAccount) {
     return (
@@ -181,9 +251,13 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setPlan(data.plan)
+      setGeneratedAsset(null)
+      setImageApproved(false)
+      setImageError('')
       setPages(data.pages || [])
       if (data.pages?.length === 1) setSelectedPage(data.pages[0].id)
       setStep('review')
+      generateCreativeImage(data.plan)
     } catch (e: any) {
       setErrorMsg(e.message)
       setStep('error')
@@ -193,6 +267,10 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
   // ── Step 3: Create ───────────────────────────────────────────────────────────
   const handleCreate = async () => {
     if (!plan || !selectedPage) return
+    if (!plan.creative.image_url || !imageApproved) {
+      setImageError('Aprove o criativo visual antes de criar a campanha.')
+      return
+    }
     setStep('creating')
     setEvents([])
 
@@ -243,6 +321,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
     setStep('input'); setIntent(''); setPlan(null)
     setPages([]); setSelectedPage(''); setEvents([])
     setErrorMsg(''); setFinalUrl(''); setEditPlan(false)
+    setGeneratedAsset(null); setImageGenerating(false); setImageError(''); setImageApproved(false)
   }
 
   // ── Renders ──────────────────────────────────────────────────────────────────
@@ -370,6 +449,84 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         <PlanField label="Destino" value={plan.creative.website_url} mono />
       </PlanCard>
 
+      <div style={{ background: '#FFFFFF', border: `1px solid ${imageApproved ? '#B7E6D1' : imageError ? 'rgba(225,72,63,.28)' : '#CCDAFB'}`, borderRadius: 12, padding: 18, marginBottom: 14, boxShadow: '0 1px 2px rgba(24,25,29,.04)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
+              <span style={{ width: 30, height: 30, borderRadius: 8, background: '#EBF0FE', color: '#1E47C4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="image" size={16} /></span>
+              <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', color: '#18191D' }}>Criativo visual</span>
+            </div>
+            <div style={{ fontSize: 12.5, color: '#565862', lineHeight: 1.5 }}>
+              Gerado pela mesma inteligência da Biblioteca. A API tenta OpenAI primeiro e usa Gemini automaticamente se a OpenAI estiver sem saldo/quota.
+            </div>
+          </div>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, padding: '3px 9px',
+            borderRadius: 999,
+            background: imageApproved ? '#E3F6EE' : imageGenerating ? '#EBF0FE' : imageError ? 'rgba(225,72,63,.08)' : '#F4F4F2',
+            color: imageApproved ? '#0B855D' : imageGenerating ? '#1E47C4' : imageError ? '#E1483F' : '#565862',
+            border: imageApproved ? '1px solid #B7E6D1' : imageGenerating ? '1px solid #CCDAFB' : imageError ? '1px solid rgba(225,72,63,.2)' : '1px solid #E6E5E0',
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: 99, background: imageApproved ? '#0E9E6E' : imageGenerating ? '#2B5BE3' : imageError ? '#E1483F' : '#898C97' }} />
+            {imageApproved ? 'Aprovado' : imageGenerating ? 'Gerando' : imageError ? 'Revisar' : 'Aguardando aprovação'}
+          </span>
+        </div>
+
+        {imageGenerating && (
+          <div style={{ minHeight: 260, borderRadius: 12, background: '#F4F4F2', border: '1px dashed #CCDAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10 }}>
+            <div style={{ width: 28, height: 28, border: '3px solid #CCDAFB', borderTopColor: '#2B5BE3', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ fontSize: 13, color: '#565862' }}>Gerando imagem do anúncio e salvando na Biblioteca...</div>
+          </div>
+        )}
+
+        {!imageGenerating && generatedAsset?.public_url && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, alignItems: 'start' }}>
+            <div style={{ borderRadius: 12, background: '#F4F4F2', border: '1px solid #E6E5E0', overflow: 'hidden', aspectRatio: '1 / 1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={generatedAsset.public_url} alt={generatedAsset.name || 'Criativo gerado'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div>
+              <PlanField label="Arquivo" value={generatedAsset.name || 'Criativo IA'} />
+              <PlanField label="Provedor" value={(plan.creative.image_provider || generatedAsset.provider || 'IA').toUpperCase()} mono />
+              <PlanField label="Status" value={imageApproved ? 'Aprovado para criar anúncio' : 'Aguardando sua aprovação'} />
+              <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <button
+                  onClick={() => setImageApproved(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 9, border: 'none', cursor: 'pointer', background: '#0E9E6E', color: '#fff', fontSize: 13, fontWeight: 700 }}
+                >
+                  <Icon name="check" size={14} /> Aprovar criativo
+                </button>
+                <button
+                  onClick={() => generateCreativeImage(plan, true)}
+                  disabled={imageGenerating}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 9, border: '1px solid #CCDAFB', cursor: 'pointer', background: '#EBF0FE', color: '#1E47C4', fontSize: 13, fontWeight: 700 }}
+                >
+                  <Icon name="spark" size={14} /> Reprovar e gerar outra
+                </button>
+                <a href={generatedAsset.public_url} target="_blank" rel="noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 9, border: '1px solid #E6E5E0', background: '#fff', color: '#565862', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                  <Icon name="link" size={14} /> Abrir imagem
+                </a>
+              </div>
+              <p style={{ marginTop: 10, fontSize: 11.5, color: '#898C97', lineHeight: 1.5 }}>
+                O asset já foi salvo na Biblioteca deste cliente e será anexado ao anúncio como imagem principal.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!imageGenerating && !generatedAsset && (
+          <div style={{ borderRadius: 12, background: imageError ? 'rgba(225,72,63,.06)' : '#F4F4F2', border: `1px dashed ${imageError ? 'rgba(225,72,63,.28)' : '#CCDAFB'}`, padding: 18 }}>
+            {imageError && <div style={{ fontSize: 12.5, color: '#E1483F', marginBottom: 10 }}>{imageError}</div>}
+            <button
+              onClick={() => generateCreativeImage(plan, true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 9, border: 'none', cursor: 'pointer', background: '#2B5BE3', color: '#fff', fontSize: 13.5, fontWeight: 700 }}
+            >
+              <Icon name="spark" size={14} /> Gerar criativo visual
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Seleção de página */}
       {pages.length > 0 && (
         <div style={{ ...S.card, marginBottom: 20 }}>
@@ -407,15 +564,15 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         </button>
         <button
           onClick={handleCreate}
-          disabled={!selectedPage && pages.length > 0}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer', border: 'none', background: '#2B5BE3', color: '#fff', opacity: (!selectedPage && pages.length > 0) ? 0.45 : 1 }}
+          disabled={!selectedPage || !imageApproved || !plan.creative.image_url || imageGenerating}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: (!selectedPage || !imageApproved || !plan.creative.image_url || imageGenerating) ? 'not-allowed' : 'pointer', border: 'none', background: '#2B5BE3', color: '#fff', opacity: (!selectedPage || !imageApproved || !plan.creative.image_url || imageGenerating) ? 0.45 : 1 }}
         >
-          <Icon name="rocket" size={15} /> Publicar campanha
+          <Icon name="rocket" size={15} /> Criar campanha pausada
         </button>
       </div>
 
       <p style={{ textAlign: 'right', fontSize: 11, color: '#565862', marginTop: 8 }}>
-        A campanha será criada em status <strong>PAUSADA</strong>. Ative no Gerenciador quando estiver pronto.
+        A campanha e o anúncio serão criados em status <strong>PAUSADO</strong>, com o criativo aprovado anexado.
       </p>
     </div>
   )
@@ -479,7 +636,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
           Campanha criada com sucesso!
         </h2>
         <p style={{ color: '#898C97', fontSize: 14, marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
-          {events.find(e => e.type === 'done')?.summary || 'Sua campanha está pronta no Meta Ads em status pausado.'}
+          {events.find(e => e.type === 'done')?.summary || 'Sua campanha está pronta no Meta Ads em status pausado, com o criativo aprovado anexado.'}
         </p>
 
         {/* IDs criados */}
@@ -509,7 +666,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
         </div>
 
         <p style={{ marginTop: 20, fontSize: 12, color: '#565862' }}>
-          A campanha está <strong>pausada</strong>. Adicione a imagem e ative no Gerenciador quando estiver pronto.
+          A campanha está <strong>pausada</strong>. Revise no Gerenciador e ative quando estiver pronto.
         </p>
       </div>
     </div>

@@ -341,6 +341,98 @@ export function TabAssets({ clientData }: Props) {
           </p>
         </div>
 
+        {/* ── Gerador de Criativos com IA ─────────────────────────────────────── */}
+        <div style={{ borderRadius: '16px', padding: '20px', background: 'linear-gradient(135deg, rgba(43,91,227,0.06), rgba(14,156,176,0.06))', border: '1px solid rgba(43,91,227,0.25)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '10px', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: S.purple, textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+                ✦ Gerar criativo · IA
+              </div>
+              <p style={{ fontSize: '12.5px', color: S.text2, margin: 0, lineHeight: 1.5 }}>
+                Descreva a imagem do anúncio. A API tenta OpenAI primeiro e usa Gemini automaticamente se a OpenAI estiver sem saldo/quota.
+              </p>
+            </div>
+            <span style={{ fontSize: '11px', color: S.green, background: 'rgba(14,158,110,.10)', border: '1px solid rgba(14,158,110,.24)', borderRadius: 999, padding: '4px 9px', fontWeight: 700 }}>
+              salva na Biblioteca
+            </span>
+          </div>
+
+          <textarea
+            value={genPrompt}
+            onChange={e => setGenPrompt(e.target.value)}
+            placeholder={`Ex: "Anúncio de ${(clientData as any).niche || 'serviço'} com pessoa sorrindo, fundo claro, espaço no topo para título, cores da marca"`}
+            rows={3}
+            disabled={genLoading}
+            style={{
+              width: '100%', boxSizing: 'border-box', resize: 'vertical',
+              background: S.surface, border: `1px solid ${S.border}`, borderRadius: '10px',
+              padding: '12px 14px', fontSize: '13px', color: S.text1, outline: 'none',
+              fontFamily: 'inherit', marginBottom: '12px',
+            }}
+          />
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: S.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>Categoria</div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {ASSET_TYPES.filter(t => t.key !== 'logo').map(t => (
+                  <button key={t.key} onClick={() => setGenType(t.key)} disabled={genLoading}
+                    style={{ padding: '5px 11px', borderRadius: '8px', fontSize: '11px', fontWeight: 600, cursor: genLoading ? 'default' : 'pointer',
+                      background: genType === t.key ? `${t.color}14` : S.surface,
+                      border: `1px solid ${genType === t.key ? t.color + '50' : S.border}`,
+                      color: genType === t.key ? t.color : S.text3 }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: S.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>Formato</div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {([['square', '1:1 Feed'], ['portrait', '9:16 Stories'], ['landscape', '16:9 Banner']] as const).map(([key, label]) => (
+                  <button key={key} onClick={() => setGenFormat(key)} disabled={genLoading}
+                    style={{ padding: '5px 11px', borderRadius: '8px', fontSize: '11px', fontWeight: 600, cursor: genLoading ? 'default' : 'pointer',
+                      background: genFormat === key ? S.purpleBg : S.surface,
+                      border: `1px solid ${genFormat === key ? 'rgba(43,91,227,0.4)' : S.border}`,
+                      color: genFormat === key ? S.purple : S.text3 }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={generateImage}
+              disabled={genLoading || !genPrompt.trim()}
+              style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '8px',
+                padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, border: 'none',
+                cursor: genLoading || !genPrompt.trim() ? 'default' : 'pointer',
+                background: '#2B5BE3', color: '#fff',
+                opacity: genLoading || !genPrompt.trim() ? 0.5 : 1 }}>
+              {genLoading ? (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                  Gerando…
+                </>
+              ) : (
+                <>✦ Gerar criativo</>
+              )}
+            </button>
+          </div>
+
+          {genLoading && (
+            <div style={{ marginTop: '12px', fontSize: '11px', color: S.text3 }}>
+              A IA está desenhando o criativo — isso pode levar de 20 a 60 segundos.
+            </div>
+          )}
+          {genError && (
+            <div style={{ marginTop: '12px', fontSize: '12px', color: '#E1483F', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
+              {genError}
+            </div>
+          )}
+        </div>
+
         {/* ── Análise visual com IA (Gemini) — aditivo, some se indisponível ────── */}
         <CreativeVisionPanel clientData={clientData} />
 
@@ -472,95 +564,6 @@ export function TabAssets({ clientData }: Props) {
           {uploadError && (
             <div style={{ marginTop: '10px', fontSize: '12px', color: '#E1483F', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
               {uploadError}
-            </div>
-          )}
-        </div>
-
-        {/* ── Studio de Criativos com IA ───────────────────────────────────────── */}
-        <div style={{ borderRadius: '16px', padding: '20px', background: S.surface, border: `1px solid ${S.purpleBg === 'transparent' ? S.border : 'rgba(43,91,227,0.25)'}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ fontSize: '10px', fontWeight: 700, color: S.purple, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)' }}>
-              ✦ Studio de Criativos · IA
-            </span>
-          </div>
-          <p style={{ fontSize: '12px', color: S.text2, margin: '0 0 14px' }}>
-            Descreva o criativo que você quer e a IA gera a imagem. Ela entra automaticamente no banco de criativos abaixo.
-          </p>
-
-          <textarea
-            value={genPrompt}
-            onChange={e => setGenPrompt(e.target.value)}
-            placeholder={`Ex: "Anúncio de ${(clientData as any).niche || 'serviço'} com pessoa sorrindo, fundo claro, espaço no topo para título, cores da marca"`}
-            rows={3}
-            disabled={genLoading}
-            style={{
-              width: '100%', boxSizing: 'border-box', resize: 'vertical',
-              background: S.elevated, border: `1px solid ${S.border}`, borderRadius: '10px',
-              padding: '12px 14px', fontSize: '13px', color: S.text1, outline: 'none',
-              fontFamily: 'inherit', marginBottom: '12px',
-            }}
-          />
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
-            {/* Tipo */}
-            <div>
-              <div style={{ fontSize: '10px', fontWeight: 700, color: S.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>Categoria</div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {ASSET_TYPES.filter(t => t.key !== 'logo').map(t => (
-                  <button key={t.key} onClick={() => setGenType(t.key)} disabled={genLoading}
-                    style={{ padding: '5px 11px', borderRadius: '8px', fontSize: '11px', fontWeight: 600, cursor: genLoading ? 'default' : 'pointer',
-                      background: genType === t.key ? `${t.color}14` : 'transparent',
-                      border: `1px solid ${genType === t.key ? t.color + '50' : S.border}`,
-                      color: genType === t.key ? t.color : S.text3 }}>
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Formato */}
-            <div>
-              <div style={{ fontSize: '10px', fontWeight: 700, color: S.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>Formato</div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {([['square', '1:1 Feed'], ['portrait', '9:16 Stories'], ['landscape', '16:9 Banner']] as const).map(([key, label]) => (
-                  <button key={key} onClick={() => setGenFormat(key)} disabled={genLoading}
-                    style={{ padding: '5px 11px', borderRadius: '8px', fontSize: '11px', fontWeight: 600, cursor: genLoading ? 'default' : 'pointer',
-                      background: genFormat === key ? S.purpleBg : 'transparent',
-                      border: `1px solid ${genFormat === key ? 'rgba(43,91,227,0.4)' : S.border}`,
-                      color: genFormat === key ? S.purple : S.text3 }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={generateImage}
-              disabled={genLoading || !genPrompt.trim()}
-              style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '8px',
-                padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, border: 'none',
-                cursor: genLoading || !genPrompt.trim() ? 'default' : 'pointer',
-                background: '#2B5BE3', color: '#fff',
-                opacity: genLoading || !genPrompt.trim() ? 0.5 : 1 }}>
-              {genLoading ? (
-                <>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  Gerando…
-                </>
-              ) : (
-                <>✦ Gerar criativo</>
-              )}
-            </button>
-          </div>
-
-          {genLoading && (
-            <div style={{ marginTop: '12px', fontSize: '11px', color: S.text3 }}>
-              A IA está desenhando o criativo — isso pode levar de 20 a 60 segundos.
-            </div>
-          )}
-          {genError && (
-            <div style={{ marginTop: '12px', fontSize: '12px', color: '#E1483F', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
-              {genError}
             </div>
           )}
         </div>

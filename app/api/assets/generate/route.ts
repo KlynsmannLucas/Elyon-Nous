@@ -259,5 +259,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: dbError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ asset })
+  return NextResponse.json({ asset, provider })
 }
