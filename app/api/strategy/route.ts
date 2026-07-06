@@ -65,6 +65,44 @@ function channelCPL(channel: string, cplAvg: number) {
   }
 }
 
+function sanitizeStringList(value: any, max = 120): string[] {
+  if (!Array.isArray(value)) return []
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const item of value) {
+    const clean = sanitizeText(String(item || ''), max)
+    const key = clean.toLowerCase()
+    if (!clean || seen.has(key)) continue
+    seen.add(key)
+    result.push(clean)
+  }
+  return result
+}
+
+function formatMultiNicheContext(niches: string[], detailsBySegment: any): string {
+  const details = detailsBySegment && typeof detailsBySegment === 'object' ? detailsBySegment : {}
+  const detailLines = Object.entries(details)
+    .map(([segment, segmentDetails]) => {
+      if (!segmentDetails || typeof segmentDetails !== 'object') return ''
+      const pairs = Object.entries(segmentDetails as Record<string, string>)
+        .map(([label, value]) => `  • ${sanitizeText(label, 80)}: ${sanitizeText(String(value || ''), 220)}`)
+        .filter((line) => !line.endsWith(': '))
+      if (pairs.length === 0) return ''
+      return `- ${sanitizeText(segment, 120)}:\n${pairs.join('\n')}`
+    })
+    .filter(Boolean)
+
+  if (niches.length <= 1 && detailLines.length === 0) return ''
+
+  return `
+=== TRIAGEM MULTI-SEGMENTO DO WIZARD ===
+- Segmento principal para benchmark: ${niches[0] || 'não informado'}
+${niches.length > 1 ? `- Segmentos/serviços adicionais: ${niches.slice(1).join(' | ')}` : ''}
+${detailLines.length > 0 ? `\nDetalhes coletados por segmento:\n${detailLines.join('\n')}` : ''}
+
+INSTRUÇÃO: trate os segmentos separadamente. A estratégia pode priorizar um segmento principal, mas não misture todos como se fossem um único nicho. Quando recomendar campanhas, indique qual segmento/serviço cada campanha atende.`
+}
+
 // ── Classificação de maturidade da conta ─────────────────────────────────────────
 function classifyMaturity(realSpend: number, realLeads: number): {
   stage: 'iniciante' | 'crescendo' | 'madura' | 'veterana'
@@ -498,7 +536,7 @@ function buildFallbackStrategy(data: {
 async function runStrategy(body: any, memoryContext = '') {
   const {
     clientName: _cn, niche: _ni, products, budget, objective: _obj, monthlyRevenue,
-    nicheDetails, city, currentCPL, currentLeadSource, mainChallenge: _mc,
+    niches, nicheDetails, nicheDetailsBySegment, city, currentCPL, currentLeadSource, mainChallenge: _mc,
     campaignHistory,
     // Unit economics
     ticketPrice, grossMargin, isRecurring, conversionRate,
@@ -506,12 +544,16 @@ async function runStrategy(body: any, memoryContext = '') {
     recentAudit, persona,
   } = body
   const clientName   = sanitizeText(_cn, 120)
-  const niche        = sanitizeText(_ni, 120)
+  const nicheList    = sanitizeStringList(niches, 120)
+  const fallbackNiche = sanitizeText(_ni, 120)
+  const niche        = nicheList[0] || fallbackNiche
+  const triageNiches = nicheList.length > 0 ? nicheList : [niche].filter(Boolean)
   const objective    = sanitizeText(_obj, 300)
   const mainChallenge = sanitizeText(_mc, 300)
 
   const bench         = getBenchmark(niche)
   const nicheContext  = buildNichePromptContext(niche, nicheDetails || {})
+  const multiNicheContext = formatMultiNicheContext(triageNiches, nicheDetailsBySegment)
 
   // Cálculos de unit economics para incluir no prompt
   const ticket          = ticketPrice || bench?.avg_ticket || 0
@@ -575,7 +617,8 @@ Você já gerenciou mais de R$50M em investimento publicitário. Sabe diagnostic
 
 DADOS DO CLIENTE:
 - Nome: ${clientName}
-- Nicho: ${niche}
+- Nicho principal: ${niche}
+${triageNiches.length > 1 ? `- Nichos/serviços selecionados no wizard: ${triageNiches.join(' | ')}` : ''}
 - Cidade/Região: ${city || 'Não informada'}
 - Produtos/Serviços: ${products.join(', ')}
 - Investimento mensal: R$${budget.toLocaleString('pt-BR')}
@@ -585,6 +628,7 @@ ${currentCPL ? `- CPL atual: R$${currentCPL}` : ''}
 ${currentLeadSource ? `- Principal origem de leads atual: ${currentLeadSource}` : ''}
 ${mainChallenge ? `- Maior desafio atual: ${mainChallenge}` : ''}
 ${unitEconomicsSection}
+${multiNicheContext}
 ${campaignHistory?.length > 0 ? `
 HISTÓRICO DE CAMPANHAS REAIS DO CLIENTE:
 ${campaignHistory.map((c: any) => `

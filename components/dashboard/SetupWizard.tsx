@@ -4,7 +4,7 @@
 import { useState, useRef } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getBenchmark } from '@/lib/niche_benchmarks'
-import { getNicheConfig } from '@/lib/niche_prompts'
+import { getNicheConfig, type NicheField } from '@/lib/niche_prompts'
 import { parseImportFile, type ImportSummary } from '@/lib/csv-import'
 
 const NICHE_GROUPS: { label: string; niches: string[] }[] = [
@@ -153,7 +153,7 @@ function Tip({ text }: { text: string }) {
 }
 
 function normalizeNicheKey(value: string): string {
-  return value.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase()
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
 }
 
 function splitNicheText(value: string): string[] {
@@ -183,6 +183,56 @@ function hasNiche(list: string[], niche: string): boolean {
 function resolveNiche(selectedNiches: string[], niche: string, customNiche: string): string {
   if (selectedNiches.length > 0) return selectedNiches.join(' + ')
   return (niche === 'Outro' ? customNiche : niche).trim()
+}
+
+const GENERIC_DETAIL_FIELDS: NicheField[] = [
+  {
+    key: 'ticket_medio',
+    label: 'Ticket médio por cliente',
+    placeholder: 'Ex: R$500 por procedimento, R$3.000 por projeto...',
+    type: 'text',
+  },
+  {
+    key: 'diferencial',
+    label: 'Principal diferencial competitivo',
+    placeholder: 'O que faz melhor que a concorrência...',
+    type: 'text',
+  },
+  {
+    key: 'maior_dor',
+    label: 'Maior dificuldade atual',
+    placeholder: 'Ex: Gerar leads, fechar clientes, retenção...',
+    type: 'text',
+  },
+]
+
+function detailScopeKey(nicheName: string, index: number): string {
+  const normalized = normalizeNicheKey(nicheName)
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+  return normalized || `segmento_${index + 1}`
+}
+
+function detailFieldKey(nicheName: string, fieldKey: string, index: number): string {
+  return index === 0 ? fieldKey : `${detailScopeKey(nicheName, index)}__${fieldKey}`
+}
+
+function buildNicheDetailsBySegment(selectedNiches: string[], details: Record<string, string>) {
+  const result: Record<string, Record<string, string>> = {}
+
+  selectedNiches.forEach((nicheName, index) => {
+    const fields = getNicheConfig(nicheName)?.fields || GENERIC_DETAIL_FIELDS
+    const segmentDetails: Record<string, string> = {}
+
+    fields.forEach((field) => {
+      const value = details[detailFieldKey(nicheName, field.key, index)]?.trim()
+      if (value) segmentDetails[field.label] = value
+    })
+
+    if (Object.keys(segmentDetails).length > 0) result[nicheName] = segmentDetails
+  })
+
+  return result
 }
 
 export function SetupWizard({ onComplete, initialData }: Props) {
@@ -253,6 +303,12 @@ export function SetupWizard({ onComplete, initialData }: Props) {
   const mainNiche = selectedNiches[0] || niche
   const bench     = getBenchmark(mainNiche || niche)
   const nicheConf = getNicheConfig(mainNiche || niche)
+  const selectedNicheConfigs = selectedNiches.map((name, index) => ({
+    name,
+    index,
+    config: getNicheConfig(name),
+  }))
+  const nicheDetailsBySegment = buildNicheDetailsBySegment(selectedNiches, form.nicheDetails)
 
   const update = (key: string, value: string) =>
     setForm((f) => ({ ...f, [key]: value }))
@@ -285,6 +341,47 @@ export function SetupWizard({ onComplete, initialData }: Props) {
 
   const updateDetail = (key: string, value: string) =>
     setForm((f) => ({ ...f, nicheDetails: { ...f.nicheDetails, [key]: value } }))
+
+  const renderDetailFields = (fields: NicheField[], nicheName: string, index: number) => (
+    <div className="space-y-4">
+      {fields.map((field) => {
+        const detailKey = detailFieldKey(nicheName, field.key, index)
+        return (
+          <div key={detailKey}>
+            <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">
+              {field.label}
+            </label>
+            {field.type === 'select' && field.options ? (
+              <div className="grid grid-cols-1 gap-1.5">
+                {field.options.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => updateDetail(detailKey, opt)}
+                    className="px-3 py-2.5 rounded-xl text-sm text-left transition-all"
+                    style={{
+                      background: form.nicheDetails[detailKey] === opt ? 'rgba(44,95,224,0.1)' : '#FFFFFF',
+                      border: form.nicheDetails[detailKey] === opt ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
+                      color: form.nicheDetails[detailKey] === opt ? '#2C5FE0' : '#5A6473',
+                    }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <input
+                type={field.type === 'number' ? 'number' : 'text'}
+                className={inputClass()}
+                placeholder={field.placeholder}
+                value={form.nicheDetails[detailKey] || ''}
+                onChange={(e) => updateDetail(detailKey, e.target.value)}
+              />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
 
   const canNext = () => {
     if (step === 0) return form.clientName.trim().length > 1
@@ -337,6 +434,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
         objective:         form.objective,
         monthlyRevenue:    Number(form.monthlyRevenue) || 0,
         nicheDetails:      Object.keys(form.nicheDetails).length > 0 ? form.nicheDetails : undefined,
+        nicheDetailsBySegment: Object.keys(nicheDetailsBySegment).length > 0 ? nicheDetailsBySegment : undefined,
         currentCPL:        form.currentCPL ? Number(form.currentCPL) : undefined,
         mainChallenge:     form.mainChallenge || undefined,
         currentLeadSource: form.currentLeadSource || undefined,
@@ -739,79 +837,51 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             <p className="text-xs text-[#2C5FE0] font-semibold uppercase tracking-widest mb-3">
               Passo 3 de {TOTAL_STEPS}
             </p>
-            {nicheConf ? (
-              <>
-                <h2 className="font-display text-3xl font-bold text-ink mb-2">
-                  Detalhes do negócio
-                </h2>
-                <p className="text-ink-2 text-sm mb-6">
-                  Quanto mais específico, mais precisa é a análise do ELYON. Estes campos seguem o nicho principal: {mainNiche}.
-                </p>
-                <div className="space-y-4">
-                  {nicheConf.fields.map((field) => (
-                    <div key={field.key}>
-                      <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">
-                        {field.label}
-                      </label>
-                      {field.type === 'select' && field.options ? (
-                        <div className="grid grid-cols-1 gap-1.5">
-                          {field.options.map((opt) => (
-                            <button
-                              key={opt}
-                              onClick={() => updateDetail(field.key, opt)}
-                              className="px-3 py-2.5 rounded-xl text-sm text-left transition-all"
-                              style={{
-                                background: form.nicheDetails[field.key] === opt ? 'rgba(44,95,224,0.1)' : '#FFFFFF',
-                                border: form.nicheDetails[field.key] === opt ? '1px solid rgba(44,95,224,0.45)' : '1px solid #E6E8EC',
-                                color: form.nicheDetails[field.key] === opt ? '#2C5FE0' : '#5A6473',
-                              }}
-                            >
-                              {opt}
-                            </button>
-                          ))}
+            <h2 className="font-display text-3xl font-bold text-ink mb-2">
+              Detalhes por segmento
+            </h2>
+            <p className="text-ink-2 text-sm mb-6">
+              Preencha o que souber de cada área do negócio. O primeiro segmento é o principal para benchmark; os demais entram como contexto separado na estratégia.
+            </p>
+
+            {selectedNicheConfigs.length > 0 ? (
+              <div className="space-y-4">
+                {selectedNicheConfigs.map(({ name, index, config }) => {
+                  const fields = config?.fields || GENERIC_DETAIL_FIELDS
+                  return (
+                    <div
+                      key={`${name}-${index}`}
+                      className="rounded-2xl p-4"
+                      style={{
+                        background: index === 0 ? 'rgba(44,95,224,0.045)' : '#FFFFFF',
+                        border: index === 0 ? '1px solid rgba(44,95,224,0.22)' : '1px solid #E6E8EC',
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div>
+                          <div className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: index === 0 ? '#2C5FE0' : '#8A93A3' }}>
+                            {index === 0 ? 'Principal' : `Segmento ${index + 1}`}
+                          </div>
+                          <h3 className="text-base font-bold text-ink mt-1">{name}</h3>
+                          {config?.analystRole && (
+                            <p className="text-xs text-ink-2 mt-1">{config.analystRole}</p>
+                          )}
                         </div>
-                      ) : (
-                        <input
-                          type={field.type === 'number' ? 'number' : 'text'}
-                          className={inputClass()}
-                          placeholder={field.placeholder}
-                          value={form.nicheDetails[field.key] || ''}
-                          onChange={(e) => updateDetail(field.key, e.target.value)}
-                        />
-                      )}
+                        {index === 0 && (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(44,95,224,0.1)', color: '#2C5FE0' }}>
+                            benchmark
+                          </span>
+                        )}
+                      </div>
+                      {renderDetailFields(fields, name, index)}
                     </div>
-                  ))}
-                </div>
-              </>
+                  )
+                })}
+              </div>
             ) : (
-              <>
-                <h2 className="font-display text-3xl font-bold text-ink mb-2">
-                  Conte mais sobre o negócio
-                </h2>
-                <p className="text-ink-2 text-sm mb-6">
-                  Essas informações personalizam a análise estratégica.
-                </p>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">Ticket médio por cliente</label>
-                    <input type="text" className={inputClass()} placeholder="Ex: R$500 por procedimento, R$3.000 por projeto..."
-                      value={form.nicheDetails['ticket_medio'] || ''}
-                      onChange={(e) => updateDetail('ticket_medio', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">Principal diferencial competitivo</label>
-                    <input type="text" className={inputClass()} placeholder="O que faz melhor que a concorrência..."
-                      value={form.nicheDetails['diferencial'] || ''}
-                      onChange={(e) => updateDetail('diferencial', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-ink-2 uppercase tracking-wider mb-2 block">Maior dificuldade atual</label>
-                    <input type="text" className={inputClass()} placeholder="Ex: Gerar leads, fechar clientes, retenção..."
-                      value={form.nicheDetails['maior_dor'] || ''}
-                      onChange={(e) => updateDetail('maior_dor', e.target.value)} />
-                  </div>
-                </div>
-              </>
+              <div className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E6E8EC' }}>
+                {renderDetailFields(GENERIC_DETAIL_FIELDS, 'Geral', 0)}
+              </div>
             )}
           </div>
         )}
@@ -1343,6 +1413,44 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                   <span className="font-medium text-sm">{objectiveLabel(obj.value)}</span>
                 </button>
               ))}
+            </div>
+
+            {/* Resumo da triagem */}
+            <div className="p-4 rounded-xl mb-4" style={{ background: '#FFFFFF', border: '1px solid #E6E8EC' }}>
+              <div className="text-xs text-ink-2 font-semibold uppercase tracking-widest mb-3">
+                Resumo da triagem
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <span className="text-ink-2">Cliente</span>
+                  <span className="font-semibold text-ink text-right">{form.clientName || 'Não informado'}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="text-ink-2">Nicho principal</span>
+                  <span className="font-semibold text-ink text-right">{mainNiche || 'Não informado'}</span>
+                </div>
+                {selectedNiches.length > 1 && (
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="text-ink-2">Segmentos extras</span>
+                    <span className="font-semibold text-ink text-right">{selectedNiches.slice(1).join(', ')}</span>
+                  </div>
+                )}
+                <div className="flex items-start justify-between gap-4">
+                  <span className="text-ink-2">Produtos/serviços</span>
+                  <span className="font-semibold text-ink text-right">
+                    {form.products.split('\n').map((item) => item.trim()).filter(Boolean).slice(0, 3).join(', ') || 'Não informado'}
+                  </span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="text-ink-2">Investimento</span>
+                  <span className="font-semibold text-ink text-right">R${Number(form.budget || 0).toLocaleString('pt-BR')}/mês</span>
+                </div>
+              </div>
+              {selectedNiches.length > 1 && (
+                <p className="text-[11px] text-[#2C5FE0] mt-3">
+                  Todos os segmentos acima serão enviados separados para a análise, sem juntar tudo em uma recomendação genérica.
+                </p>
+              )}
             </div>
 
             {/* Preview do que será gerado */}

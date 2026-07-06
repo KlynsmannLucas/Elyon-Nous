@@ -924,6 +924,7 @@ export default function DashboardBody() {
             body: JSON.stringify({
               clientName: clientData.clientName,
               niche: clientData.niche,
+              niches: clientData.niches,
               budget: clientData.budget,
               objective: clientData.objective,
               uploadedFiles,

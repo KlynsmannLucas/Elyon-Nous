@@ -99,6 +99,7 @@ export interface ClientData {
   objective: string
   monthlyRevenue: number
   nicheDetails?: Record<string, string>   // campos específicos do nicho (ex: especialidade, ticket)
+  nicheDetailsBySegment?: Record<string, Record<string, string>> // detalhes separados por nicho/serviço escolhido
   city?: string                            // cidade/região de atuação
   currentCPL?: number                      // CPL atual do cliente
   mainChallenge?: string                   // maior desafio de crescimento atual

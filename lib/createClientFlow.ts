@@ -104,6 +104,7 @@ export async function generateStrategyForActiveClient(
           body: JSON.stringify({
             clientName: clientData.clientName,
             niche: clientData.niche,
+            niches: clientData.niches,
             budget: clientData.budget,
             objective: clientData.objective,
             uploadedFiles: importData.map(d => ({ filename: d.filename, platform: d.platform, campaigns: d.campaigns })),
