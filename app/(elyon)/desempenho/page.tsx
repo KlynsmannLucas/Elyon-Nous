@@ -56,6 +56,7 @@ function exportCsv(rows: any[]) {
 type SubTab = 'visao' | 'campanhas' | 'audiencias' | 'canais' | 'criativos' | 'funil' | 'alocador'
 const STATUS_TONE: Record<string, 'good' | 'warn' | 'bad'> = { vencedora: 'good', atencao: 'warn', critica: 'bad' }
 const STATUS_LABEL: Record<string, string> = { vencedora: 'Escalar', atencao: 'Otimizar', critica: 'Revisar' }
+const VALID_SUBTABS: SubTab[] = ['visao', 'campanhas', 'audiencias', 'canais', 'criativos', 'funil', 'alocador']
 
 // Status de ENTREGA real da campanha (Meta status / Google campaign.status) → rótulo + cor.
 const DELIVERY: Record<string, { label: string; color: string }> = {
@@ -180,6 +181,11 @@ export default function DesempenhoPage() {
   const [trackingLoading, setTrackingLoading] = useState(false)
   const [trackingErr, setTrackingErr] = useState('')
   useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const requested = new URLSearchParams(window.location.search).get('tab') as SubTab | null
+    if (requested && VALID_SUBTABS.includes(requested)) setTab(requested)
+  }, [])
 
   // Regenera a estratégia (público-alvo, ranking) sem sair da tela.
   const genStrat = async () => {

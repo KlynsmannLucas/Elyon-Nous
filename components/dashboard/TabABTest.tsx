@@ -17,7 +17,7 @@ function calcCTR(v: CreativeVariant) {
   return v.impressions > 0 ? (v.clicks / v.impressions) * 100 : 0
 }
 function calcCPL(v: CreativeVariant) {
-  return v.clicks > 0 ? Math.round(v.spend / v.clicks) : 0
+  return v.conversions > 0 ? Math.round(v.spend / v.conversions) : 0
 }
 function calcConvRate(v: CreativeVariant) {
   return v.clicks > 0 ? (v.conversions / v.clicks) * 100 : 0
