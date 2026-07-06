@@ -52,11 +52,12 @@ const ASPECT_HINT: Record<string, string> = {
   portrait:  ' Vertical 9:16 composition (stories/reels), subject centered with headroom on top.',
   landscape: ' Horizontal 16:9 banner composition, leave clear space for a headline.',
 }
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
-// Modelos de geração de imagem do Gemini (free-tier via generateContent), em ordem de preferência.
-const GEMINI_IMAGE_MODELS = ['gemini-2.5-flash-image-preview', 'gemini-2.0-flash-preview-image-generation']
-// Por último, tenta o Imagen (pago/predict) caso a conta tenha billing.
-const IMAGEN_MODEL = 'imagen-3.0-generate-002'
+const GEMINI_API_ROOT = 'https://generativelanguage.googleapis.com/v1beta'
+const GEMINI_MODELS_BASE = `${GEMINI_API_ROOT}/models`
+// Interactions API e modelos atuais de imagem do Gemini. Pode ser sobrescrito por GEMINI_IMAGE_MODELS.
+const GEMINI_INTERACTION_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image', 'gemini-3-pro-image-preview']
+// Fallback legado via generateContent para contas que ainda têm estes previews habilitados.
+const GEMINI_CONTENT_IMAGE_MODELS = ['gemini-2.5-flash-image-preview', 'gemini-2.0-flash-preview-image-generation']
 
 interface ProviderAttempt {
   provider: 'openai' | 'gemini'
@@ -124,19 +125,108 @@ function classifyOpenAIMessage(attempt: ProviderAttempt | null): string {
 
 function buildFailureMessage(openaiAttempt: ProviderAttempt | null, geminiAttempts: ProviderAttempt[]): string {
   const openai = classifyOpenAIMessage(openaiAttempt)
-  const hasGeminiKey = geminiAttempts.some(a => a.configured)
-  const geminiOk = geminiAttempts.some(a => a.ok)
-  const geminiLast = [...geminiAttempts].reverse().find(a => !a.ok && a.message)
-
-  const gemini = geminiOk
-    ? ''
-    : hasGeminiKey
-      ? ` Fallback Gemini tentou gerar, mas falhou (${geminiLast?.message || 'sem imagem retornada'}).`
-      : ' Fallback Gemini não está configurado na Vercel (GEMINI_API_KEY ausente).'
+  const gemini = classifyGeminiAttempts(geminiAttempts)
 
   return openai
-    ? `${openai}${gemini}`
-    : `Não foi possível gerar a imagem com nenhum provedor.${gemini}`
+    ? `${openai}${gemini ? ` ${gemini}` : ''}`
+    : `Não foi possível gerar a imagem com nenhum provedor.${gemini ? ` ${gemini}` : ''}`
+}
+
+function classifyGeminiAttempts(attempts: ProviderAttempt[]): string {
+  if (!attempts.length) return ''
+  if (attempts.every(a => !a.configured)) return 'Fallback Gemini não está configurado na Vercel (GEMINI_API_KEY ausente).'
+  if (attempts.some(a => a.ok)) return ''
+
+  const last = [...attempts].reverse().find(a => !a.ok)
+  const low = attempts.map(a => `${a.status || ''} ${a.code || ''} ${a.type || ''} ${a.message || ''}`).join(' ').toLowerCase()
+
+  if (low.includes('api key not valid') || low.includes('api_key_invalid') || low.includes('invalid api key')) {
+    return 'Fallback Gemini está com chave inválida. Atualize GEMINI_API_KEY na Vercel.'
+  }
+  if (low.includes('permission') || low.includes('permission_denied') || low.includes('not authorized')) {
+    return 'Fallback Gemini sem permissão para gerar imagem. Libere a Gemini API/modelos de imagem no projeto Google da chave.'
+  }
+  if (low.includes('quota') || low.includes('resource_exhausted') || low.includes('rate limit')) {
+    return 'Fallback Gemini atingiu quota/limite agora. Tente novamente em alguns minutos ou aumente o limite no Google AI Studio.'
+  }
+  if (low.includes('not found') || low.includes('unsupported') || low.includes('model')) {
+    const models = [...new Set(attempts.map(a => a.model).filter(Boolean))].join(', ')
+    return `Fallback Gemini não encontrou modelo de imagem liberado para essa chave${models ? ` (${models})` : ''}.`
+  }
+  return `Fallback Gemini tentou gerar, mas não retornou imagem${last?.status ? ` (HTTP ${last.status})` : ''}.`
+}
+
+function parseEnvList(name: string, fallback: string[]): string[] {
+  const env = (process.env[name] || '')
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean)
+  return [...new Set([...env, ...fallback])]
+}
+
+function parseGeminiError(status: number, text: string, model: string): ProviderAttempt {
+  let message = `Gemini ${model} falhou`
+  let code = ''
+  let type = ''
+  try {
+    const j = JSON.parse(text)
+    message = j?.error?.message || message
+    code = j?.error?.status || j?.error?.code || ''
+    type = j?.error?.type || ''
+  } catch {
+    if (text.trim()) message = text.trim().slice(0, 240)
+  }
+  return { provider: 'gemini', model, configured: true, ok: false, status, code, type, message }
+}
+
+function cleanBase64(value: string): string {
+  return value.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '').trim()
+}
+
+function extractBase64Image(data: any): string | null {
+  const seen = new Set<any>()
+
+  const visit = (node: any): string | null => {
+    if (!node || typeof node !== 'object' || seen.has(node)) return null
+    seen.add(node)
+
+    const type = String(node.type || '').toLowerCase()
+    const mime = String(node.mime_type || node.mimeType || node.media_type || node.mediaType || '').toLowerCase()
+    const isImage = type === 'image' || type === 'output_image' || mime.startsWith('image/')
+
+    if (isImage) {
+      for (const key of ['data', 'bytesBase64Encoded', 'b64_json', 'b64Json', 'base64']) {
+        if (typeof node[key] === 'string' && node[key].trim()) return cleanBase64(node[key])
+      }
+    }
+
+    const inline = node.inlineData || node.inline_data
+    if (inline) {
+      const img = visit(inline)
+      if (img) return img
+    }
+
+    const source = node.source || node.image || node.output_image
+    if (source) {
+      const img = visit(source)
+      if (img) return img
+    }
+
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const img = visit(item)
+          if (img) return img
+        }
+      } else if (value && typeof value === 'object') {
+        const img = visit(value)
+        if (img) return img
+      }
+    }
+    return null
+  }
+
+  return visit(data)
 }
 
 // Fallback: gera a imagem com o Gemini (Imagen ou Flash image-gen). Retorna base64 + tentativas.
@@ -150,11 +240,46 @@ async function generateWithGemini(prompt: string, format: string): Promise<{ b64
     }
   }
   const fullPrompt = prompt + (ASPECT_HINT[format] || ASPECT_HINT.square)
+  const aspectRatio = format === 'portrait' ? '9:16' : format === 'landscape' ? '16:9' : '1:1'
 
-  // 1) Flash image generation (generateContent → inlineData) — funciona na API key padrão.
-  for (const model of GEMINI_IMAGE_MODELS) {
+  // 1) Gemini Interactions API (rota atual de imagem).
+  for (const model of parseEnvList('GEMINI_IMAGE_MODELS', GEMINI_INTERACTION_IMAGE_MODELS)) {
     try {
-      const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${key}`, {
+      const res = await fetch(`${GEMINI_API_ROOT}/interactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({
+          model,
+          input: fullPrompt,
+          response_format: { type: 'image', mime_type: 'image/png', aspect_ratio: aspectRatio, image_size: '1K' },
+          store: false,
+        }),
+        signal: AbortSignal.timeout(110000),
+      })
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '')
+        attempts.push(parseGeminiError(res.status, errText, model))
+        console.error(`[assets/generate] gemini interaction ${model} error:`, res.status, errText.slice(0, 300))
+        continue
+      }
+      const data = await res.json()
+      const img = extractBase64Image(data)
+      if (img) {
+        attempts.push({ provider: 'gemini', model, configured: true, ok: true, status: res.status, message: 'Imagem gerada' })
+        return { b64: img, attempts }
+      }
+      attempts.push({ provider: 'gemini', model, configured: true, ok: false, status: res.status, message: 'Gemini Interactions respondeu sem imagem' })
+      console.error(`[assets/generate] gemini interaction ${model} sem imagem na resposta`)
+    } catch (e: any) {
+      attempts.push({ provider: 'gemini', model, configured: true, ok: false, message: e?.message || 'Erro no Gemini Interactions' })
+      console.error(`[assets/generate] gemini interaction ${model} threw:`, e?.message)
+    }
+  }
+
+  // 2) Flash image generation legado (generateContent → inlineData).
+  for (const model of parseEnvList('GEMINI_LEGACY_IMAGE_MODELS', GEMINI_CONTENT_IMAGE_MODELS)) {
+    try {
+      const res = await fetch(`${GEMINI_MODELS_BASE}/${model}:generateContent?key=${key}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -165,13 +290,12 @@ async function generateWithGemini(prompt: string, format: string): Promise<{ b64
       })
       if (!res.ok) {
         const errText = await res.text().catch(() => '')
-        attempts.push({ provider: 'gemini', model, configured: true, ok: false, status: res.status, message: errText.slice(0, 240) || `Gemini ${model} falhou` })
+        attempts.push(parseGeminiError(res.status, errText, model))
         console.error(`[assets/generate] gemini ${model} error:`, res.status, errText.slice(0, 300))
         continue
       }
       const data = await res.json()
-      const parts: any[] = data?.candidates?.[0]?.content?.parts || []
-      const img = parts.find(p => p?.inlineData?.data)?.inlineData?.data
+      const img = extractBase64Image(data)
       if (img) {
         attempts.push({ provider: 'gemini', model, configured: true, ok: true, status: res.status, message: 'Imagem gerada' })
         return { b64: img, attempts }
@@ -182,29 +306,6 @@ async function generateWithGemini(prompt: string, format: string): Promise<{ b64
       attempts.push({ provider: 'gemini', model, configured: true, ok: false, message: e?.message || 'Erro no Gemini' })
       console.error(`[assets/generate] gemini ${model} threw:`, e?.message)
     }
-  }
-
-  // 2) Imagen predict (só se a conta Google tiver billing).
-  try {
-    const ar = format === 'portrait' ? '9:16' : format === 'landscape' ? '16:9' : '1:1'
-    const res = await fetch(`${GEMINI_BASE}/${IMAGEN_MODEL}:predict?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ instances: [{ prompt }], parameters: { sampleCount: 1, aspectRatio: ar } }),
-      signal: AbortSignal.timeout(110000),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      const img = data?.predictions?.[0]?.bytesBase64Encoded || null
-      attempts.push({ provider: 'gemini', model: IMAGEN_MODEL, configured: true, ok: !!img, status: res.status, message: img ? 'Imagem gerada' : 'Imagen respondeu sem imagem' })
-      return { b64: img, attempts }
-    }
-    const errText = await res.text().catch(() => '')
-    attempts.push({ provider: 'gemini', model: IMAGEN_MODEL, configured: true, ok: false, status: res.status, message: errText.slice(0, 240) || 'Imagen falhou' })
-    console.error('[assets/generate] imagen predict error:', res.status, errText.slice(0, 300))
-  } catch (e: any) {
-    attempts.push({ provider: 'gemini', model: IMAGEN_MODEL, configured: true, ok: false, message: e?.message || 'Erro no Imagen' })
-    console.error('[assets/generate] imagen predict threw:', e?.message)
   }
   return { b64: null, attempts }
 }
