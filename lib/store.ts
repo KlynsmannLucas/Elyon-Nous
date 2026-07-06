@@ -66,6 +66,10 @@ export interface AdsCampaign {
   ctr: number
   leads: number
   cpl: number
+  results?: number
+  resultLabel?: string
+  resultType?: string
+  costPerResult?: number
   roas: number
   platform: 'meta' | 'google'
 }

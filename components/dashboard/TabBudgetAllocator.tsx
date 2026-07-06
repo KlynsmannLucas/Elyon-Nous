@@ -54,6 +54,9 @@ interface ManualCampaign {
   spend: number
   leads: number
   cpl: number
+  results?: number
+  resultLabel?: string
+  costPerResult?: number
   ctr: number
   roas: number
   dailyBudget: number
@@ -105,8 +108,11 @@ export function TabBudgetAllocator() {
             name: r.campaign_name || 'Campanha Meta',
             platform: 'meta' as const,
             spend: n.spend || 0,
-            leads: n.leads || 0,
-            cpl: n.cpl || 0,
+            leads: n.results || n.leads || 0,
+            cpl: n.costPerResult || n.cpl || 0,
+            results: n.results || n.leads || 0,
+            resultLabel: n.resultLabel || 'Resultados',
+            costPerResult: n.costPerResult || n.cpl || 0,
             ctr: n.ctr || 0,
             roas: n.roas || 0,
             dailyBudget: n.spend > 0 ? +(n.spend / 30).toFixed(2) : 0,

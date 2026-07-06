@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken } from '@/services/meta/token-manager'
 import { getBenchmark } from '@/lib/niche_benchmarks'
+import { summarizeMetaResults } from '@/lib/metaResults'
 
 export const maxDuration = 30
 
@@ -12,17 +13,20 @@ type Tone = 'bad' | 'warn' | 'good' | 'blue'
 type Action = 'pause' | 'scale'
 interface Insight { tone: Tone; title: string; body?: string; tag?: string; campaignId?: string; campaignName?: string; action?: Action; platform?: 'meta' | 'google' }
 
-const LEAD_RE = /lead|complete_registration|onsite_conversion\.messaging|purchase|offsite_conversion\.fb_pixel_(lead|purchase|complete_registration)/i
 const REMARKETING_RE = /\b(remar|retar|remarketing|retargeting|rmk|bof|bofu|quente|hot|carrinho|abandon)/i
 
-function leadsFromActions(actions: any[]): number {
-  if (!Array.isArray(actions)) return 0
-  // Evita dupla contagem: prioriza messaging/lead; soma valores dos tipos relevantes.
-  let total = 0
-  for (const a of actions) {
-    if (LEAD_RE.test(a?.action_type || '')) total += Number(a?.value || 0)
-  }
-  return total
+function contactsFrom(row: any): number {
+  const result = summarizeMetaResults({
+    objective: row.objective,
+    actions: row.actions,
+    actionValues: row.action_values,
+    spend: Number(row.spend || 0),
+    clicks: Number(row.clicks || 0),
+    inlineLinkClicks: Number(row.inline_link_clicks || 0),
+    impressions: Number(row.impressions || 0),
+    reach: Number(row.reach || 0),
+  })
+  return result.leads + result.totalMessages + result.phoneCalls
 }
 
 const brl = (n: number) => 'R$' + Math.round(n || 0).toLocaleString('pt-BR')
@@ -40,22 +44,23 @@ export async function POST(req: NextRequest) {
     const strict = body.strict === true
 
     // ── META (opcional — se não conectado, seguimos só com Google) ───────────
-    let camps: { id: string; name: string; spend: number; leads: number; cpl: number; ctr: number; freq: number; impressions: number }[] = []
+    let camps: { id: string; name: string; spend: number; leads: number; cpl: number; ctr: number; freq: number; impressions: number; resultLabel?: string }[] = []
     try {
       const t = await getValidMetaToken(userId)
       const accountId = strict ? (bodyAccountId || '') : (bodyAccountId || t.accountId)
       if (accountId) {
         const act = `act_${accountId}`
         const token = encodeURIComponent(t.accessToken)
-        const fields = 'campaign_id,campaign_name,spend,impressions,clicks,reach,frequency,ctr,actions'
-        const url = `https://graph.facebook.com/v21.0/${act}/insights?fields=${fields}&level=campaign&date_preset=last_30d&limit=80&access_token=${token}`
+        const fields = 'campaign_id,campaign_name,objective,spend,impressions,clicks,inline_link_clicks,reach,frequency,ctr,actions,action_values'
+        const url = `https://graph.facebook.com/v21.0/${act}/insights?fields=${fields}&level=campaign&date_preset=last_30d&action_breakdowns=action_type,action_destination&limit=80&access_token=${token}`
         const res = await fetch(url, { signal: AbortSignal.timeout(20000) })
         const json = await res.json()
         if (!json?.error) {
           camps = (json?.data || []).map((r: any) => {
             const spend = Number(r.spend || 0)
-            const leads = leadsFromActions(r.actions)
-            return { id: String(r.campaign_id || ''), name: r.campaign_name || 'Campanha', spend, leads, cpl: leads > 0 ? spend / leads : Infinity, ctr: Number(r.ctr || 0), freq: Number(r.frequency || 0), impressions: Number(r.impressions || 0) }
+            const result = summarizeMetaResults({ objective: r.objective, actions: r.actions, actionValues: r.action_values, spend, clicks: Number(r.clicks || 0), inlineLinkClicks: Number(r.inline_link_clicks || 0), impressions: Number(r.impressions || 0), reach: Number(r.reach || 0) })
+            const leads = contactsFrom(r)
+            return { id: String(r.campaign_id || ''), name: r.campaign_name || 'Campanha', spend, leads, cpl: leads > 0 ? spend / leads : Infinity, ctr: Number(r.ctr || 0), freq: Number(r.frequency || 0), impressions: Number(r.impressions || 0), resultLabel: result.primaryResultLabel }
           }).filter((c: any) => c.spend > 0)
         }
       }
@@ -101,7 +106,7 @@ export async function POST(req: NextRequest) {
     if (waste.length) {
       const c = waste[0]
       const wasteTotal = waste.reduce((s, x) => s + x.spend, 0)
-      insights.push({ tone: 'bad', tag: 'Desperdício', title: `"${c.name}" gastou ${brl(c.spend)} sem conversão`, body: waste.length > 1 ? `${waste.length} campanhas sem nenhum resultado somam ${brl(wasteTotal)} — pause e realoque.` : 'Pause ou revise o público/criativo desta campanha.', campaignId: c.id || undefined, campaignName: c.name, action: c.id ? 'pause' : undefined })
+      insights.push({ tone: 'bad', tag: 'Desperdício', title: `"${c.name}" gastou ${brl(c.spend)} sem ${c.resultLabel || 'resultado'}`, body: waste.length > 1 ? `${waste.length} campanhas sem nenhum resultado somam ${brl(wasteTotal)} — pause e realoque.` : 'Pause ou revise o público/criativo desta campanha.', campaignId: c.id || undefined, campaignName: c.name, action: c.id ? 'pause' : undefined })
     }
 
     // 3. CPL muito acima do benchmark — só quando NÃO há unit economics (senão usamos o prejuízo real acima)

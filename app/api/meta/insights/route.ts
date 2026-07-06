@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
+import { summarizeMetaResults } from '@/lib/metaResults'
 
 type InsightLevel = 'account' | 'campaign' | 'adset' | 'ad'
 
@@ -20,27 +21,6 @@ const STANDARD_FIELDS = [
   'clicks', 'inline_link_clicks', 'ctr', 'cpc', 'cpm',
   'actions', 'action_values', 'cost_per_action_type',
 ].join(',')
-
-function normalizeActions(
-  actions: Array<{ action_type: string; value: string }> | undefined,
-  types: string[]
-): number {
-  return (actions || [])
-    .filter(a => types.includes(a.action_type))
-    .reduce((sum, a) => sum + parseInt(a.value || '0'), 0)
-}
-
-function normalizeActionValues(
-  actionValues: Array<{ action_type: string; value: string }> | undefined,
-  types: string[]
-): number {
-  return (actionValues || [])
-    .filter(a => types.includes(a.action_type))
-    .reduce((sum, a) => sum + parseFloat(a.value || '0'), 0)
-}
-
-const LEAD_TYPES     = ['lead', 'onsite_conversion.lead_grouped']
-const PURCHASE_TYPES = ['purchase', 'omni_purchase']
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -73,8 +53,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const fields = level === 'campaign'
+      ? `campaign_id,campaign_name,objective,${STANDARD_FIELDS}`
+      : STANDARD_FIELDS
     const params = new URLSearchParams({
-      fields:       STANDARD_FIELDS,
+      fields,
       level,
       limit:        '200',
       access_token: accessToken,
@@ -89,6 +72,8 @@ export async function POST(req: NextRequest) {
     if (breakdowns.length > 0) {
       params.set('breakdowns', breakdowns.join(','))
     }
+
+    params.set('action_breakdowns', 'action_type,action_destination')
 
     const res = await fetch(
       `https://graph.facebook.com/v21.0/act_${accountId}/insights?${params}`,
@@ -108,9 +93,17 @@ export async function POST(req: NextRequest) {
       const actions     = row.actions as Array<{ action_type: string; value: string }> | undefined
       const actionValues = row.action_values as Array<{ action_type: string; value: string }> | undefined
 
-      const leads     = normalizeActions(actions, LEAD_TYPES)
-      const purchases = normalizeActions(actions, PURCHASE_TYPES)
-      const revenue   = normalizeActionValues(actionValues, PURCHASE_TYPES)
+      const result = summarizeMetaResults({
+        objective: row.objective as string | undefined,
+        actions,
+        actionValues,
+        spend,
+        clicks,
+        inlineLinkClicks: parseInt((row.inline_link_clicks as string) || '0'),
+        impressions,
+        reach: parseInt((row.reach as string) || '0'),
+      })
+      const leads = result.leads + result.totalMessages + result.phoneCalls
 
       return {
         ...row,
@@ -126,9 +119,25 @@ export async function POST(req: NextRequest) {
           cpm:         impressions > 0 ? +((spend / impressions) * 1000).toFixed(2) : 0,
           leads,
           cpl:         leads > 0 ? +(spend / leads).toFixed(2) : 0,
-          purchases,
-          revenue,
-          roas:        spend > 0 && revenue > 0 ? +(revenue / spend).toFixed(2) : 0,
+          results:     result.primaryResultValue,
+          resultLabel: result.primaryResultLabel,
+          resultType:  result.primaryResultKey,
+          costPerResult: result.costPerResult,
+          formLeads: result.formLeads,
+          websiteLeads: result.websiteLeads,
+          whatsappConversations: result.whatsappConversations,
+          messengerConversations: result.messengerConversations,
+          instagramDirectConversations: result.instagramDirectConversations,
+          messageConversations: result.messageConversations,
+          phoneCalls: result.phoneCalls,
+          purchases: result.purchases,
+          landingPageViews: result.landingPageViews,
+          linkClicks: result.linkClicks,
+          postEngagements: result.postEngagements,
+          videoViews: result.videoViews,
+          resultBreakdown: result.resultBreakdown,
+          revenue: result.revenue,
+          roas:        spend > 0 && result.revenue > 0 ? +(result.revenue / spend).toFixed(2) : 0,
         },
       }
     })

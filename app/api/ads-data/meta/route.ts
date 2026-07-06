@@ -3,34 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
 import { errMsg } from '@/lib/errMsg'
-
-// "lead" é o evento primário. "lead_grouped" agrega múltiplas janelas de atribuição
-// e se sobrepõe com "lead" — usar os dois juntos infla o número. Usar apenas um.
-const LEAD_FORM_PRIMARY   = 'lead'
-const LEAD_FORM_FALLBACK  = 'onsite_conversion.lead_grouped'
-
-// Fallback prioritizado: nunca somar tipos que representam a mesma conversa.
-// Meta retorna os 3 tipos para o mesmo evento, somá-los infla 3× o CPL.
-// Usar somente o primeiro disponível (conversation_started é o padrão do Gerenciador).
-const WHATSAPP_PRIORITY = [
-  'onsite_conversion.messaging_conversation_started_7d',
-  'messaging_first_reply',
-  'onsite_conversion.messaging_first_reply',
-]
-
-function extractActions(actions: any[], types: string[]): number {
-  return (actions || [])
-    .filter((a: any) => types.includes(a.action_type))
-    .reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0)
-}
-
-// Retorna leads de formulário sem dupla-contagem:
-// usa "lead" se existir, caso contrário usa "lead_grouped" como fallback.
-function extractFormLeads(actions: any[]): number {
-  const primary = extractActions(actions, [LEAD_FORM_PRIMARY])
-  if (primary > 0) return primary
-  return extractActions(actions, [LEAD_FORM_FALLBACK])
-}
+import { summarizeMetaResults } from '@/lib/metaResults'
 
 function dateStr(d: Date): string {
   return d.toISOString().split('T')[0]
@@ -39,7 +12,7 @@ function dateStr(d: Date): string {
 async function fetchAllInsights(accountId: string, accessToken: string, timeParam: string): Promise<any[]> {
   const insightFields = [
     'campaign_id', 'campaign_name', 'objective', 'spend', 'impressions', 'clicks',
-    'actions', 'reach', 'frequency',
+    'inline_link_clicks', 'actions', 'action_values', 'reach', 'frequency',
   ].join(',')
 
   let url: string | null =
@@ -47,6 +20,7 @@ async function fetchAllInsights(accountId: string, accessToken: string, timePara
     `fields=${insightFields}` +
     `&${timeParam}` +
     `&level=campaign` +
+    `&action_breakdowns=action_type,action_destination` +
     `&limit=50` +
     `&access_token=${accessToken}`
 
@@ -145,38 +119,48 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(c.impressions || '0')
       const frequency   = +parseFloat(c.frequency || '0').toFixed(2)
 
-      // O objetivo da campanha determina qual métrica é o resultado real no Gerenciador.
-      // Campanhas de Tráfego/Engajamento/Alcance não têm "lead" como resultado primário —
-      // o action_type "lead" retorna cliques amplos e infla o CPL. Apenas campanhas de
-      // Mensagens (WhatsApp) e Geração de Cadastros têm CPL real no Gerenciador.
       const objective = (c.objective || '').toUpperCase()
-      // Fallback: usa o primeiro tipo disponível — nunca soma tipos que se sobrepõem
-      const whatsappLeads = extractActions(c.actions, [WHATSAPP_PRIORITY[0]])
-        || extractActions(c.actions, [WHATSAPP_PRIORITY[1]])
-        || extractActions(c.actions, [WHATSAPP_PRIORITY[2]])
-      // Formulários: só válidos para objetivos de geração de leads, e apenas quando não há WhatsApp
-      const isLeadObjective = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(objective)
-      const leadFormLeads = (whatsappLeads === 0 && isLeadObjective) ? extractFormLeads(c.actions) : 0
-      const leads = whatsappLeads + leadFormLeads
-
+      const result = summarizeMetaResults({
+        objective,
+        actions: c.actions,
+        actionValues: c.action_values,
+        spend,
+        clicks,
+        inlineLinkClicks: parseInt(c.inline_link_clicks || '0'),
+        impressions,
+        reach: parseInt(c.reach || '0'),
+      })
+      const leads = result.leads + result.totalMessages + result.phoneCalls
       const cpl = leads > 0 ? +(spend / leads).toFixed(2) : 0
-
-      const purchaseAction = c.actions?.find((a: any) =>
-        a.action_type === 'purchase' || a.action_type === 'omni_purchase'
-      )
-      const revenue = purchaseAction ? parseFloat(purchaseAction.value || '0') : 0
+      const revenue = result.revenue
       const roas = spend > 0 && revenue > 0 ? +(revenue / spend).toFixed(2) : 0
 
       return {
         id: c.campaign_id || Math.random().toString(),
         name: c.campaign_name,
-        objective: c.objective || null,
+        objective: result.objectiveLabel || c.objective || null,
+        objectiveKey: objective || null,
         status: statusMap[c.campaign_id] || 'ACTIVE',
         spend, impressions, clicks, frequency,
         ctr: impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0,
+        results: result.primaryResultValue,
+        resultLabel: result.primaryResultLabel,
+        resultType: result.primaryResultKey,
+        costPerResult: result.costPerResult,
+        resultBreakdown: result.resultBreakdown,
         leads,
-        leadFormLeads,
-        whatsappLeads,
+        formLeads: result.formLeads,
+        websiteLeads: result.websiteLeads,
+        whatsappConversations: result.whatsappConversations,
+        messengerConversations: result.messengerConversations,
+        instagramDirectConversations: result.instagramDirectConversations,
+        messageConversations: result.messageConversations,
+        phoneCalls: result.phoneCalls,
+        purchases: result.purchases,
+        landingPageViews: result.landingPageViews,
+        linkClicks: result.linkClicks,
+        postEngagements: result.postEngagements,
+        videoViews: result.videoViews,
         cpl, revenue, roas,
         platform: 'meta' as const,
       }
@@ -187,11 +171,16 @@ export async function POST(req: NextRequest) {
       impressions: acc.impressions + c.impressions,
       clicks:      acc.clicks + c.clicks,
       leads:       acc.leads + c.leads,
+      results:     acc.results + c.results,
       revenue:     acc.revenue + c.revenue,
-    }), { spend: 0, impressions: 0, clicks: 0, leads: 0, revenue: 0 })
+    }), { spend: 0, impressions: 0, clicks: 0, leads: 0, results: 0, revenue: 0 })
 
     const extTotals = {
       ...totals,
+      totalResults: totals.results,
+      resultLabel: 'Resultados',
+      costPerResult: totals.results > 0 ? +(totals.spend / totals.results).toFixed(2) : 0,
+      avgCostPerResult: totals.results > 0 ? +(totals.spend / totals.results).toFixed(2) : 0,
       cpl:  totals.leads > 0 ? +(totals.spend / totals.leads).toFixed(2) : 0,
       roas: totals.spend > 0 && totals.revenue > 0 ? +(totals.revenue / totals.spend).toFixed(2) : 0,
       ctr:  totals.impressions > 0 ? +((totals.clicks / totals.impressions) * 100).toFixed(2) : 0,
@@ -200,22 +189,31 @@ export async function POST(req: NextRequest) {
     // Previous period totals for MoM comparison
     const prevTotals = prevRows.reduce((acc, c) => {
       const spend  = parseFloat(c.spend || '0')
-      const prevWa = extractActions(c.actions, [WHATSAPP_PRIORITY[0]])
-        || extractActions(c.actions, [WHATSAPP_PRIORITY[1]])
-        || extractActions(c.actions, [WHATSAPP_PRIORITY[2]])
-      const leads  = prevWa > 0 ? prevWa : extractFormLeads(c.actions)
+      const result = summarizeMetaResults({
+        objective: c.objective,
+        actions: c.actions,
+        actionValues: c.action_values,
+        spend,
+        clicks: parseInt(c.clicks || '0'),
+        impressions: parseInt(c.impressions || '0'),
+      })
+      const leads  = result.leads + result.totalMessages + result.phoneCalls
+      const results = result.primaryResultValue
       const clicks = parseInt(c.clicks || '0')
-      return { spend: acc.spend + spend, leads: acc.leads + leads, clicks: acc.clicks + clicks }
-    }, { spend: 0, leads: 0, clicks: 0 })
+      return { spend: acc.spend + spend, leads: acc.leads + leads, results: acc.results + results, clicks: acc.clicks + clicks }
+    }, { spend: 0, leads: 0, results: 0, clicks: 0 })
 
     const delta = (curr: number, prev: number) =>
       prev > 0 ? +((curr - prev) / prev * 100).toFixed(1) : null
 
     const previousTotals = {
       ...prevTotals,
+      totalResults: prevTotals.results,
+      costPerResult: prevTotals.results > 0 ? +(prevTotals.spend / prevTotals.results).toFixed(2) : 0,
       cpl: prevTotals.leads > 0 ? +(prevTotals.spend / prevTotals.leads).toFixed(2) : 0,
       spendDelta:  delta(totals.spend,  prevTotals.spend),
       leadsDelta:  delta(totals.leads,  prevTotals.leads),
+      resultsDelta: delta(totals.results, prevTotals.results),
       clicksDelta: delta(totals.clicks, prevTotals.clicks),
       cplDelta:    delta(
         totals.leads > 0 ? totals.spend / totals.leads : 0,

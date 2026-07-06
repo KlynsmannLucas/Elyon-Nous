@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
+import { summarizeMetaResults } from '@/lib/metaResults'
 
 // ~13 chamadas paralelas ao Meta (cada uma até 20s) + breakdowns. Sem maxDuration a
 // função caía no limite padrão e dava 504 em contas grandes (ex.: 50 campanhas/100 ads),
@@ -57,6 +58,11 @@ interface AdSet {
   optimizationGoal: string; optimizationGoalLabel: string
   dailyBudget: number; lifetimeBudget: number
   hasRemarketing: boolean
+  results: number; resultLabel: string; resultType: string; costPerResult: number
+  resultBreakdown: any[]
+  formLeads: number; websiteLeads: number; whatsappConversations: number
+  messengerConversations: number; instagramDirectConversations: number
+  messageConversations: number; phoneCalls: number; purchases: number
   spend: number; impressions: number; clicks: number
   leads: number; cpl: number; ctr: number; frequency: number
   issues: string[]
@@ -77,6 +83,11 @@ interface AdCreative {
   format: 'image' | 'video' | 'carousel'
   createdTime: string | null
   ageDays: number | null
+  results: number; resultLabel: string; resultType: string; costPerResult: number
+  resultBreakdown: any[]
+  formLeads: number; websiteLeads: number; whatsappConversations: number
+  messengerConversations: number; instagramDirectConversations: number
+  messageConversations: number; phoneCalls: number; purchases: number
   spend: number; impressions: number; clicks: number
   leads: number; cpl: number; ctr: number; frequency: number
   tag: 'winner' | 'waste' | 'learning' | 'ok'
@@ -165,6 +176,11 @@ type CampaignResult = {
   id: string; name: string; objective: string; objectiveLabel: string; status: string
   spend30: number; impressions: number; clicks: number; reach: number; frequency: number
   ctr30: number; cpc30: number; cpm30: number
+  results30: number; resultLabel: string; resultType: string; costPerResult: number
+  resultBreakdown: any[]
+  formLeads30: number; websiteLeads30: number; whatsappConversations30: number
+  messengerConversations30: number; instagramDirectConversations30: number
+  messageConversations30: number; phoneCalls30: number
   leads30: number; cpl30: number; purchases30: number
   revenue30: number; roas30: number
   messages30: number; videoViews30: number
@@ -176,9 +192,6 @@ type CampaignResult = {
 
 function extractConversions(actions: any[], types: string[]): number {
   return (actions || []).filter((a: any) => types.includes(a.action_type)).reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0)
-}
-function extractRevenue(actions: any[], types: string[]): number {
-  return (actions || []).filter((a: any) => types.includes(a.action_type)).reduce((s: number, a: any) => s + parseFloat(a.value || '0'), 0)
 }
 
 const NICHE_FREQ_THRESHOLD: Record<string, number> = {
@@ -199,12 +212,6 @@ function campaignAge(createdTime: string | undefined): CampaignAge {
   const days = (Date.now() - new Date(createdTime).getTime()) / 86400000
   if (days < 14) return 'new'; if (days < 45) return 'growing'; if (days < 180) return 'established'; return 'veteran'
 }
-
-const LEAD_TYPES    = ['lead', 'onsite_conversion.lead_grouped']
-const PURCHASE_TYPES = ['purchase', 'omni_purchase']
-// Fallback prioritizado: nunca somar tipos que representam a mesma conversa.
-// Meta pode retornar os 3 tipos para o mesmo evento; somá-los infla 3× o count.
-const MSG_PRIORITY  = ['onsite_conversion.messaging_conversation_started_7d','messaging_first_reply','onsite_conversion.messaging_first_reply']
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -240,9 +247,10 @@ export async function POST(req: NextRequest) {
     const sixtyAgo  = new Date(today.getTime() - 60 * 86400000)
     const prevRange = encodeURIComponent(JSON.stringify({ since: dateStr(sixtyAgo), until: dateStr(thirtyAgo) }))
 
-    const insightFields = 'campaign_id,campaign_name,spend,impressions,clicks,reach,frequency,actions,cost_per_action_type'
-    const adsetInsightFields = 'adset_id,adset_name,campaign_id,spend,impressions,clicks,reach,frequency,actions'
-    const adInsightFields    = 'ad_id,ad_name,campaign_id,adset_id,spend,impressions,clicks,reach,frequency,actions'
+    const insightFields = 'campaign_id,campaign_name,spend,impressions,clicks,inline_link_clicks,reach,frequency,actions,action_values,cost_per_action_type'
+    const adsetInsightFields = 'adset_id,adset_name,campaign_id,spend,impressions,clicks,inline_link_clicks,reach,frequency,actions,action_values'
+    const adInsightFields    = 'ad_id,ad_name,campaign_id,adset_id,spend,impressions,clicks,inline_link_clicks,reach,frequency,actions,action_values'
+    const actionBreakdowns = '&action_breakdowns=action_type,action_destination'
     const adFieldsBase       = 'id,name,status,effective_status,campaign_id,adset_id,created_time,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,object_story_spec{link_data{picture,child_attachments{picture}},video_data{image_url}},asset_feed_spec{images{url},videos{thumbnail_url}}}'
     const adFieldsWithLinks  = 'id,name,status,effective_status,campaign_id,adset_id,created_time,preview_shareable_link,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,effective_object_story_id,object_story_id,instagram_permalink_url,object_url,object_story_spec{link_data{link,picture,child_attachments{link,picture}},video_data{image_url,call_to_action{value{link}}}},asset_feed_spec{images{url},videos{thumbnail_url}}}'
 
@@ -257,27 +265,27 @@ export async function POST(req: NextRequest) {
       // 1 - campanhas (meta)
       fetch(`${baseUrl}/${act}/campaigns?fields=id,name,objective,effective_status,created_time,daily_budget,lifetime_budget&limit=50&status=["ACTIVE","PAUSED"]&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 2 - insights 30d por campanha
-      fetch(`${baseUrl}/${act}/insights?fields=${insightFields}&date_preset=last_30d&level=campaign&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=${insightFields}&date_preset=last_30d&level=campaign${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 3 - insights 7d por campanha
-      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,actions&date_preset=last_7d&level=campaign&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,impressions,clicks,inline_link_clicks,reach,actions,action_values&date_preset=last_7d&level=campaign${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 4 - insights período anterior (30-60d)
-      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,actions,impressions,clicks,frequency&time_range=${prevRange}&level=campaign&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,actions,action_values,impressions,clicks,inline_link_clicks,reach,frequency&time_range=${prevRange}&level=campaign${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 5 - ad sets (metadados)
       fetch(`${baseUrl}/${act}/adsets?fields=id,name,status,effective_status,optimization_goal,daily_budget,lifetime_budget,campaign_id,targeting&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 6 - insights de ad sets
-      fetch(`${baseUrl}/${act}/insights?fields=${adsetInsightFields}&date_preset=last_30d&level=adset&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=${adsetInsightFields}&date_preset=last_30d&level=adset${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 7 - ads/criativos (metadados)
       fetch(`${baseUrl}/${act}/ads?fields=${adFieldsWithLinks}&limit=80&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
       // 8 - insights de ads
-      fetch(`${baseUrl}/${act}/insights?fields=${adInsightFields}&date_preset=last_30d&level=ad&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=${adInsightFields}&date_preset=last_30d&level=ad${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
       // 9 - pixels (endpoint correto: adspixels)
       fetch(`${baseUrl}/${act}/adspixels?fields=id,name,last_fired_time,is_unavailable&access_token=${token}`, { signal: AbortSignal.timeout(10000) }).then(r => r.json()),
       // 10 - breakdown geográfico
-      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,impressions&breakdowns=region&date_preset=last_30d&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,action_values,impressions,clicks,reach&breakdowns=region&date_preset=last_30d${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 11 - breakdown por plataforma
-      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,impressions,clicks,ctr&breakdowns=publisher_platform,platform_position&date_preset=last_30d&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,action_values,impressions,clicks,reach,ctr&breakdowns=publisher_platform,platform_position&date_preset=last_30d${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 12 - breakdown por idade/gênero
-      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,impressions&breakdowns=age,gender&date_preset=last_30d&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,action_values,impressions,clicks,reach&breakdowns=age,gender&date_preset=last_30d${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
     ])
 
     // ── Valida resposta principal ─────────────────────────────────────────────
@@ -309,20 +317,37 @@ export async function POST(req: NextRequest) {
 
       // Objetivo determina qual métrica é o resultado real da campanha
       const objective   = (meta.objective || 'UNKNOWN').toUpperCase()
-      const isLeadObj   = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(objective)
-      const purchases30 = extractConversions(row.actions, PURCHASE_TYPES)
-      const revenue30   = extractRevenue(row.actions, PURCHASE_TYPES)
-      const messages30  = extractConversions(row.actions, [MSG_PRIORITY[0]]) || extractConversions(row.actions, [MSG_PRIORITY[1]]) || extractConversions(row.actions, [MSG_PRIORITY[2]])
-      // Formulários só válidos para LEAD_GENERATION/OUTCOME_LEADS, e apenas quando sem WhatsApp
-      const formLeads30 = (messages30 === 0 && isLeadObj) ? extractConversions(row.actions, LEAD_TYPES) : 0
-      const leads30     = messages30 + formLeads30
+      const result30 = summarizeMetaResults({
+        objective,
+        actions: row.actions,
+        actionValues: row.action_values,
+        spend: spend30,
+        clicks,
+        inlineLinkClicks: parseInt(row.inline_link_clicks || '0'),
+        impressions,
+        reach,
+      })
+      const purchases30 = result30.purchases
+      const revenue30   = result30.revenue
+      const messages30  = result30.totalMessages
+      const formLeads30 = result30.formLeads
+      const leads30     = result30.leads + result30.totalMessages + result30.phoneCalls
       const videoViews30 = extractConversions(row.actions, ['video_view', 'video_thruplay_watched_actions'])
 
       const row7        = ins7Map[row.campaign_id] || {}
       const spend7      = parseFloat(row7.spend || '0')
-      const msgs7       = extractConversions(row7.actions, [MSG_PRIORITY[0]]) || extractConversions(row7.actions, [MSG_PRIORITY[1]]) || extractConversions(row7.actions, [MSG_PRIORITY[2]])
-      const leads7      = msgs7 > 0 ? msgs7 : (isLeadObj ? extractConversions(row7.actions, LEAD_TYPES) : 0)
-      const purchases7  = extractConversions(row7.actions, PURCHASE_TYPES)
+      const result7     = summarizeMetaResults({
+        objective,
+        actions: row7.actions,
+        actionValues: row7.action_values,
+        spend: spend7,
+        clicks: parseInt(row7.clicks || '0'),
+        inlineLinkClicks: parseInt(row7.inline_link_clicks || '0'),
+        impressions: parseInt(row7.impressions || '0'),
+        reach: parseInt(row7.reach || '0'),
+      })
+      const leads7      = result7.leads + result7.totalMessages + result7.phoneCalls
+      const purchases7  = result7.purchases
       const conversions7 = leads7 + purchases7
 
       const roas30 = spend30 > 0 && revenue30 > 0 ? +(revenue30 / spend30).toFixed(2) : 0
@@ -363,7 +388,20 @@ export async function POST(req: NextRequest) {
         id: row.campaign_id, name: row.campaign_name || meta.name || row.campaign_id,
         objective, objectiveLabel: OBJECTIVE_LABELS[objective] || objective, status,
         spend30, impressions, clicks, reach, frequency,
-        ctr30, cpc30, cpm30, leads30, cpl30, purchases30,
+        ctr30, cpc30, cpm30,
+        results30: result30.primaryResultValue,
+        resultLabel: result30.primaryResultLabel,
+        resultType: result30.primaryResultKey,
+        costPerResult: result30.costPerResult,
+        resultBreakdown: result30.resultBreakdown,
+        formLeads30,
+        websiteLeads30: result30.websiteLeads,
+        whatsappConversations30: result30.whatsappConversations,
+        messengerConversations30: result30.messengerConversations,
+        instagramDirectConversations30: result30.instagramDirectConversations,
+        messageConversations30: result30.messageConversations,
+        phoneCalls30: result30.phoneCalls,
+        leads30, cpl30, purchases30,
         revenue30, roas30, messages30, videoViews30,
         spend7, conversions7, learningPhase, age, ageDays,
         issues, recommendations,
@@ -386,11 +424,18 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(ins.impressions || '0')
       const clicks      = parseInt(ins.clicks || '0')
       const frequency   = +parseFloat(ins.frequency || '0').toFixed(2)
-      const messages      = extractConversions(ins.actions, [MSG_PRIORITY[0]]) || extractConversions(ins.actions, [MSG_PRIORITY[1]]) || extractConversions(ins.actions, [MSG_PRIORITY[2]])
       const asObjKey      = (campaignMeta[as.campaign_id]?.objective || '').toUpperCase()
-      const isLeadObjAS   = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(asObjKey)
-      const formLeads     = (messages === 0 && isLeadObjAS) ? extractConversions(ins.actions, LEAD_TYPES) : 0
-      const leads         = messages + formLeads
+      const result        = summarizeMetaResults({
+        objective: asObjKey,
+        actions: ins.actions,
+        actionValues: ins.action_values,
+        spend,
+        clicks,
+        inlineLinkClicks: parseInt(ins.inline_link_clicks || '0'),
+        impressions,
+        reach: parseInt(ins.reach || '0'),
+      })
+      const leads         = result.leads + result.totalMessages + result.phoneCalls
       const cpl           = leads > 0 ? +(spend / leads).toFixed(2) : 0
       const ctr           = impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0
 
@@ -417,6 +462,19 @@ export async function POST(req: NextRequest) {
         dailyBudget:    parseFloat(as.daily_budget    || '0') / 100,
         lifetimeBudget: parseFloat(as.lifetime_budget || '0') / 100,
         hasRemarketing,
+        results: result.primaryResultValue,
+        resultLabel: result.primaryResultLabel,
+        resultType: result.primaryResultKey,
+        costPerResult: result.costPerResult,
+        resultBreakdown: result.resultBreakdown,
+        formLeads: result.formLeads,
+        websiteLeads: result.websiteLeads,
+        whatsappConversations: result.whatsappConversations,
+        messengerConversations: result.messengerConversations,
+        instagramDirectConversations: result.instagramDirectConversations,
+        messageConversations: result.messageConversations,
+        phoneCalls: result.phoneCalls,
+        purchases: result.purchases,
         spend, impressions, clicks, leads, cpl, ctr, frequency,
         issues,
       }
@@ -455,11 +513,18 @@ export async function POST(req: NextRequest) {
       const impressions = parseInt(ins.impressions || '0')
       const clicks      = parseInt(ins.clicks || '0')
       const frequency   = +parseFloat(ins.frequency || '0').toFixed(2)
-      const messages      = extractConversions(ins.actions, [MSG_PRIORITY[0]]) || extractConversions(ins.actions, [MSG_PRIORITY[1]]) || extractConversions(ins.actions, [MSG_PRIORITY[2]])
       const adObjKey      = (campaignMeta[ad.campaign_id]?.objective || '').toUpperCase()
-      const isLeadObjAd   = ['LEAD_GENERATION', 'OUTCOME_LEADS'].includes(adObjKey)
-      const formLeads     = (messages === 0 && isLeadObjAd) ? extractConversions(ins.actions, LEAD_TYPES) : 0
-      const leads         = messages + formLeads
+      const result        = summarizeMetaResults({
+        objective: adObjKey,
+        actions: ins.actions,
+        actionValues: ins.action_values,
+        spend,
+        clicks,
+        inlineLinkClicks: parseInt(ins.inline_link_clicks || '0'),
+        impressions,
+        reach: parseInt(ins.reach || '0'),
+      })
+      const leads         = result.leads + result.totalMessages + result.phoneCalls
       const cpl           = leads > 0 ? +(spend / leads).toFixed(2) : 0
       const ctr           = impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : 0
 
@@ -487,6 +552,19 @@ export async function POST(req: NextRequest) {
         format,
         createdTime,
         ageDays,
+        results: result.primaryResultValue,
+        resultLabel: result.primaryResultLabel,
+        resultType: result.primaryResultKey,
+        costPerResult: result.costPerResult,
+        resultBreakdown: result.resultBreakdown,
+        formLeads: result.formLeads,
+        websiteLeads: result.websiteLeads,
+        whatsappConversations: result.whatsappConversations,
+        messengerConversations: result.messengerConversations,
+        instagramDirectConversations: result.instagramDirectConversations,
+        messageConversations: result.messageConversations,
+        phoneCalls: result.phoneCalls,
+        purchases: result.purchases,
         spend, impressions, clicks, frequency,
         leads, cpl, ctr, tag,
       }
@@ -513,13 +591,22 @@ export async function POST(req: NextRequest) {
     const geoBreakdown: GeoBreakdown[] = (geoRawData.data || [])
       .map((r: any) => {
         const spend   = parseFloat(r.spend || '0')
-        // Breakdowns não têm objetivo — prioriza WhatsApp, fallback para formulários
-        const msgL    = extractConversions(r.actions, [MSG_PRIORITY[0]]) || extractConversions(r.actions, [MSG_PRIORITY[1]]) || extractConversions(r.actions, [MSG_PRIORITY[2]])
-        const leads   = msgL > 0 ? msgL : extractConversions(r.actions, LEAD_TYPES)
+        const result  = summarizeMetaResults({
+          actions: r.actions,
+          actionValues: r.action_values,
+          spend,
+          clicks: parseInt(r.clicks || '0'),
+          impressions: parseInt(r.impressions || '0'),
+          reach: parseInt(r.reach || '0'),
+        })
+        const leads   = result.leads + result.totalMessages + result.phoneCalls
         return {
           region: r.region || 'Desconhecido',
           spend,
           leads,
+          results: result.primaryResultValue,
+          resultLabel: result.primaryResultLabel,
+          resultBreakdown: result.resultBreakdown,
           cpl: leads > 0 ? +(spend / leads).toFixed(2) : 0,
           impressions: parseInt(r.impressions || '0'),
         }
@@ -535,12 +622,15 @@ export async function POST(req: NextRequest) {
         const spend       = parseFloat(r.spend || '0')
         const impressions = parseInt(r.impressions || '0')
         const clicks      = parseInt(r.clicks || '0')
-        const msgL        = extractConversions(r.actions, [MSG_PRIORITY[0]]) || extractConversions(r.actions, [MSG_PRIORITY[1]]) || extractConversions(r.actions, [MSG_PRIORITY[2]])
-        const leads       = msgL > 0 ? msgL : extractConversions(r.actions, LEAD_TYPES)
+        const result      = summarizeMetaResults({ actions: r.actions, actionValues: r.action_values, spend, clicks, impressions, reach: parseInt(r.reach || '0') })
+        const leads       = result.leads + result.totalMessages + result.phoneCalls
         return {
           platform: r.publisher_platform || 'unknown',
           position: r.platform_position  || 'unknown',
           spend, leads,
+          results: result.primaryResultValue,
+          resultLabel: result.primaryResultLabel,
+          resultBreakdown: result.resultBreakdown,
           cpl:   leads > 0 ? +(spend / leads).toFixed(2) : 0,
           impressions, clicks,
           ctr: impressions > 0 ? +((clicks / impressions) * 100).toFixed(2) : parseFloat(r.ctr || '0'),
@@ -554,12 +644,15 @@ export async function POST(req: NextRequest) {
     const demoBreakdown: DemoBreakdown[] = (demoRawData.data || [])
       .map((r: any) => {
         const spend  = parseFloat(r.spend || '0')
-        const msgL   = extractConversions(r.actions, [MSG_PRIORITY[0]]) || extractConversions(r.actions, [MSG_PRIORITY[1]]) || extractConversions(r.actions, [MSG_PRIORITY[2]])
-        const leads  = msgL > 0 ? msgL : extractConversions(r.actions, LEAD_TYPES)
+        const result = summarizeMetaResults({ actions: r.actions, actionValues: r.action_values, spend, clicks: parseInt(r.clicks || '0'), impressions: parseInt(r.impressions || '0'), reach: parseInt(r.reach || '0') })
+        const leads  = result.leads + result.totalMessages + result.phoneCalls
         return {
           age:    r.age    || 'unknown',
           gender: r.gender || 'unknown',
           spend, leads,
+          results: result.primaryResultValue,
+          resultLabel: result.primaryResultLabel,
+          resultBreakdown: result.resultBreakdown,
           cpl:   leads > 0 ? +(spend / leads).toFixed(2) : 0,
           impressions: parseInt(r.impressions || '0'),
         }
@@ -589,6 +682,7 @@ export async function POST(req: NextRequest) {
     const learningCampaigns  = campaigns.filter(c => c.learningPhase === 'learning' || c.learningPhase === 'learning_limited')
     const totalSpend         = campaigns.reduce((s, c) => s + c.spend30,      0)
     const totalLeads         = campaigns.reduce((s, c) => s + c.leads30,      0)
+    const totalResults       = campaigns.reduce((s, c) => s + c.results30,    0)
     const totalRevenue       = campaigns.reduce((s, c) => s + c.revenue30,    0)
     const totalMessages      = campaigns.reduce((s, c) => s + (Number(c.messages30) || 0),   0)
     const totalClicks        = campaigns.reduce((s, c) => s + (Number(c.clicks) || 0),       0)
@@ -658,14 +752,21 @@ export async function POST(req: NextRequest) {
     // ── Previous period ────────────────────────────────────────────────────────
     const prevSpend = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseFloat(c.spend || '0'), 0)
     const prevLeads = Object.values(insPrevMap).reduce((s: number, c: any) => {
-      const prevMsgL = extractConversions(c.actions, [MSG_PRIORITY[0]]) || extractConversions(c.actions, [MSG_PRIORITY[1]]) || extractConversions(c.actions, [MSG_PRIORITY[2]])
-      return s + (prevMsgL > 0 ? prevMsgL : extractConversions(c.actions, LEAD_TYPES))
+      const result = summarizeMetaResults({
+        actions: c.actions,
+        actionValues: c.action_values,
+        spend: parseFloat(c.spend || '0'),
+        clicks: parseInt(c.clicks || '0'),
+        impressions: parseInt(c.impressions || '0'),
+        reach: parseInt(c.reach || '0'),
+      })
+      return s + result.leads + result.totalMessages + result.phoneCalls
     }, 0)
     const prevImpressions = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseInt(c.impressions || '0'), 0)
     const prevClicks      = Object.values(insPrevMap).reduce((s: number, c: any) => s + parseInt(c.clicks || '0'), 0)
     const prevFreqValues  = Object.values(insPrevMap).map((c: any) => parseFloat(c.frequency || '0')).filter(f => f > 0)
     const prevCpl         = prevLeads > 0 ? +(prevSpend / prevLeads).toFixed(2) : 0
-    const prevRevenue     = Object.values(insPrevMap).reduce((s: number, c: any) => s + extractRevenue(c.actions, PURCHASE_TYPES), 0)
+    const prevRevenue     = Object.values(insPrevMap).reduce((s: number, c: any) => s + summarizeMetaResults({ actions: c.actions, actionValues: c.action_values }).revenue, 0)
     const prevRoas        = prevSpend > 0 && prevRevenue > 0 ? +(prevRevenue / prevSpend).toFixed(2) : 0
     const prevCTR         = prevImpressions > 0 ? +(prevClicks / prevImpressions * 100).toFixed(2) : 0
     const prevCPC         = prevClicks > 0 ? +(prevSpend / prevClicks).toFixed(2) : 0
@@ -687,6 +788,10 @@ export async function POST(req: NextRequest) {
       geoBreakdown, platformBreakdown, demoBreakdown,
       totals: {
         spend: totalSpend, leads: totalLeads, revenue: totalRevenue, messages: totalMessages,
+        results: totalResults,
+        totalResults,
+        resultLabel: 'Resultados',
+        costPerResult: totalResults > 0 ? +(totalSpend / totalResults).toFixed(2) : 0,
         roas:  currRoas,
         cpl:   totalLeads > 0 ? +(totalSpend / totalLeads).toFixed(2) : totalMessages > 0 ? +(totalSpend / totalMessages).toFixed(2) : 0,
         avgCTR: +avgCTR.toFixed(2), avgFrequency: +avgFrequency.toFixed(1),

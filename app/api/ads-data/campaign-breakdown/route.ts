@@ -5,12 +5,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken } from '@/services/meta/token-manager'
+import { summarizeMetaResults } from '@/lib/metaResults'
 
 export const maxDuration = 60
 
-const LEAD_RE = /lead|complete_registration|onsite_conversion\.messaging|purchase|offsite_conversion\.fb_pixel_(lead|purchase|complete_registration)/i
-const leadsFromActions = (actions: any[]): number =>
-  Array.isArray(actions) ? actions.reduce((t, a) => t + (LEAD_RE.test(a?.action_type || '') ? Number(a?.value || 0) : 0), 0) : 0
+const contactsFrom = (row: any, objective?: string): number => {
+  const result = summarizeMetaResults({
+    objective,
+    actions: row?.actions,
+    actionValues: row?.action_values,
+    spend: Number(row?.spend || 0),
+    clicks: Number(row?.clicks || 0),
+    inlineLinkClicks: Number(row?.inline_link_clicks || 0),
+    impressions: Number(row?.impressions || 0),
+    reach: Number(row?.reach || 0),
+  })
+  return result.leads + result.totalMessages + result.phoneCalls
+}
+
+const resultInfo = (row: any, objective?: string) => summarizeMetaResults({
+  objective,
+  actions: row?.actions,
+  actionValues: row?.action_values,
+  spend: Number(row?.spend || 0),
+  clicks: Number(row?.clicks || 0),
+  inlineLinkClicks: Number(row?.inline_link_clicks || 0),
+  impressions: Number(row?.impressions || 0),
+  reach: Number(row?.reach || 0),
+})
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -32,49 +54,50 @@ export async function POST(req: NextRequest) {
       const token = encodeURIComponent(t.accessToken)
       const filt = encodeURIComponent(JSON.stringify([{ field: 'campaign.id', operator: 'IN', value: [campaignId] }]))
       const base = `https://graph.facebook.com/v21.0/${act}/insights`
-      const q = (extra: string) => `${base}?${extra}&filtering=${filt}&date_preset=${datePreset}&access_token=${token}`
+      const q = (extra: string) => `${base}?${extra}&filtering=${filt}&date_preset=${datePreset}&action_breakdowns=action_type,action_destination&access_token=${token}`
 
       const [adsetRes, placeRes, geoRes, demoRes, hourRes, campRes] = await Promise.allSettled([
-        fetch(q('level=adset&fields=adset_id,adset_name,spend,impressions,clicks,frequency,actions&limit=50'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
-        fetch(q('fields=spend,actions,impressions&breakdowns=publisher_platform,platform_position&limit=50'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
-        fetch(q('fields=spend,actions&breakdowns=region&limit=40'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
-        fetch(q('fields=spend,actions&breakdowns=age,gender&limit=100'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
-        fetch(q('fields=spend,actions&breakdowns=hourly_stats_aggregated_by_advertiser_time_zone&limit=30'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+        fetch(q('level=adset&fields=adset_id,adset_name,spend,impressions,clicks,inline_link_clicks,reach,frequency,actions,action_values&limit=50'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+        fetch(q('fields=spend,actions,action_values,impressions,clicks,inline_link_clicks,reach&breakdowns=publisher_platform,platform_position&limit=50'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+        fetch(q('fields=spend,actions,action_values,impressions,clicks,inline_link_clicks,reach&breakdowns=region&limit=40'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+        fetch(q('fields=spend,actions,action_values,impressions,clicks,inline_link_clicks,reach&breakdowns=age,gender&limit=100'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+        fetch(q('fields=spend,actions,action_values,impressions,clicks,inline_link_clicks,reach&breakdowns=hourly_stats_aggregated_by_advertiser_time_zone&limit=30'), { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
         // Nó da campanha (datas de início/término agendadas) — não vem nos insights.
-        fetch(`https://graph.facebook.com/v21.0/${campaignId}?fields=start_time,stop_time,created_time&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+        fetch(`https://graph.facebook.com/v21.0/${campaignId}?fields=start_time,stop_time,created_time,objective&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       ])
       const val = (r: any) => (r.status === 'fulfilled' && !r.value?.error ? (r.value.data || []) : [])
       const campObj = campRes.status === 'fulfilled' && !campRes.value?.error ? campRes.value : {}
       const dates = { start: campObj.start_time || null, stop: campObj.stop_time || null, created: campObj.created_time || null }
+      const objective = String(campObj.objective || '')
 
       const adsets = val(adsetRes).map((a: any) => {
-        const spend = Number(a.spend || 0); const leads = leadsFromActions(a.actions)
-        return { id: a.adset_id, name: a.adset_name || 'Conjunto', spend, leads, cpl: leads > 0 ? Math.round(spend / leads) : 0, frequency: Number(a.frequency || 0) }
+        const spend = Number(a.spend || 0); const result = resultInfo(a, objective); const leads = contactsFrom(a, objective)
+        return { id: a.adset_id, name: a.adset_name || 'Conjunto', spend, leads, results: result.primaryResultValue, resultLabel: result.primaryResultLabel, resultType: result.primaryResultKey, resultBreakdown: result.resultBreakdown, cpl: leads > 0 ? Math.round(spend / leads) : 0, costPerResult: result.costPerResult, frequency: Number(a.frequency || 0) }
       }).filter((a: any) => a.spend > 0).sort((a: any, b: any) => b.spend - a.spend)
 
       const placements = val(placeRes).map((p: any) => ({
-        platform: p.publisher_platform || '—', position: p.platform_position || '', spend: Number(p.spend || 0), leads: leadsFromActions(p.actions),
+        platform: p.publisher_platform || '—', position: p.platform_position || '', spend: Number(p.spend || 0), leads: contactsFrom(p, objective), results: resultInfo(p, objective).primaryResultValue, resultLabel: resultInfo(p, objective).primaryResultLabel,
       })).filter((p: any) => p.spend > 0).sort((a: any, b: any) => b.spend - a.spend).slice(0, 8)
 
       const geo = val(geoRes).map((g: any) => {
-        const spend = Number(g.spend || 0); const leads = leadsFromActions(g.actions)
-        return { region: g.region || '—', spend, leads, cpl: leads > 0 ? Math.round(spend / leads) : 0 }
+        const spend = Number(g.spend || 0); const result = resultInfo(g, objective); const leads = contactsFrom(g, objective)
+        return { region: g.region || '—', spend, leads, results: result.primaryResultValue, resultLabel: result.primaryResultLabel, cpl: leads > 0 ? Math.round(spend / leads) : 0, costPerResult: result.costPerResult }
       }).filter((g: any) => g.spend > 0).sort((a: any, b: any) => b.spend - a.spend).slice(0, 8)
 
       const demo = val(demoRes).map((d: any) => {
-        const spend = Number(d.spend || 0); const leads = leadsFromActions(d.actions)
-        return { age: d.age || '', gender: d.gender || '', spend, leads, cpl: leads > 0 ? Math.round(spend / leads) : 0 }
+        const spend = Number(d.spend || 0); const result = resultInfo(d, objective); const leads = contactsFrom(d, objective)
+        return { age: d.age || '', gender: d.gender || '', spend, leads, results: result.primaryResultValue, resultLabel: result.primaryResultLabel, cpl: leads > 0 ? Math.round(spend / leads) : 0, costPerResult: result.costPerResult }
       }).filter((d: any) => d.leads > 0).sort((a: any, b: any) => b.leads - a.leads).slice(0, 8)
 
       // Por HORA do dia (0-23, fuso do anunciante) — dayparting.
       const hourly = val(hourRes).map((h: any) => {
         const raw = String(h.hourly_stats_aggregated_by_advertiser_time_zone || '')
         const hour = parseInt(raw.slice(0, 2), 10)
-        const spend = Number(h.spend || 0); const leads = leadsFromActions(h.actions)
-        return { hour: isNaN(hour) ? -1 : hour, spend, leads, cpl: leads > 0 ? Math.round(spend / leads) : 0 }
+        const spend = Number(h.spend || 0); const result = resultInfo(h, objective); const leads = contactsFrom(h, objective)
+        return { hour: isNaN(hour) ? -1 : hour, spend, leads, results: result.primaryResultValue, resultLabel: result.primaryResultLabel, cpl: leads > 0 ? Math.round(spend / leads) : 0, costPerResult: result.costPerResult }
       }).filter((h: any) => h.hour >= 0).sort((a: any, b: any) => a.hour - b.hour)
 
-      return NextResponse.json({ success: true, platform, adsets, placements, geo, demo, hourly, dates })
+      return NextResponse.json({ success: true, platform, adsets, placements, geo, demo, hourly, dates, objective })
     }
 
     // ── GOOGLE ────────────────────────────────────────────────────────────────

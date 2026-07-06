@@ -13,6 +13,24 @@ import { errMsg } from '@/lib/errMsg'
 // 300s dá folga (mesmo teto das rotas pesadas daily-snapshot/briefing).
 export const maxDuration = 300
 
+const resultLabelOf = (c: any) =>
+  c?.resultLabel || c?.primaryResultLabel || (c?.platform === 'google' ? 'Conversões' : 'Resultados')
+
+const resultValueOf = (c: any) => {
+  const n = Number(c?.results ?? c?.primaryResultValue ?? c?.leads ?? 0)
+  return Number.isFinite(n) ? n : 0
+}
+
+const costPerResultOf = (c: any) => {
+  const explicit = Number(c?.costPerResult || 0)
+  if (explicit > 0) return explicit
+  const value = resultValueOf(c)
+  return value > 0 ? Number(c?.spend || 0) / value : 0
+}
+
+const isContactResult = (label: string) =>
+  /lead|formul|cadastro|conversa|whatsapp|messenger|instagram|liga/i.test(label || '')
+
 // ── Salva padrões da auditoria diretamente no Supabase (fire-and-forget) ─────
 async function saveAuditMemory(
   userId: string,
@@ -107,7 +125,11 @@ function buildFallbackAudit(
     || (metaTotals?.spend || 0) + (googleTotals?.spend || 0)
   const totalLeads = allCampaigns.reduce((s, c) => s + (c.leads || 0), 0)
     || (metaTotals?.leads || 0) + (googleTotals?.leads || 0)
+  const totalResults = allCampaigns.reduce((s, c) => s + resultValueOf(c), 0)
+    || (metaTotals?.totalResults || metaTotals?.results || metaTotals?.leads || 0) + (googleTotals?.results || googleTotals?.leads || 0)
+  const resultLabel = metaTotals?.resultLabel || 'resultados'
   const realCPL = totalLeads > 0 ? Math.round(totalSpend / totalLeads) : 0
+  const realCostPerResult = totalResults > 0 ? Math.round(totalSpend / totalResults) : 0
   const benchCPL = Math.round((bench.cpl_min + bench.cpl_max) / 2)
   const cplDiff = realCPL > 0 ? ((realCPL - benchCPL) / benchCPL) * 100 : 0
 
@@ -122,12 +144,14 @@ function buildFallbackAudit(
   const metaCamps = allCampaigns.filter(c => c.platform !== 'google')
   const googleCamps = allCampaigns.filter(c => c.platform === 'google')
 
-  // Pixel: se há leads registrados via API, pixel está funcionando
+  // Pixel: só dá para inferir falha por ausência de leads em campanhas de contato.
+  // Campanhas de tráfego/alcance/vídeo podem estar corretas mesmo com zero lead.
   const metaLeads = (metaTotals?.leads || 0) + metaCamps.reduce((s, c) => s + (c.leads || 0), 0)
   const metaSpend  = metaTotals?.spend || metaCamps.reduce((s, c) => s + (c.spend || 0), 0)
+  const hasContactCampaigns = metaCamps.some(c => isContactResult(resultLabelOf(c))) || metaLeads > 0
   const pixelOk: boolean | null =
     metaLeads > 0 ? true :
-    metaSpend > 500 && metaLeads === 0 ? false :
+    hasContactCampaigns && metaSpend > 500 && metaLeads === 0 ? false :
     null
 
   // Eventos duplicados: ROAS impossível (>20×) sugere valor de conversão inflado
@@ -161,13 +185,13 @@ function buildFallbackAudit(
     ? 'Presença de campanhas de remarketing/BOF detectada. Confirmar audiências frio, morno e quente no Gerenciador de Anúncios.'
     : 'Sem campanhas de remarketing identificadas pelos nomes. Criar audiências separadas: visitantes 7d, 30d e leads sem conversão.'
 
-  // Campanhas com desperdício crítico (gasto > 10% do total, zero leads)
-  const wasteCamps = metaCamps.filter(c => (c.spend || 0) > totalSpend * 0.1 && (c.leads || 0) === 0)
+  // Campanhas com desperdício crítico (gasto > 10% do total, zero resultado do objetivo)
+  const wasteCamps = metaCamps.filter(c => (c.spend || 0) > totalSpend * 0.1 && resultValueOf(c) === 0)
   const highFreqCamps = metaCamps.filter(c => (c.frequency || 0) > 4)
 
   const metaErros: string[] = []
-  if (realCPL > bench.cpl_max) metaErros.push(`CPL médio R$${realCPL} acima do benchmark — revisar estrutura de segmentação`)
-  wasteCamps.forEach(c => metaErros.push(`"${c.name}" — R$${Math.round(c.spend).toLocaleString('pt-BR')} gastos sem conversão`))
+  if (totalLeads > 0 && realCPL > bench.cpl_max) metaErros.push(`CPL médio R$${realCPL} acima do benchmark — revisar estrutura de segmentação`)
+  wasteCamps.forEach(c => metaErros.push(`"${c.name}" — R$${Math.round(c.spend).toLocaleString('pt-BR')} gastos sem ${resultLabelOf(c).toLowerCase()}`))
   highFreqCamps.forEach(c => metaErros.push(`"${c.name}" — frequência ${c.frequency?.toFixed(1)}× (público saturado)`))
 
   const trackingProblemas: string[] = []
@@ -182,26 +206,31 @@ function buildFallbackAudit(
   // ── Plano de ação DATA-DRIVEN: nomeia campanhas reais (pausar/escalar) com CPL real.
   // Cai no genérico só quando a conta não tem dados de campanha.
   const money = (n: number) => 'R$' + Math.round(n || 0).toLocaleString('pt-BR')
-  const cplOf = (c: any) => ((c.leads || 0) > 0 ? (c.spend || 0) / c.leads : Infinity)
-  const withLeads = metaCamps.filter(c => (c.leads || 0) > 0 && (c.spend || 0) > 0)
-  const worstCamps = withLeads.filter(c => cplOf(c) > bench.cpl_max).sort((a, b) => cplOf(b) - cplOf(a)).slice(0, 3)
-  const bestCamps  = withLeads.filter(c => cplOf(c) <= bench.cpl_min).sort((a, b) => cplOf(a) - cplOf(b)).slice(0, 2)
+  const cplOf = (c: any) => {
+    const value = resultValueOf(c)
+    return value > 0 ? costPerResultOf(c) : Infinity
+  }
+  const withResults = metaCamps.filter(c => resultValueOf(c) > 0 && (c.spend || 0) > 0)
+  const contactResultCamps = withResults.filter(c => isContactResult(resultLabelOf(c)))
+  const worstCamps = contactResultCamps.filter(c => cplOf(c) > bench.cpl_max).sort((a, b) => cplOf(b) - cplOf(a)).slice(0, 3)
+  const bestCamps  = contactResultCamps.filter(c => cplOf(c) <= bench.cpl_min).sort((a, b) => cplOf(a) - cplOf(b)).slice(0, 2)
   const wasteTotal = wasteCamps.reduce((s, c) => s + (c.spend || 0), 0)
 
   const curto: any[] = []
   if (wasteCamps.length) {
     curto.push({
       acao: `Pausar ${wasteCamps.length} campanha(s) que gastam sem converter`,
-      como: wasteCamps.slice(0, 3).map(c => `"${c.name}" (${money(c.spend)} gastos, 0 leads)`).join(' · '),
+      como: wasteCamps.slice(0, 3).map(c => `"${c.name}" (${money(c.spend)} gastos, 0 ${resultLabelOf(c).toLowerCase()})`).join(' · '),
       impacto: `Recupera ~${money(wasteTotal)} já no próximo ciclo`,
     })
   }
   if (worstCamps.length) {
     const w = worstCamps[0]
+    const label = resultLabelOf(w).toLowerCase()
     curto.push({
-      acao: `Revisar/cortar a campanha de CPL mais alto: "${w.name}"`,
-      como: `CPL ${money(cplOf(w))} — ${(cplOf(w) / Math.max(1, benchCPL)).toFixed(1)}× o benchmark (${money(benchCPL)}). Realocar a verba para os conjuntos eficientes.`,
-      impacto: 'Alto — corta o maior ralo de CPL da conta',
+      acao: `Revisar/cortar a campanha com maior custo por ${label}: "${w.name}"`,
+      como: `Custo por ${label} ${money(cplOf(w))} — ${(cplOf(w) / Math.max(1, benchCPL)).toFixed(1)}× o benchmark (${money(benchCPL)}). Realocar a verba para os conjuntos eficientes.`,
+      impacto: `Alto — corta o maior ralo de custo por ${label} da conta`,
     })
   }
   if (pixelOk === false) {
@@ -217,10 +246,11 @@ function buildFallbackAudit(
   const medio: any[] = []
   if (bestCamps.length) {
     const b = bestCamps[0]
+    const label = resultLabelOf(b).toLowerCase()
     medio.push({
       acao: `Escalar a campanha vencedora "${b.name}"`,
-      como: `CPL ${money(cplOf(b))} (abaixo do piso ${money(bench.cpl_min)} do nicho). Subir budget 15–20%/semana enquanto o CPL segurar.`,
-      impacto: '+volume de leads sem subir o CPL',
+      como: `Custo por ${label} ${money(cplOf(b))} (abaixo do piso ${money(bench.cpl_min)} do nicho). Subir budget 15–20%/semana enquanto o custo segurar.`,
+      impacto: `+volume de ${label} sem subir o custo`,
     })
   }
   medio.push({
@@ -243,15 +273,17 @@ function buildFallbackAudit(
   return {
     health_score: score,
     grade,
-    executive_summary: `Conta de ${clientName} (${niche}) com CPL real de R$${realCPL} vs benchmark R$${bench.cpl_min}–${bench.cpl_max}. ${allCampaigns.length} campanhas analisadas com investimento total de R$${Math.round(totalSpend).toLocaleString('pt-BR')}.`,
+    executive_summary: `Conta de ${clientName} (${niche}) com ${totalLeads > 0 ? `CPL real de R$${realCPL}` : `custo médio por ${resultLabel.toLowerCase()} de R$${realCostPerResult}`} vs benchmark R$${bench.cpl_min}–${bench.cpl_max}. ${allCampaigns.length} campanhas analisadas com investimento total de R$${Math.round(totalSpend).toLocaleString('pt-BR')}.`,
 
     visao_geral: {
       modelo_aquisicao: totalSpend > 0
-        ? `Modelo de aquisição baseado em tráfego pago para ${niche}. Investimento de R$${Math.round(totalSpend).toLocaleString('pt-BR')} gerando ${totalLeads} leads com CPL médio de R$${realCPL}.`
+        ? totalLeads > 0
+          ? `Modelo de aquisição baseado em tráfego pago para ${niche}. Investimento de R$${Math.round(totalSpend).toLocaleString('pt-BR')} gerando ${totalLeads} leads com CPL médio de R$${realCPL}.`
+          : `Modelo de aquisição baseado em tráfego pago para ${niche}. Investimento de R$${Math.round(totalSpend).toLocaleString('pt-BR')} gerando ${totalResults} ${resultLabel.toLowerCase()} com custo médio de R$${realCostPerResult}.`
         : `Análise de ${niche} baseada em benchmarks do mercado. Sem dados de performance disponíveis para o período selecionado — conecte a conta correta ou importe um relatório para análise real.`,
-      desalinhamentos: realCPL > bench.cpl_max
+      desalinhamentos: totalLeads > 0 && realCPL > bench.cpl_max
         ? [`CPL ${Math.round(cplDiff)}% acima do benchmark do nicho — sinaliza desalinhamento entre criativo, audiência ou oferta`]
-        : [`Performance dentro do benchmark do nicho ${niche}`],
+        : [`Performance lida por objetivo de campanha; resultados não foram misturados como lead gen.`],
       riscos: ['Dependência de um único canal de aquisição', pixelOk === false ? 'Pixel com problema detectado — conversões podem estar sub-registradas' : 'Validar tracking antes de escalar investimento'],
     },
 
@@ -297,12 +329,12 @@ function buildFallbackAudit(
 
     performance: {
       meta: metaTotals ? {
-        metricas: { cpm: 0, ctr: metaTotals.ctr || 0, cpc: 0, cpa: realCPL, frequencia: 0 },
+        metricas: { cpm: 0, ctr: metaTotals.ctr || 0, cpc: 0, cpa: realCPL || realCostPerResult, frequencia: 0 },
         gargalos: [
           metaTotals.ctr < 1 ? 'CTR abaixo de 1% — criativos com baixo engajamento' : 'CTR dentro do esperado',
-          realCPL > bench.cpl_max ? `CPL R$${realCPL} acima do benchmark R$${bench.cpl_max}` : 'CPL no benchmark',
+          totalLeads > 0 && realCPL > bench.cpl_max ? `CPL R$${realCPL} acima do benchmark R$${bench.cpl_max}` : `Custo por ${resultLabel.toLowerCase()} acompanhado separadamente`,
         ],
-        interpretacao: `CTR de ${metaTotals.ctr}% com CPL R$${metaTotals.cpl || realCPL}. ${metaTotals.roas > 0 ? `ROAS ${metaTotals.roas}× no período.` : 'ROAS não calculado — verificar rastreamento de receita.'}`,
+        interpretacao: `CTR de ${metaTotals.ctr}% com ${totalLeads > 0 ? `CPL R$${metaTotals.cpl || realCPL}` : `custo por ${resultLabel.toLowerCase()} R$${realCostPerResult}`}. ${metaTotals.roas > 0 ? `ROAS ${metaTotals.roas}× no período.` : 'ROAS não calculado — verificar rastreamento de receita.'}`,
       } : null,
       google: googleTotals ? {
         metricas: { ctr: googleTotals.ctr || 0, cpc: 0, taxa_conversao: 0 },
@@ -341,12 +373,14 @@ function buildFallbackAudit(
       landing_page: 'Auditar velocidade (>3s = perda de 50% dos leads), headline clara e CTA visível above the fold',
       atendimento: 'Definir SLA de primeiro atendimento — resposta em até 5min aumenta conversão em 3×',
       follow_up: 'Implementar sequência de 5–7 touchpoints para leads não convertidos',
-      gargalo_principal: realCPL > bench.cpl_max ? 'trafego' : 'pos-clique',
-      nota: `CPL atual R$${realCPL} vs benchmark R$${benchCPL} — ${realCPL > benchCPL ? 'gargalo está no tráfego (custo por lead elevado)' : 'gargalo provavelmente no pós-clique (qualificação e atendimento)'}`,
+      gargalo_principal: totalLeads > 0 && realCPL > bench.cpl_max ? 'trafego' : 'pos-clique',
+      nota: totalLeads > 0
+        ? `CPL atual R$${realCPL} vs benchmark R$${benchCPL} — ${realCPL > benchCPL ? 'gargalo está no tráfego (custo por lead elevado)' : 'gargalo provavelmente no pós-clique (qualificação e atendimento)'}`
+        : `Resultado principal atual: ${resultLabel}. Custo médio R$${realCostPerResult}; não comparar automaticamente com benchmark de CPL.`,
     },
 
     gargalos: [
-      realCPL > bench.cpl_max ? {
+      totalLeads > 0 && realCPL > bench.cpl_max ? {
         rank: 1, titulo: `CPL ${Math.round(cplDiff)}% acima do benchmark`,
         descricao: `R$${realCPL} vs benchmark R$${bench.cpl_min}–${bench.cpl_max} para ${niche}`,
         impacto: `Desperdício estimado: R$${Math.round(totalSpend * 0.2).toLocaleString('pt-BR')}/mês em custo excessivo por lead`,
@@ -694,19 +728,24 @@ export async function POST(req: NextRequest) {
     // Quando o usuário sobe 2 arquivos do mesmo Meta (ex: conjuntos + anúncios),
     // os totais seriam duplicados se simplesmente somados. A heurística: para
     // cada plataforma, usa o arquivo com maior investimento total (mais completo).
-    const platformBest: Record<string, { spend: number; leads: number }> = {}
+    const platformBest: Record<string, { spend: number; leads: number; results: number }> = {}
     for (const file of srcUploadedFiles) {
       const p = (file as any).platform || 'unknown'
       const fs = (file as any).campaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
       const fl = (file as any).campaigns.reduce((s: number, c: any) => s + (c.leads || 0), 0)
+      const fr = (file as any).campaigns.reduce((s: number, c: any) => s + resultValueOf(c), 0)
       if (!platformBest[p] || fs > platformBest[p].spend) {
-        platformBest[p] = { spend: fs, leads: fl }
+        platformBest[p] = { spend: fs, leads: fl, results: fr || fl }
       }
     }
     const uploadTotalSpend = Object.values(platformBest).reduce((s, v) => s + v.spend, 0)
     const uploadTotalLeads = Object.values(platformBest).reduce((s, v) => s + v.leads, 0)
+    const uploadTotalResults = Object.values(platformBest).reduce((s, v) => s + v.results, 0)
     const totalSpend = (srcMetaTotals?.spend || 0) + (srcGoogleTotals?.spend || 0) + uploadTotalSpend
     const totalLeads = (srcMetaTotals?.leads || 0) + (srcGoogleTotals?.leads || 0) + uploadTotalLeads
+    const totalResults = (srcMetaTotals?.totalResults || srcMetaTotals?.results || srcMetaTotals?.leads || 0)
+      + (srcGoogleTotals?.totalResults || srcGoogleTotals?.results || srcGoogleTotals?.leads || 0)
+      + uploadTotalResults
     const realCPL    = totalLeads > 0 ? +(totalSpend / totalLeads).toFixed(2) : 0
 
     // ── Métricas reais agregadas (usadas pelo Overview) ────────────────────────
@@ -725,10 +764,12 @@ export async function POST(req: NextRequest) {
     const realMetrics = {
       totalSpend:    Math.round(Number(totalSpend)),
       totalLeads:    Math.round(totalLeads),
+      totalResults:  Math.round(totalResults),
       totalRevenue:  Math.round(totalRevenue),
       totalClicks:   Math.round(totalClicks),
       totalImpressions: Math.round(totalImpressions),
       avgCPL:        totalLeads > 0 ? Math.round(Number(totalSpend) / totalLeads) : null,
+      avgCostPerResult: totalResults > 0 ? Math.round(Number(totalSpend) / totalResults) : null,
       avgROAS,
       avgCTR,
       campaignCount: allCampaigns.length,
@@ -767,46 +808,56 @@ INSTRUÇÃO: Comece o resumo executivo referenciando a EVOLUÇÃO real vs a audi
     const classifiedCampaigns = (() => {
       const camps = allCampaigns.filter((c: any) => (c.spend || 0) > 0)
       const vencedoras: any[] = [], atencao: any[] = [], criticas: any[] = []
-      const leadsValid = camps.filter((x: any) => (x.leads || 0) > 0)
-      const avgCPLRef = leadsValid.length > 0
-        ? leadsValid.reduce((s: number, x: any) => s + x.spend / x.leads, 0) / leadsValid.length
+      const resultRows = camps
+        .map((x: any) => ({ campaign: x, value: resultValueOf(x), cost: costPerResultOf(x), label: resultLabelOf(x) }))
+        .filter((x: any) => x.value > 0 && x.cost > 0)
+      const avgCostRef = resultRows.length > 0
+        ? resultRows.reduce((s: number, x: any) => s + x.cost, 0) / resultRows.length
         : 0
       for (const c of camps) {
-        const cpl = (c.leads || 0) > 0 ? c.spend / c.leads : null
-        if (bench) {
-          if (cpl !== null && cpl <= bench.cpl_min * 1.3)       vencedoras.push(c)
-          else if (cpl !== null && cpl <= bench.cpl_max * 1.2)  atencao.push(c)
-          else                                                    criticas.push(c)
+        const label = resultLabelOf(c)
+        const value = resultValueOf(c)
+        const cost = value > 0 ? costPerResultOf(c) : null
+        const contact = isContactResult(label)
+        if (contact && bench) {
+          if (cost !== null && cost <= bench.cpl_min * 1.3)       vencedoras.push(c)
+          else if (cost !== null && cost <= bench.cpl_max * 1.2)  atencao.push(c)
+          else                                                     criticas.push(c)
         } else {
-          if (avgCPLRef > 0 && cpl !== null && cpl < avgCPLRef * 0.7) vencedoras.push(c)
-          else if (avgCPLRef > 0 && cpl !== null && cpl < avgCPLRef * 1.5) atencao.push(c)
-          else                                                    criticas.push(c)
+          if (avgCostRef > 0 && cost !== null && cost < avgCostRef * 0.7) vencedoras.push(c)
+          else if (avgCostRef > 0 && cost !== null && cost < avgCostRef * 1.5) atencao.push(c)
+          else if (cost !== null && value > 0) atencao.push(c)
+          else criticas.push(c)
         }
       }
 
       const enrich = (c: any, type: 'vencedora' | 'atencao' | 'critica') => {
-        const cpl = (c.leads || 0) > 0 ? c.spend / c.leads : null
+        const label = resultLabelOf(c)
+        const lowerLabel = label.toLowerCase()
+        const value = resultValueOf(c)
+        const cost = value > 0 ? costPerResultOf(c) : null
+        const contact = isContactResult(label)
         let evidence = ''
         let recommended_action = ''
         if (type === 'vencedora') {
-          const pctBelow = bench && cpl && bench.cpl_min > 0 ? Math.round((1 - cpl / bench.cpl_min) * 100) : 0
-          evidence = cpl
-            ? `CPL R$${Math.round(cpl)}${bench ? ` — ${pctBelow > 0 ? `${pctBelow}% abaixo do mínimo benchmark (R$${bench.cpl_min})` : 'no mínimo do benchmark'}` : ' — melhor CPL da conta'}`
+          const pctBelow = bench && contact && cost && bench.cpl_min > 0 ? Math.round((1 - cost / bench.cpl_min) * 100) : 0
+          evidence = cost
+            ? `Custo por ${lowerLabel} R$${Math.round(cost)}${bench && contact ? ` — ${pctBelow > 0 ? `${pctBelow}% abaixo do mínimo benchmark (R$${bench.cpl_min})` : 'no mínimo do benchmark'}` : ' — melhor custo relativo da conta'}`
             : 'Alta performance relativa à conta'
-          recommended_action = 'Escalar gradualmente: +20–30% de verba por semana mantendo CPL controlado.'
+          recommended_action = `Escalar gradualmente: +20–30% de verba por semana mantendo custo por ${lowerLabel} controlado.`
         } else if (type === 'atencao') {
-          evidence = cpl
-            ? `CPL R$${Math.round(cpl)}${bench ? ` — dentro do benchmark (R$${bench.cpl_min}–R$${bench.cpl_max})` : ' — acima da média mas com conversões'}`
-            : 'Conversões registradas, mas volume baixo'
+          evidence = cost
+            ? `Custo por ${lowerLabel} R$${Math.round(cost)}${bench && contact ? ` — dentro do benchmark (R$${bench.cpl_min}–R$${bench.cpl_max})` : ` — ${value} ${lowerLabel} registrados`}`
+            : `${label} registrados, mas volume baixo`
           recommended_action = 'Manter e otimizar: revisar público, criativo e oferta antes de escalar.'
         } else {
-          if (!c.leads || c.leads === 0) {
-            evidence = `R$${Math.round(c.spend || 0).toLocaleString('pt-BR')} investidos sem nenhuma conversão registrada`
+          if (!value || value === 0) {
+            evidence = `R$${Math.round(c.spend || 0).toLocaleString('pt-BR')} investidos sem ${lowerLabel} registrado(s)`
             recommended_action = 'Pausar e investigar: verificar criativo, público, página de destino e evento de conversão.'
           } else {
-            const pctAbove = bench && cpl && bench.cpl_max > 0 ? Math.round((cpl / bench.cpl_max - 1) * 100) : 0
-            evidence = cpl
-              ? `CPL R$${Math.round(cpl)}${bench ? ` — ${pctAbove > 0 ? `${pctAbove}% acima do máximo benchmark (R$${bench.cpl_max})` : 'no limite do benchmark'}` : ' — acima da média da conta'}`
+            const pctAbove = bench && contact && cost && bench.cpl_max > 0 ? Math.round((cost / bench.cpl_max - 1) * 100) : 0
+            evidence = cost
+              ? `Custo por ${lowerLabel} R$${Math.round(cost)}${bench && contact ? ` — ${pctAbove > 0 ? `${pctAbove}% acima do máximo benchmark (R$${bench.cpl_max})` : 'no limite do benchmark'}` : ' — acima da média da conta'}`
               : 'Performance insuficiente'
             recommended_action = 'Reduzir verba em 50% e revisar: novo ângulo criativo e segmentação de público.'
           }
@@ -815,7 +866,7 @@ INSTRUÇÃO: Comece o resumo executivo referenciando a EVOLUÇÃO real vs a audi
       }
 
       return {
-        vencedoras: vencedoras.sort((a, b) => (a.spend / Math.max(a.leads, 1)) - (b.spend / Math.max(b.leads, 1))).slice(0, 8).map(c => enrich(c, 'vencedora')),
+        vencedoras: vencedoras.sort((a, b) => costPerResultOf(a) - costPerResultOf(b)).slice(0, 8).map(c => enrich(c, 'vencedora')),
         atencao:    atencao.sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8).map(c => enrich(c, 'atencao')),
         criticas:   criticas.sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8).map(c => enrich(c, 'critica')),
       }
@@ -823,7 +874,7 @@ INSTRUÇÃO: Comece o resumo executivo referenciando a EVOLUÇÃO real vs a audi
 
     // ── Desperdício de verba ──────────────────────────────────────────────────
     const wasteCampaigns = allCampaigns
-      .filter((c: any) => (c.spend || 0) > 0 && (c.leads || 0) === 0)
+      .filter((c: any) => (c.spend || 0) > 0 && resultValueOf(c) === 0)
       .sort((a: any, b: any) => (b.spend || 0) - (a.spend || 0))
       .slice(0, 8)
     const totalWaste     = wasteCampaigns.reduce((s: number, c: any) => s + (c.spend || 0), 0)
@@ -858,7 +909,7 @@ INSTRUÇÃO: Comece o resumo executivo referenciando a EVOLUÇÃO real vs a audi
       let score = 0
       if (srcHasMeta || srcHasGoogle) score += 35; else if (hasUpload) score += 25
       if (Number(totalSpend) > 0) score += 25; else issues.push('Sem dados de investimento')
-      if (totalLeads > 0) score += 25; else issues.push('Sem dados de conversão')
+      if (totalResults > 0) score += 25; else issues.push('Sem dados de resultado')
       if (avgROAS !== null) score += 10
       if (allCampaigns.length > 0) score += 5
       const confidence: 'alta' | 'media' | 'baixa' = score >= 70 ? 'alta' : score >= 40 ? 'media' : 'baixa'
@@ -866,7 +917,7 @@ INSTRUÇÃO: Comece o resumo executivo referenciando a EVOLUÇÃO real vs a audi
       const reasonParts: string[] = []
       if (srcHasMeta || srcHasGoogle) reasonParts.push(`dados reais de API (${auditSource === 'api' ? 'somente API' : 'consolidado'})`)
       else if (hasUpload) reasonParts.push('dados de arquivo importado')
-      if (totalLeads === 0) reasonParts.push('sem conversões registradas')
+      if (totalResults === 0) reasonParts.push('sem resultados registrados')
       if (avgROAS === null) reasonParts.push('ROAS não calculado')
       if (dataWarnings.length > 0) reasonParts.push('possível inconsistência de fontes detectada')
       const apiOrUpload = reasonParts.find(p => p.startsWith('dados'))
@@ -921,15 +972,26 @@ INSTRUÇÃO: Comece o resumo executivo referenciando a EVOLUÇÃO real vs a audi
         const anthropic = new Anthropic({ apiKey })
 
         // ── Monta o contexto completo de dados ─────────────────────────────
+        const campaignMetricLine = (c: any, fallbackLabel = 'Resultados') => {
+          const label = resultLabelOf(c) || fallbackLabel
+          const value = resultValueOf(c)
+          const cost = costPerResultOf(c)
+          const breakdown = Array.isArray(c.resultBreakdown) && c.resultBreakdown.length > 0
+            ? ` | Separado: ${c.resultBreakdown.slice(0, 5).map((r: any) => `${r.label || r.key}: ${r.value || 0}${r.cost ? ` (R$${Math.round(r.cost)})` : ''}`).join(', ')}`
+            : ''
+          return `Resultado principal: ${label} = ${value} | Custo por resultado: ${cost > 0 ? `R$${cost.toFixed(2)}` : 'N/A'}${breakdown}`
+        }
+
         const metaSummary = srcHasMeta ? `
 === META ADS ===
 Fonte dos dados: ${auditSource === 'upload' ? 'arquivo importado' : 'API Meta Ads'}
 Gasto: R$${(srcMetaTotals?.spend || 0).toFixed(2)} | Impressões: ${(srcMetaTotals?.impressions || 0).toLocaleString('pt-BR')} | Cliques: ${srcMetaTotals?.clicks || 0}
-CTR: ${srcMetaTotals?.ctr || 0}% | CPL: R$${srcMetaTotals?.cpl || 0} | ROAS: ${srcMetaTotals?.roas || 0}× | Leads: ${srcMetaTotals?.leads || 0}
+CTR: ${srcMetaTotals?.ctr || 0}% | CPL compatível: R$${srcMetaTotals?.cpl || 0} | Custo por resultado: R$${srcMetaTotals?.costPerResult || srcMetaTotals?.avgCostPerResult || 0} | ROAS: ${srcMetaTotals?.roas || 0}× | Leads/contatos: ${srcMetaTotals?.leads || 0} | Resultados: ${srcMetaTotals?.totalResults || srcMetaTotals?.results || srcMetaTotals?.leads || 0}
 Campanhas (${srcMetaCampaigns.length}):
 ${srcMetaCampaigns.slice(0, 12).map((c: any) =>
   `  [${c.status || 'ACTIVE'}] ${c.name}
-   Gasto: R$${(c.spend||0).toFixed(2)} | Leads: ${c.leads||0} | CPL: R$${(c.cpl||0).toFixed(2)} | CTR: ${(c.ctr||0).toFixed(2)}% | ROAS: ${(c.roas||0).toFixed(2)}× | Frequência: ${(c.frequency||0).toFixed(1)}`
+   Objetivo: ${c.objective || c.objectiveLabel || c.objectiveKey || 'não informado'} | ${campaignMetricLine(c)}
+   Gasto: R$${(c.spend||0).toFixed(2)} | Leads/contatos compatíveis: ${c.leads||0} | CPL compatível: R$${(c.cpl||0).toFixed(2)} | CTR: ${(c.ctr||0).toFixed(2)}% | ROAS: ${(c.roas||0).toFixed(2)}× | Frequência: ${(c.frequency||0).toFixed(1)}`
 ).join('\n')}` : ''
 
         const googleSummary = srcHasGoogle ? `
@@ -949,7 +1011,8 @@ ${srcGoogleCampaigns.slice(0, 12).map((c: any) =>
 Total de campanhas/anúncios: ${file.campaigns.length}
 ${file.campaigns.slice(0, 25).map((c: any) =>
   `  [${c.status || '-'}] ${c.name}${c.adName && c.adName !== c.name ? ` / Anúncio: ${c.adName}` : ''}
-   Gasto: R$${(c.spend||0).toFixed(2)} | Leads: ${c.leads||0} | CPL: R$${(c.cpl||0).toFixed(2)} | CTR: ${(c.ctr||0).toFixed(2)}% | ROAS: ${(c.roas||0).toFixed(2)}×${c.frequency ? ` | Freq: ${c.frequency}` : ''}${c.placement ? ` | Pos: ${c.placement}` : ''}`
+   ${campaignMetricLine(c)}
+   Gasto: R$${(c.spend||0).toFixed(2)} | Leads/contatos compatíveis: ${c.leads||0} | CPL compatível: R$${(c.cpl||0).toFixed(2)} | CTR: ${(c.ctr||0).toFixed(2)}% | ROAS: ${(c.roas||0).toFixed(2)}×${c.frequency ? ` | Freq: ${c.frequency}` : ''}${c.placement ? ` | Pos: ${c.placement}` : ''}`
 ).join('\n')}
 Subtotal: Gasto R$${file.campaigns.reduce((s:number,c:any)=>s+(c.spend||0),0).toFixed(2)} | Leads ${file.campaigns.reduce((s:number,c:any)=>s+(c.leads||0),0)}`
         ).join('\n') : ''
@@ -966,12 +1029,12 @@ Subtotal: Gasto R$${file.campaigns.reduce((s:number,c:any)=>s+(c.spend||0),0).to
         const absurdROAS = allCamps.filter((c: any) => (c.roas || 0) > 40)
         if (absurdROAS.length > 0) anomalies.push(`⚠ ROAS IMPOSSÍVEL (>40×): ${absurdROAS.map((c:any) => `${c.name} (${c.roas}×)`).join(', ')} — provável erro no valor de conversão (duplicado ou errado no pixel)`)
 
-        // CPL zero com leads (evento de conversão mal configurado)
-        const zeroCPL = allCamps.filter((c: any) => (c.leads || 0) > 0 && (c.cpl || 0) === 0 && (c.spend || 0) > 0)
-        if (zeroCPL.length > 0) anomalies.push(`⚠ CPL=R$0 COM LEADS: ${zeroCPL.map((c:any) => c.name).join(', ')} — pixel contando evento mas não vinculando ao gasto correto`)
+        // Custo zerado com resultado (evento de conversão mal configurado)
+        const zeroCost = allCamps.filter((c: any) => resultValueOf(c) > 0 && costPerResultOf(c) === 0 && (c.spend || 0) > 0)
+        if (zeroCost.length > 0) anomalies.push(`⚠ CUSTO=R$0 COM RESULTADO: ${zeroCost.map((c:any) => `${c.name} (${resultLabelOf(c)})`).join(', ')} — evento contando resultado mas não vinculando ao gasto corretamente`)
 
-        // Campanhas com gasto alto mas zero leads (desperdício crítico)
-        const wasteCamps = allCamps.filter((c: any) => (c.spend || 0) > (totalSpend * 0.1) && (c.leads || 0) === 0)
+        // Campanhas com gasto alto mas zero resultado do objetivo (desperdício crítico)
+        const wasteCamps = allCamps.filter((c: any) => (c.spend || 0) > (totalSpend * 0.1) && resultValueOf(c) === 0)
         if (wasteCamps.length > 0) anomalies.push(`🔴 DESPERDÍCIO CRÍTICO: ${wasteCamps.map((c:any) => `${c.name} (R$${c.spend?.toFixed(0)})`).join(', ')} — investimento alto SEM resultado`)
 
         // Frequência muito alta (fadiga criativa)
@@ -990,47 +1053,52 @@ ${anomalies.join('\n')}
         const rankedCamps = [...allCampaigns]
           .filter((c: any) => (c.spend || 0) > 0)
           .sort((a: any, b: any) => {
-            // Campanhas com leads: ordena por CPA crescente (menor = melhor)
-            if ((a.leads || 0) > 0 && (b.leads || 0) > 0)
-              return (a.cpl || a.spend / a.leads) - (b.cpl || b.spend / b.leads)
-            // Campanhas sem leads: vai para o final
-            if ((a.leads || 0) === 0) return 1
-            if ((b.leads || 0) === 0) return -1
+            // Campanhas com resultado: ordena por custo por resultado crescente (menor = melhor)
+            if (resultValueOf(a) > 0 && resultValueOf(b) > 0)
+              return costPerResultOf(a) - costPerResultOf(b)
+            // Campanhas sem resultado: vai para o final
+            if (resultValueOf(a) === 0) return 1
+            if (resultValueOf(b) === 0) return -1
             return 0
           })
 
         const campRankingText = rankedCamps.length > 0 ? `
-=== RANKING DE CAMPANHAS POR EFICIÊNCIA (pré-calculado — use estes dados) ===
+=== RANKING DE CAMPANHAS POR EFICIÊNCIA (pré-calculado por resultado real — use estes dados) ===
 ${rankedCamps.map((c: any, i: number) => {
-  const cpa = c.leads > 0 ? Math.round(c.spend / c.leads) : null
-  const efficiency = cpa === null ? '⛔ SEM CONVERSÃO' :
-    (bench && cpa <= bench.cpl_min * 1.1) ? '🏆 EXCELENTE' :
-    (bench && cpa <= bench.cpl_max) ? '✅ DENTRO DO BENCHMARK' :
-    (bench && cpa <= bench.cpl_max * 2) ? '⚠ ACIMA DO BENCHMARK' : '🔴 CRÍTICO'
+  const value = resultValueOf(c)
+  const cpa = value > 0 ? Math.round(costPerResultOf(c)) : null
+  const label = resultLabelOf(c)
+  const contact = isContactResult(label)
+  const efficiency = cpa === null ? `⛔ SEM ${label.toUpperCase()}` :
+    (bench && contact && cpa <= bench.cpl_min * 1.1) ? '🏆 EXCELENTE' :
+    (bench && contact && cpa <= bench.cpl_max) ? '✅ DENTRO DO BENCHMARK' :
+    (bench && contact && cpa <= bench.cpl_max * 2) ? '⚠ ACIMA DO BENCHMARK' : '✅ RESULTADO REGISTRADO'
   return `  ${i+1}. [${efficiency}] "${c.name}"${c.campaignType ? ` (${c.campaignType})` : ''}
-     Gasto: R$${Math.round(c.spend).toLocaleString('pt-BR')} | Conversões: ${c.leads || 0} | CPA: ${cpa ? `R$${cpa}` : 'N/A'} | CTR: ${(c.ctr||0).toFixed(2)}%${c.roas ? ` | ROAS: ${c.roas.toFixed(1)}×` : ''}`
+     Objetivo: ${c.objective || c.objectiveLabel || c.objectiveKey || 'não informado'} | ${label}: ${value} | Custo/result.: ${cpa ? `R$${cpa}` : 'N/A'}
+     Gasto: R$${Math.round(c.spend).toLocaleString('pt-BR')} | Leads/contatos compatíveis: ${c.leads || 0} | CTR: ${(c.ctr||0).toFixed(2)}%${c.roas ? ` | ROAS: ${c.roas.toFixed(1)}×` : ''}`
 }).join('\n')}
 
-Campanhas CRÍTICAS (gasto alto, zero conversões):
-${rankedCamps.filter((c: any) => (c.leads || 0) === 0).map((c: any) =>
-  `  ⛔ "${c.name}" — R$${Math.round(c.spend).toLocaleString('pt-BR')} GASTOS SEM RESULTADO`
+Campanhas CRÍTICAS (gasto alto, zero resultado do objetivo):
+${rankedCamps.filter((c: any) => resultValueOf(c) === 0).map((c: any) =>
+  `  ⛔ "${c.name}" — R$${Math.round(c.spend).toLocaleString('pt-BR')} GASTOS SEM ${resultLabelOf(c).toUpperCase()}`
 ).join('\n') || '  Nenhuma'}
 
-Melhor campanha: ${rankedCamps[0] ? `"${rankedCamps[0].name}" (CPA R$${rankedCamps[0].leads > 0 ? Math.round(rankedCamps[0].spend / rankedCamps[0].leads) : 'N/A'})` : 'N/A'}
-Pior campanha com gasto: ${rankedCamps.filter((c:any) => c.leads === 0).length > 0
-  ? `"${rankedCamps.filter((c:any) => c.leads === 0).sort((a:any,b:any) => b.spend - a.spend)[0].name}" (R$${Math.round(rankedCamps.filter((c:any) => c.leads === 0).sort((a:any,b:any) => b.spend - a.spend)[0].spend).toLocaleString('pt-BR')} sem conversão)`
-  : rankedCamps[rankedCamps.length-1] ? `"${rankedCamps[rankedCamps.length-1].name}" (CPA R$${rankedCamps[rankedCamps.length-1].leads > 0 ? Math.round(rankedCamps[rankedCamps.length-1].spend / rankedCamps[rankedCamps.length-1].leads) : 'N/A'})` : 'N/A'}
+Melhor campanha: ${rankedCamps[0] ? `"${rankedCamps[0].name}" (${resultLabelOf(rankedCamps[0])} a R$${resultValueOf(rankedCamps[0]) > 0 ? Math.round(costPerResultOf(rankedCamps[0])) : 'N/A'})` : 'N/A'}
+Pior campanha com gasto: ${rankedCamps.filter((c:any) => resultValueOf(c) === 0).length > 0
+  ? `"${rankedCamps.filter((c:any) => resultValueOf(c) === 0).sort((a:any,b:any) => b.spend - a.spend)[0].name}" (R$${Math.round(rankedCamps.filter((c:any) => resultValueOf(c) === 0).sort((a:any,b:any) => b.spend - a.spend)[0].spend).toLocaleString('pt-BR')} sem ${resultLabelOf(rankedCamps.filter((c:any) => resultValueOf(c) === 0).sort((a:any,b:any) => b.spend - a.spend)[0]).toLowerCase()})`
+  : rankedCamps[rankedCamps.length-1] ? `"${rankedCamps[rankedCamps.length-1].name}" (${resultLabelOf(rankedCamps[rankedCamps.length-1])} a R$${resultValueOf(rankedCamps[rankedCamps.length-1]) > 0 ? Math.round(costPerResultOf(rankedCamps[rankedCamps.length-1])) : 'N/A'})` : 'N/A'}
 ` : ''
 
         prompt = `Você é um consultor sênior de tráfego pago com 10+ anos de experiência no mercado brasileiro, especialista em Meta Ads (Advantage+, CBO, ASC) e Google Ads (Search, PMAX, Smart Bidding, tCPA/tROAS). Já gerenciou mais de R$50M em investimento publicitário.
 
 REGRAS DA ANÁLISE — siga obrigatoriamente:
 1. Use os NOMES EXATOS das campanhas do ranking abaixo em todos os problemas e recomendações
-2. Cite NÚMEROS REAIS (CPA, gasto, conversões) — nunca invente métricas
+2. Cite NÚMEROS REAIS (resultado principal, custo por resultado, gasto, conversões) — nunca invente métricas
 3. Classifique cada campanha como ESCALAR / MANTER / PAUSAR com justificativa numérica
 4. Dê % exatas de realocação de verba (ex: "+30% para X, -50% de Y")
 5. Para Google: liste negativos específicos para adicionar com base nos dados
 6. Seja tão direto quanto um relatório de R$10.000 — sem rodeios, sem genéricos
+7. Meta Ads: NÃO misture objetivos. Formulário, WhatsApp, Messenger, Instagram Direct, ligação, compra, clique, landing page view, vídeo e alcance devem ser tratados separadamente conforme o "Resultado principal" e o breakdown.
 
 === DADOS DO CLIENTE ===
 Cliente: ${clientName}
@@ -1054,6 +1122,8 @@ ${uploadSummary}
 Investimento total analisado: R$${Number(totalSpend).toFixed(2)}
 Total de leads/conversões: ${totalLeads}
 CPL médio real: R$${realCPL}
+Total de resultados por objetivo: ${totalResults}
+Custo médio por resultado: R$${totalResults > 0 ? (Number(totalSpend) / totalResults).toFixed(2) : '0'}
 
 ${benchmarkText ? `=== BENCHMARK DO NICHO (${niche}) ===\n${benchmarkText}` : ''}
 ${evolutionText}

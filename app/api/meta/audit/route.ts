@@ -5,20 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
 import type { MetaAuditIssue } from '@/types/meta'
-
-const LEAD_TYPES     = ['lead', 'onsite_conversion.lead_grouped']
-const PURCHASE_TYPES = ['purchase', 'omni_purchase']
-const MSG_TYPES      = [
-  'onsite_conversion.messaging_conversation_started_7d',
-  'messaging_first_reply',
-  'onsite_conversion.messaging_first_reply',
-]
-
-function extractActions(actions: Array<{ action_type: string; value: string }> | undefined, types: string[]): number {
-  return (actions || [])
-    .filter(a => types.includes(a.action_type))
-    .reduce((s, a) => s + parseInt(a.value || '0'), 0)
-}
+import { summarizeMetaResults } from '@/lib/metaResults'
 
 function dateStr(d: Date): string {
   return d.toISOString().split('T')[0]
@@ -62,13 +49,14 @@ export async function POST(req: NextRequest) {
     const prevRange = encodeURIComponent(JSON.stringify({ since: dateStr(sixtyAgo), until: dateStr(thirtyAgo) }))
     const sevenRange = encodeURIComponent(JSON.stringify({ since: dateStr(sevenAgo), until: dateStr(today) }))
 
-    const insightFields = 'campaign_id,campaign_name,spend,impressions,clicks,frequency,actions,cpm,ctr'
+    const insightFields = 'campaign_id,campaign_name,objective,spend,impressions,clicks,inline_link_clicks,reach,frequency,actions,action_values,cpm,ctr'
+    const actionBreakdowns = '&action_breakdowns=action_type,action_destination'
 
     const [campaigns30Res, campaigns7Res, campaignsPrevRes, campaignsMetaRes] = await Promise.allSettled([
-      fetch(`${baseUrl}/${act}/insights?fields=${insightFields}&date_preset=last_30d&level=campaign&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
-      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,actions,cpm&time_range=${sevenRange}&level=campaign&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
-      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,actions,cpm&time_range=${prevRange}&level=campaign&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
-      fetch(`${baseUrl}/${act}/campaigns?fields=id,name,effective_status,created_time&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=${insightFields}&date_preset=last_30d&level=campaign${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,objective,spend,actions,action_values,cpm&time_range=${sevenRange}&level=campaign${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,objective,spend,actions,action_values,cpm&time_range=${prevRange}&level=campaign${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/campaigns?fields=id,name,effective_status,created_time,objective&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
     ])
 
     const data30   = campaigns30Res.status   === 'fulfilled' ? campaigns30Res.value   : { data: [] }
@@ -100,11 +88,22 @@ export async function POST(req: NextRequest) {
       const freq30   = parseFloat((r.frequency as string) || '0')
       const ctr30    = parseFloat((r.ctr as string) || '0')
       const cpm30    = parseFloat((r.cpm as string) || '0')
-      const actions  = r.actions as Array<{ action_type: string; value: string }> | undefined
-
-      const leads30    = extractActions(actions, LEAD_TYPES) + extractActions(actions, MSG_TYPES)
-      const purchases30 = extractActions(actions, PURCHASE_TYPES)
-      const conversions30 = leads30 + purchases30
+      const meta       = metaMap[id]
+      const objective  = String((r.objective as string) || (meta?.objective as string) || '')
+      const result30   = summarizeMetaResults({
+        objective,
+        actions: r.actions as any,
+        actionValues: r.action_values as any,
+        spend: spend30,
+        clicks: parseInt((r.clicks as string) || '0'),
+        inlineLinkClicks: parseInt((r.inline_link_clicks as string) || '0'),
+        impressions: parseInt((r.impressions as string) || '0'),
+        reach: parseInt((r.reach as string) || '0'),
+      })
+      const contacts30 = result30.leads + result30.totalMessages + result30.phoneCalls
+      const resultValue30 = result30.primaryResultValue
+      const purchases30 = result30.purchases
+      const conversions30 = contacts30 + purchases30
 
       // ── Regra 1: Gasto sem conversão (spend > 200 e conversões == 0) ─────────
       if (spend30 > 200 && conversions30 === 0) {
@@ -113,9 +112,9 @@ export async function POST(req: NextRequest) {
           entity:         'campaign',
           entityId:       id,
           entityName:     name,
-          metric:         'conversions',
+          metric:         result30.primaryResultLabel,
           severity:       'critical',
-          evidence:       `R$${spend30.toFixed(2)} gastos nos últimos 30 dias sem nenhuma conversão registrada`,
+          evidence:       `R$${spend30.toFixed(2)} gastos nos últimos 30 dias sem ${result30.primaryResultLabel.toLowerCase()} registrado(s)`,
           impact:         'Verba sendo desperdiçada sem geração de resultado mensurável',
           recommendation: 'Verifique o pixel de conversão, o evento otimizado e a configuração do público-alvo',
         })
@@ -170,29 +169,28 @@ export async function POST(req: NextRequest) {
 
       // ── Regra 5: CPL em Alta (comparar 30d vs 30d anterior) ──────────────────
       const rowPrev    = mapPrev[id]
-      if (rowPrev && leads30 > 0) {
+      if (rowPrev && resultValue30 > 0) {
         const spendPrev  = parseFloat((rowPrev.spend as string) || '0')
-        const leadsPrev  = extractActions(rowPrev.actions as Array<{ action_type: string; value: string }> | undefined, LEAD_TYPES) +
-                           extractActions(rowPrev.actions as Array<{ action_type: string; value: string }> | undefined, MSG_TYPES)
-        const cpl30   = leads30    > 0 ? spend30 / leads30     : 0
-        const cplPrev = leadsPrev  > 0 ? spendPrev / leadsPrev : 0
-        if (cplPrev > 0 && cpl30 > cplPrev * 1.3) {
+        const prevResult = summarizeMetaResults({ objective, actions: rowPrev.actions as any, actionValues: rowPrev.action_values as any, spend: spendPrev })
+        const prevValue = prevResult.primaryResultValue
+        const cpr30   = resultValue30 > 0 ? spend30 / resultValue30 : 0
+        const cprPrev = prevValue > 0 ? spendPrev / prevValue : 0
+        if (cprPrev > 0 && cpr30 > cprPrev * 1.3) {
           issues.push({
             type:           'RISING_CPL',
             entity:         'campaign',
             entityId:       id,
             entityName:     name,
-            metric:         'cpl',
+            metric:         result30.primaryResultLabel,
             severity:       'high',
-            evidence:       `CPL atual R$${cpl30.toFixed(2)} vs R$${cplPrev.toFixed(2)} no período anterior (+${((cpl30 / cplPrev - 1) * 100).toFixed(0)}%)`,
-            impact:         'Custo por lead crescente pode inviabilizar a rentabilidade da campanha',
+            evidence:       `Custo por ${result30.primaryResultLabel.toLowerCase()} atual R$${cpr30.toFixed(2)} vs R$${cprPrev.toFixed(2)} no período anterior (+${((cpr30 / cprPrev - 1) * 100).toFixed(0)}%)`,
+            impact:         `Custo por ${result30.primaryResultLabel.toLowerCase()} crescente pode inviabilizar a rentabilidade da campanha`,
             recommendation: 'Revise criativos, landing page e qualidade da audiência — considere remarketing',
           })
         }
       }
 
       // ── Regra 6: Campanha ACTIVE sem dados recentes (últimos 7 dias) ──────────
-      const meta       = metaMap[id]
       const isActive   = meta ? (meta.effective_status as string) === 'ACTIVE' : false
       const hasData7d  = row7 && parseFloat((row7.spend as string) || '0') > 0
       if (isActive && !hasData7d && spend30 > 0) {

@@ -26,14 +26,22 @@ const roiOk = (range: any) => { const m = String(range || '').match(/(\d+)/g); r
 const brl = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0)
 const int = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0)
 const campCPL = (c: any) => (c.leads > 0 ? Math.round(c.spend / c.leads) : null)
+const resultLabelOf = (c: any) => c.resultLabel || c.primaryResultLabel || (c.platform === 'google' ? 'Conversões' : 'Resultados')
+const resultValueOf = (c: any) => Number(c.results ?? c.primaryResultValue ?? c.leads ?? 0)
+const costPerResultOf = (c: any) => {
+  const cost = Number(c.costPerResult || 0)
+  if (cost > 0) return Math.round(cost)
+  const value = resultValueOf(c)
+  return value > 0 ? Math.round((c.spend || 0) / value) : null
+}
 
 // Exporta as campanhas filtradas como CSV real (download no navegador).
 function exportCsv(rows: any[]) {
-  const head = ['Campanha', 'Canal', 'Investimento', 'Receita', 'Conversoes', 'ROAS', 'CPA', 'CTR', 'Status']
+  const head = ['Campanha', 'Canal', 'Investimento', 'Receita', 'Resultado', 'Tipo de resultado', 'ROAS', 'Custo por resultado', 'CTR', 'Status']
   const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
   const lines = rows.map(c => [
     c.name || '', String(c.platform || ''), Math.round(c.spend || 0), Math.round(c.revenue || 0),
-    Math.round(c.leads || 0), c.roas ? Number(c.roas).toFixed(2) : '', campCPL(c) ?? '',
+    Math.round(resultValueOf(c)), resultLabelOf(c), c.roas ? Number(c.roas).toFixed(2) : '', costPerResultOf(c) ?? '',
     c.ctr ? Number(c.ctr).toFixed(2) : '', STATUS_LABEL[c._s] || '',
   ].map(esc).join(','))
   const csv = [head.map(esc).join(','), ...lines].join('\n')
@@ -235,10 +243,11 @@ export default function DesempenhoPage() {
   }
   // Veredito por criativo (determinístico, dos números reais) — o "o que fazer" do clique.
   const verdictFor = (c: any): { label: string; tone: 'good' | 'warn' | 'bad'; action: string; replace?: boolean } => {
-    const freq = +(c.frequency || 0), cpl = +(c.cpl || 0), ctr = +(c.ctr || 0), leads = +(c.leads || 0), spend = +(c.spend || 0)
+    const freq = +(c.frequency || 0), cpl = +(c.costPerResult || c.cpl || 0), ctr = +(c.ctr || 0), leads = resultValueOf(c), spend = +(c.spend || 0)
+    const label = resultLabelOf(c).toLowerCase()
     if (freq >= 3.5 && spend > 0) return { label: 'Fadiga', tone: 'bad', action: `Frequência ${freq.toFixed(1)}× — o público já viu demais. Troque por um criativo novo no mesmo ângulo antes do CPL subir.`, replace: true }
-    if (spend > 100 && leads === 0) return { label: 'Desperdício', tone: 'bad', action: `Gastou ${brl(spend)} sem 1 lead. Pause este criativo e realoque a verba.` }
-    if (c.tag === 'winner' || (leads >= 3 && cpl > 0)) return { label: 'Vencedor', tone: 'good', action: `CPL ${brl(cpl)} com ${leads} leads. Escale: suba o orçamento ~20% enquanto o CPL segurar.` }
+    if (spend > 100 && leads === 0) return { label: 'Desperdício', tone: 'bad', action: `Gastou ${brl(spend)} sem gerar ${label}. Pause este criativo e realoque a verba.` }
+    if (c.tag === 'winner' || (leads >= 3 && cpl > 0)) return { label: 'Vencedor', tone: 'good', action: `Custo ${brl(cpl)} com ${int(leads)} ${label}. Escale: suba o orçamento ~20% enquanto o custo segurar.` }
     if (ctr >= 1.2 && leads < 3 && spend > 50) return { label: 'Revisar oferta', tone: 'warn', action: `CTR ${ctr}% é bom, mas converte pouco — o gargalo é a oferta/landing, não o criativo.` }
     if (ctr > 0 && ctr < 0.8 && spend > 30) return { label: 'Gancho fraco', tone: 'warn', action: `CTR ${ctr}% — o gancho dos 3 primeiros segundos não prende. Teste outra abertura.`, replace: true }
     if (spend < 30) return { label: 'Aprendendo', tone: 'warn', action: 'Ainda em aprendizado — pouca verba pra concluir. Dê mais tempo antes de decidir.' }
@@ -309,7 +318,7 @@ export default function DesempenhoPage() {
   for (const c of camps) {
     const ch = singlePlatform || channelOf(c)
     const e = chMap.get(ch.label) || { label: ch.label, color: ch.color, spend: 0, leads: 0 }
-    e.spend += c.spend || 0; e.leads += c.leads || 0
+    e.spend += c.spend || 0; e.leads += resultValueOf(c)
     chMap.set(ch.label, e)
   }
   const channels = [...chMap.values()].sort((a, b) => b.spend - a.spend)
@@ -326,8 +335,8 @@ export default function DesempenhoPage() {
     { label: 'Investimento', value: brl(rm.totalSpend), trend: prev?.spendDelta ?? null, inverse: false, series: spark(rm.totalSpend, prev?.spendDelta), up: (prev?.spendDelta ?? 0) >= 0 },
     { label: 'Receita', value: rm.totalRevenue > 0 ? brl(rm.totalRevenue) : '—', trend: prev?.revenueDelta ?? null, inverse: false, series: rm.totalRevenue > 0 ? spark(rm.totalRevenue, prev?.revenueDelta) : null, up: (prev?.revenueDelta ?? 0) >= 0 },
     { label: 'ROAS', value: rm.avgROAS ? `${rm.avgROAS}x` : '—', trend: null, inverse: false, series: null, up: true },
-    { label: 'Conversões', value: int(rm.totalLeads), trend: prev?.leadsDelta ?? null, inverse: false, series: spark(rm.totalLeads, prev?.leadsDelta), up: (prev?.leadsDelta ?? 0) >= 0 },
-    { label: 'CPA médio', value: rm.avgCPL ? brl(rm.avgCPL) : '—', trend: prev?.cplDelta ?? null, inverse: true, series: spark(rm.avgCPL, prev?.cplDelta), up: (prev?.cplDelta ?? 0) <= 0 },
+    { label: 'Resultados', value: int(rm.totalResults ?? rm.totalLeads), trend: prev?.resultsDelta ?? prev?.leadsDelta ?? null, inverse: false, series: spark(rm.totalResults ?? rm.totalLeads, prev?.resultsDelta ?? prev?.leadsDelta), up: (prev?.resultsDelta ?? prev?.leadsDelta ?? 0) >= 0 },
+    { label: 'Custo médio', value: (rm.avgCostPerResult ?? rm.avgCPL) ? brl(rm.avgCostPerResult ?? rm.avgCPL) : '—', trend: prev?.costPerResultDelta ?? prev?.cplDelta ?? null, inverse: true, series: spark(rm.avgCostPerResult ?? rm.avgCPL, prev?.costPerResultDelta ?? prev?.cplDelta), up: (prev?.costPerResultDelta ?? prev?.cplDelta ?? 0) <= 0 },
     { label: 'CTR médio', value: rm.avgCTR ? `${rm.avgCTR}%` : '—', trend: null, inverse: false, series: null, up: true },
   ] : []
 
@@ -354,9 +363,9 @@ export default function DesempenhoPage() {
               <th className={`text-left ${th}`}>Campanha</th>
               <th className={`text-right ${th}`}>Investimento</th>
               {hasRev && <th className={`text-right ${th}`}>Receita</th>}
-              <th className={`text-right ${th}`}>Conv.</th>
+              <th className={`text-right ${th}`}>Resultado</th>
               {hasRoas && <th className={`text-right ${th}`}>ROAS</th>}
-              <th className={`text-right ${th}`}>CPA</th>
+              <th className={`text-right ${th}`}>Custo/result.</th>
               {hasCtr && <th className={`text-right ${th}`}>CTR</th>}
               <th className={`text-center ${th}`}>Status</th>
               <th className={`border-b border-line w-8`}></th>
@@ -365,7 +374,9 @@ export default function DesempenhoPage() {
           <tbody>
             {rows.map((c, i) => {
               const id = `${c.name}-${i}`
-              const cpa = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+              const cpa = costPerResultOf(c)
+              const resultLabel = resultLabelOf(c)
+              const resultValue = resultValueOf(c)
               const roas = Number(c.roas || 0)
               const td = 'py-[11px] px-3 border-b border-line-2 whitespace-nowrap font-mono'
               return (
@@ -381,7 +392,10 @@ export default function DesempenhoPage() {
                   </td>
                   <td className={`text-right text-ink ${td}`}>{brl(c.spend || 0)}</td>
                   {hasRev && <td className={`text-right text-ink ${td}`}>{(c.revenue || 0) > 0 ? brl(c.revenue) : '—'}</td>}
-                  <td className={`text-right text-ink ${td}`}>{int(c.leads || 0)}</td>
+                  <td className={`text-right text-ink ${td}`}>
+                    <div className="font-semibold">{int(resultValue)}</div>
+                    <div className="font-sans text-[10.5px] text-ink-3 normal-case">{resultLabel}</div>
+                  </td>
                   {hasRoas && <td className={`text-right ${td} font-semibold`} style={{ color: roas >= 3 ? '#0B855D' : '#E08B0B' }}>{roas > 0 ? `${roas.toFixed(2)}x` : '—'}</td>}
                   <td className={`text-right text-ink ${td}`}>{cpa != null ? brl(cpa) : '—'}</td>
                   {hasCtr && <td className={`text-right text-ink-2 ${td}`}>{(c.ctr || 0) > 0 ? `${Number(c.ctr).toFixed(2)}%` : '—'}</td>}
@@ -409,7 +423,9 @@ export default function DesempenhoPage() {
     const hourly: any[] = cd?.hourly || []
     const placeTotal = placements.reduce((s, p) => s + (p.spend || 0), 0) || 1
     const geoTotal = geo.reduce((s, g) => s + (g.spend || 0), 0) || 1
-    const cpaC = c.leads > 0 ? Math.round(c.spend / c.leads) : null
+    const cpaC = costPerResultOf(c)
+    const mainResultLabel = resultLabelOf(c)
+    const mainResultValue = resultValueOf(c)
     const gLabel = (g: string) => g === 'male' ? 'Homens' : g === 'female' ? 'Mulheres' : (g || '—')
     const fmtDate = (s: any) => { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) }
     const startStr = fmtDate(cd?.dates?.start)
@@ -425,7 +441,7 @@ export default function DesempenhoPage() {
             <ChannelMark name={platformName(c.platform)} size={32} />
             <div className="flex-1 min-w-[200px]">
               <div className="text-[17px] font-bold text-ink" style={{ letterSpacing: '-0.01em' }}>{c.name || 'Campanha'}</div>
-              <div className="text-[12.5px] text-ink-3">{c.objective || (c.name?.toLowerCase().includes('lead') ? 'Geração de leads' : 'Conversões')}</div>
+              <div className="text-[12.5px] text-ink-3">{c.objective || (c.name?.toLowerCase().includes('lead') ? 'Geração de leads' : 'Conversões')} · resultado: {mainResultLabel}</div>
               <div className="text-[11.5px] text-ink-3 mt-1 flex items-center gap-1.5 flex-wrap">
                 <Icon name="calendar" size={12} className="text-ink-4" />
                 {cdLoading && !cd?.dates ? 'Buscando datas…'
@@ -436,7 +452,8 @@ export default function DesempenhoPage() {
             {(() => { const d = deliveryOf(c); return <span className="text-[11px] font-bold px-2.5 py-1 rounded-pill inline-flex items-center gap-1.5" style={{ color: d.color, background: `${d.color}1A` }}><span className="w-1.5 h-1.5 rounded-full" style={{ background: d.color }} />{d.label}</span> })()}
             <Badge tone={STATUS_TONE[c._s]} dot>{STATUS_LABEL[c._s]}</Badge>
             <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Investido</div><div className="font-mono font-bold text-ink">{brl(c.spend || 0)}</div></div>
-            <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPA</div><div className="font-mono font-bold text-ink">{cpaC != null ? brl(cpaC) : '—'}</div></div>
+            <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">{mainResultLabel}</div><div className="font-mono font-bold text-ink">{int(mainResultValue)}</div></div>
+            <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Custo/result.</div><div className="font-mono font-bold text-ink">{cpaC != null ? brl(cpaC) : '—'}</div></div>
           </div>
           {(c.evidence || c.recommended_action) && (
             <div className="grid md:grid-cols-2 gap-3 mt-3 pt-3 border-t border-line-2">
@@ -457,7 +474,7 @@ export default function DesempenhoPage() {
 
         {/* ── Diagnóstico do NOUS desta campanha (sempre renderiza, dados da própria campanha) ── */}
         {(() => {
-          const cpl = campCPL(c)
+          const cpr = costPerResultOf(c)
           const ctr = Number(c.ctr || 0)
           const roas = Number(c.roas || 0)
           const freq = Number(c.frequency || 0)
@@ -466,22 +483,22 @@ export default function DesempenhoPage() {
           const revenue = Number(c.revenue || 0)
           const cpc = c.clicks > 0 ? c.spend / c.clicks : (impressions && ctr ? (c.spend / (impressions * ctr / 100)) : null)
           const cpm = impressions > 0 ? (c.spend / impressions) * 1000 : null
-          const accCpls = camps.map((x: any) => campCPL(x)).filter((v: any) => v && v > 0) as number[]
-          const avgCpl = accCpls.length ? Math.round(accCpls.reduce((a, b) => a + b, 0) / accCpls.length) : null
+          const accCprs = camps.map((x: any) => costPerResultOf(x)).filter((v: any) => v && v > 0) as number[]
+          const avgCpr = accCprs.length ? Math.round(accCprs.reduce((a, b) => a + b, 0) / accCprs.length) : null
           const be = (clientData?.ticketPrice && clientData?.grossMargin && clientData?.conversionRate)
             ? Math.round(clientData.ticketPrice * (clientData.grossMargin / 100) * (clientData.conversionRate / 100)) : null
           const diag: { t: 'good' | 'warn' | 'bad'; text: string }[] = []
-          if (cpl && avgCpl) { const d = Math.round((cpl / avgCpl - 1) * 100); diag.push({ t: d <= -15 ? 'good' : d >= 15 ? 'bad' : 'warn', text: `CPL ${brl(cpl)} — ${Math.abs(d)}% ${d < 0 ? 'abaixo' : 'acima'} da média da conta (${brl(avgCpl)}).` }) }
-          if (cpl && be) diag.push({ t: cpl <= be ? 'good' : 'bad', text: cpl <= be ? `Dentro do ponto de equilíbrio (${brl(be)}) — cada lead dá lucro.` : `${(cpl / be).toFixed(1)}× o ponto de equilíbrio (${brl(be)}) — cada lead aqui dá prejuízo.` })
+          if (cpr && avgCpr) { const d = Math.round((cpr / avgCpr - 1) * 100); diag.push({ t: d <= -15 ? 'good' : d >= 15 ? 'bad' : 'warn', text: `Custo por ${mainResultLabel.toLowerCase()} ${brl(cpr)} — ${Math.abs(d)}% ${d < 0 ? 'abaixo' : 'acima'} da média da conta (${brl(avgCpr)}).` }) }
+          if (cpr && be && /lead|formul|conversa|whatsapp|lig/i.test(mainResultLabel)) diag.push({ t: cpr <= be ? 'good' : 'bad', text: cpr <= be ? `Dentro do ponto de equilíbrio (${brl(be)}) — cada resultado tende a dar lucro.` : `${(cpr / be).toFixed(1)}× o ponto de equilíbrio (${brl(be)}) — este resultado está caro demais.` })
           if (ctr) diag.push({ t: ctr >= 2 ? 'good' : ctr >= 1 ? 'warn' : 'bad', text: `CTR ${ctr.toFixed(2)}% — ${ctr >= 2 ? 'criativo forte' : ctr >= 1 ? 'mediano' : 'criativo pouco atrativo, teste um novo ângulo'}.` })
           if (freq >= 3.5) diag.push({ t: freq >= 5 ? 'bad' : 'warn', text: `Frequência ${freq.toFixed(1)}× — público ${freq >= 5 ? 'saturado' : 'saturando'}; renove o criativo antes do CTR cair.` })
           if (roas) diag.push({ t: roas >= 3 ? 'good' : roas >= 1.5 ? 'warn' : 'bad', text: `ROAS ${roas.toFixed(2)}× — ${roas >= 3 ? 'retorno saudável' : roas >= 1.5 ? 'no limite' : 'abaixo do break-even'}.` })
           const verdict = c._s === 'vencedora' ? { t: 'good' as const, label: 'Escalar', why: 'Eficiência acima da conta — suba a verba com segurança.' }
             : c._s === 'critica' ? { t: 'bad' as const, label: 'Pausar / revisar', why: 'Custo alto sem retorno proporcional — corte ou reestruture.' }
             : { t: 'warn' as const, label: 'Monitorar', why: 'Resultado mediano — otimize criativo e segmentação.' }
-          const proj = (c._s === 'vencedora' && cpl) ? Math.round((c.spend * 0.2) / cpl) : null
+          const proj = (c._s === 'vencedora' && cpr) ? Math.round((c.spend * 0.2) / cpr) : null
           const metrics: [string, string][] = [
-            ['Investido', brl(c.spend || 0)], ['Conversões', int(c.leads || 0)], ['CPL/CPA', cpl ? brl(cpl) : '—'],
+            ['Investido', brl(c.spend || 0)], [mainResultLabel, int(mainResultValue)], ['Custo/result.', cpr ? brl(cpr) : '—'],
             ['CTR', ctr ? `${ctr.toFixed(2)}%` : '—'], ['ROAS', roas ? `${roas.toFixed(2)}×` : '—'], ['Receita', revenue > 0 ? brl(revenue) : '—'],
             ['CPC', cpc ? brl(cpc) : '—'], ['CPM', cpm ? brl(cpm) : '—'], ['Frequência', freq ? `${freq.toFixed(1)}×` : '—'], ['Alcance', reach ? int(reach) : '—'],
           ]
@@ -492,7 +509,7 @@ export default function DesempenhoPage() {
                 <SectionHead title="Diagnóstico do NOUS" subtitle="Leitura desta campanha vs. sua conta e ponto de equilíbrio" icon={<Icon name="spark" size={17} />} action={<SourceBadge source="real" />} />
                 <div className="flex items-start gap-3 mb-3 p-3 rounded-md" style={{ background: `${tc[verdict.t]}10`, border: `1px solid ${tc[verdict.t]}30` }}>
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-pill shrink-0" style={{ color: tc[verdict.t], background: `${tc[verdict.t]}1A` }}>{verdict.label}</span>
-                  <span className="text-[13px] text-ink-2 leading-relaxed">{verdict.why}{proj ? ` Escalar +20% ≈ +${int(proj)} leads/mês no mesmo CPL.` : ''}</span>
+                  <span className="text-[13px] text-ink-2 leading-relaxed">{verdict.why}{proj ? ` Escalar +20% ≈ +${int(proj)} ${mainResultLabel.toLowerCase()} no mesmo custo.` : ''}</span>
                 </div>
                 <div className="space-y-1.5">
                   {diag.map((d, i) => (
@@ -512,6 +529,22 @@ export default function DesempenhoPage() {
                   ))}
                 </div>
               </Card>
+              {Array.isArray(c.resultBreakdown) && c.resultBreakdown.length > 0 && (
+                <Card>
+                  <SectionHead title="Resultados separados" subtitle="A Meta devolveu estes tipos de resultado sem misturar" icon={<Icon name="layers" size={17} />} action={<SourceBadge source="real" />} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {c.resultBreakdown.slice(0, 9).map((r: any, i: number) => (
+                      <div key={`${r.key || r.label}-${i}`} className="p-2.5 rounded-sm bg-canvas-2 border border-line">
+                        <div className="text-[12px] font-semibold text-ink">{r.label || 'Resultado'}</div>
+                        <div className="mt-1 flex items-baseline justify-between gap-2">
+                          <span className="text-[18px] font-mono font-bold text-ink">{int(Number(r.value || 0))}</span>
+                          <span className="text-[11px] font-mono text-ink-3">{r.cost ? brl(Number(r.cost)) : 'sem custo'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
             </>
           )
         })()}
@@ -538,21 +571,21 @@ export default function DesempenhoPage() {
             )}
 
             {hourly.length > 0 && (() => {
-              const maxH = Math.max(1, ...hourly.map((h: any) => h.leads || 0))
+              const maxH = Math.max(1, ...hourly.map((h: any) => Number(h.results ?? h.leads ?? 0)))
               const byHour: Record<number, any> = {}; hourly.forEach((h: any) => { byHour[h.hour] = h })
-              const withLeads = hourly.filter((h: any) => (h.leads || 0) > 0)
-              const best = [...withLeads].sort((a, b) => b.leads - a.leads)[0]
-              const bestCpl = [...withLeads].filter((h: any) => h.cpl > 0 && h.leads >= 3).sort((a, b) => a.cpl - b.cpl)[0]
+              const withLeads = hourly.filter((h: any) => Number(h.results ?? h.leads ?? 0) > 0)
+              const best = [...withLeads].sort((a, b) => Number(b.results ?? b.leads ?? 0) - Number(a.results ?? a.leads ?? 0))[0]
+              const bestCpl = [...withLeads].filter((h: any) => (h.costPerResult || h.cpl) > 0 && Number(h.results ?? h.leads ?? 0) >= 3).sort((a, b) => (a.costPerResult || a.cpl) - (b.costPerResult || b.cpl))[0]
               return (
                 <Card>
-                  <SectionHead title="Melhores horários" subtitle="Leads por hora do dia · esta campanha" icon={<Icon name="calendar" size={17} />} action={<SourceBadge source="real" />} />
-                  {best && <p className="text-[13px] text-ink-2 mb-3">Pico de conversão às <strong className="text-ink">{best.hour}h</strong> ({int(best.leads)} leads).{bestCpl ? <> Menor CPL às <strong className="text-ink">{bestCpl.hour}h</strong> ({brl(bestCpl.cpl)}) — concentre verba nas melhores faixas.</> : ''}</p>}
+                  <SectionHead title="Melhores horários" subtitle="Resultado por hora do dia · esta campanha" icon={<Icon name="calendar" size={17} />} action={<SourceBadge source="real" />} />
+                  {best && <p className="text-[13px] text-ink-2 mb-3">Pico de resultado às <strong className="text-ink">{best.hour}h</strong> ({int(best.results ?? best.leads)} {best.resultLabel || mainResultLabel}).{bestCpl ? <> Menor custo às <strong className="text-ink">{bestCpl.hour}h</strong> ({brl(bestCpl.costPerResult || bestCpl.cpl)}) — concentre verba nas melhores faixas.</> : ''}</p>}
                   <div className="flex items-end gap-[3px]" style={{ height: 92 }}>
                     {Array.from({ length: 24 }, (_, h) => {
-                      const v = byHour[h]?.leads || 0
+                      const v = Number(byHour[h]?.results ?? byHour[h]?.leads ?? 0)
                       const isBest = best && h === best.hour
                       return (
-                        <div key={h} className="flex-1 flex flex-col items-center justify-end gap-1" title={`${h}h · ${int(v)} leads${byHour[h]?.cpl ? ` · CPL ${brl(byHour[h].cpl)}` : ''}`}>
+                        <div key={h} className="flex-1 flex flex-col items-center justify-end gap-1" title={`${h}h · ${int(v)} ${byHour[h]?.resultLabel || mainResultLabel}${byHour[h]?.costPerResult || byHour[h]?.cpl ? ` · custo ${brl(byHour[h].costPerResult || byHour[h].cpl)}` : ''}`}>
                           <div className="w-full rounded-sm" style={{ height: Math.max(2, (v / maxH) * 70), background: isBest ? CHART_COLORS.green : CHART_COLORS.blue, opacity: isBest ? 1 : 0.6 }} />
                           {h % 6 === 0 && <span className="text-[8.5px] font-mono text-ink-3">{h}h</span>}
                         </div>
@@ -571,16 +604,19 @@ export default function DesempenhoPage() {
                     <thead><tr className="text-[10.5px] font-mono uppercase tracking-[0.06em] text-ink-3">
                       <th className="text-left py-2.5 px-3 font-semibold border-b border-line">{isGoogleCamp ? 'Grupo' : 'Ad set'}</th>
                       <th className="text-right py-2.5 px-3 font-semibold border-b border-line">Investido</th>
-                      <th className="text-right py-2.5 px-3 font-semibold border-b border-line">Leads</th>
-                      <th className="text-right py-2.5 px-3 font-semibold border-b border-line">CPL</th>
+                      <th className="text-right py-2.5 px-3 font-semibold border-b border-line">Resultado</th>
+                      <th className="text-right py-2.5 px-3 font-semibold border-b border-line">Custo/result.</th>
                     </tr></thead>
                     <tbody>
                       {adsets.slice(0, 15).map((a, i) => (
                         <tr key={a.id || i} className="hover:bg-canvas">
                           <td className="py-[11px] px-3 border-b border-line-2 max-w-[280px]"><span className="text-ink font-medium truncate block">{a.name}</span></td>
                           <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{brl(a.spend || 0)}</td>
-                          <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{int(a.leads || 0)}</td>
-                          <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{a.cpl > 0 ? brl(a.cpl) : '—'}</td>
+                          <td className="py-[11px] px-3 border-b border-line-2 text-right text-ink">
+                            <div className="font-mono font-semibold">{int(Number(a.results ?? a.leads ?? 0))}</div>
+                            <div className="text-[10.5px] text-ink-3">{a.resultLabel || 'Resultados'}</div>
+                          </td>
+                          <td className="py-[11px] px-3 border-b border-line-2 text-right font-mono text-ink">{a.costPerResult > 0 ? brl(a.costPerResult) : a.cpl > 0 ? brl(a.cpl) : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -597,8 +633,8 @@ export default function DesempenhoPage() {
                     {demo.slice(0, 6).map((d, i) => (
                       <div key={i} className="flex items-center gap-2.5 text-[12.5px]">
                         <span className="text-ink w-[120px] shrink-0 truncate">{gLabel(d.gender)} · {d.age || '—'}</span>
-                        <span className="flex-1 font-mono text-ink-3">{int(d.leads)} leads</span>
-                        <span className="font-mono text-ink-2 w-14 text-right">{d.cpl > 0 ? brl(d.cpl) : '—'}</span>
+                        <span className="flex-1 font-mono text-ink-3">{int(Number(d.results ?? d.leads ?? 0))} {d.resultLabel || mainResultLabel}</span>
+                        <span className="font-mono text-ink-2 w-14 text-right">{d.costPerResult > 0 ? brl(d.costPerResult) : d.cpl > 0 ? brl(d.cpl) : '—'}</span>
                       </div>
                     ))}
                   </div>
@@ -613,7 +649,7 @@ export default function DesempenhoPage() {
                         <span className="font-mono text-[12px] font-semibold text-ink w-[90px] shrink-0 truncate">{g.region}</span>
                         <div className="flex-1"><HBar value={(g.spend / geoTotal) * 100} color={CHART_COLORS.blue} h={7} /></div>
                         <span className="font-mono text-[11.5px] text-ink-3 w-9 text-right">{Math.round((g.spend / geoTotal) * 100)}%</span>
-                        <span className="font-mono text-[11.5px] text-ink-2 w-14 text-right">{g.cpl > 0 ? brl(g.cpl) : '—'}</span>
+                        <span className="font-mono text-[11.5px] text-ink-2 w-14 text-right">{g.costPerResult > 0 ? brl(g.costPerResult) : g.cpl > 0 ? brl(g.cpl) : '—'}</span>
                       </div>
                     ))}
                   </div>
@@ -680,7 +716,7 @@ export default function DesempenhoPage() {
                 <Donut data={channelDonut} centerLabel={brl(channels.reduce((s, c) => s + c.spend, 0)).replace('R$ ', 'R$')} centerSub="total" />
               </Card>
               <Card>
-                <SectionHead title="Leads por canal" subtitle="Volume de conversões" icon={<Icon name="chart" size={17} />} />
+                <SectionHead title="Resultados por canal" subtitle="Volume do resultado principal" icon={<Icon name="chart" size={17} />} />
                 <BarChart data={channels.map(c => ({ label: c.label.replace(' Ads', ''), value: c.leads, color: c.color }))} height={200} valueFmt={(v) => int(v)} />
               </Card>
             </div>
@@ -764,10 +800,10 @@ export default function DesempenhoPage() {
                       <div className="text-[18px] font-bold font-mono text-ink">{brl(c.spend)}</div>
                       <div className="text-[10.5px] font-mono uppercase tracking-wider text-ink-3 mt-0.5">investido</div>
                       <div className="mt-2 pt-2 border-t border-line-2 flex justify-between text-xs">
-                        <span className="text-ink-3">Leads</span><span className="font-mono text-ink">{int(c.leads)}</span>
+                        <span className="text-ink-3">Resultados</span><span className="font-mono text-ink">{int(c.leads)}</span>
                       </div>
                       <div className="flex justify-between text-xs mt-1">
-                        <span className="text-ink-3">CPL</span><span className="font-mono text-ink">{cpl != null ? brl(cpl) : '—'}</span>
+                        <span className="text-ink-3">Custo</span><span className="font-mono text-ink">{cpl != null ? brl(cpl) : '—'}</span>
                       </div>
                     </Card>
                   )
@@ -775,12 +811,12 @@ export default function DesempenhoPage() {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Card>
-                  <SectionHead title="Leads por canal" icon={<Icon name="chart" size={17} />} />
+                  <SectionHead title="Resultados por canal" icon={<Icon name="chart" size={17} />} />
                   <BarChart data={channels.map(c => ({ label: c.label.replace(' Ads', ''), value: c.leads, color: c.color }))} height={200} valueFmt={(v) => int(v)} />
                 </Card>
                 <Card>
                   <SectionHead title="Distribuição de verba" subtitle="Participação no investimento" icon={<Icon name="layers" size={17} />} />
-                  <Donut data={channelDonut} centerLabel={int(channels.reduce((s, c) => s + c.leads, 0))} centerSub="leads" />
+                  <Donut data={channelDonut} centerLabel={int(channels.reduce((s, c) => s + c.leads, 0))} centerSub="resultados" />
                 </Card>
               </div>
             </>
@@ -817,13 +853,15 @@ export default function DesempenhoPage() {
         const geoReal: any[] = (intel?.geoBreakdown || intel?.intelligenceData?.geoBreakdown || []).filter((g: any) => (g.spend || 0) > 0)
         const hasReal = adsets.length > 0 || demo.length > 0 || geoReal.length > 0
 
-        // Mediana de CPL entre públicos com lead → base para classificar (escalar/manter/cortar).
-        const cplArr = adsets.filter(a => (a.leads || 0) > 0 && (a.cpl || 0) > 0).map(a => a.cpl).sort((x, y) => x - y)
+        // Mediana de custo por resultado entre públicos com resultado → base para classificar.
+        const cplArr = adsets.filter(a => Number(a.results ?? a.leads ?? 0) > 0 && (a.costPerResult || a.cpl || 0) > 0).map(a => a.costPerResult || a.cpl).sort((x, y) => x - y)
         const medCpl = cplArr.length ? cplArr[Math.floor(cplArr.length / 2)] : 0
         const recOf = (a: any): { t: string; tone: 'good' | 'bad' | 'blue'; txt: string } => {
-          if ((a.leads || 0) === 0 && (a.spend || 0) >= Math.max(medCpl || 0, 25)) return { t: 'Revisar', tone: 'bad', txt: 'Investiu sem gerar lead — revise segmentação/criativo' }
-          if (medCpl && (a.cpl || 0) > 0 && a.cpl <= medCpl * 0.85) return { t: 'Escalar', tone: 'good', txt: 'CPL abaixo da mediana da conta — candidato a +orçamento' }
-          if (medCpl && (a.cpl || 0) >= medCpl * 1.4) return { t: 'Cortar', tone: 'bad', txt: 'CPL bem acima da mediana — realoque a verba' }
+          const value = Number(a.results ?? a.leads ?? 0)
+          const cost = Number(a.costPerResult || a.cpl || 0)
+          if (value === 0 && (a.spend || 0) >= Math.max(medCpl || 0, 25)) return { t: 'Revisar', tone: 'bad', txt: 'Investiu sem gerar resultado — revise segmentação/criativo' }
+          if (medCpl && cost > 0 && cost <= medCpl * 0.85) return { t: 'Escalar', tone: 'good', txt: 'Custo abaixo da mediana da conta — candidato a +orçamento' }
+          if (medCpl && cost >= medCpl * 1.4) return { t: 'Cortar', tone: 'bad', txt: 'Custo bem acima da mediana — realoque a verba' }
           return { t: 'Manter', tone: 'blue', txt: 'Dentro da média da conta' }
         }
         const topAdsets = [...adsets].sort((a, b) => (b.spend || 0) - (a.spend || 0)).slice(0, 8)
@@ -859,14 +897,14 @@ export default function DesempenhoPage() {
             {/* ── Públicos ativos (ad sets reais) com CPL e o que fazer ── */}
             {topAdsets.length > 0 && (
               <Card>
-                <SectionHead title="Públicos ativos" subtitle="Cada conjunto de anúncios é um público — CPL real e recomendação" icon={<Icon name="users" size={17} />} action={<SourceBadge source="real" />} />
+                <SectionHead title="Públicos ativos" subtitle="Cada conjunto de anúncios é um público — resultado real e recomendação" icon={<Icon name="users" size={17} />} action={<SourceBadge source="real" />} />
                 <div className="overflow-x-auto -mx-1">
                   <table className="w-full text-sm min-w-[560px]">
                     <thead><tr className="text-left text-[10.5px] font-mono uppercase tracking-wider text-ink-3 border-b border-line">
                       <th className="py-2 px-1 font-medium">Público</th>
                       <th className="py-2 px-1 font-medium text-right">Investido</th>
-                      <th className="py-2 px-1 font-medium text-right">Leads</th>
-                      <th className="py-2 px-1 font-medium text-right">CPL</th>
+                      <th className="py-2 px-1 font-medium text-right">Resultado</th>
+                      <th className="py-2 px-1 font-medium text-right">Custo</th>
                       <th className="py-2 px-1 font-medium text-right">Ação</th>
                     </tr></thead>
                     <tbody>
@@ -880,8 +918,11 @@ export default function DesempenhoPage() {
                             </div>
                           </td>
                           <td className="py-2.5 px-1 text-right font-mono text-ink-2">{brl(a.spend || 0)}</td>
-                          <td className="py-2.5 px-1 text-right font-mono text-ink-2">{a.leads || 0}</td>
-                          <td className="py-2.5 px-1 text-right font-mono font-semibold text-ink">{(a.leads || 0) > 0 && (a.cpl || 0) > 0 ? brl(a.cpl) : '—'}</td>
+                          <td className="py-2.5 px-1 text-right text-ink-2">
+                            <div className="font-mono">{int(Number(a.results ?? a.leads ?? 0))}</div>
+                            <div className="text-[10.5px] text-ink-3">{a.resultLabel || 'Resultados'}</div>
+                          </td>
+                          <td className="py-2.5 px-1 text-right font-mono font-semibold text-ink">{a.costPerResult > 0 ? brl(a.costPerResult) : (a.leads || 0) > 0 && (a.cpl || 0) > 0 ? brl(a.cpl) : '—'}</td>
                           <td className="py-2.5 px-1 text-right"><Badge tone={r.tone}>{r.t}</Badge></td>
                         </tr>
                       )})}
@@ -894,15 +935,15 @@ export default function DesempenhoPage() {
             {/* ── Quem mais converte: idade × gênero (demografia real) ── */}
             {topDemo.length > 0 && (
               <Card>
-                <SectionHead title="Quem mais converte" subtitle="Leads e CPL real por faixa etária e gênero" icon={<Icon name="target" size={17} />} action={<SourceBadge source="real" />} />
-                {bestCohort && <p className="text-sm text-ink-2 mb-3">Melhor coorte: <span className="font-semibold text-ink">{gLabel(bestCohort.gender)} {bestCohort.age}</span> — CPL {brl(bestCohort.cpl)}.</p>}
+                <SectionHead title="Quem mais converte" subtitle="Resultado e custo real por faixa etária e gênero" icon={<Icon name="target" size={17} />} action={<SourceBadge source="real" />} />
+                {bestCohort && <p className="text-sm text-ink-2 mb-3">Melhor coorte: <span className="font-semibold text-ink">{gLabel(bestCohort.gender)} {bestCohort.age}</span> — custo {brl(bestCohort.costPerResult || bestCohort.cpl)}.</p>}
                 <div className="space-y-2">
                   {topDemo.map((d, i) => { const w = Math.round(((d.leads || 0) / maxLeads) * 100); return (
                     <div key={i} className="flex items-center gap-3">
                       <div className="w-[116px] text-sm text-ink shrink-0 truncate">{gLabel(d.gender)} · {d.age}</div>
                       <div className="flex-1 h-6 rounded-sm bg-canvas-2 overflow-hidden relative">
                         <div className="h-full bg-blue/25" style={{ width: `${Math.max(4, w)}%` }} />
-                        <span className="absolute inset-y-0 left-2 flex items-center text-[11px] font-mono text-ink-2">{d.leads || 0} leads</span>
+                        <span className="absolute inset-y-0 left-2 flex items-center text-[11px] font-mono text-ink-2">{int(Number(d.results ?? d.leads ?? 0))} {d.resultLabel || 'resultados'}</span>
                       </div>
                       <div className="w-[78px] text-right font-mono text-sm font-semibold text-ink shrink-0">{(d.cpl || 0) > 0 ? brl(d.cpl) : '—'}</div>
                     </div>
@@ -916,14 +957,14 @@ export default function DesempenhoPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {topGeo.length > 0 ? (
                   <Card>
-                    <SectionHead title="Melhores regiões" subtitle="Por leads reais" icon={<Icon name="globe" size={17} />} action={<SourceBadge source="real" />} />
+                    <SectionHead title="Melhores regiões" subtitle="Por resultado real" icon={<Icon name="globe" size={17} />} action={<SourceBadge source="real" />} />
                     <div className="space-y-2">
                       {topGeo.map((g, i) => (
                         <div key={i} className="flex items-center gap-2 p-2.5 rounded-sm bg-canvas-2">
                           <span className="w-5 h-5 rounded-md bg-paper border border-line text-ink font-mono text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
                           <span className="text-sm text-ink flex-1 truncate">{g.region || g.city || g.name || '—'}</span>
-                          <span className="text-xs font-mono text-ink-2">{g.leads || 0} leads</span>
-                          {(g.cpl || 0) > 0 && <span className="text-xs font-mono text-ink-3">CPL {brl(g.cpl)}</span>}
+                          <span className="text-xs font-mono text-ink-2">{int(Number(g.results ?? g.leads ?? 0))} {g.resultLabel || 'resultados'}</span>
+                          {(g.costPerResult || g.cpl || 0) > 0 && <span className="text-xs font-mono text-ink-3">Custo {brl(g.costPerResult || g.cpl)}</span>}
                         </div>
                       ))}
                     </div>
@@ -1115,7 +1156,7 @@ export default function DesempenhoPage() {
                           <div className="flex justify-between text-[11.5px] mb-2">
                             <div><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CTR</div><div className="font-mono font-bold text-[14px] text-ink">{c.ctr ? `${Number(c.ctr).toFixed(2)}%` : '—'}</div></div>
                             <div className="text-center"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Freq.</div><div className={`font-mono font-bold text-[14px] ${fatigued ? 'text-red' : 'text-ink'}`}>{c.frequency ? `${Number(c.frequency).toFixed(1)}×` : '—'}</div></div>
-                            <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">CPL</div><div className="font-mono font-bold text-[14px] text-green-600">{c.cpl > 0 ? brl(c.cpl) : '—'}</div></div>
+                            <div className="text-right"><div className="text-[10px] font-mono uppercase tracking-wider text-ink-3">Custo</div><div className="font-mono font-bold text-[14px] text-green-600">{(c.costPerResult || c.cpl) > 0 ? brl(c.costPerResult || c.cpl) : '—'}</div></div>
                           </div>
                           <div className="flex items-center justify-between text-[10.5px] text-ink-3 pt-2 border-t border-line">
                             <span>{c.ageDays != null ? `há ${c.ageDays}d no ar` : 'ativo'}</span>
@@ -1199,7 +1240,7 @@ export default function DesempenhoPage() {
                   </a>
                 )}
                 <div className="grid grid-cols-3 gap-2 mb-3">
-                  {([['CTR', c.ctr ? `${(+c.ctr).toFixed(2)}%` : '—'], ['Freq.', c.frequency ? `${(+c.frequency).toFixed(1)}×` : '—'], ['CPL', c.cpl > 0 ? brl(c.cpl) : '—'], ['Leads', String(c.leads ?? 0)], ['Gasto', brl(c.spend || 0)], ['Cliques', String(c.clicks ?? '—')]] as [string, string][]).map(([l, val], i) => (
+                  {([['CTR', c.ctr ? `${(+c.ctr).toFixed(2)}%` : '—'], ['Freq.', c.frequency ? `${(+c.frequency).toFixed(1)}×` : '—'], ['Custo', (c.costPerResult || c.cpl) > 0 ? brl(c.costPerResult || c.cpl) : '—'], [resultLabelOf(c), String(resultValueOf(c) ?? 0)], ['Gasto', brl(c.spend || 0)], ['Cliques', String(c.clicks ?? '—')]] as [string, string][]).map(([l, val], i) => (
                     <div key={i} className="bg-canvas-2 rounded-sm p-2 text-center">
                       <div className="text-[9.5px] font-mono uppercase tracking-wider text-ink-3">{l}</div>
                       <div className={`text-[14px] font-mono font-bold ${l === 'Freq.' && (c.frequency || 0) >= 3.5 ? 'text-red' : 'text-ink'}`}>{val}</div>
