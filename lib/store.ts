@@ -93,6 +93,7 @@ export interface CampaignRecord {
 export interface ClientData {
   clientName: string
   niche: string
+  niches?: string[]                         // segmentos múltiplos escolhidos no wizard
   products: string[]
   budget: number
   objective: string

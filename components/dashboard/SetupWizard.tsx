@@ -152,6 +152,39 @@ function Tip({ text }: { text: string }) {
   )
 }
 
+function normalizeNicheKey(value: string): string {
+  return value.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase()
+}
+
+function splitNicheText(value: string): string[] {
+  return value
+    .split(/\s*(?:,|;|\+|\n)\s*/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function uniqueNiches(items: string[]): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const item of items) {
+    const key = normalizeNicheKey(item)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    result.push(item.trim())
+  }
+  return result
+}
+
+function hasNiche(list: string[], niche: string): boolean {
+  const key = normalizeNicheKey(niche)
+  return list.some((item) => normalizeNicheKey(item) === key)
+}
+
+function resolveNiche(selectedNiches: string[], niche: string, customNiche: string): string {
+  if (selectedNiches.length > 0) return selectedNiches.join(' + ')
+  return (niche === 'Outro' ? customNiche : niche).trim()
+}
+
 export function SetupWizard({ onComplete, initialData }: Props) {
   const { setClientData, setWizardStep, wizardStep, setMarketResearchTaskId, setMarketResearch, setUserExperience } = useAppStore()
 
@@ -163,6 +196,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
   const [form, setForm] = useState({
     clientName:         initialData?.clientName    ?? '',
     niche:              initialData?.niche         ?? '',
+    selectedNiches:     uniqueNiches((initialData?.niches?.length ? initialData.niches : splitNicheText(initialData?.niche ?? '')) as string[]),
     customNiche:        '',
     city:               initialData?.city          ?? '',
     products:           (initialData?.products     ?? []).join(', '),
@@ -200,10 +234,10 @@ export function SetupWizard({ onComplete, initialData }: Props) {
   const [fastLane, setFastLane] = useState(false)
   const fastLaneConnect = () => {
     const cn = form.clientName.trim()
-    const nc = (form.niche === 'Outro' ? form.customNiche : form.niche).trim()
+    const nc = resolveNiche(form.selectedNiches, form.niche, form.customNiche)
     if (cn.length < 2 || nc.length < 2) { setError('Informe o nome do cliente e o nicho.'); return }
-    setClientData({ clientName: cn, niche: nc, products: [], budget: 3000, objective: 'leads', monthlyRevenue: 0 })
-    try { localStorage.setItem('elyon_fastlane', JSON.stringify({ clientName: cn, niche: nc })) } catch {}
+    setClientData({ clientName: cn, niche: nc, niches: form.selectedNiches.length > 0 ? form.selectedNiches : [nc], products: [], budget: 3000, objective: 'leads', monthlyRevenue: 0 })
+    try { localStorage.setItem('elyon_fastlane', JSON.stringify({ clientName: cn, niche: nc, niches: form.selectedNiches })) } catch {}
     const csrf = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now())
     document.cookie = `oauth_csrf=${csrf}; path=/; max-age=300; samesite=lax`
     const appId = process.env.NEXT_PUBLIC_META_APP_ID
@@ -214,19 +248,47 @@ export function SetupWizard({ onComplete, initialData }: Props) {
   }
 
   const step      = wizardStep
-  const niche     = form.niche === 'Outro' ? form.customNiche : form.niche
-  const bench     = getBenchmark(niche)
-  const nicheConf = getNicheConfig(niche)
+  const selectedNiches = form.selectedNiches
+  const niche     = resolveNiche(selectedNiches, form.niche, form.customNiche)
+  const mainNiche = selectedNiches[0] || niche
+  const bench     = getBenchmark(mainNiche || niche)
+  const nicheConf = getNicheConfig(mainNiche || niche)
 
   const update = (key: string, value: string) =>
     setForm((f) => ({ ...f, [key]: value }))
+
+  const toggleNiche = (nicheName: string) => {
+    const clean = nicheName.trim()
+    if (!clean) return
+    setForm((f) => {
+      const selected = hasNiche(f.selectedNiches, clean)
+      const selectedNiches = selected
+        ? f.selectedNiches.filter((item) => normalizeNicheKey(item) !== normalizeNicheKey(clean))
+        : [...f.selectedNiches, clean]
+      return {
+        ...f,
+        selectedNiches,
+        niche: selectedNiches[0] || '',
+        customNiche: selected ? f.customNiche : '',
+      }
+    })
+  }
+
+  const addCustomNiche = () => {
+    const clean = form.customNiche.trim()
+    if (!clean) return
+    setForm((f) => {
+      const selectedNiches = hasNiche(f.selectedNiches, clean) ? f.selectedNiches : [...f.selectedNiches, clean]
+      return { ...f, selectedNiches, niche: selectedNiches[0] || clean, customNiche: '' }
+    })
+  }
 
   const updateDetail = (key: string, value: string) =>
     setForm((f) => ({ ...f, nicheDetails: { ...f.nicheDetails, [key]: value } }))
 
   const canNext = () => {
     if (step === 0) return form.clientName.trim().length > 1
-    if (step === 1) return form.niche.length > 0
+    if (step === 1) return form.selectedNiches.length > 0 || form.niche.length > 0
     if (step === 2) return true
     if (step === 3) return form.products.trim().length > 3
     if (step === 4) return Number(form.budget) >= 500 // orçamento + financeiro (unit economics)
@@ -268,6 +330,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
       const clientData = {
         clientName:        form.clientName,
         niche,
+        niches:            selectedNiches.length > 0 ? selectedNiches : [niche].filter(Boolean),
         city:              form.city || undefined,
         products:          form.products.split('\n').filter(Boolean),
         budget:            Math.max(0, Number(form.budget) || 0),
@@ -433,14 +496,21 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             />
             <input
               className={inputClass()}
-              placeholder="Nicho (ex: Odontologia, Loja de Móveis...)"
+              placeholder="Nichos/serviços (ex: Ótica, Farmácia, Consulta...)"
               list="fastlane-niches"
-              value={form.niche === 'Outro' ? form.customNiche : form.niche}
-              onChange={(e) => setForm(f => ({ ...f, niche: e.target.value, customNiche: '' }))}
+              value={form.selectedNiches.length > 0 ? form.selectedNiches.join(', ') : (form.niche === 'Outro' ? form.customNiche : form.niche)}
+              onChange={(e) => {
+                const text = e.target.value
+                const parsed = uniqueNiches(splitNicheText(text))
+                setForm(f => ({ ...f, niche: text, selectedNiches: parsed, customNiche: '' }))
+              }}
             />
             <datalist id="fastlane-niches">
               {nicheList.map(n => <option key={n} value={n} />)}
             </datalist>
+            <p style={{ fontSize: '11px', color: '#8A93A3', marginTop: '-6px' }}>
+              Pode informar mais de um, separado por vírgula.
+            </p>
           </div>
 
           {error && <div style={{ fontSize: '12px', color: '#E1483F', marginBottom: '12px' }}>{error}</div>}
@@ -545,20 +615,36 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               Passo 2 de {TOTAL_STEPS}
             </p>
             <h2 className="font-display text-3xl font-bold text-ink mb-2">
-              Qual é o segmento de mercado?
+              Quais segmentos ou serviços?
             </h2>
             <p className="text-ink-2 text-sm mb-4">
-              O ELYON ajusta toda a análise ao seu mercado específico.
+              Selecione um ou mais. O primeiro escolhido será usado como nicho principal da análise.
             </p>
 
             {/* Busca rápida */}
             <input
               type="text"
               className={inputClass()}
-              placeholder="🔍  Buscar nicho..."
+              placeholder="🔍  Buscar ou adicionar nicho..."
               value={form.customNiche}
               onChange={(e) => update('customNiche', e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && form.customNiche.trim()) {
+                  e.preventDefault()
+                  addCustomNiche()
+                }
+              }}
             />
+            {form.customNiche.trim().length > 1 && (
+              <button
+                type="button"
+                onClick={addCustomNiche}
+                className="mt-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                style={{ background: 'rgba(44,95,224,0.08)', border: '1px solid rgba(44,95,224,0.22)', color: '#2C5FE0' }}
+              >
+                Adicionar "{form.customNiche.trim()}"
+              </button>
+            )}
 
             <div className="mt-3 max-h-64 overflow-y-auto pr-1 space-y-3">
               {NICHE_GROUPS.map((group) => {
@@ -577,15 +663,16 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                       {filtered.map((n) => (
                         <button
                           key={n}
-                          onClick={() => { update('niche', n); update('customNiche', '') }}
+                          onClick={() => toggleNiche(n)}
                           className="px-3 py-2 rounded-xl text-xs font-medium text-left transition-all"
                           style={{
-                            background: form.niche === n ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
-                            border: form.niche === n ? '1px solid rgba(44,95,224,0.5)' : '1px solid #E6E8EC',
-                            color: form.niche === n ? '#2C5FE0' : '#5A6473',
+                            background: hasNiche(form.selectedNiches, n) ? 'rgba(44,95,224,0.12)' : '#FFFFFF',
+                            border: hasNiche(form.selectedNiches, n) ? '1px solid rgba(44,95,224,0.5)' : '1px solid #E6E8EC',
+                            color: hasNiche(form.selectedNiches, n) ? '#2C5FE0' : '#5A6473',
                           }}
                         >
-                          {n}
+                          <span>{n}</span>
+                          {hasNiche(form.selectedNiches, n) && <span style={{ float: 'right', fontWeight: 800 }}>✓</span>}
                         </button>
                       ))}
                     </div>
@@ -594,19 +681,28 @@ export function SetupWizard({ onComplete, initialData }: Props) {
               })}
             </div>
 
-            {form.niche && (
-              <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl"
+            {form.selectedNiches.length > 0 && (
+              <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl flex-wrap"
                 style={{ background: 'rgba(44,95,224,0.08)', border: '1px solid rgba(44,95,224,0.2)' }}>
-                <span className="text-xs text-[#2C5FE0] font-semibold">Selecionado:</span>
-                <span className="text-xs text-ink">{form.niche}</span>
-                <button onClick={() => update('niche', '')} className="ml-auto text-ink-2 hover:text-ink text-sm">×</button>
+                <span className="text-xs text-[#2C5FE0] font-semibold">Selecionados:</span>
+                {form.selectedNiches.map((n, i) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => toggleNiche(n)}
+                    className="text-xs rounded-full px-2.5 py-1"
+                    style={{ background: '#FFFFFF', border: '1px solid rgba(44,95,224,0.22)', color: '#161B26' }}
+                  >
+                    {i === 0 ? 'Principal: ' : ''}{n} ×
+                  </button>
+                ))}
               </div>
             )}
             {/* Preview do benchmark */}
             {bench && (
               <div className="mt-4 p-4 rounded-xl" style={{ background: 'rgba(44,95,224,0.06)', border: '1px solid rgba(44,95,224,0.2)' }}>
                 <p className="text-xs text-[#2C5FE0] font-semibold mb-2">
-                  📊 Dados reais do mercado: {bench.name}
+                  📊 Dados reais do mercado principal: {bench.name}
                 </p>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
@@ -627,6 +723,11 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                     "{nicheConf.analystRole}"
                   </p>
                 )}
+                {form.selectedNiches.length > 1 && (
+                  <p className="text-[10px] text-ink-2 mt-2">
+                    Outros segmentos também entrarão no contexto: {form.selectedNiches.slice(1).join(', ')}.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -644,7 +745,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
                   Detalhes do negócio
                 </h2>
                 <p className="text-ink-2 text-sm mb-6">
-                  Quanto mais específico, mais precisa é a análise do ELYON.
+                  Quanto mais específico, mais precisa é a análise do ELYON. Estes campos seguem o nicho principal: {mainNiche}.
                 </p>
                 <div className="space-y-4">
                   {nicheConf.fields.map((field) => (
@@ -726,6 +827,7 @@ export function SetupWizard({ onComplete, initialData }: Props) {
             </h2>
             <p className="text-ink-2 text-sm mb-6">
               Liste um por linha. Seja específico — isso define o foco da estratégia.
+              {form.selectedNiches.length > 1 ? ` Você selecionou: ${form.selectedNiches.join(', ')}.` : ''}
             </p>
             <textarea
               className={inputClass()}
