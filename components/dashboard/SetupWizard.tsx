@@ -20,7 +20,7 @@ const NICHE_GROUPS: { label: string; niches: string[] }[] = [
     niches: [
       'Loja de Roupas', 'Loja de Calçados', 'Loja de Eletrônicos', 'Loja de Móveis',
       'Loja de Cosméticos', 'Loja de Suplementos', 'Loja de Brinquedos',
-      'Papelaria', 'Loja de Presentes', 'E-commerce / Loja Online',
+      'Ótica / Óculos e Lentes', 'Papelaria', 'Loja de Presentes', 'E-commerce / Loja Online',
     ],
   },
   {
