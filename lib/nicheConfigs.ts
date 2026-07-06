@@ -4,7 +4,7 @@
 
 import { useAppStore } from '@/lib/store'
 
-export type NicheKey = 'generic' | 'health_insurance_broker'
+export type NicheKey = 'generic' | 'health_insurance_broker' | 'optics_store'
 
 export interface NicheAction {
   id: string
@@ -167,14 +167,104 @@ const health_insurance_broker: NicheConfig = {
   complianceNote: 'Use apenas dados necessários para cotação e atendimento. Evite coletar informações sensíveis sem necessidade e deixe claro ao lead como os dados serão usados. Não prometa aprovação, preço final ou ausência de carência sem validação da operadora.',
 }
 
+// ── ÓTICAS ───────────────────────────────────────────────────────────────────
+const optics_store: NicheConfig = {
+  key: 'optics_store',
+  label: 'Ótica',
+  recommendedMode: 'simple',
+  defaultTab: 'funil',
+  language: {
+    leadName: 'atendimento',
+    saleName: 'venda de óculos',
+    revenueName: 'faturamento',
+    primaryChannel: 'WhatsApp',
+  },
+  funnelLabels: {
+    impressions: 'Viram o anúncio',
+    clicks:      'Clicaram para ver modelos',
+    leads:       'Chamaram no WhatsApp',
+    qualified:   'Tinham receita ou intenção real',
+    quotes:      'Receberam orçamento',
+    proposals:   'Visitaram ou provaram armações',
+    sales:       'Compraram armação + lente',
+  },
+  emptyStateHints: [
+    'Investimento em anúncios',
+    'Cliques',
+    'Atendimentos no WhatsApp',
+    'Orçamentos enviados',
+    'Visitas à loja',
+    'Vendas de armação + lente',
+    'Ticket médio por venda',
+  ],
+  mainMetrics: [
+    'Custo por atendimento',
+    'Custo por orçamento',
+    'Custo por visita à loja',
+    'Custo por venda',
+    'Taxa de orçamento para venda',
+    'Ticket médio',
+  ],
+  diagnostics: {
+    lead_curioso:          'Você está recebendo contatos, mas muitos ainda não têm receita, urgência ou intenção real de compra.',
+    demora_atendimento:    'O atendimento pode estar demorando e o cliente compara com outra ótica antes de você responder.',
+    poucas_cotacoes:       'Muitos contatos chegam, mas poucos recebem uma proposta clara de armação + lente.',
+    cotacao_sem_fechamento:'O problema parece estar depois do orçamento: a pessoa compara preço, garantia e estilo, mas não avança.',
+    custo_venda_alto:      'Cada venda pode estar custando caro demais para o ticket médio da ótica.',
+    falta_followup:        'Você pode estar perdendo vendas por não retomar quem recebeu orçamento e ficou de decidir.',
+    dados_insuficientes:   'Faltam dados para saber se o gargalo está no anúncio, atendimento, orçamento ou visita à loja.',
+  },
+  recommendations: {
+    geral: [
+      'Separar campanhas por intenção: óculos de grau, óculos infantil, multifocal, lente de contato e óculos de sol',
+      'Criar roteiro de WhatsApp para pedir receita, estilo desejado, faixa de preço e urgência',
+      'Usar criativos com pessoas reais provando armações, não só foto de produto',
+      'Criar combo claro de armação + lente + garantia',
+      'Fazer follow-up de orçamento em 2h, 24h e 72h',
+      'Medir visitas à loja e vendas vindas do WhatsApp',
+      'Reativar clientes antigos para troca de grau e revisão de lente',
+    ],
+  },
+  actionTemplates: {
+    anuncio: [
+      { id: 'opt_anuncio_1', title: 'Criar campanha separada para óculos de grau', why: 'Misturar óculos de grau, sol e lente de contato deixa o anúncio genérico e atrai curiosos.', impact: 'Alto', effort: 'Baixo', prazo: '24h', detail: 'Faça uma campanha focada em óculos de grau com chamada para WhatsApp: receita, estilo de armação e combo armação + lente.' },
+      { id: 'opt_anuncio_2', title: 'Trocar foto de produto por prova real de armações', why: 'Cliente compra quando se imagina usando. Produto isolado parece catálogo e reduz intenção.', impact: 'Alto', effort: 'Médio', prazo: 'Esta semana', detail: 'Grave 5 vídeos curtos com pessoas diferentes provando armações. Teste formatos: clássico, moderno, infantil, trabalho/tela e solar.' },
+    ],
+    landing_page: [
+      { id: 'opt_lp_1', title: 'Configurar WhatsApp com perguntas de triagem', why: 'Sem triagem, o atendimento vira conversa solta e poucos viram orçamento.', impact: 'Alto', effort: 'Baixo', prazo: 'Hoje', detail: 'Pergunte: já tem receita? É óculos de grau, sol ou lente? Qual faixa de preço? Prefere armação discreta ou marcante? Quando precisa retirar?' },
+      { id: 'opt_lp_2', title: 'Criar mensagem pronta com combo e garantia', why: 'O cliente compara preço. Combo claro reduz dúvida e melhora fechamento.', impact: 'Médio', effort: 'Baixo', prazo: '24h', detail: 'Monte 2-3 opções: entrada, intermediária e premium. Inclua lente, garantia, ajuste grátis e prazo de entrega.' },
+    ],
+    qualificacao: [
+      { id: 'opt_qual_1', title: 'Separar contato com receita de contato curioso', why: 'Quem já tem receita tende a comprar mais rápido e merece prioridade no atendimento.', impact: 'Alto', effort: 'Baixo', prazo: 'Hoje', detail: 'Marque cada atendimento como: com receita, sem receita, troca de grau, lente de contato, óculos infantil ou solar.' },
+      { id: 'opt_qual_2', title: 'Registrar motivo de perda do orçamento', why: 'Sem motivo de perda você não sabe se o problema é preço, lente, estilo, prazo ou atendimento.', impact: 'Médio', effort: 'Baixo', prazo: 'Esta semana', detail: 'Crie motivos padrão: achou caro, comprou em rede grande, não gostou da armação, prazo, sem receita, sem retorno.' },
+    ],
+    fechamento: [
+      { id: 'opt_fech_1', title: 'Fazer follow-up de orçamento em 2h, 24h e 72h', why: 'Muita venda de ótica fica parada porque o cliente foi comparar e ninguém retoma.', impact: 'Alto', effort: 'Baixo', prazo: '24h', detail: 'Envie uma mensagem curta com foto/modelo escolhido, benefício da lente, garantia e prazo. No terceiro contato, ofereça uma alternativa de valor menor.' },
+      { id: 'opt_fech_2', title: 'Criar oferta de visita/prova na loja', why: 'Óculos é visual. Levar a pessoa para provar aumenta muito a chance de fechar.', impact: 'Médio', effort: 'Médio', prazo: 'Esta semana', detail: 'Convide para separar 3 armações no estilo dela e provar sem compromisso. Registre quem compareceu e quem comprou.' },
+    ],
+    velocidade: [
+      { id: 'opt_vel_1', title: 'Responder WhatsApp em até 10 minutos no horário comercial', why: 'Quem procura ótica costuma falar com 2-3 lojas. Velocidade decide a primeira visita.', impact: 'Alto', effort: 'Baixo', prazo: 'Hoje', detail: 'Use respostas rápidas e deixe alguém responsável por novos leads. Meta: primeira resposta em até 10 minutos.' },
+    ],
+  },
+  aiPrompts: {
+    lead_curioso:           'Estou recebendo contatos para ótica, mas muitos não têm receita ou só perguntam preço. Como atrair pessoas com intenção real de comprar óculos?',
+    cotacao_sem_fechamento: 'Envio orçamento de armação + lente, mas muita gente não fecha. Me dê um roteiro de follow-up e como contornar preço, garantia e comparação com grandes redes.',
+    custo_venda_alto:       'O custo por venda da ótica está alto para o ticket médio. Como reduzir o CAC e aumentar o ticket de armação + lente?',
+    geral:                  'Me ajude a vender mais em uma ótica. Quero um plano simples para melhorar anúncios, WhatsApp, orçamento, visita à loja e fechamento.',
+  },
+  complianceNote: 'Não prometa exame, diagnóstico, correção visual ou resultado médico se a ótica não tiver profissional habilitado. Use a receita do cliente apenas para atendimento e orçamento, com cuidado de privacidade.',
+}
+
 export const nicheConfigs: Record<NicheKey, NicheConfig> = {
   generic,
   health_insurance_broker,
+  optics_store,
 }
 
 // Mapa de perfil do onboarding → nicho
 const PROFILE_TO_NICHE: Record<string, NicheKey> = {
   health_insurance_broker: 'health_insurance_broker',
+  optics_store: 'optics_store',
 }
 
 export function getNicheConfig(profileOrNiche?: string): NicheConfig {
@@ -194,6 +284,9 @@ export function detectNicheFromText(text?: string): NicheKey {
   const t = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   if ((t.includes('plano') && t.includes('saude')) || (t.includes('corretor') && t.includes('saude')) || t.includes('saude suplementar') || t.includes('convenio medico')) {
     return 'health_insurance_broker'
+  }
+  if (t.includes('otica') || t.includes('optica') || t.includes('oculos') || t.includes('lente de contato') || t.includes('armacao')) {
+    return 'optics_store'
   }
   return 'generic'
 }

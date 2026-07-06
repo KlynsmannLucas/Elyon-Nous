@@ -278,6 +278,37 @@ const NICHE_CONTENT: Record<string, NicheContent> = {
     calendar: buildCalendar([11, 12], [2, 8], [3, 6, 9], { 11: 'Novembro: Black Friday — orçamento dobrado', 12: 'Dezembro: Natal — ticket médio sobe 40%' }),
   },
 
+  opticas: {
+    audience: {
+      age: '24–58 anos', gender: '58% feminino', income: 'R$2K–12K/mês',
+      location: 'Raio de 3–12km da loja', buyTime: '1–10 dias',
+      pains: ['Receita vencida ou grau mudou', 'Óculos quebrado ou desconfortável', 'Preço alto de lente', 'Dificuldade para escolher armação'],
+      motivations: ['Enxergar melhor no trabalho e estudo', 'Estilo e autoestima', 'Conforto para tela e direção', 'Resolver rápido perto de casa'],
+      hooks: ['Armação + lente com garantia', 'Prove modelos pelo WhatsApp', 'Entrega rápida', 'Condições para troca de grau'],
+      objections: ['Não sei qual lente escolher', 'Achei mais barato online', 'Tenho medo de errar a armação', 'Preciso consultar a receita primeiro'],
+    },
+    insights: [
+      { icon: '👓', title: 'Prova real de armações aumenta intenção', category: 'Criativo', categoryColor: '#F0B429', description: 'Vídeos curtos com pessoas reais provando 3–5 modelos vendem melhor que foto de produto em fundo branco.' },
+      { icon: '📍', title: 'Google Maps captura compra pronta', category: 'Canal', categoryColor: '#22C55E', description: 'Buscas como "ótica perto de mim" e "óculos de grau + cidade" indicam alta intenção de visita no mesmo dia.' },
+      { icon: '💬', title: 'WhatsApp precisa qualificar receita e estilo', category: 'Processo', categoryColor: '#38BDF8', description: 'Perguntar se tem receita, tipo de lente, faixa de preço e estilo desejado reduz atendimento perdido.' },
+      { icon: '🎒', title: 'Volta às aulas movimenta óculos infantil', category: 'Sazonalidade', categoryColor: '#A78BFA', description: 'Janeiro/fevereiro e julho são bons períodos para campanhas de exame, óculos infantil e troca de grau.' },
+      { icon: '🛡️', title: 'Garantia reduz objeção contra grandes redes', category: 'Oferta', categoryColor: '#FF4D4D', description: 'Combos com garantia, ajuste grátis e assistência local dão motivo claro para comprar na loja física.' },
+    ],
+    creatives: [
+      { name: 'Prove 5 armações no seu estilo', channel: 'Instagram', score: 94, status: 'Top performer', statusColor: '#22C55E' },
+      { name: 'Combo armação + lente com garantia', channel: 'Meta', score: 88, status: 'Em destaque', statusColor: '#F0B429' },
+      { name: 'Óculos infantil para volta às aulas', channel: 'Google', score: 78, status: 'Estável', statusColor: '#38BDF8' },
+      { name: 'Lente para tela: conforto no trabalho', channel: 'Meta', score: 70, status: 'Monitorando', statusColor: '#A78BFA' },
+      { name: 'Só desconto em armações', channel: 'Instagram', score: 54, status: 'Otimizar', statusColor: '#FF4D4D' },
+    ],
+    calendar: buildCalendar([1, 2, 7, 11], [4, 9], [3, 6, 10], {
+      1: 'Janeiro: volta às aulas — óculos infantil e troca de grau',
+      2: 'Fevereiro: reforço de volta às aulas e retorno ao trabalho',
+      7: 'Julho: férias e revisão de grau no meio do ano',
+      11: 'Novembro: Black Friday — combos com garantia',
+    }),
+  },
+
   juridico: {
     audience: {
       age: '30–60 anos', gender: '50% cada', income: 'R$5K–20K/mês',
@@ -733,6 +764,12 @@ const CONTENT_KEY_MAP: Record<string, string> = {
   'saúde': 'saude', saude: 'saude', clínica: 'saude', clinica: 'saude', hospital: 'saude',
   'educaç': 'educacao', educac: 'educacao', curso: 'educacao', escola: 'educacao',
   imóvel: 'imobiliario', imovel: 'imobiliario', imobili: 'imobiliario',
+  'loja de óculos': 'opticas', 'loja de oculos': 'opticas',
+  ótica: 'opticas', otica: 'opticas', óticas: 'opticas', oticas: 'opticas',
+  óptica: 'opticas', optica: 'opticas', ópticas: 'opticas', opticas: 'opticas',
+  óculos: 'opticas', oculos: 'opticas', 'óculos de grau': 'opticas', 'oculos de grau': 'opticas',
+  'óculos de sol': 'opticas', 'oculos de sol': 'opticas', armação: 'opticas', armacao: 'opticas',
+  'lente de contato': 'opticas', 'lentes de contato': 'opticas',
   ecommerce: 'ecommerce', 'e-commerce': 'ecommerce', loja: 'ecommerce', varejo: 'ecommerce',
   jurídico: 'juridico', juridico: 'juridico', advocaci: 'juridico', advogado: 'juridico',
   contabilidade: 'contabilidade', contador: 'contabilidade',

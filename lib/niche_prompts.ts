@@ -352,6 +352,65 @@ CONTEXTO DO NICHO — E-COMMERCE E VAREJO:
     },
   },
 
+  // ─ ÓTICAS / ÓCULOS ────────────────────────────────────────────────
+  {
+    key: 'oticas',
+    label: 'Óticas e Óculos',
+    icon: '👓',
+    title: 'ótica / loja de óculos e lentes',
+    analystRole: 'Analista especializado em marketing para óticas, óculos de grau, lentes e varejo óptico no Brasil',
+    fields: [
+      {
+        key: 'mix_produtos',
+        label: 'Principal linha vendida',
+        type: 'select',
+        options: ['Óculos de grau', 'Óculos de sol', 'Lentes de contato', 'Óculos infantil', 'Lentes multifocais', 'Armações premium', 'Mix completo'],
+        placeholder: '',
+      },
+      {
+        key: 'modelo_venda',
+        label: 'Modelo de venda',
+        type: 'select',
+        options: ['Loja física', 'Loja física + WhatsApp', 'E-commerce', 'Quiosque / shopping', 'Atendimento com optometrista', 'Múltiplas unidades'],
+        placeholder: '',
+      },
+      {
+        key: 'ticket_otica',
+        label: 'Ticket médio por venda',
+        type: 'select',
+        options: ['Até R$250', 'R$250–R$600', 'R$600–R$1.200', 'Acima de R$1.200'],
+        placeholder: '',
+      },
+      {
+        key: 'diferencial_otica',
+        label: 'Principal diferencial',
+        type: 'select',
+        options: ['Preço e parcelamento', 'Armações de marca', 'Lentes premium', 'Entrega rápida', 'Garantia / assistência local', 'Exame ou triagem na loja', 'Atendimento personalizado'],
+        placeholder: '',
+      },
+    ],
+    promptContext: `
+CONTEXTO DO NICHO — ÓTICAS / ÓCULOS:
+- Ótica é varejo local com venda assistida: a pessoa compara preço, estilo, tipo de lente, garantia e conveniência.
+- O funil comum é: anúncio/Google/Maps → WhatsApp ou visita → triagem de receita/grau/estilo → orçamento → prova de armação → venda.
+- Google Search e Maps captam intenção alta: "ótica perto de mim", "óculos de grau", "lente de contato", "armação + cidade".
+- Meta/Instagram funcionam melhor com criativos visuais: pessoas reais provando armações, antes/depois de estilo, combo armação + lente.
+- Principais objeções: preço da lente, medo de comprar armação errada, dúvida sobre multifocal/antirreflexo, comparação com grandes redes e compra online.
+- Melhor oferta: combo claro (armação + lente), garantia, ajuste grátis, entrega rápida, parcelamento e atendimento consultivo.
+- Sazonalidade: Jan/Fev e Jul por volta às aulas/troca de grau; Nov/Dez por Black Friday, presentes e 13º salário.
+- Métricas chave: custo por WhatsApp qualificado, taxa de orçamento enviado, taxa de visita à loja, taxa orçamento→venda e ticket médio por lente.
+- Terminologia correta: "armação", "lente", "grau", "receita", "multifocal", "antirreflexo", "blue light", "fotossensível", "ajuste", "garantia".
+- Evite prometer exame ou diagnóstico se a loja não tiver profissional habilitado. Se houver exame, comunicar como agendamento/triagem conforme operação real.
+`,
+    productPlaceholder: 'Óculos de grau completo\nArmações femininas e masculinas\nLentes multifocais\nLentes de contato\nÓculos infantil',
+    objectiveLabels: {
+      leads: 'Gerar WhatsApps e visitas à loja',
+      vendas: 'Aumentar vendas de armação + lente',
+      brand: 'Ser a ótica mais lembrada da região',
+      retencao: 'Reativar clientes para troca de grau e novas lentes',
+    },
+  },
+
   // ─ EDUCAÇÃO / CURSOS ──────────────────────────────────────────────
   {
     key: 'educacao',
@@ -587,6 +646,15 @@ const NICHE_KEYWORD_MAP: Record<string, string> = {
   // Restaurante
   'restaurante': 'restaurante', 'food': 'restaurante', 'alimentação': 'restaurante',
   'cafeteria': 'restaurante', 'pizzaria': 'restaurante', 'hamburgueria': 'restaurante',
+
+  // Óticas
+  'loja de óculos': 'oticas', 'loja de oculos': 'oticas',
+  'ótica': 'oticas', 'otica': 'oticas', 'óticas': 'oticas', 'oticas': 'oticas',
+  'óptica': 'oticas', 'optica': 'oticas', 'ópticas': 'oticas', 'opticas': 'oticas',
+  'óculos': 'oticas', 'oculos': 'oticas', 'óculos de grau': 'oticas', 'oculos de grau': 'oticas',
+  'óculos de sol': 'oticas', 'oculos de sol': 'oticas',
+  'lente de contato': 'oticas', 'lentes de contato': 'oticas',
+  'armação': 'oticas', 'armacao': 'oticas',
 
   // E-commerce
   'e-commerce': 'ecommerce', 'ecommerce': 'ecommerce', 'loja': 'ecommerce',

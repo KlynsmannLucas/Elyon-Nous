@@ -1808,6 +1808,32 @@ const BENCHMARKS: Record<string, NicheBenchmark> = {
       'Retargeting de carrinho abandonado com desconto de 10% recupera 15–25% das vendas perdidas',
     ],
   },
+  opticas: {
+    name: 'Óticas / Óculos',
+    cpl_min: 18, cpl_max: 65,
+    cpl_by_channel: {
+      'Meta Ads': 'R$18–45',
+      'Instagram Ads': 'R$16–40',
+      'Google Search': 'R$28–65',
+      'Google Shopping': 'R$20–55',
+      'Google Maps': 'R$15–38',
+    },
+    cvr_lead_to_sale: 0.24,
+    avg_ticket: 650,
+    ltv_multiplier: 2.4,
+    best_channels: ['Meta Ads', 'Instagram Ads', 'Google Search', 'Google Maps'],
+    budget_floor: 1200,
+    budget_ideal: 5000,
+    kpi_thresholds: { cpl_good: 32, cpl_bad: 58, roas_good: 4.0, cvr_good: 0.28 },
+    seasonality: ['Jan', 'Fev', 'Jul', 'Nov', 'Dez'],
+    insights: [
+      'Volta às aulas e férias elevam a busca por exame de vista, óculos infantil e troca de grau',
+      'Criativos com prova de armações no rosto geram mais intenção que foto de produto isolado',
+      'Google Maps e Search capturam demanda pronta: "ótica perto de mim" e "óculos de grau + cidade"',
+      'WhatsApp com triagem rápida de receita, convênio e estilo de armação aumenta a ida à loja',
+      'Combos de armação + lente + garantia reduzem objeção de preço e facilitam comparação com grandes redes',
+    ],
+  },
 
   outro: {
     name: 'Outro / Geral',
@@ -1862,6 +1888,14 @@ const KEY_MAP: Record<string, string> = {
   'loja moveis':          'loja_moveis',
   'loja de decoração':    'loja_moveis',
   'home decor':           'loja_moveis',
+  'loja de óculos':       'opticas',
+  'loja de oculos':       'opticas',
+  'óculos de grau':       'opticas',
+  'oculos de grau':       'opticas',
+  'óculos de sol':        'opticas',
+  'oculos de sol':        'opticas',
+  'lente de contato':     'opticas',
+  'lentes de contato':    'opticas',
 
   // ── Financeiro ────────────────────────────────────────────────────────────
   financeiro: 'financeiro', crédito: 'financeiro', credito: 'financeiro',
@@ -2121,6 +2155,14 @@ const KEY_MAP: Record<string, string> = {
   'loja de roupas':     'ecommerce_moda', 'moda online': 'ecommerce_moda',
   'loja de moda':       'ecommerce_moda',
 
+  // ── Óticas ───────────────────────────────────────────────────────────────
+  ótica:                'opticas', otica: 'opticas', óticas: 'opticas', oticas: 'opticas',
+  óptica:               'opticas', optica: 'opticas', ópticas: 'opticas', opticas: 'opticas',
+  óculos:               'opticas', oculos: 'opticas',
+  armação:              'opticas', armacao: 'opticas',
+  'armação de óculos':  'opticas', 'armacao de oculos': 'opticas',
+  optometrista:         'opticas',
+
   // ── Seguros ───────────────────────────────────────────────────────────────
   'plano de saúde':     'corretor_saude',
   'plano de saude':     'corretor_saude',
@@ -2264,6 +2306,7 @@ const SEASONALITY_INDEXES: Record<string, number[]> = {
   desenvolvimento_pessoal:[1.50, 1.10, 0.85, 0.80, 0.85, 0.80, 1.25, 1.10, 0.85, 0.85, 0.85, 0.90],
   ecommerce_cosmeticos:[0.90, 1.20, 0.90, 0.85, 1.45, 0.90, 0.85, 0.90, 0.90, 0.95, 1.10, 1.40],
   ecommerce_moda:      [0.90, 0.90, 0.90, 1.25, 1.35, 0.90, 0.85, 0.85, 0.90, 0.95, 1.40, 1.35],
+  opticas:             [1.30, 1.25, 0.95, 0.85, 0.90, 0.90, 1.20, 1.10, 0.95, 0.95, 1.30, 1.20],
   outro:               [1.05, 0.95, 0.95, 0.90, 0.90, 0.90, 0.95, 0.95, 1.00, 1.05, 1.05, 1.00],
 }
 
@@ -2298,6 +2341,11 @@ const CREATIVE_ANGLES_DATA: Record<string, CreativeAngles> = {
     saturated:     ['desconto %', 'frete grátis sem urgência', 'promoção relâmpago sem gatilho real'],
     trending:      ['unboxing e experiência de entrega', 'UGC — clientes usando o produto no dia a dia', 'comparativo honesto com concorrente'],
     underexplored: ['por trás da fabricação do produto', 'sustentabilidade e impacto ambiental', 'personalização do produto como experiência'],
+  },
+  opticas: {
+    saturated:     ['foto de armação em fundo branco', 'desconto genérico em óculos', '"óculos em promoção" sem estilo ou benefício'],
+    trending:      ['prova real de armações em rostos diferentes', 'combo armação + lente explicado com preço claro', 'troca de grau / volta às aulas com urgência leve'],
+    underexplored: ['guia de lentes para tela e direção', 'óculos infantil com adaptação e garantia', 'comparativo óculos pronto vs lente personalizada'],
   },
   loja_moveis: {
     saturated:     ['renderização 3D genérica sem cliente', 'promoção sem prazo definido', 'foto de catálogo'],
@@ -2941,7 +2989,7 @@ export interface FunnelBenchmarks {
 export function getFunnelBenchmarks(benchKey: string): FunnelBenchmarks {
   const bench = BENCHMARKS[benchKey] || BENCHMARKS['outro']
   const isHighTicket  = ['imobiliario','juridico','financeiro','tecnologia','construcao','moveis_planejados','arquitetura_design','consultoria','marketing_agencia','eventos','franquias','corretor_imobiliario','protecao_patrimonial','rh_empresa','auditoria'].includes(benchKey)
-  const isLocalService = ['barbearia','beleza','depilacao','harmonizacao','fisioterapia','lava_jato','lavanderia','autoescola','servicos_residenciais','padaria_cafeteria','restaurante','automotivo','pet'].includes(benchKey)
+  const isLocalService = ['barbearia','beleza','depilacao','harmonizacao','fisioterapia','lava_jato','lavanderia','autoescola','servicos_residenciais','padaria_cafeteria','restaurante','automotivo','pet','opticas'].includes(benchKey)
   const isMedical     = ['saude','odontologia','psicologia','nutricao','farmacia'].includes(benchKey) // fisioterapia removida (já em isLocalService)
 
   return {
