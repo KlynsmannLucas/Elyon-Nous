@@ -349,7 +349,7 @@ export function TabAssets({ clientData }: Props) {
                 ✦ Gerar criativo · IA
               </div>
               <p style={{ fontSize: '12.5px', color: S.text2, margin: 0, lineHeight: 1.5 }}>
-                Descreva a imagem do anúncio. A API tenta OpenAI primeiro e usa Gemini automaticamente se a OpenAI estiver sem saldo/quota.
+                Descreva a imagem do anúncio. A API tenta OpenAI primeiro e usa Gemini como fallback quando a chave estiver configurada.
               </p>
             </div>
             <span style={{ fontSize: '11px', color: S.green, background: 'rgba(14,158,110,.10)', border: '1px solid rgba(14,158,110,.24)', borderRadius: 999, padding: '4px 9px', fontWeight: 700 }}>

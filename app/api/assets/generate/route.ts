@@ -58,10 +58,97 @@ const GEMINI_IMAGE_MODELS = ['gemini-2.5-flash-image-preview', 'gemini-2.0-flash
 // Por último, tenta o Imagen (pago/predict) caso a conta tenha billing.
 const IMAGEN_MODEL = 'imagen-3.0-generate-002'
 
-// Fallback: gera a imagem com o Gemini (Imagen ou Flash image-gen). Retorna base64 ou null.
-async function generateWithGemini(prompt: string, format: string): Promise<string | null> {
+interface ProviderAttempt {
+  provider: 'openai' | 'gemini'
+  model?: string
+  configured: boolean
+  ok: boolean
+  status?: number
+  code?: string
+  type?: string
+  message: string
+}
+
+function parseProviderError(status: number, text: string): ProviderAttempt {
+  let message = `Falha na geração (${status})`
+  let code = ''
+  let type = ''
+  try {
+    const j = JSON.parse(text)
+    message = j?.error?.message || message
+    code = j?.error?.code || ''
+    type = j?.error?.type || ''
+  } catch {
+    if (text.trim()) message = text.trim().slice(0, 240)
+  }
+  return { provider: 'openai', configured: true, ok: false, status, code, type, message }
+}
+
+function buildOpenAIHeaders(apiKey: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${apiKey}`,
+  }
+  const projectId = process.env.OPENAI_PROJECT_ID || process.env.OPENAI_PROJECT
+  const orgId = process.env.OPENAI_ORGANIZATION_ID || process.env.OPENAI_ORG_ID || process.env.OPENAI_ORGANIZATION
+  if (projectId) headers['OpenAI-Project'] = projectId
+  if (orgId) headers['OpenAI-Organization'] = orgId
+  return headers
+}
+
+function classifyOpenAIMessage(attempt: ProviderAttempt | null): string {
+  if (!attempt) return ''
+  const low = `${attempt.code || ''} ${attempt.type || ''} ${attempt.message || ''}`.toLowerCase()
+
+  if (attempt.status === 401 || low.includes('invalid api key') || low.includes('incorrect api key')) {
+    return 'A chave OpenAI configurada no servidor está inválida. Atualize OPENAI_API_KEY na Vercel.'
+  }
+  if (attempt.status === 403 || low.includes('permission') || low.includes('not authorized')) {
+    return 'A chave/projeto OpenAI não tem permissão para gerar imagem. Confira permissões da API key e Model Usage do projeto.'
+  }
+  if (low.includes('billing_hard_limit') || low.includes('hard limit')) {
+    return 'O projeto/chave OpenAI configurado no servidor atingiu o limite de uso. O saldo geral pode existir, mas o projeto da chave precisa ter limite/modelo liberado.'
+  }
+  if (low.includes('insufficient_quota') || low.includes('current quota') || low.includes('quota')) {
+    return 'A chave/projeto OpenAI configurado no servidor está sem quota disponível. Confira se a OPENAI_API_KEY da Vercel pertence ao mesmo projeto que tem saldo e se o limite/modelo está liberado.'
+  }
+  if (low.includes('billing')) {
+    return 'A OpenAI recusou a geração por configuração de cobrança do projeto/chave. Confira Billing, Project Limits e Model Usage no projeto da API key.'
+  }
+  if (attempt.status === 429) return 'A OpenAI limitou as requisições agora. Tente novamente em alguns minutos.'
+  if (low.includes('model') && (low.includes('not found') || low.includes('does not exist') || low.includes('unsupported'))) {
+    return 'O modelo de imagem não está disponível para o projeto OpenAI configurado. Libere o modelo em Project → Limits → Model Usage.'
+  }
+  return attempt.message || 'A OpenAI não conseguiu gerar a imagem.'
+}
+
+function buildFailureMessage(openaiAttempt: ProviderAttempt | null, geminiAttempts: ProviderAttempt[]): string {
+  const openai = classifyOpenAIMessage(openaiAttempt)
+  const hasGeminiKey = geminiAttempts.some(a => a.configured)
+  const geminiOk = geminiAttempts.some(a => a.ok)
+  const geminiLast = [...geminiAttempts].reverse().find(a => !a.ok && a.message)
+
+  const gemini = geminiOk
+    ? ''
+    : hasGeminiKey
+      ? ` Fallback Gemini tentou gerar, mas falhou (${geminiLast?.message || 'sem imagem retornada'}).`
+      : ' Fallback Gemini não está configurado na Vercel (GEMINI_API_KEY ausente).'
+
+  return openai
+    ? `${openai}${gemini}`
+    : `Não foi possível gerar a imagem com nenhum provedor.${gemini}`
+}
+
+// Fallback: gera a imagem com o Gemini (Imagen ou Flash image-gen). Retorna base64 + tentativas.
+async function generateWithGemini(prompt: string, format: string): Promise<{ b64: string | null; attempts: ProviderAttempt[] }> {
   const key = process.env.GEMINI_API_KEY
-  if (!key) return null
+  const attempts: ProviderAttempt[] = []
+  if (!key) {
+    return {
+      b64: null,
+      attempts: [{ provider: 'gemini', configured: false, ok: false, message: 'GEMINI_API_KEY ausente na Vercel' }],
+    }
+  }
   const fullPrompt = prompt + (ASPECT_HINT[format] || ASPECT_HINT.square)
 
   // 1) Flash image generation (generateContent → inlineData) — funciona na API key padrão.
@@ -77,15 +164,22 @@ async function generateWithGemini(prompt: string, format: string): Promise<strin
         signal: AbortSignal.timeout(110000),
       })
       if (!res.ok) {
-        console.error(`[assets/generate] gemini ${model} error:`, res.status, (await res.text().catch(() => '')).slice(0, 300))
+        const errText = await res.text().catch(() => '')
+        attempts.push({ provider: 'gemini', model, configured: true, ok: false, status: res.status, message: errText.slice(0, 240) || `Gemini ${model} falhou` })
+        console.error(`[assets/generate] gemini ${model} error:`, res.status, errText.slice(0, 300))
         continue
       }
       const data = await res.json()
       const parts: any[] = data?.candidates?.[0]?.content?.parts || []
       const img = parts.find(p => p?.inlineData?.data)?.inlineData?.data
-      if (img) return img
+      if (img) {
+        attempts.push({ provider: 'gemini', model, configured: true, ok: true, status: res.status, message: 'Imagem gerada' })
+        return { b64: img, attempts }
+      }
+      attempts.push({ provider: 'gemini', model, configured: true, ok: false, status: res.status, message: 'Gemini respondeu sem imagem' })
       console.error(`[assets/generate] gemini ${model} sem imagem na resposta`)
     } catch (e: any) {
+      attempts.push({ provider: 'gemini', model, configured: true, ok: false, message: e?.message || 'Erro no Gemini' })
       console.error(`[assets/generate] gemini ${model} threw:`, e?.message)
     }
   }
@@ -101,13 +195,18 @@ async function generateWithGemini(prompt: string, format: string): Promise<strin
     })
     if (res.ok) {
       const data = await res.json()
-      return data?.predictions?.[0]?.bytesBase64Encoded || null
+      const img = data?.predictions?.[0]?.bytesBase64Encoded || null
+      attempts.push({ provider: 'gemini', model: IMAGEN_MODEL, configured: true, ok: !!img, status: res.status, message: img ? 'Imagem gerada' : 'Imagen respondeu sem imagem' })
+      return { b64: img, attempts }
     }
-    console.error('[assets/generate] imagen predict error:', res.status, (await res.text().catch(() => '')).slice(0, 300))
+    const errText = await res.text().catch(() => '')
+    attempts.push({ provider: 'gemini', model: IMAGEN_MODEL, configured: true, ok: false, status: res.status, message: errText.slice(0, 240) || 'Imagen falhou' })
+    console.error('[assets/generate] imagen predict error:', res.status, errText.slice(0, 300))
   } catch (e: any) {
+    attempts.push({ provider: 'gemini', model: IMAGEN_MODEL, configured: true, ok: false, message: e?.message || 'Erro no Imagen' })
     console.error('[assets/generate] imagen predict threw:', e?.message)
   }
-  return null
+  return { b64: null, attempts }
 }
 
 export async function POST(req: NextRequest) {
@@ -159,54 +258,51 @@ export async function POST(req: NextRequest) {
   const prompt = buildPrompt(body)
   let b64: string | null = null
   let provider = ''
-  let openaiMsg = '' // mensagem amigável caso a OpenAI falhe (mostrada só se o Gemini também falhar)
+  let openaiAttempt: ProviderAttempt | null = null
+  let geminiAttempts: ProviderAttempt[] = []
 
   if (apiKey) {
     try {
       const res = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        headers: buildOpenAIHeaders(apiKey),
         body: JSON.stringify({ model: 'gpt-image-1', prompt, size, n: 1, quality: 'high' }),
         signal: AbortSignal.timeout(110000),
       })
       if (res.ok) {
         const data = await res.json()
         b64 = data?.data?.[0]?.b64_json || null
-        if (b64) provider = 'openai'
+        if (b64) {
+          provider = 'openai'
+          openaiAttempt = { provider: 'openai', configured: true, ok: true, status: res.status, message: 'Imagem gerada' }
+        } else {
+          openaiAttempt = { provider: 'openai', configured: true, ok: false, status: res.status, message: 'OpenAI respondeu sem imagem' }
+        }
       } else {
         const errText = await res.text().catch(() => '')
-        let rawMsg = `Falha na geração (${res.status})`
-        try { const j = JSON.parse(errText); rawMsg = j.error?.message || rawMsg } catch {}
+        openaiAttempt = parseProviderError(res.status, errText)
         console.error('[assets/generate] openai error:', res.status, errText.slice(0, 400))
-        const low = rawMsg.toLowerCase()
-        if (low.includes('billing') || low.includes('hard limit') || res.status === 402) {
-          openaiMsg = 'Limite de cobrança da conta OpenAI atingido (ajuste em platform.openai.com → Billing → Limits).'
-        } else if (low.includes('quota') || low.includes('insufficient')) {
-          openaiMsg = 'Conta OpenAI sem créditos/quota (adicione saldo em platform.openai.com).'
-        } else if (res.status === 429) {
-          openaiMsg = 'Muitas requisições à OpenAI agora.'
-        } else {
-          openaiMsg = rawMsg
-        }
       }
     } catch (e: any) {
-      openaiMsg = e?.name === 'TimeoutError' ? 'A OpenAI demorou demais para responder.' : (e?.message || 'Erro na OpenAI')
-      console.error('[assets/generate] openai threw:', openaiMsg)
+      const message = e?.name === 'TimeoutError' ? 'A OpenAI demorou demais para responder.' : (e?.message || 'Erro na OpenAI')
+      openaiAttempt = { provider: 'openai', configured: true, ok: false, message }
+      console.error('[assets/generate] openai threw:', message)
     }
+  } else {
+    openaiAttempt = { provider: 'openai', configured: false, ok: false, message: 'OPENAI_API_KEY ausente na Vercel' }
   }
 
   // Fallback automático: se a OpenAI não gerou, tenta o Imagen (Gemini).
   if (!b64) {
     const g = await generateWithGemini(prompt, body.format || 'square')
-    if (g) { b64 = g; provider = 'gemini' }
+    geminiAttempts = g.attempts
+    if (g.b64) { b64 = g.b64; provider = 'gemini' }
   }
 
   if (!b64) {
     refund()
-    const msg = openaiMsg
-      ? `${openaiMsg} O fallback (Gemini) também não conseguiu gerar a imagem agora.`
-      : 'Não foi possível gerar a imagem com nenhum provedor (OpenAI/Gemini). Tente novamente em instantes.'
-    return NextResponse.json({ error: msg }, { status: 502 })
+    const msg = buildFailureMessage(openaiAttempt, geminiAttempts)
+    return NextResponse.json({ error: msg, attempts: [openaiAttempt, ...geminiAttempts].filter(Boolean) }, { status: 502 })
   }
   console.log('[assets/generate] imagem gerada via', provider)
 

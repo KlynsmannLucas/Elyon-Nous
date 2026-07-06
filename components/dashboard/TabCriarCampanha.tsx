@@ -457,7 +457,7 @@ export function TabCriarCampanha({ clientData, onNavigateToConnections }: Props)
               <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', color: '#18191D' }}>Criativo visual</span>
             </div>
             <div style={{ fontSize: 12.5, color: '#565862', lineHeight: 1.5 }}>
-              Gerado pela mesma inteligência da Biblioteca. A API tenta OpenAI primeiro e usa Gemini automaticamente se a OpenAI estiver sem saldo/quota.
+              Gerado pela mesma inteligência da Biblioteca. A API tenta OpenAI primeiro e usa Gemini como fallback quando a chave estiver configurada.
             </div>
           </div>
           <span style={{
