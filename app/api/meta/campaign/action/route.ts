@@ -5,11 +5,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
 import { supabaseAdmin } from '@/lib/supabase'
+import { summarizeMetaResults } from '@/lib/metaResults'
 
 export const maxDuration = 30
 const META_BASE = 'https://graph.facebook.com/v21.0'
 
-type ActionType = 'pause' | 'resume' | 'scale'
+type ActionType = 'pause' | 'resume' | 'scale' | 'set_budget'
 
 // Registra a ação + o CPL/spend da conta no momento (para medir o "depois").
 // Tolerante: se a tabela não existir ainda, apenas ignora.
@@ -39,12 +40,17 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const action = body.action as ActionType
   const id = String(body.id || '').trim()           // campaign id
-  const factor = Number(body.factor) || 1.2          // escala: +20% por padrão
+  const rawFactor = Number(body.factor)
+  const factor = Number.isFinite(rawFactor) && rawFactor > 0 ? rawFactor : 1.2
+  const targetBudgetBrl = Number(body.targetBudget || body.dailyBudget || body.budget || 0)
   const dryRun = body.dryRun === true                // preview: calcula o plano SEM executar
-  if (!['pause', 'resume', 'scale'].includes(action)) {
+  if (!['pause', 'resume', 'scale', 'set_budget'].includes(action)) {
     return NextResponse.json({ success: false, error: 'Ação inválida.' }, { status: 400 })
   }
   if (!id) return NextResponse.json({ success: false, error: 'ID da campanha ausente.' }, { status: 400 })
+  if (action === 'set_budget' && (!Number.isFinite(targetBudgetBrl) || targetBudgetBrl <= 0)) {
+    return NextResponse.json({ success: false, error: 'Informe um orçamento diário válido.' }, { status: 400 })
+  }
 
   let accessToken: string
   let tokenAccountId: string | undefined
@@ -85,57 +91,75 @@ export async function POST(req: NextRequest) {
 
     // ── SCALE ────────────────────────────────────────────────────────────────
     // Calcula o PLANO (alvo + de/para) antes de tocar em qualquer coisa.
-    const cur = await fetch(`${META_BASE}/${id}?fields=daily_budget,name&access_token=${encodeURIComponent(accessToken)}`, { signal: AbortSignal.timeout(15000) })
+    const cur = await fetch(`${META_BASE}/${id}?fields=daily_budget,name,objective&access_token=${encodeURIComponent(accessToken)}`, { signal: AbortSignal.timeout(15000) })
     const cj = await cur.json().catch(() => ({}))
     if (cj?.error) return NextResponse.json({ success: false, error: cj.error.message || 'Não foi possível ler o orçamento.' }, { status: 502 })
     const daily = Number(cj?.daily_budget || 0) // centavos
+    const nextBudget = (current: number) => action === 'set_budget'
+      ? Math.round(targetBudgetBrl * 100)
+      : Math.round(current * factor)
+    const budgetVerb = (current: number, next: number) =>
+      action === 'set_budget' ? (next >= current ? 'Definir/aumentar' : 'Definir/reduzir') : next >= current ? 'Aumentar' : 'Reduzir'
+    const deltaText = (current: number, next: number) =>
+      current > 0 ? ` (${next >= current ? '+' : ''}${Math.round((next / current - 1) * 100)}%)` : ''
 
     // Define o alvo (campanha CBO ou ad set vencedor no ABO) sem executar.
     let targetId = id
     let targetBudget = daily
     let plan = ''
     if (daily) {
-      const next = Math.round(daily * factor)
-      plan = `Aumentar o orçamento da campanha "${cj.name || body.campaignName}" de ${fmt(daily)} para ${fmt(next)}/dia (+${Math.round((factor - 1) * 100)}%).`
+      const next = nextBudget(daily)
+      plan = `${budgetVerb(daily, next)} o orçamento da campanha "${cj.name || body.campaignName}" de ${fmt(daily)} para ${fmt(next)}/dia${deltaText(daily, next)}.`
     } else {
       // ABO: escolhe o ad set vencedor (menor CPL com leads).
       const enc = encodeURIComponent(accessToken)
       const [setsRes, insRes] = await Promise.all([
         fetch(`${META_BASE}/${id}/adsets?fields=id,name,daily_budget,effective_status&limit=50&access_token=${enc}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()).catch(() => ({})),
-        fetch(`${META_BASE}/${id}/insights?level=adset&fields=adset_id,spend,actions&date_preset=last_30d&limit=50&access_token=${enc}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()).catch(() => ({})),
+        fetch(`${META_BASE}/${id}/insights?level=adset&fields=adset_id,spend,actions,action_values,clicks,inline_link_clicks,impressions,reach&action_breakdowns=action_type,action_destination&date_preset=last_30d&limit=50&access_token=${enc}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()).catch(() => ({})),
       ])
-      const LEAD_RE = /lead|complete_registration|onsite_conversion\.messaging|purchase/i
-      const cplByAdset: Record<string, number> = {}
+      const costByAdset: Record<string, { cost: number; results: number; label: string }> = {}
       for (const row of (insRes?.data || [])) {
         const spend = Number(row.spend || 0)
-        let leads = 0
-        for (const a of (row.actions || [])) if (LEAD_RE.test(a?.action_type || '')) leads += Number(a?.value || 0)
-        cplByAdset[String(row.adset_id)] = leads > 0 ? spend / leads : Infinity
+        const result = summarizeMetaResults({
+          objective: String(cj?.objective || ''),
+          actions: row.actions,
+          actionValues: row.action_values,
+          spend,
+          clicks: Number(row.clicks || 0),
+          inlineLinkClicks: Number(row.inline_link_clicks || 0),
+          impressions: Number(row.impressions || 0),
+          reach: Number(row.reach || 0),
+        })
+        costByAdset[String(row.adset_id)] = {
+          cost: result.primaryResultValue > 0 ? spend / result.primaryResultValue : Infinity,
+          results: result.primaryResultValue,
+          label: result.primaryResultLabel,
+        }
       }
       const candidates = (setsRes?.data || [])
         .filter((s: any) => Number(s.daily_budget || 0) > 0 && (s.effective_status === 'ACTIVE' || !s.effective_status))
-        .map((s: any) => ({ id: String(s.id), name: s.name, budget: Number(s.daily_budget), cpl: cplByAdset[String(s.id)] ?? Infinity }))
-        .filter((s: any) => isFinite(s.cpl))
-        .sort((a: any, b: any) => a.cpl - b.cpl)
+        .map((s: any) => ({ id: String(s.id), name: s.name, budget: Number(s.daily_budget), ...(costByAdset[String(s.id)] || { cost: Infinity, results: 0, label: 'resultados' }) }))
+        .filter((s: any) => isFinite(s.cost))
+        .sort((a: any, b: any) => a.cost - b.cost)
       if (!candidates.length) {
         return NextResponse.json({ success: false, error: 'Campanha com orçamento no conjunto (ABO) e sem um ad set vencedor com dados suficientes. Ajuste o conjunto de melhor CPL manualmente.' }, { status: 409 })
       }
       const best = candidates[0]
       targetId = best.id
       targetBudget = best.budget
-      const next = Math.round(best.budget * factor)
-      plan = `Aumentar o orçamento do AD SET VENCEDOR "${best.name}" (CPL ${fmt(Math.round(best.cpl * 100))}) de ${fmt(best.budget)} para ${fmt(next)}/dia (+${Math.round((factor - 1) * 100)}%). A campanha usa orçamento no conjunto (ABO).`
+      const next = nextBudget(best.budget)
+      plan = `${budgetVerb(best.budget, next)} o orçamento do AD SET VENCEDOR "${best.name}" (${best.label}: ${best.results}, custo ${fmt(Math.round(best.cost * 100))}) de ${fmt(best.budget)} para ${fmt(next)}/dia${deltaText(best.budget, next)}. A campanha usa orçamento no conjunto (ABO).`
     }
 
     // Preview: NÃO executa, devolve o plano para o usuário aprovar.
     if (dryRun) return NextResponse.json({ success: true, preview: true, plan })
 
     // Execução (após aprovação explícita do usuário).
-    const next = Math.round(targetBudget * factor)
+    const next = nextBudget(targetBudget)
     const r = await post(targetId, { daily_budget: String(next) })
-    if (!r.ok) return NextResponse.json({ success: false, error: r.error || 'Falha ao escalar o orçamento.' }, { status: 502 })
+    if (!r.ok) return NextResponse.json({ success: false, error: r.error || 'Falha ao atualizar o orçamento.' }, { status: 502 })
     await logExecutedAction(userId, tokenAccountId, body, action)
-    return NextResponse.json({ success: true, message: `${plan.replace('Aumentar', 'Aumentado')}` })
+    return NextResponse.json({ success: true, message: `Orçamento atualizado. ${plan}` })
   } catch (e: any) {
     console.error('[meta/campaign/action]', e?.message)
     return NextResponse.json({ success: false, error: 'Erro ao executar a ação no Meta.' }, { status: 500 })

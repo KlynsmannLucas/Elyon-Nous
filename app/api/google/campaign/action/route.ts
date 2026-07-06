@@ -6,7 +6,7 @@ import { auth } from '@clerk/nextjs/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export const maxDuration = 30
-type ActionType = 'pause' | 'resume' | 'scale'
+type ActionType = 'pause' | 'resume' | 'scale' | 'set_budget'
 
 async function logExecutedAction(userId: string, accountId: string | undefined, body: any, action: ActionType) {
   if (!supabaseAdmin) return
@@ -26,10 +26,15 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const action = body.action as ActionType
   const id = String(body.id || '').trim()            // campaign id (numérico)
-  const factor = Number(body.factor) || 1.2
+  const rawFactor = Number(body.factor)
+  const factor = Number.isFinite(rawFactor) && rawFactor > 0 ? rawFactor : 1.2
+  const targetBudgetBrl = Number(body.targetBudget || body.dailyBudget || body.budget || 0)
   const dryRun = body.dryRun === true
-  if (!['pause', 'resume', 'scale'].includes(action)) return NextResponse.json({ success: false, error: 'Ação inválida.' }, { status: 400 })
+  if (!['pause', 'resume', 'scale', 'set_budget'].includes(action)) return NextResponse.json({ success: false, error: 'Ação inválida.' }, { status: 400 })
   if (!id) return NextResponse.json({ success: false, error: 'ID da campanha ausente.' }, { status: 400 })
+  if (action === 'set_budget' && (!Number.isFinite(targetBudgetBrl) || targetBudgetBrl <= 0)) {
+    return NextResponse.json({ success: false, error: 'Informe um orçamento diário válido.' }, { status: 400 })
+  }
 
   const devToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN
   if (!devToken) return NextResponse.json({ success: false, error: 'GOOGLE_ADS_DEVELOPER_TOKEN não configurado.' }, { status: 500 })
@@ -75,15 +80,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Não foi possível ler o orçamento desta campanha no Google.' }, { status: 502 })
     }
     const cur = amountMicros / 1e6
-    const next = Math.round(cur * factor)
-    const plan = `Aumentar o orçamento diário da campanha "${row?.campaign?.name || body.campaignName}" de ${brl(cur)} para ${brl(next)}/dia (+${Math.round((factor - 1) * 100)}%) no Google Ads.`
+    const next = action === 'set_budget' ? Math.round(targetBudgetBrl) : Math.round(cur * factor)
+    const verb = action === 'set_budget' ? (next >= cur ? 'Definir/aumentar' : 'Definir/reduzir') : next >= cur ? 'Aumentar' : 'Reduzir'
+    const delta = cur > 0 ? ` (${next >= cur ? '+' : ''}${Math.round((next / cur - 1) * 100)}%)` : ''
+    const plan = `${verb} o orçamento diário da campanha "${row?.campaign?.name || body.campaignName}" de ${brl(cur)} para ${brl(next)}/dia${delta} no Google Ads.`
     if (dryRun) return NextResponse.json({ success: true, preview: true, plan })
 
     await googleAdsMutate(customerId, accessToken, devToken, 'campaignBudgets:mutate', {
       operations: [{ updateMask: 'amount_micros', update: { resourceName: budgetResource, amountMicros: String(next * 1e6) } }],
     })
     await logExecutedAction(userId, customerId, body, action)
-    return NextResponse.json({ success: true, message: `Orçamento elevado de ${brl(cur)} para ${brl(next)}/dia no Google Ads.` })
+    return NextResponse.json({ success: true, message: `Orçamento atualizado de ${brl(cur)} para ${brl(next)}/dia no Google Ads.` })
   } catch (e: any) {
     console.error('[google/campaign/action]', e?.message)
     return NextResponse.json({ success: false, error: e?.message || 'Erro ao executar a ação no Google Ads.' }, { status: 502 })

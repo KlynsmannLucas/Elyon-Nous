@@ -67,6 +67,64 @@ const DELIVERY: Record<string, { label: string; color: string }> = {
 const deliveryOf = (c: any): { label: string; color: string } =>
   DELIVERY[String(c?.status || c?.effective_status || '').toUpperCase()] || { label: 'Ativa', color: '#0E9E6E' }
 
+type CampaignActionType = 'pause' | 'resume' | 'scale' | 'set_budget'
+type CampaignActionDraft = {
+  campaign: any
+  action: CampaignActionType
+  factor?: number
+  recommendedBudget?: number
+  source: 'queue' | 'detail' | 'manual'
+}
+
+const ACTION_COPY: Record<CampaignActionType, { label: string; title: string; icon: string; tone: 'good' | 'bad' | 'warn' | 'blue' }> = {
+  pause:      { label: 'Pausar', title: 'Pausar campanha', icon: 'alert', tone: 'bad' },
+  resume:     { label: 'Reativar', title: 'Reativar campanha', icon: 'bolt', tone: 'good' },
+  scale:      { label: 'Escalar', title: 'Escalar orçamento', icon: 'arrowUp', tone: 'good' },
+  set_budget: { label: 'Definir verba', title: 'Alterar orçamento diário', icon: 'money', tone: 'blue' },
+}
+
+const cleanAccountId = (value: any) => String(value || '').replace(/^act_/i, '').replace(/[^\d]/g, '')
+const metaCampaignUrl = (campaignId: any, accountId: any) => {
+  const act = cleanAccountId(accountId)
+  const cid = String(campaignId || '').trim()
+  if (!act || !cid) return ''
+  return `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${act}&selected_campaign_ids=${encodeURIComponent(cid)}`
+}
+const metaAdUrl = (adId: any, accountId: any, campaignId?: any, adsetId?: any) => {
+  const act = cleanAccountId(accountId)
+  const aid = String(adId || '').trim()
+  if (!act || !aid) return ''
+  const params = new URLSearchParams({ act, selected_ad_ids: aid })
+  if (campaignId) params.set('selected_campaign_ids', String(campaignId))
+  if (adsetId) params.set('selected_adset_ids', String(adsetId))
+  return `https://adsmanager.facebook.com/adsmanager/manage/ads?${params.toString()}`
+}
+const googleCampaignUrl = (campaignId: any, accountId: any) => {
+  const cid = cleanAccountId(accountId)
+  const camp = String(campaignId || '').trim()
+  if (!cid) return 'https://ads.google.com/aw/campaigns'
+  const params = new URLSearchParams({ ocid: cid })
+  if (camp) params.set('campaignId', camp)
+  return `https://ads.google.com/aw/campaigns?${params.toString()}`
+}
+const isPausedDelivery = (c: any) => deliveryOf(c).label === 'Pausada'
+const estimateDailyBudget = (c: any, fallback = 50) => {
+  const direct = Number(c?.dailyBudget || c?.daily_budget || c?.budgetDaily || 0)
+  if (direct > 0) return Math.round(direct)
+  const spend = Number(c?.spend || c?.spend30 || 0)
+  if (spend > 0) return Math.max(10, Math.round(spend / 30))
+  return fallback
+}
+const suggestedBudgetFor = (c: any, action: CampaignActionType) => {
+  const daily = estimateDailyBudget(c)
+  if (action === 'set_budget') {
+    if (c?._s === 'vencedora') return Math.max(10, Math.round(daily * 1.2))
+    if (c?._s === 'critica') return Math.max(10, Math.round(daily * 0.5))
+    return daily
+  }
+  return daily
+}
+
 function Empty() {
   return (
     <div className="p-4 md:p-6">
@@ -114,25 +172,13 @@ export default function DesempenhoPage() {
   const [campBreakdownLoading, setCampBreakdownLoading] = useState(false)
   const [stratGen, setStratGen] = useState(false)
   const [execId, setExecId] = useState<string | null>(null)
-
-  // Executa ação na campanha (Meta ou Google) com aprovação explícita: preview -> aprovar -> executar.
-  const execCampaign = async (c: any, action: 'pause' | 'scale') => {
-    if (!c?.id) return
-    const isGoogle = c.platform === 'google'
-    const endpoint = isGoogle ? '/api/google/campaign/action' : '/api/meta/campaign/action'
-    const canal = isGoogle ? 'Google Ads' : 'Meta Ads'
-    const payload = { action, id: String(c.id), accountId: isGoogle ? undefined : (metaAcctId || undefined), clientName: acctKey, campaignName: c.name }
-    setExecId(String(c.id))
-    try {
-      const prev = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, dryRun: true }) })
-      const pd = await prev.json()
-      if (!pd?.success) { window.toast?.({ tone: 'bad', title: 'Não foi possível', body: pd?.error || 'Tente novamente.' }); return }
-      if (typeof window !== 'undefined' && !window.confirm(`${pd.plan}\n\nConfirmar e executar no ${canal}?`)) return
-      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-      const d = await res.json()
-      window.toast?.(d?.success ? { tone: 'good', title: 'Ação executada', body: d.message } : { tone: 'bad', title: 'Não foi possível', body: d?.error || 'Tente novamente.' })
-    } catch { window.toast?.({ tone: 'bad', title: 'Falha de conexão' }) } finally { setExecId(null) }
-  }
+  const [actionDraft, setActionDraft] = useState<CampaignActionDraft | null>(null)
+  const [actionPreview, setActionPreview] = useState<any | null>(null)
+  const [actionPreviewLoading, setActionPreviewLoading] = useState(false)
+  const [budgetDraft, setBudgetDraft] = useState('')
+  const [trackingAudit, setTrackingAudit] = useState<any | null>(null)
+  const [trackingLoading, setTrackingLoading] = useState(false)
+  const [trackingErr, setTrackingErr] = useState('')
   useEffect(() => { setMounted(true) }, [])
 
   // Regenera a estratégia (público-alvo, ranking) sem sair da tela.
@@ -158,6 +204,115 @@ export default function DesempenhoPage() {
   const metaAcctId = (acctKey && selectedMetaAccountByClient[acctKey]) || ''
   const googleAcctId = (acctKey && selectedGoogleAccountByClient[acctKey]) || ''
   const hasMeta = !!metaAcctId
+
+  const campaignManagerLink = useCallback((c: any) => (
+    c?.platform === 'google' ? googleCampaignUrl(c?.id, googleAcctId) : metaCampaignUrl(c?.id, metaAcctId)
+  ), [googleAcctId, metaAcctId])
+
+  const actionEndpoint = (c: any) => c?.platform === 'google' ? '/api/google/campaign/action' : '/api/meta/campaign/action'
+
+  const actionPayload = useCallback((draft: CampaignActionDraft, dryRun = false) => {
+    const c = draft.campaign
+    const isGoogle = c?.platform === 'google'
+    const payload: any = {
+      action: draft.action,
+      id: String(c.id),
+      accountId: isGoogle ? (googleAcctId || undefined) : (metaAcctId || undefined),
+      clientName: acctKey,
+      campaignName: c.name,
+    }
+    if (draft.action === 'scale') payload.factor = draft.factor || 1.2
+    if (draft.action === 'set_budget') payload.targetBudget = Number(budgetDraft)
+    if (dryRun) payload.dryRun = true
+    return payload
+  }, [acctKey, budgetDraft, googleAcctId, metaAcctId])
+
+  const openCampaignAction = (campaign: any, action: CampaignActionType, opts: Partial<CampaignActionDraft> = {}) => {
+    if (!campaign?.id) return
+    const recommendedBudget = opts.recommendedBudget || suggestedBudgetFor(campaign, action)
+    setBudgetDraft(String(recommendedBudget))
+    setActionPreview(null)
+    setActionDraft({ campaign, action, factor: opts.factor, recommendedBudget, source: opts.source || 'manual' })
+  }
+
+  const closeCampaignAction = () => {
+    setActionDraft(null)
+    setActionPreview(null)
+    setActionPreviewLoading(false)
+    setBudgetDraft('')
+  }
+
+  useEffect(() => {
+    if (!actionDraft) return
+    if (actionDraft.action === 'set_budget' && (!Number.isFinite(Number(budgetDraft)) || Number(budgetDraft) <= 0)) {
+      setActionPreview(null)
+      return
+    }
+    let active = true
+    const timer = window.setTimeout(async () => {
+      setActionPreviewLoading(true)
+      setActionPreview(null)
+      try {
+        const prev = await fetch(actionEndpoint(actionDraft.campaign), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(actionPayload(actionDraft, true)),
+        })
+        const pd = await prev.json().catch(() => null)
+        if (active) setActionPreview(pd || { success: false, error: 'Não consegui calcular a prévia.' })
+      } catch {
+        if (active) setActionPreview({ success: false, error: 'Falha de conexão ao calcular a prévia.' })
+      } finally {
+        if (active) setActionPreviewLoading(false)
+      }
+    }, actionDraft.action === 'set_budget' ? 420 : 0)
+    return () => { active = false; window.clearTimeout(timer) }
+  }, [actionDraft, actionPayload, budgetDraft])
+
+  const confirmCampaignAction = async () => {
+    if (!actionDraft?.campaign?.id) return
+    setExecId(String(actionDraft.campaign.id))
+    try {
+      const res = await fetch(actionEndpoint(actionDraft.campaign), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(actionPayload(actionDraft, false)),
+      })
+      const d = await res.json().catch(() => null)
+      window.toast?.(d?.success
+        ? { tone: 'good', title: 'Ação executada', body: d.message || 'Campanha atualizada.' }
+        : { tone: 'bad', title: 'Não foi possível', body: d?.error || 'Tente novamente.' })
+      if (d?.success) closeCampaignAction()
+    } catch {
+      window.toast?.({ tone: 'bad', title: 'Falha de conexão' })
+    } finally {
+      setExecId(null)
+    }
+  }
+
+  const loadTrackingAudit = useCallback(() => {
+    if (!metaAcctId || trackingLoading) return
+    setTrackingLoading(true)
+    setTrackingErr('')
+    fetch(`/api/meta/tracking-audit?accountId=${encodeURIComponent(cleanAccountId(metaAcctId))}`, { signal: AbortSignal.timeout(30000) })
+      .then(async r => {
+        const d = await r.json().catch(() => null)
+        if (!r.ok || !d?.success) { setTrackingErr(d?.error || 'Não consegui auditar o tracking agora.'); return }
+        setTrackingAudit(d)
+      })
+      .catch((e: any) => setTrackingErr(e?.name === 'TimeoutError' ? 'Tempo esgotado ao auditar o tracking.' : 'Falha de conexão ao auditar o tracking.'))
+      .finally(() => setTrackingLoading(false))
+  }, [metaAcctId, trackingLoading])
+
+  useEffect(() => {
+    setTrackingAudit(null)
+    setTrackingErr('')
+  }, [metaAcctId])
+
+  useEffect(() => {
+    if (tab === 'campanhas' && metaAcctId && !trackingAudit && !trackingLoading) loadTrackingAudit()
+  }, [tab, metaAcctId, trackingAudit, trackingLoading, loadTrackingAudit])
+
   // Inteligência da conta (criativos, geo, posicionamentos, ad sets, pixel) sob demanda.
   const intelReqRef = useRef('')
   const loadIntel = useCallback(() => {
@@ -463,11 +618,28 @@ export default function DesempenhoPage() {
           )}
           {/* Ações executáveis (Meta e Google) com aprovação explícita */}
           {c.id && (
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line-2">
-              {c._s === 'vencedora'
-                ? <Button size="sm" variant="primary" icon={<Icon name="arrowUp" size={14} />} disabled={execId === String(c.id)} onClick={() => execCampaign(c, 'scale')}>{execId === String(c.id) ? 'Aguarde…' : 'Escalar (+20%)'}</Button>
-                : <Button size="sm" variant="soft" icon={<Icon name="alert" size={14} />} disabled={execId === String(c.id)} onClick={() => execCampaign(c, 'pause')}>{execId === String(c.id) ? 'Aguarde…' : 'Pausar campanha'}</Button>}
-              <span className="text-[11px] text-ink-3">no {c.platform === 'google' ? 'Google Ads' : 'Meta Ads'} · com aprovação</span>
+            <div className="mt-4 pt-4 border-t border-line-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap mb-2.5">
+                <div>
+                  <div className="text-[12.5px] font-bold text-ink">Controle da campanha</div>
+                  <div className="text-[11.5px] text-ink-3">Prévia obrigatória antes de executar no {c.platform === 'google' ? 'Google Ads' : 'Meta Ads'}.</div>
+                </div>
+                {campaignManagerLink(c) && (
+                  <a href={campaignManagerLink(c)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-sm border border-line bg-paper px-3 py-1.5 text-xs font-semibold text-ink-2 hover:border-blue hover:text-blue">
+                    <Icon name="link" size={13} /> Abrir gerenciador
+                  </a>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {isPausedDelivery(c) ? (
+                  <Button size="sm" variant="primary" icon={<Icon name="bolt" size={14} />} disabled={execId === String(c.id)} onClick={() => openCampaignAction(c, 'resume', { source: 'detail' })}>Reativar</Button>
+                ) : (
+                  <Button size="sm" variant="secondary" className="text-red border-red/30 hover:border-red" icon={<Icon name="alert" size={14} />} disabled={execId === String(c.id)} onClick={() => openCampaignAction(c, 'pause', { source: 'detail' })}>Pausar</Button>
+                )}
+                <Button size="sm" variant="primary" icon={<Icon name="arrowUp" size={14} />} disabled={execId === String(c.id) || isPausedDelivery(c)} onClick={() => openCampaignAction(c, 'scale', { factor: 1.2, source: 'detail' })}>Escalar +20%</Button>
+                <Button size="sm" variant="secondary" icon={<Icon name="arrowDown" size={14} />} disabled={execId === String(c.id) || isPausedDelivery(c)} onClick={() => openCampaignAction(c, 'scale', { factor: 0.8, source: 'detail' })}>Reduzir 20%</Button>
+                <Button size="sm" variant="soft" icon={<Icon name="money" size={14} />} disabled={execId === String(c.id)} onClick={() => openCampaignAction(c, 'set_budget', { source: 'detail' })}>Definir verba</Button>
+              </div>
             </div>
           )}
         </Card>
@@ -666,6 +838,277 @@ export default function DesempenhoPage() {
     )
   }
 
+  const CampaignControlCenter = () => {
+    const active = camps.filter((c: any) => !isPausedDelivery(c))
+    const winners = camps.filter((c: any) => c._s === 'vencedora' && !isPausedDelivery(c))
+    const critical = camps.filter((c: any) => c._s === 'critica' && !isPausedDelivery(c))
+    const pausedWinners = camps.filter((c: any) => c._s === 'vencedora' && isPausedDelivery(c))
+    const totalSpend = camps.reduce((s: number, c: any) => s + (Number(c.spend) || 0), 0)
+    const avoidWaste = critical.reduce((s: number, c: any) => s + (Number(c.spend) || 0), 0)
+    const trackingChecks = Array.isArray(trackingAudit?.checks) ? trackingAudit.checks : []
+    const trackingHasError = trackingChecks.some((x: any) => x.status === 'error')
+    const trackingHasWarn = trackingChecks.some((x: any) => x.status === 'warning' || x.status === 'not_checked') || (!trackingAudit && !!metaAcctId)
+    const trackingTone: 'good' | 'warn' | 'bad' | 'neutral' = trackingHasError ? 'bad' : trackingHasWarn ? 'warn' : trackingAudit ? 'good' : 'neutral'
+    const trackingLabel = trackingHasError ? 'Corrigir antes de escalar' : trackingHasWarn ? 'Escalar com cuidado' : trackingAudit ? 'Pode escalar' : 'Não auditado'
+    const queue: Array<{ campaign: any; title: string; body: string; action: CampaignActionType; factor?: number; badge: string; tone: 'good' | 'bad' | 'warn' | 'blue' }> = [
+      ...critical.slice(0, 3).map((c: any) => ({
+        campaign: c,
+        title: 'Cortar desperdício',
+        body: c.evidence || `Investimento ${brl(c.spend || 0)} com custo acima do aceitável.`,
+        action: 'pause' as CampaignActionType,
+        badge: 'pausar',
+        tone: 'bad' as const,
+      })),
+      ...winners.slice(0, 3).map((c: any) => ({
+        campaign: c,
+        title: 'Escalar vencedora',
+        body: c.evidence || `Custo por ${resultLabelOf(c).toLowerCase()} em vantagem na conta.`,
+        action: 'scale' as CampaignActionType,
+        factor: 1.2,
+        badge: '+20%',
+        tone: 'good' as const,
+      })),
+      ...pausedWinners.slice(0, 2).map((c: any) => ({
+        campaign: c,
+        title: 'Reativar oportunidade',
+        body: 'Campanha classificada como vencedora, mas está pausada.',
+        action: 'resume' as CampaignActionType,
+        badge: 'reativar',
+        tone: 'blue' as const,
+      })),
+    ].slice(0, 6)
+
+    const trackingRows = [
+      ...trackingChecks.map((x: any) => ({ id: x.id, name: x.name, detail: x.detail || x.actionRequired || x.description, status: x.status })),
+      {
+        id: 'result_split',
+        name: 'Objetivos e resultados separados',
+        detail: camps.some((c: any) => Array.isArray(c.resultBreakdown) && c.resultBreakdown.length > 0)
+          ? 'Leads, WhatsApp, ligações, compras e cliques estão sendo lidos separadamente.'
+          : 'Sem breakdown de resultado suficiente no cache atual. Rode nova análise se a conta foi atualizada.',
+        status: camps.some((c: any) => Array.isArray(c.resultBreakdown) && c.resultBreakdown.length > 0) ? 'ok' : 'warning',
+      },
+      {
+        id: 'google_conversions',
+        name: 'Conversões do Google Ads',
+        detail: googleAcctId
+          ? camps.some((c: any) => c.platform === 'google' && resultValueOf(c) > 0)
+            ? 'Google Ads tem conversões/resultados chegando.'
+            : 'Conta Google conectada, mas sem conversões visíveis no período. Validar tags e conversões primárias.'
+          : 'Google Ads não conectado para este cliente.',
+        status: googleAcctId ? (camps.some((c: any) => c.platform === 'google' && resultValueOf(c) > 0) ? 'ok' : 'warning') : 'not_checked',
+      },
+    ]
+    const checkTone = (status: string): 'good' | 'warn' | 'bad' | 'neutral' =>
+      status === 'ok' ? 'good' : status === 'error' ? 'bad' : status === 'warning' ? 'warn' : 'neutral'
+    const eventsUrl = metaAcctId ? `https://business.facebook.com/events_manager2/overview?act=${cleanAccountId(metaAcctId)}` : ''
+
+    return (
+      <div className="space-y-4 mb-4">
+        <Card padding="none" className="overflow-hidden border-blue-line">
+          <div className="p-4 md:p-5 bg-[linear-gradient(135deg,#F7FAFF_0%,#FFFFFF_48%,#F3FBF7_100%)]">
+            <div className="flex items-start gap-3 flex-wrap">
+              <span className="w-11 h-11 rounded-md bg-ink text-white flex items-center justify-center shrink-0"><Icon name="scale" size={20} /></span>
+              <div className="flex-1 min-w-[260px]">
+                <div className="text-[10.5px] font-mono uppercase tracking-wider text-blue mb-1">Centro de controle · Meta + Google</div>
+                <h2 className="text-[19px] font-bold text-ink" style={{ letterSpacing: '-0.01em' }}>Decisões operacionais com aprovação</h2>
+                <p className="text-[13px] text-ink-2 mt-1 max-w-3xl">
+                  Pause, reative ou altere orçamento sem sair do ELYON. O NOUS calcula a prévia, mostra o motivo e mantém links diretos para conferir no gerenciador antes de executar.
+                </p>
+              </div>
+              <Badge tone={trackingTone} dot>{trackingLabel}</Badge>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mt-4">
+              {[
+                ['Ativas', int(active.length), `${int(camps.length)} campanhas analisadas`, 'pulse'],
+                ['Prontas para escalar', int(winners.length), 'custo controlado', 'arrowUp'],
+                ['Cortar/reduzir', int(critical.length), avoidWaste > 0 ? `${brl(avoidWaste)} sob revisão` : 'sem desperdício forte', 'alert'],
+                ['Investimento lido', brl(totalSpend), 'último período analisado', 'money'],
+              ].map(([label, value, sub, icon]) => (
+                <div key={label} className="rounded-sm border border-line bg-paper/80 px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-ink-3"><Icon name={String(icon)} size={12} />{label}</div>
+                  <div className="text-[18px] font-mono font-bold text-ink mt-1">{value}</div>
+                  <div className="text-[11px] text-ink-3">{sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-1 xl:grid-cols-[1.45fr_.9fr] gap-4">
+          <Card>
+            <SectionHead title="Fila de decisões do NOUS" subtitle={queue.length ? `${queue.length} ações prontas para revisão` : 'Sem ação crítica agora'} icon={<Icon name="bolt" size={17} />} action={<SourceBadge source="real" />} />
+            {queue.length > 0 ? (
+              <div className="divide-y divide-line-2">
+                {queue.map((item, i) => {
+                  const c = item.campaign
+                  const cpa = costPerResultOf(c)
+                  const link = campaignManagerLink(c)
+                  return (
+                    <div key={`${c.id}-${item.action}-${i}`} className="py-3 first:pt-0 last:pb-0">
+                      <div className="flex items-start gap-3">
+                        <span className={`w-8 h-8 rounded-sm flex items-center justify-center shrink-0 ${item.tone === 'good' ? 'bg-green-soft text-green' : item.tone === 'bad' ? 'bg-red-soft text-red' : item.tone === 'warn' ? 'bg-amber-soft text-amber' : 'bg-blue-soft text-blue'}`}>
+                          <Icon name={item.action === 'pause' ? 'alert' : item.action === 'resume' ? 'bolt' : 'arrowUp'} size={15} />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[13.5px] font-bold text-ink">{item.title}</span>
+                            <Badge tone={item.tone}>{item.badge}</Badge>
+                            <span className="text-[11px] text-ink-3">{platformName(c.platform)}</span>
+                          </div>
+                          <div className="text-[13px] font-medium text-ink mt-1 truncate">{c.name || 'Campanha'}</div>
+                          <p className="text-[12px] text-ink-2 mt-0.5 leading-relaxed">{item.body}</p>
+                          <div className="flex flex-wrap gap-3 mt-2 text-[11.5px] font-mono text-ink-3">
+                            <span>{brl(c.spend || 0)} investidos</span>
+                            <span>{int(resultValueOf(c))} {resultLabelOf(c).toLowerCase()}</span>
+                            <span>{cpa != null ? `${brl(cpa)} custo` : 'custo indisponível'}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {link && (
+                            <a href={link} target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 rounded-sm border border-line bg-paper px-2.5 py-1.5 text-xs font-semibold text-ink-2 hover:border-blue hover:text-blue">
+                              <Icon name="link" size={13} /> Gerenciador
+                            </a>
+                          )}
+                          <Button size="sm" variant={item.tone === 'bad' ? 'secondary' : 'primary'} className={item.tone === 'bad' ? 'text-red border-red/30 hover:border-red' : ''} disabled={execId === String(c.id)} onClick={() => openCampaignAction(c, item.action, { factor: item.factor, source: 'queue' })}>
+                            Revisar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="rounded-sm border border-line bg-canvas-2 p-4 text-sm text-ink-2">
+                Nenhuma campanha exige ação imediata. Mantenha o acompanhamento e valide tracking antes de aumentar orçamento.
+              </div>
+            )}
+          </Card>
+
+          <Card>
+            <SectionHead title="Saúde do tracking" subtitle="Trava de escala antes de mexer em verba" icon={<Icon name="pulse" size={17} />}
+              action={<Badge tone={trackingTone} dot>{trackingLabel}</Badge>} />
+            <div className="space-y-2.5">
+              {trackingLoading && <div className="text-sm text-ink-3 py-4">Auditando pixel e eventos…</div>}
+              {trackingErr && <div className="rounded-sm bg-red-soft border border-red/20 p-3 text-[12px] text-red">{trackingErr}</div>}
+              {!trackingLoading && trackingRows.slice(0, 6).map((row: any) => (
+                <div key={row.id} className="flex items-start gap-2.5">
+                  <span className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${checkTone(row.status) === 'good' ? 'bg-green-soft text-green' : checkTone(row.status) === 'bad' ? 'bg-red-soft text-red' : checkTone(row.status) === 'warn' ? 'bg-amber-soft text-amber' : 'bg-canvas-2 text-ink-3'}`}>
+                    <Icon name={row.status === 'ok' ? 'check' : row.status === 'error' ? 'alert' : 'pulse'} size={13} />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-[12.5px] font-semibold text-ink">{row.name}</div>
+                    <div className="text-[11.5px] text-ink-3 leading-relaxed">{row.detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-3 border-t border-line-2 flex flex-wrap gap-2">
+              <Button size="sm" variant="soft" icon={<Icon name="pulse" size={13} />} onClick={loadTrackingAudit} disabled={!metaAcctId || trackingLoading}>
+                {trackingLoading ? 'Auditando…' : 'Reauditar'}
+              </Button>
+              {eventsUrl && (
+                <a href={eventsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-sm border border-line bg-paper px-3 py-1.5 text-xs font-semibold text-ink-2 hover:border-blue hover:text-blue">
+                  <Icon name="link" size={13} /> Events Manager
+                </a>
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  const CampaignActionModal = () => {
+    if (!actionDraft) return null
+    const c = actionDraft.campaign
+    const copy = ACTION_COPY[actionDraft.action]
+    const isDecrease = actionDraft.action === 'scale' && Number(actionDraft.factor || 1.2) < 1
+    const modalTitle = isDecrease ? 'Reduzir orçamento' : copy.title
+    const managerLink = campaignManagerLink(c)
+    const isBudgetInvalid = actionDraft.action === 'set_budget' && (!Number.isFinite(Number(budgetDraft)) || Number(budgetDraft) <= 0)
+    const canExecute = !!actionPreview?.success && !actionPreviewLoading && !isBudgetInvalid && execId !== String(c.id)
+    const trackingRisk = (actionDraft.action === 'scale' || actionDraft.action === 'set_budget') && (trackingAudit?.overallStatus === 'error' || !trackingAudit)
+    return (
+      <Modal open={!!actionDraft} onClose={closeCampaignAction} icon={copy.icon} title={modalTitle} sub={`${platformName(c.platform)} · ${c.name || 'Campanha'}`} width={640}
+        footer={<>
+          <Button variant="ghost" onClick={closeCampaignAction}>Cancelar</Button>
+          <Button onClick={confirmCampaignAction} disabled={!canExecute} className={copy.tone === 'bad' ? 'bg-red hover:bg-red/90 text-white' : ''} icon={<Icon name="check" size={14} />}>
+            {execId === String(c.id) ? 'Executando…' : 'Aprovar e executar'}
+          </Button>
+        </>}>
+        <div className="space-y-4">
+          <div className="rounded-md border border-line bg-canvas-2 p-3">
+            <div className="flex items-start gap-3">
+              <ChannelMark name={platformName(c.platform)} size={26} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[13.5px] font-semibold text-ink truncate">{c.name || 'Campanha'}</div>
+                <div className="flex flex-wrap gap-3 mt-1 text-[11.5px] font-mono text-ink-3">
+                  <span>{brl(c.spend || 0)} investidos</span>
+                  <span>{int(resultValueOf(c))} {resultLabelOf(c).toLowerCase()}</span>
+                  <span>{costPerResultOf(c) != null ? `${brl(costPerResultOf(c)!)} custo` : 'custo indisponível'}</span>
+                  <span>{deliveryOf(c).label}</span>
+                </div>
+              </div>
+              <Badge tone={copy.tone}>{isDecrease ? 'reduzir' : copy.label}</Badge>
+            </div>
+          </div>
+
+          {actionDraft.action === 'set_budget' && (
+            <div>
+              <label className="text-[12px] font-semibold text-ink-2 mb-1.5 block">Novo orçamento diário</label>
+              <div className="flex items-center gap-2">
+                <span className="rounded-sm border border-line bg-canvas-2 px-3 py-2 text-sm font-mono text-ink-3">R$</span>
+                <input
+                  value={budgetDraft}
+                  onChange={e => setBudgetDraft(e.target.value.replace(',', '.'))}
+                  type="number"
+                  min="1"
+                  step="1"
+                  className="w-full rounded-sm border border-line bg-paper px-3 py-2 text-sm font-semibold text-ink outline-none focus:border-blue"
+                />
+              </div>
+              <div className="text-[11.5px] text-ink-3 mt-1">Sugestão inicial do NOUS: {brl(actionDraft.recommendedBudget || suggestedBudgetFor(c, 'set_budget'))}/dia.</div>
+            </div>
+          )}
+
+          <div className="rounded-md border border-blue-line bg-blue-soft p-3">
+            <div className="text-[10.5px] font-mono uppercase tracking-wider text-blue mb-1">Prévia da execução</div>
+            {actionPreviewLoading && <div className="text-[13px] text-ink-2">Calculando plano seguro…</div>}
+            {!actionPreviewLoading && actionPreview?.success && <div className="text-[13px] text-ink leading-relaxed">{actionPreview.plan}</div>}
+            {!actionPreviewLoading && actionPreview && !actionPreview.success && <div className="text-[13px] text-red leading-relaxed">{actionPreview.error || 'Não consegui calcular a prévia.'}</div>}
+          </div>
+
+          {trackingRisk && (
+            <div className="rounded-md border border-amber/25 bg-amber-soft p-3">
+              <div className="flex items-start gap-2">
+                <Icon name="alert" size={16} className="text-amber shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-[12.5px] font-semibold text-ink">Atenção antes de escalar</div>
+                  <div className="text-[12px] text-ink-2 leading-relaxed">
+                    O tracking ainda não está 100% confirmado nesta sessão. Para aumento de verba, valide pixel, CAPI/tag de conversão e evento principal antes de aprovar mudanças agressivas.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {managerLink && (
+              <a href={managerLink} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-sm border border-line bg-paper px-3 py-2 text-[12.5px] font-semibold text-ink-2 hover:border-blue hover:text-blue">
+                <Icon name="link" size={14} /> Abrir no gerenciador
+              </a>
+            )}
+            <button onClick={() => setTab('criativos')} className="inline-flex items-center justify-center gap-2 rounded-sm border border-line bg-paper px-3 py-2 text-[12.5px] font-semibold text-ink-2 hover:border-blue hover:text-blue">
+              <Icon name="image" size={14} /> Ver criativos ligados
+            </button>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+
   return (
     <div className="p-4 md:p-6">
       <header className="mb-5 animate-fade-up">
@@ -740,6 +1183,7 @@ export default function DesempenhoPage() {
         const pill = (active: boolean) => `px-3 py-1.5 text-[12.5px] font-semibold rounded-pill border-[1.5px] ${active ? 'border-blue bg-blue-soft text-blue-600' : 'border-line bg-paper text-ink-2 hover:border-line-strong'}`
         return (
           <div className="animate-fade-up">
+            <CampaignControlCenter />
             <Card>
               <SectionHead title="Desempenho por campanha" subtitle={`${filtered.length} de ${camps.length} campanhas · clique numa linha para detalhes`} icon={<Icon name="megaphone" size={17} />}
                 action={camps.length ? (
@@ -1207,6 +1651,7 @@ export default function DesempenhoPage() {
         const campName = adSet?.campaignName || (intel?.campaigns || []).find((cm: any) => cm.id === c.campaignId)?.name || ''
         const adSetName = adSet?.name || ''
         const ai = crDetail[c.id]
+        const adManagerLink = metaAdUrl(c.id, metaAcctId, c.campaignId, c.adsetId)
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm" onClick={() => setOpenCre(null)}>
             <div className="bg-paper rounded-lg border border-line max-w-md w-full max-h-[88vh] overflow-y-auto shadow-xl animate-fade-up" onClick={e => e.stopPropagation()}>
@@ -1236,6 +1681,18 @@ export default function DesempenhoPage() {
                   >
                     <Icon name="link" size={14} />
                     {c.creativeUrlLabel || 'Abrir criativo'}
+                    <Icon name="arrowR" size={13} />
+                  </a>
+                )}
+                {adManagerLink && (
+                  <a
+                    href={adManagerLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mb-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-line bg-paper px-3 py-2 text-[12.5px] font-semibold text-ink-2 hover:border-blue hover:text-blue transition-colors"
+                  >
+                    <Icon name="megaphone" size={14} />
+                    Abrir anúncio no Gerenciador
                     <Icon name="arrowR" size={13} />
                   </a>
                 )}
@@ -1475,6 +1932,7 @@ export default function DesempenhoPage() {
         </div>
         )
       })()}
+      <CampaignActionModal />
     </div>
   )
 }
