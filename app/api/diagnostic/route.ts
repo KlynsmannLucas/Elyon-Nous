@@ -147,7 +147,7 @@ function buildFallbackDiagnostic(params: {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
@@ -345,4 +345,9 @@ Responda APENAS com JSON válido. Seja específico, use os números calculados a
     console.error('Diagnostic route error:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
+}
+
+export async function POST(req: NextRequest) {
+  const { withCreditCharge } = await import('@/lib/gate')
+  return withCreditCharge('diagnostic', () => handlePost(req))
 }

@@ -11,6 +11,9 @@ export const PLAN_CREDITS: Record<string, number> = {
 }
 
 export const OPERATION_COSTS: Record<string, number> = {
+  first_ad:        2,
+  competitor_xray: 2,
+  pipeline:        29, // full 360° analysis bundle
   nous_chat:        2,
   audit:            10,
   strategy:         8,
@@ -33,119 +36,42 @@ export const OPERATION_COSTS: Record<string, number> = {
   creative_detail:       1,
 }
 
-function getLimit(plan: string): number {
-  return PLAN_CREDITS[plan] ?? PLAN_CREDITS.free
-}
-
-function nextMonthReset(): string {
-  const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString()
+export interface CreditResult {
+  allowed: boolean; remaining: number; used: number; limit: number
+  error?: string; status?: number; chargeId?: string
 }
 
 export async function getCredits(userId: string, plan: string) {
-  const limit = getLimit(plan)
-  if (!supabaseAdmin) return { used: 0, limit, remaining: limit, resetAt: nextMonthReset() }
-
-  try {
-    const { data } = await supabaseAdmin
-      .from('ai_credits')
-      .select('used, limit, reset_at')
-      .eq('user_id', userId)
-      .single()
-
-    if (!data) return { used: 0, limit, remaining: limit, resetAt: nextMonthReset() }
-
-    const now = new Date()
-    const resetAt = new Date(data.reset_at)
-    const used = now > resetAt ? 0 : (data.used ?? 0)
-
-    return { used, limit, remaining: Math.max(limit - used, 0), resetAt: data.reset_at }
-  } catch {
-    return { used: 0, limit, remaining: limit, resetAt: nextMonthReset() }
-  }
+  if (!supabaseAdmin) throw new Error('Serviço de créditos indisponível')
+  const { data, error } = await supabaseAdmin.from('ai_credits')
+    .select('used, reset_at').eq('user_id', userId).maybeSingle()
+  if (error) throw new Error('Não foi possível consultar os créditos')
+  const limit = PLAN_CREDITS[plan] ?? PLAN_CREDITS.free
+  const expired = !data || new Date(data.reset_at).getTime() <= Date.now()
+  const used = expired ? 0 : data.used
+  const next = new Date(); next.setUTCMonth(next.getUTCMonth() + 1, 1); next.setUTCHours(0, 0, 0, 0)
+  return { used, limit, remaining: Math.max(0, limit - used), resetAt: expired ? next.toISOString() : data.reset_at, plan }
 }
 
-export async function checkAndDeductCredits(
-  userId: string,
-  plan: string,
-  operation: string
-): Promise<{ allowed: boolean; remaining: number; used: number; limit: number; error?: string }> {
-  const limit = getLimit(plan)
-
-  if (plan === 'admin' || limit >= 9999999) {
-    return { allowed: true, remaining: 9999999, used: 0, limit }
-  }
-
-  const cost = OPERATION_COSTS[operation] ?? 2
-
-  if (!supabaseAdmin) {
-    return { allowed: true, remaining: limit, used: 0, limit }
-  }
-
+export async function checkAndDeductCredits(userId: string, plan: string, operation: string): Promise<CreditResult> {
+  const limit = PLAN_CREDITS[plan] ?? PLAN_CREDITS.free
+  const cost = OPERATION_COSTS[operation]
+  const unavailable: CreditResult = { allowed: false, remaining: 0, used: 0, limit, status: 503, error: 'Serviço de créditos indisponível. Tente novamente.' }
+  if (!cost) return { ...unavailable, status: 400, error: 'Operação inválida' }
+  if (!supabaseAdmin) return unavailable
   try {
-    const now      = new Date()
-    const resetAt  = nextMonthReset()
-
-    const { data: existing } = await supabaseAdmin
-      .from('ai_credits')
-      .select('used, limit, reset_at')
-      .eq('user_id', userId)
-      .single()
-
-    let currentUsed = 0
-
-    if (existing) {
-      const expiry = new Date(existing.reset_at)
-      currentUsed  = now > expiry ? 0 : (existing.used ?? 0)
-    }
-
-    if (currentUsed + cost > limit) {
-      return {
-        allowed:   false,
-        remaining: Math.max(limit - currentUsed, 0),
-        used:      currentUsed,
-        limit,
-        error:     `Você usou todos os seus créditos de IA este mês. Faça upgrade do seu plano para continuar.`,
-      }
-    }
-
-    const newUsed = currentUsed + cost
-
-    await supabaseAdmin.from('ai_credits').upsert(
-      { user_id: userId, used: newUsed, limit, reset_at: existing?.reset_at || resetAt },
-      { onConflict: 'user_id' }
-    )
-
-    return { allowed: true, remaining: limit - newUsed, used: newUsed, limit }
-  } catch {
-    return { allowed: true, remaining: limit, used: 0, limit }
-  }
+    const { data, error } = await supabaseAdmin.rpc('elyon_charge_credits', {
+      p_user_id: userId, p_limit: limit, p_cost: cost, p_operation: operation,
+    })
+    if (error || !data) return unavailable
+    return { ...data, status: data.allowed ? 200 : 402,
+      error: data.allowed ? undefined : 'Créditos insuficientes. Faça upgrade do plano para continuar.' }
+  } catch { return unavailable }
 }
 
-/**
- * Devolve créditos de uma operação que falhou sem entregar resultado ao usuário.
- * Silencioso — falha de refund nunca quebra o fluxo.
- */
-export async function refundCredits(
-  userId: string,
-  plan: string,
-  operation: string,
-): Promise<void> {
-  if (!supabaseAdmin) return
-  if (plan === 'admin' || (PLAN_CREDITS[plan] ?? 0) >= 9999999) return
-  const cost = OPERATION_COSTS[operation] ?? 2
-  try {
-    const { data } = await supabaseAdmin
-      .from('ai_credits')
-      .select('used, reset_at')
-      .eq('user_id', userId)
-      .maybeSingle()
-    if (!data) return
-    if (new Date() > new Date(data.reset_at)) return  // janela já resetou, nada a devolver
-    const newUsed = Math.max(0, (data.used ?? 0) - cost)
-    await supabaseAdmin.from('ai_credits').update({ used: newUsed }).eq('user_id', userId)
-    console.info('[credits] refundCredits ok:', { userId: userId.slice(0, 8) + '…', operation, costReturned: cost, newUsed })
-  } catch {
-    // falha silenciosa — refund não deve interromper a resposta
-  }
+// Refunds identify the exact debit: retry-safe and cannot affect a new monthly period.
+export async function refundCredits(userId: string, _plan: string, _operation: string, chargeId?: string): Promise<void> {
+  if (!supabaseAdmin || !chargeId) return
+  const { error } = await supabaseAdmin.rpc('elyon_refund_credits', { p_user_id: userId, p_charge_id: chargeId })
+  if (error) console.error('[credits] Falha ao estornar cobrança', error.message)
 }

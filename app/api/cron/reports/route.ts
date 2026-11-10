@@ -15,7 +15,7 @@ const CRON_SECRET = process.env.CRON_SECRET
 export async function GET(req: Request) {
   // Protege a rota: aceita chamadas do Vercel Cron (Authorization: Bearer <CRON_SECRET>)
   const auth = req.headers instanceof Headers ? req.headers.get('authorization') : null
-  if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
+  if (!CRON_SECRET || auth !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 

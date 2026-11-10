@@ -10,11 +10,12 @@ const ACTIVE_USER_KEY = 'elyon_active_user'
 const LOOSE_LOCAL_KEYS = [
   'elyon_terms_v1',
   'elyon_onboarding_dismissed',
+  'elyon_onboarding_dismissed_v1',
   'dashboard_profile_goal_onboarding',
   'dashboard_simple_action_plan_status',
   'using_simple_demo_data',
 ]
-const SESSION_KEYS = ['elyon_ai_context']
+const SESSION_KEYS = ['elyon_ai_context', 'elyon_xray_theme']
 
 /** Limpa TODO o estado local do app (memória + persistência). */
 function wipeAllLocalState() {
@@ -45,9 +46,9 @@ export function enforceUserScope(userId: string | null | undefined): boolean {
   if (active === userId) return false  // mesmo usuário — nada a fazer
 
   // Usuário diferente (ou primeira vez) → limpa tudo do anterior
-  if (active !== null) wipeAllLocalState()
+  wipeAllLocalState()
   try { localStorage.setItem(ACTIVE_USER_KEY, userId) } catch {}
-  return active !== null
+  return true
 }
 
 /** Chamado no logout — limpa o estado e o marcador de usuário ativo. */

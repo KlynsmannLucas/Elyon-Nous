@@ -156,7 +156,7 @@ async function executeTool(name: string, input: Record<string, any>, accountId: 
 }
 
 // ── Route ──────────────────────────────────────────────────────────────────────
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) {
     return new Response('Não autenticado', { status: 401 })
@@ -271,4 +271,9 @@ ${JSON.stringify(plan, null, 2)}`
       'Connection':    'keep-alive',
     },
   })
+}
+
+export async function POST(req: NextRequest) {
+  const { withCreditCharge } = await import('@/lib/gate')
+  return withCreditCharge('campaign_generate', () => handlePost(req))
 }

@@ -7,12 +7,16 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
+  const client = await clerkClient()
+  const actor = await client.users.getUser(userId)
+  const { isAdministrator } = await import('@/lib/access')
+  if (!isAdministrator(actor)) return NextResponse.json({ error: 'Acesso restrito a administradores' }, { status: 403 })
+
   const { plan } = await req.json()
   if (!ALLOWED_PLANS.includes(plan)) {
     return NextResponse.json({ error: `Plano inválido. Use: ${ALLOWED_PLANS.join(', ')}` }, { status: 400 })
   }
 
-  const client = await clerkClient()
   await client.users.updateUserMetadata(userId, {
     publicMetadata: { plan },
   })

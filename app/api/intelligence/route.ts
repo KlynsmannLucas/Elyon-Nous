@@ -5,7 +5,7 @@ import { getBenchmark, getBenchmarkSummary } from '@/lib/niche_benchmarks'
 import { fetchRealtimeBenchmarks } from '@/lib/tavily'
 import { sanitizeText } from '@/lib/sanitize'
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
 
@@ -220,4 +220,9 @@ Gere EXATAMENTE 6 seções de inteligência, cada uma com foco diferente. Respon
     console.error('Intelligence route error:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
+}
+
+export async function POST(req: NextRequest) {
+  const { withCreditCharge } = await import('@/lib/gate')
+  return withCreditCharge('intelligence', () => handlePost(req))
 }

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { extractJson } from '@/lib/aiJson'
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
@@ -147,4 +147,9 @@ Responda APENAS com JSON válido (array), sem markdown:
     console.error('Action plan error:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
+}
+
+export async function POST(req: NextRequest) {
+  const { withCreditCharge } = await import('@/lib/gate')
+  return withCreditCharge('action_plan', () => handlePost(req))
 }

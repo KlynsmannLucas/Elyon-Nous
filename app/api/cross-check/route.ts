@@ -38,25 +38,10 @@ export async function POST(req: NextRequest) {
   if (!body.payload) return NextResponse.json({ success: false, error: 'Análise ausente.' }, { status: 400 })
 
   // Plano / trial — mesmo padrão das demais rotas de IA
-  const { clerkClient } = await import('@clerk/nextjs/server')
-  const clerkUser = await (await clerkClient()).users.getUser(userId)
-  const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
-  const hasActivePlan = plan && plan !== 'free'
-  let effectivePlan = plan || 'free'
-  if (!hasActivePlan) {
-    const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
-    const inTrial = (Date.now() - createdAtMs) < 14 * 24 * 60 * 60 * 1000
-    if (!inTrial) {
-      return NextResponse.json({ success: false, error: 'Período de avaliação encerrado. Assine um plano para continuar.' }, { status: 402 })
-    }
-    effectivePlan = 'trial'
-  }
+  const { gateAndCharge, refundGate } = await import('@/lib/gate')
+  const gate = await gateAndCharge('gemini_crosscheck')
+  if (!gate.ok) return new Response(JSON.stringify({ success: false, error: gate.error }), { status: gate.status || 503, headers: { 'Content-Type': 'application/json' } })
 
-  const { checkAndDeductCredits, refundCredits } = await import('@/lib/credits')
-  const creditResult = await checkAndDeductCredits(userId, effectivePlan, 'gemini_crosscheck')
-  if (!creditResult.allowed) {
-    return NextResponse.json({ success: false, error: creditResult.error }, { status: 402 })
-  }
 
   // Serializa a análise (limitada para não estourar o prompt)
   const analysisJson = JSON.stringify(body.payload).slice(0, 12000)
@@ -89,7 +74,7 @@ Responda em português APENAS com JSON válido (sem markdown):
     })
     return NextResponse.json({ success: true, kind, review, source: 'gemini' })
   } catch (err: any) {
-    refundCredits(userId, effectivePlan, 'gemini_crosscheck').catch(() => {})
+    refundGate(gate, 'gemini_crosscheck').catch(() => {})
     const { errMsg } = await import('@/lib/errMsg')
     return NextResponse.json({ success: false, error: errMsg(err, 'Não foi possível gerar a segunda opinião.') }, { status: 500 })
   }

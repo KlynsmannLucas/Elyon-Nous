@@ -1,7 +1,7 @@
 // app/api/benchmarks/refresh/route.ts
 // Atualiza benchmark de um nicho específico via Tavily + Claude e persiste no Supabase.
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
 async function tavilySearch(query: string, apiKey: string): Promise<string> {
@@ -34,6 +34,10 @@ async function tavilySearch(query: string, apiKey: string): Promise<string> {
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const actor = await (await clerkClient()).users.getUser(userId)
+  const { isAdministrator } = await import('@/lib/access')
+  if (!isAdministrator(actor)) return NextResponse.json({ error: 'Acesso restrito a administradores' }, { status: 403 })
 
   const body = await req.json()
   const { niche, nicheKey } = body

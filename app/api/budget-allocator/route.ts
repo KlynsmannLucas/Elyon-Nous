@@ -262,7 +262,7 @@ function buildAllocations(
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -376,4 +376,9 @@ Use a ferramenta emit_allocation para retornar a realocação.`
     console.error('[budget-allocator] error:', err)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
+}
+
+export async function POST(req: NextRequest) {
+  const { withCreditCharge } = await import('@/lib/gate')
+  return withCreditCharge('budget_allocator', () => handlePost(req))
 }

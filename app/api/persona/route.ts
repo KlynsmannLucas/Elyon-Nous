@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { sanitizeText } from '@/lib/sanitize'
 import { extractJson } from '@/lib/aiJson'
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
@@ -128,4 +128,9 @@ Use a ferramenta emit_persona para retornar a persona.`
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
+}
+
+export async function POST(req: NextRequest) {
+  const { withCreditCharge } = await import('@/lib/gate')
+  return withCreditCharge('persona', () => handlePost(req))
 }

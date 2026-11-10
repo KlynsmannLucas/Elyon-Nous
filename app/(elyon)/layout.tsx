@@ -7,6 +7,8 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useUser, useClerk } from '@clerk/nextjs'
+import { UserScopeBoundary } from '@/components/dashboard/UserScopeBoundary'
+import { clearUserScopeOnLogout } from '@/lib/userScope'
 import { useAppStore } from '@/lib/store'
 import { SidebarV2, TopbarV2, NousRail, NousOrb, StudioTabs, STUDIO_ROUTES, ToastProvider, VersionSync, type AreaKey } from '@/components/dashboard/v2'
 
@@ -28,6 +30,10 @@ const SUBTITLES: Record<AreaKey, string> = {
 }
 
 export default function ElyonShellLayout({ children }: { children: React.ReactNode }) {
+  return <UserScopeBoundary><ScopedShell>{children}</ScopedShell></UserScopeBoundary>
+}
+
+function ScopedShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -86,11 +92,12 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
   // Restaura conexões OAuth do servidor (persistência por usuário) + processa
   // o retorno do OAuth (?oauth_success=1) feito a partir do v2.
   useEffect(() => {
+    let active = true
     const restore = () => {
       fetch('/api/connections')
         .then(r => (r.ok ? r.json() : { connections: [] }))
         .then(({ connections }) => {
-          if (!Array.isArray(connections)) return
+          if (!active || !Array.isArray(connections)) return
           const cur = useAppStore.getState().connectedAccounts
           for (const conn of connections) {
             if (!cur.some(c => c.platform === conn.platform)) useAppStore.getState().connectAccount(conn)
@@ -101,17 +108,20 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
     restore()
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('oauth_success') === '1') {
       window.history.replaceState({}, '', window.location.pathname)
-      setTimeout(restore, 600) // dá tempo do callback persistir antes do refetch
+      setTimeout(() => { if (active) restore() }, 600) // dá tempo do callback persistir antes do refetch
     }
+    return () => { active = false }
   }, [])
 
   // Restaura os CLIENTES do Supabase (fonte da verdade, isolada por user_id).
   // Corrige "clientes sumiram": se o localStorage foi limpo/evictado ou estourou
   // a cota, os clientes voltam do banco em vez de aparecerem como conta vazia.
   useEffect(() => {
+    let active = true
     fetch('/api/clients')
       .then(r => (r.ok ? r.json() : { clients: [] }))
       .then(({ clients }) => {
+        if (!active) return
         const server = Array.isArray(clients) ? clients : []
         if (server.length === 0) return // server vazio/erro transitório → NÃO apaga o local
         const st = useAppStore.getState()
@@ -131,6 +141,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
         }
       })
       .catch(() => {})
+    return () => { active = false }
   }, [])
 
   // Fecha o drawer da sidebar ao navegar (mobile).
@@ -222,7 +233,7 @@ export default function ElyonShellLayout({ children }: { children: React.ReactNo
           onDeleteClient={onDeleteClient}
           userName={userName}
           userPlan={plan}
-          onLogout={() => signOut(() => router.push('/'))}
+          onLogout={() => { clearUserScopeOnLogout(); signOut(() => router.push('/')) }}
           mobileOpen={mobileNav}
           onMobileClose={() => setMobileNav(false)}
         />

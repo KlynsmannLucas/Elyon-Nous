@@ -1,7 +1,7 @@
 // app/api/metrics/route.ts — CRUD de métricas reais no Supabase
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin as supabase } from '@/lib/supabase'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 
 // GET — busca métricas do usuário

@@ -280,7 +280,7 @@ ${rawText.slice(0, 1200)}`,
 
 export async function GET(req: Request) {
   const authHeader = req.headers instanceof Headers ? req.headers.get('authorization') : null
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
