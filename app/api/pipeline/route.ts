@@ -154,6 +154,12 @@ export async function POST(req: NextRequest) {
   }
 
   const skip = new Set<string>(input.skipAgents || [])
+  if (['auditor', 'data_analyst', 'estrategista', 'copywriter', 'report'].every(a => skip.has(a))) {
+    return new Response('Selecione pelo menos um agente', { status: 400 })
+  }
+  const { gateAndCharge, refundGate } = await import('@/lib/gate')
+  const gate = await gateAndCharge('pipeline')
+  if (!gate.ok) return Response.json({ error: gate.error }, { status: gate.status || 503 })
 
   // Normaliza dados de campanha antes de passar aos agentes
   const metaCampaigns    = normalizeCampaigns(input.metaCampaigns    || [], 'meta')
@@ -260,6 +266,7 @@ export async function POST(req: NextRequest) {
         send({ type: 'fatal_error', message: e.message })
       }
 
+      if (executed.length === 0) await refundGate(gate, 'pipeline')
       send({
         type: 'done',
         pipeline: 'elyon_full',

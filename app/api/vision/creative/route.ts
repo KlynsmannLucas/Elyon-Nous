@@ -49,25 +49,10 @@ export async function POST(req: NextRequest) {
   const niche = sanitizeText(body.niche, 120) || 'negócio'
 
   // Plano / trial — mesmo padrão das demais rotas de IA
-  const { clerkClient } = await import('@clerk/nextjs/server')
-  const clerkUser = await (await clerkClient()).users.getUser(userId)
-  const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
-  const hasActivePlan = plan && plan !== 'free'
-  let effectivePlan = plan || 'free'
-  if (!hasActivePlan) {
-    const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
-    const inTrial = (Date.now() - createdAtMs) < 14 * 24 * 60 * 60 * 1000
-    if (!inTrial) {
-      return NextResponse.json({ success: false, error: 'Período de avaliação encerrado. Assine um plano para continuar.' }, { status: 402 })
-    }
-    effectivePlan = 'trial'
-  }
+  const { gateAndCharge, refundGate } = await import('@/lib/gate')
+  const gate = await gateAndCharge('gemini_vision')
+  if (!gate.ok) return new Response(JSON.stringify({ success: false, error: gate.error }), { status: gate.status || 503, headers: { 'Content-Type': 'application/json' } })
 
-  const { checkAndDeductCredits, refundCredits } = await import('@/lib/credits')
-  const creditResult = await checkAndDeductCredits(userId, effectivePlan, 'gemini_vision')
-  if (!creditResult.allowed) {
-    return NextResponse.json({ success: false, error: creditResult.error }, { status: 402 })
-  }
 
   const focusCreative = `Avalie este CRIATIVO de anúncio para o nicho "${niche}". Considere: clareza da oferta/proposta de valor, força do gancho, legibilidade do texto, hierarquia visual, presença e destaque do CTA, prova social, e aderência ao público do nicho. Estime o potencial de CTR.`
   const focusLanding  = `Avalie este print de LANDING PAGE para o nicho "${niche}". Considere: clareza da proposta de valor acima da dobra, visibilidade e clareza do CTA, número de campos de formulário, sinais de confiança/prova social, legibilidade e foco. Estime o potencial de conversão (clique→lead).`
@@ -97,7 +82,7 @@ Responda em português APENAS com JSON válido (sem markdown), nesta estrutura:
     })
     return NextResponse.json({ success: true, kind, analysis, source: 'gemini' })
   } catch (err: any) {
-    refundCredits(userId, effectivePlan, 'gemini_vision').catch(() => {})
+    refundGate(gate, 'gemini_vision').catch(() => {})
     const raw = String(err?.message || err || '')
     // Bloqueio de conta/projeto do Google (403/PERMISSION_DENIED) ou indisponibilidade:
     // não é acionável pelo usuário → responde 503 para o painel se esconder sozinho.

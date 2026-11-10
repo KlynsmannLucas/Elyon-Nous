@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/market-intelligence — upsert (1 registro por cliente)
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -74,4 +74,9 @@ export async function POST(req: NextRequest) {
   })
 
   return NextResponse.json({ ok: true })
+}
+
+export async function POST(req: NextRequest) {
+  const { withCreditCharge } = await import('@/lib/gate')
+  return withCreditCharge('market_intel', () => handlePost(req))
 }

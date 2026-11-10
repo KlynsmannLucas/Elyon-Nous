@@ -104,26 +104,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Sempre busca do Clerk diretamente — JWT pode estar cacheado sem o plano atualizado
-  const { clerkClient } = await import('@clerk/nextjs/server')
-  const clerkUser = await (await clerkClient()).users.getUser(userId)
-  const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
-  const hasActivePlan = plan && plan !== 'free'
-  let effectivePlan = plan || 'free'
+  const { gateAndCharge, refundGate } = await import('@/lib/gate')
+  const gate = await gateAndCharge('nous_chat')
+  if (!gate.ok) return new Response(JSON.stringify({ success: false, error: gate.error }), { status: gate.status || 503, headers: { 'Content-Type': 'application/json' } })
 
-  if (!hasActivePlan) {
-    const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
-    const inTrial = (Date.now() - createdAtMs) < 14 * 24 * 60 * 60 * 1000
-    if (!inTrial) {
-      return NextResponse.json({ success: false, error: 'Período de avaliação encerrado. Assine um plano para continuar.' }, { status: 402 })
-    }
-    effectivePlan = 'trial'
-  }
-
-  const { checkAndDeductCredits } = await import('@/lib/credits')
-  const creditResult = await checkAndDeductCredits(userId, effectivePlan, 'nous_chat')
-  if (!creditResult.allowed) {
-    return NextResponse.json({ success: false, error: creditResult.error }, { status: 402 })
-  }
 
   try {
     const { message: _msg, context, history, niche: _ni, city, hasRealData, viewMode, nicheProfile, clientName: _cn, liveInsights, metaAccountId: _acct, actionableCampaigns } = await req.json()
@@ -208,11 +192,12 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (apiKey) {
+      let systemPrompt = ''
       try {
         const { default: Anthropic } = await import('@anthropic-ai/sdk')
         const anthropic = new Anthropic({ apiKey })
 
-        const systemPrompt = `Você é a NOUS — a analista estratégica sênior da plataforma ELYON. Você tem 10 anos de experiência em tráfego pago, funis de aquisição e crescimento de negócios no Brasil.
+        systemPrompt = `Você é a NOUS — a analista estratégica sênior da plataforma ELYON. Você tem 10 anos de experiência em tráfego pago, funis de aquisição e crescimento de negócios no Brasil.
 
 CONTEXTO DO CLIENTE (leia os rótulos de cada seção antes de responder):
 ${context}
@@ -354,6 +339,7 @@ COMPLIANCE — OBRIGATÓRIO: nunca prometa aprovação, preço final ou ausênci
     return NextResponse.json({ success: true, reply, dataSource: 'local' })
 
   } catch (error: any) {
+    await refundGate(gate, 'nous_chat')
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

@@ -625,6 +625,8 @@ async function runPersistence(
 }
 
 export async function POST(req: NextRequest) {
+  const { gateAndCharge, refundGate } = await import('@/lib/gate')
+  let gate: Awaited<ReturnType<typeof gateAndCharge>> | undefined
   try {
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
@@ -643,22 +645,9 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const { clerkClient } = await import('@clerk/nextjs/server')
-    const clerkUser = await (await clerkClient()).users.getUser(userId)
-    const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
-    const hasActivePlan = plan && plan !== 'free'
-    const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
-    const inTrial = (Date.now() - createdAtMs) < 14 * 24 * 60 * 60 * 1000
-    if (!hasActivePlan && !inTrial) {
-      return NextResponse.json({ success: false, error: 'Período de avaliação encerrado.' }, { status: 402 })
-    }
-    const effectivePlan = hasActivePlan ? plan! : (inTrial ? 'trial' : 'free')
+    gate = await gateAndCharge('audit')
+    if (!gate.ok) return new Response(JSON.stringify({ success: false, error: gate.error }), { status: gate.status || 503, headers: { 'Content-Type': 'application/json' } })
 
-    const { checkAndDeductCredits, refundCredits } = await import('@/lib/credits')
-    const creditResult = await checkAndDeductCredits(userId, effectivePlan, 'audit')
-    if (!creditResult.allowed) {
-      return NextResponse.json({ success: false, error: creditResult.error }, { status: 402 })
-    }
 
     const body = await req.json()
     const {
@@ -1396,7 +1385,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     // ── Fallback: Gemini (se disponível) ou benchmark estático ───────────────
     if (!geminiAudit && !bench) {
       // IA falhou E nicho desconhecido → usuário não recebe nenhum resultado: devolve créditos
-      refundCredits(userId, effectivePlan, 'audit').catch(() => {})
+      refundGate(gate, 'audit').catch(() => {})
       return NextResponse.json({ success: false, error: 'Nicho não reconhecido e API indisponível.' }, { status: 400 })
     }
     const auditSrcLabel = geminiAudit ? 'gemini' : 'benchmark'
@@ -1434,6 +1423,7 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`json):
     return NextResponse.json({ success: true, audit, source: auditSrcLabel, priorityActions: fbMergedActions, auditReportId: fbPersistence.auditReportId, persistence: fbPersistence.status })
 
   } catch (error: any) {
+    if (gate?.ok) await refundGate(gate, 'audit')
     console.error('Audit route error:', error)
     return NextResponse.json({ success: false, error: errMsg(error, 'Erro ao gerar auditoria.') }, { status: 500 })
   }

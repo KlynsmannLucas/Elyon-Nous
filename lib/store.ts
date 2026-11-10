@@ -902,10 +902,9 @@ export const useAppStore = create<AppStore>()(
         strategyData:        state.strategyData,
         savedClients:        state.savedClients,
         campaignHistory:     state.campaignHistory,
-        // Persiste conexões com accessToken (Meta usa token de 60d; Google token expira mas server-side auto-refresh).
-        // refreshToken do Google não vai para o localStorage — fica apenas no Supabase criptografado.
-        connectedAccounts: state.connectedAccounts,
-        clientConnectedAccounts: state.clientConnectedAccounts,
+        // Tokens permanecem no servidor; persista apenas os metadados da conexão.
+        connectedAccounts: state.connectedAccounts.map(a => ({ ...a, accessToken: '' })),
+        clientConnectedAccounts: Object.fromEntries(Object.entries(state.clientConnectedAccounts).map(([name, accounts]) => [name, accounts.map(a => ({ ...a, accessToken: '' }))])),
         // Isolamento por cliente: a conta de anúncio escolhida POR cliente precisa
         // sobreviver a reloads — senão todo cliente cairia na conta padrão do usuário.
         selectedMetaAccountByClient:   state.selectedMetaAccountByClient,

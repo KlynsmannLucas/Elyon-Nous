@@ -19,7 +19,7 @@ async function fetchPages(token: string) {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
@@ -107,4 +107,9 @@ Responda SOMENTE com um JSON válido no formato abaixo (sem markdown, sem texto 
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
+}
+
+export async function POST(req: NextRequest) {
+  const { withCreditCharge } = await import('@/lib/gate')
+  return withCreditCharge('campaign_generate', () => handlePost(req))
 }

@@ -45,7 +45,7 @@ interface GenerateCopyRequest {
   funnelGap?: string
 }
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
@@ -144,4 +144,9 @@ Retorne SOMENTE JSON válido:
     console.error('[generate-copy] Erro:', e.message)
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
+}
+
+export async function POST(req: NextRequest) {
+  const { withCreditCharge } = await import('@/lib/gate')
+  return withCreditCharge('assets_copy', () => handlePost(req))
 }

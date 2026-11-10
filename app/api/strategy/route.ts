@@ -870,35 +870,13 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { clerkClient } = await import('@clerk/nextjs/server')
-  const clerkUser = await (await clerkClient()).users.getUser(userId)
-  const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
-  const hasActivePlan = plan && plan !== 'free'
-  let effectivePlan = plan || 'free'
+  const body = await req.json().catch(() => null)
+  if (!body) return Response.json({ error: 'JSON inválido' }, { status: 400 })
+  const { gateAndCharge, refundGate } = await import('@/lib/gate')
+  const gate = await gateAndCharge('strategy')
+  if (!gate.ok) return new Response(JSON.stringify({ success: false, error: gate.error }), { status: gate.status || 503, headers: { 'Content-Type': 'application/json' } })
 
-  if (!hasActivePlan) {
-    const TRIAL_DAYS = 14
-    const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
-    const inTrial = (Date.now() - createdAtMs) < TRIAL_DAYS * 24 * 60 * 60 * 1000
-    if (!inTrial) {
-      return new Response(
-        `data: ${JSON.stringify({ success: false, error: 'Período de avaliação encerrado. Assine um plano para continuar.' })}\n\n`,
-        { status: 402, headers: { 'Content-Type': 'text/event-stream' } }
-      )
-    }
-    effectivePlan = 'trial'
-  }
 
-  const { checkAndDeductCredits, refundCredits } = await import('@/lib/credits')
-  const creditResult = await checkAndDeductCredits(userId, effectivePlan, 'strategy')
-  if (!creditResult.allowed) {
-    return new Response(
-      `data: ${JSON.stringify({ success: false, error: creditResult.error })}\n\n`,
-      { status: 402, headers: { 'Content-Type': 'text/event-stream' } }
-    )
-  }
-
-  const body = await req.json()
   const encoder = new TextEncoder()
   let pingTimer: ReturnType<typeof setInterval> | null = null
 
@@ -917,7 +895,7 @@ export async function POST(req: NextRequest) {
       } catch (err: any) {
         console.error('Strategy stream error:', err)
         // Devolve créditos — estratégia falhou, usuário não recebeu resultado
-        refundCredits(userId, effectivePlan, 'strategy').catch(() => {})
+        refundGate(gate, 'strategy').catch(() => {})
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ success: false, error: err.message || 'Erro inesperado.' })}\n\n`))
       } finally {
         if (pingTimer) clearInterval(pingTimer)

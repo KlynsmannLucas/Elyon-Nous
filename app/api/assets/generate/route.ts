@@ -339,21 +339,12 @@ export async function POST(req: NextRequest) {
   const size = VALID_SIZES[body.format || 'square'] || VALID_SIZES.square
 
   // ── Controle de custo: debita créditos ANTES de chamar os provedores ────────
-  const { clerkClient } = await import('@clerk/nextjs/server')
-  const clerkUser = await (await clerkClient()).users.getUser(userId)
-  const plan = (clerkUser.publicMetadata as any)?.plan as string | undefined
-  const hasActivePlan = !!plan && plan !== 'free'
-  const createdAtMs = typeof clerkUser.createdAt === 'number' ? clerkUser.createdAt : new Date(clerkUser.createdAt as any).getTime()
-  const inTrial = (Date.now() - createdAtMs) < 14 * 24 * 60 * 60 * 1000
-  const effectivePlan = hasActivePlan ? plan! : (inTrial ? 'trial' : 'free')
+  const { gateAndCharge, refundGate } = await import('@/lib/gate')
+  const gate = await gateAndCharge('assets_generate')
+  if (!gate.ok) return new Response(JSON.stringify({ success: false, error: gate.error }), { status: gate.status || 503, headers: { 'Content-Type': 'application/json' } })
 
-  const { checkAndDeductCredits, refundCredits } = await import('@/lib/credits')
-  const credit = await checkAndDeductCredits(userId, effectivePlan, 'assets_generate')
-  if (!credit.allowed) {
-    return NextResponse.json({ error: credit.error || 'Créditos insuficientes para gerar imagem.' }, { status: 402 })
-  }
   // Em qualquer saída de erro a partir daqui, devolvemos o crédito.
-  const refund = () => { refundCredits(userId, effectivePlan, 'assets_generate').catch(() => {}) }
+  const refund = () => { refundGate(gate, 'assets_generate').catch(() => {}) }
 
   // ── 1. Gera a imagem: OpenAI (gpt-image-1) → fallback Gemini (Imagen) ───────
   const prompt = buildPrompt(body)

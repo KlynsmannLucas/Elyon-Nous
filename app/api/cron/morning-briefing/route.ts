@@ -134,7 +134,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
 export async function GET(req: Request) {
   // Vercel cron authentication
   const authHeader = req.headers.get('authorization')
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
