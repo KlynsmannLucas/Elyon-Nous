@@ -9,7 +9,7 @@ export interface DailySeries {
   labels: string[]        // "6 jun", "7 jun"…
   spend: number[]         // investimento diário (real)
   leads: number[]         // leads diários (real)
-  revenue: number[] | null // receita estimada = spend × avgROAS (derivada) — null se sem ROAS
+  revenue: number[] | null // null until the daily source provides actual revenue
   hasRevenue: boolean
 }
 
@@ -21,10 +21,11 @@ const fmtDay = (iso: string) => {
 }
 
 /** Lê a série diária real do cliente ativo. Retorna null enquanto carrega ou sem dados. */
-export function useDailySeries(avgROAS?: number | null): DailySeries | null {
+export function useDailySeries(_avgROAS?: number | null): DailySeries | null {
   const clientData = useAppStore(s => s.clientData)
   const savedClients = useAppStore(s => s.savedClients)
   const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
+  const datePreset = useAppStore(s => s.globalPeriod.preset)
   const [series, setSeries] = useState<DailySeries | null>(null)
 
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
@@ -33,9 +34,10 @@ export function useDailySeries(avgROAS?: number | null): DailySeries | null {
   const accountId = (key && selectedMetaAccountByClient[key]) || ''
 
   useEffect(() => {
+    setSeries(null)
     if (!key || !accountId) { setSeries(null); return }
     let active = true
-    fetch(`/api/metrics/daily?accountId=${encodeURIComponent(accountId)}`)
+    fetch(`/api/metrics/daily?accountId=${encodeURIComponent(accountId)}&datePreset=${encodeURIComponent(datePreset)}`)
       .then(r => (r.ok ? r.json() : { days: [] }))
       .then(d => {
         if (!active) return
@@ -43,16 +45,14 @@ export function useDailySeries(avgROAS?: number | null): DailySeries | null {
         if (days.length < 2) { setSeries(null); return }
         const spend = days.map((x: any) => Number(x.spend || 0))
         const leads = days.map((x: any) => Number(x.leads || 0))
-        const roas = avgROAS && avgROAS > 0 ? Number(avgROAS) : null
-        const revenue = roas ? spend.map(s => Math.round(s * roas)) : null
         setSeries({
           labels: days.map((x: any) => fmtDay(String(x.date))),
-          spend, leads, revenue, hasRevenue: !!revenue,
+          spend, leads, revenue: null, hasRevenue: false,
         })
       })
       .catch(() => { if (active) setSeries(null) })
     return () => { active = false }
-  }, [key, accountId, avgROAS])
+  }, [key, accountId, datePreset])
 
   return series
 }

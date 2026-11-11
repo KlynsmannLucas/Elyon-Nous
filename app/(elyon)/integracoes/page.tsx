@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Card, Badge, Button, SectionHead, Modal, AdAccountPicker } from '@/components/dashboard/v2'
+import ReporteiIntegrationCard from '@/components/dashboard/ReporteiIntegrationCard'
 
 function setReturnCookie() {
   try { document.cookie = `oauth_return=/integracoes; path=/; max-age=600; samesite=lax` } catch {}
@@ -39,9 +40,9 @@ export default function IntegracoesPage() {
   const key = clientData?.clientName || savedClients?.[0]?.clientData?.clientName || ''
   const connected = connectedAccounts.length
   const stats = [
-    { label: 'Conectadas', value: connected, color: '#161B26' },
-    { label: 'Saudáveis', value: connected, color: '#0B855D' },
-    { label: 'Com atenção', value: 0, color: '#E08B0B' },
+    { label: 'Conexões diretas', value: connected, color: '#161B26' },
+    { label: 'Meta Ads', value: connectedAccounts.filter(account => account.platform === 'meta').length, color: '#0B855D' },
+    { label: 'Google Ads', value: connectedAccounts.filter(account => account.platform === 'google').length, color: '#E08B0B' },
   ]
 
   const disconnect = (platform: 'meta' | 'google') => {
@@ -122,7 +123,8 @@ export default function IntegracoesPage() {
         })}
       </div>
 
-      <p className="text-xs text-ink-3 mt-4">As conexões são por usuário e ficam salvas com segurança. Os tokens nunca são expostos ao navegador.</p>
+      <ReporteiIntegrationCard key={key} clientName={key} clientId={savedClients.find(client => client.clientData.clientName === key)?.id} />
+      <p className="text-xs text-ink-3 mt-4">As conexões são por usuário. Cada cliente usa apenas as contas e o projeto que você vinculou a ele.</p>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import type { ClientData } from '@/lib/store'
 import { useClientActions } from '@/hooks/useClientActions'
 import { getBenchmark } from '@/lib/niche_benchmarks'
 import { errMsg } from '@/lib/errMsg'
+import { resolveReportingPeriod } from '@/lib/reporting-period'
 import CrossCheckPanel from './CrossCheckPanel'
 
 interface Props {
@@ -503,26 +504,29 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
     setAudit(null)
 
     try {
+      const reportingPeriod = resolveReportingPeriod({ datePreset })
       // Busca dados reais das plataformas em paralelo
       // Tokens são buscados server-side via getValidMetaToken/getValidGoogleToken
       const [metaResult, googleResult] = await Promise.all([
-        metaAccount
+        metaAccount && selectedMetaAccountId
           ? fetch('/api/ads-data/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                accountId: selectedMetaAccountId || metaAccount.accountId || undefined,
+                accountId: selectedMetaAccountId,
                 datePreset,
+                ...reportingPeriod,
               }) })
               .then(r => r.json())
-              .catch(() => null)
+              .catch(() => ({ success: false, error: 'Falha de conexão com Meta Ads.' }))
           : Promise.resolve(null),
-        googleAccount
+        googleAccount && selectedGoogleAccountId
           ? fetch('/api/ads-data/google', { method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                accountId: selectedGoogleAccountId || googleAccount.accountId || undefined,
+                accountId: selectedGoogleAccountId,
                 datePreset,
+                ...reportingPeriod,
               }) })
               .then(r => r.json())
-              .catch(() => null)
+              .catch(() => ({ success: false, error: 'Falha de conexão com Google Ads.' }))
           : Promise.resolve(null),
       ])
 
@@ -531,8 +535,8 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
       const googleError = googleResult && !googleResult.success ? googleResult.error : null
 
       // Se ambas falharam e não há upload, reportar erro claro
-      if (metaError && googleError && uploadedFiles.length === 0) {
-        throw new Error(`Meta Ads: ${errMsg(metaError)} | Google Ads: ${errMsg(googleError)}`)
+      if ((metaError || googleError) && uploadedFiles.length === 0) {
+        throw new Error([metaError && `Meta Ads: ${errMsg(metaError)}`, googleError && `Google Ads: ${errMsg(googleError)}`].filter(Boolean).join(' | '))
       }
 
       setLoadingStep('Normalizando métricas…')
@@ -557,10 +561,12 @@ export function TabAuditoria({ clientData, autoRun, onAutoRunConsumed }: Props) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientName:    clientData.clientName,
+          clientId: useAppStore.getState().savedClients.find(client => client.clientData.clientName === clientData.clientName)?.id,
           niche:         clientData.niche,
           budget:        clientData.budget,
           objective:     clientData.objective,
           datePreset,
+          period: reportingPeriod,
           metaCampaigns,
           metaTotals,
           googleCampaigns,

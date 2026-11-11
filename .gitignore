@@ -24,6 +24,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+supabase/.temp/
 
 # Sentry Config File
 .env.sentry-build-plugin
