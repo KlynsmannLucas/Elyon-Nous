@@ -1,5 +1,6 @@
 // app/(elyon)/config/page.tsx — Configurações (Workspace + Preferências NOUS + Plano + Memória viva)
 'use client'
+import InternalSettingsLink from '@/components/dashboard/InternalSettingsLink'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -108,6 +109,7 @@ export default function ConfigPage() {
     <div className="p-4 md:p-6">
       <header className="mb-5 animate-fade-up">
         <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>Configurações</h1>
+          <InternalSettingsLink />
         <p className="text-sm text-ink-2 mt-0.5">Workspace e preferências{key ? ` · ${key}` : ''}</p>
       </header>
 

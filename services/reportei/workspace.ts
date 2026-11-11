@@ -1,4 +1,3 @@
-import { createHash } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
 import { decryptReporteiToken, encryptReporteiToken, isEncryptedReporteiToken } from './crypto'
 import { resolveReportingPeriod, type ReportingPeriod } from '@/lib/reporting-period'
@@ -17,7 +16,7 @@ export function assertSameOrigin(request: Request) {
 
 export async function ownedClient(userId: string, clientId: string) {
   if (!/^[0-9a-f-]{36}$/i.test(clientId)) throw new ReporteiError('Selecione um cliente salvo no Nous.', 400)
-  const { data, error } = await reporteiDb().from('clients').select('id, client_data').eq('id', clientId).eq('user_id', userId).maybeSingle()
+  const { data, error } = await reporteiDb().from('clients').select('id, client_data, extra_data').eq('id', clientId).eq('user_id', userId).maybeSingle()
   if (error) throw dbError()
   if (!data) throw new ReporteiError('Cliente não encontrado nesta conta.', 404)
   return data
@@ -87,28 +86,6 @@ export async function saveReporteiLink(userId: string, clientId: string, project
 }
 
 export async function readReporteiData(userId: string, clientId: string, input: { datePreset?: string; startDate?: string; endDate?: string }, refresh = false) {
-  const link = await clientReporteiLink(userId, clientId)
-  if (!link) return { connected: false, sources: [], message: 'Vincule este cliente a um projeto do Reportei nas Integrações.' }
-  const connection = await reporteiConnection(userId)
-  const token = connectionToken(connection)
-  let period: ReportingPeriod
-  try { period = resolveReportingPeriod(input, new Date(), link.timezone) }
-  catch (error) { throw new ReporteiError(error instanceof Error ? error.message : 'Período inválido.', 400) }
-  const version = createHash('sha256').update(JSON.stringify([link, connection!.company_id, connection!.connected_at])).digest('hex')
-  const db = reporteiDb()
-  const { data: snapshot, error: snapshotError } = await db.from('reportei_snapshots').select('payload, fetched_at')
-    .eq('user_id', userId).eq('client_id', clientId).eq('start_date', period.startDate).eq('end_date', period.endDate).eq('config_version', version).maybeSingle()
-  if (snapshotError) throw dbError()
-  if (!refresh && snapshot && Date.now() - Date.parse(snapshot.fetched_at) < 15 * 60_000) return { ...snapshot.payload, cached: true }
-  const integrations = await reporteiList(token, `/integrations?project_id=${link.project_id}`)
-  const selected = (link.integration_ids as number[]).map(id => integrations.find(row => Number(row.id) === Number(id) && Number(row.project_id) === Number(link.project_id)))
-  const sources = await Promise.all(selected.map((integration, index) => integration
-    ? fetchReporteiIntegration(token, integration, period)
-    : Promise.resolve({ integrationId: link.integration_ids[index], status: 'unavailable', metrics: [], error: 'Integração não encontrada neste projeto.' })))
-  const payload = { connected: true, projectName: link.project_name, period, fetchedAt: new Date().toISOString(), sources,
-    partial: sources.some(source => source.status !== 'available'), cached: false }
-  const { error } = await db.from('reportei_snapshots').upsert({ user_id: userId, client_id: clientId, start_date: period.startDate,
-    end_date: period.endDate, config_version: version, payload, fetched_at: payload.fetchedAt }, { onConflict: 'user_id,client_id,start_date,end_date,config_version' })
-  if (error) throw dbError()
-  return payload
+  const { readInternalReporteiData } = await import('./internal')
+  return readInternalReporteiData(userId, clientId, input, refresh)
 }

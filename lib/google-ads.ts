@@ -1,12 +1,8 @@
 // lib/google-ads.ts — Shared Google Ads REST API helpers
 
-// v17/v18/v19 estão sunset. Usar apenas versões suportadas:
-// v20 (ago/2024), v21 (nov/2024), v22 (fev/2025), v23 (mai/2025).
-// Variável de ambiente GOOGLE_ADS_API_VERSION sobrescreve o padrão.
+// Current official API first; retry reads only on explicit version incompatibility.
 const _envVersion = process.env.GOOGLE_ADS_API_VERSION
-export const API_VERSIONS: string[] = _envVersion
-  ? [_envVersion, 'v23', 'v22', 'v21', 'v20'].filter((v, i, a) => a.indexOf(v) === i)
-  : ['v23', 'v22', 'v21', 'v20']
+export const API_VERSIONS = [...new Set([_envVersion, 'v26', 'v25', 'v24', 'v23'].filter(Boolean))] as string[]
 
 /** Remove hyphens, preserve leading zeros — never coerce to number */
 export function normalizeCustomerId(id: string | number): string {
