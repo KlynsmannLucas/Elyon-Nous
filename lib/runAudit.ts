@@ -2,13 +2,16 @@
 // (v2 ou app antigo), replicando o fluxo do TabAuditoria: busca dados Meta/Google
 // → /api/audit → salva no store. Retorna { ok, error }.
 import { useAppStore } from '@/lib/store'
+import { resolveReportingPeriod } from '@/lib/reporting-period'
 
 export async function runAuditForActiveClient(opts?: { datePreset?: string; onStep?: (s: string) => void }): Promise<{ ok: boolean; error?: string }> {
   const s = useAppStore.getState()
   const clientData = s.clientData
   if (!clientData) return { ok: false, error: 'Nenhum cliente ativo.' }
 
-  const datePreset = opts?.datePreset || 'last_30d'
+  const datePreset = opts?.datePreset || s.globalPeriod.preset || 'last_30d'
+  const period = resolveReportingPeriod({ datePreset })
+  const clientId = s.savedClients.find(client => client.clientData.clientName === clientData.clientName)?.id
   const step = opts?.onStep || (() => {})
 
   // Isolamento por cliente: usa SÓ as contas que ESTE cliente selecionou — sem fallback
@@ -23,16 +26,16 @@ export async function runAuditForActiveClient(opts?: { datePreset?: string; onSt
     step('Buscando dados das plataformas…')
     const [metaResult, googleResult] = await Promise.all([
       selMeta
-        ? fetch('/api/ads-data/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: selMeta, datePreset }) }).then(r => r.json()).catch(() => null)
+        ? fetch('/api/ads-data/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: selMeta, datePreset, ...period }) }).then(r => r.json()).catch(() => ({ success: false, error: 'Falha de conexão com Meta Ads.' }))
         : Promise.resolve(null),
       selGoogle
-        ? fetch('/api/ads-data/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: selGoogle, datePreset }) }).then(r => r.json()).catch(() => null)
+        ? fetch('/api/ads-data/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: selGoogle, datePreset, ...period }) }).then(r => r.json()).catch(() => ({ success: false, error: 'Falha de conexão com Google Ads.' }))
         : Promise.resolve(null),
     ])
 
     const metaError = metaResult && !metaResult.success ? metaResult.error : null
     const googleError = googleResult && !googleResult.success ? googleResult.error : null
-    if (metaError && googleError) return { ok: false, error: `Meta Ads: ${metaError} · Google Ads: ${googleError}` }
+    if (metaError || googleError) return { ok: false, error: [metaError && `Meta Ads: ${metaError}`, googleError && `Google Ads: ${googleError}`].filter(Boolean).join(' · ') }
 
     step('Analisando campanhas com IA…')
     const metaCampaigns = metaResult?.success ? metaResult.campaigns : []
@@ -45,10 +48,12 @@ export async function runAuditForActiveClient(opts?: { datePreset?: string; onSt
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         clientName: clientData.clientName,
+        clientId,
         niche: clientData.niche,
         budget: clientData.budget,
         objective: clientData.objective,
         datePreset,
+        period,
         metaCampaigns, metaTotals, googleCampaigns, googleTotals,
         uploadedFiles: [],
         auditSource: 'auto',

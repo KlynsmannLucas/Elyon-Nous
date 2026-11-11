@@ -10,6 +10,7 @@ import { useUser, useClerk } from '@clerk/nextjs'
 import { UserScopeBoundary } from '@/components/dashboard/UserScopeBoundary'
 import { clearUserScopeOnLogout } from '@/lib/userScope'
 import { useAppStore } from '@/lib/store'
+import { normalizeAuditCache } from '@/lib/audit-data'
 import { SidebarV2, TopbarV2, NousRail, NousOrb, StudioTabs, STUDIO_ROUTES, ToastProvider, VersionSync, type AreaKey } from '@/components/dashboard/v2'
 
 const TITLES: Record<AreaKey, string> = {
@@ -130,6 +131,13 @@ function ScopedShell({ children }: { children: React.ReactNode }) {
         for (const c of server) byId.set(c.id, { id: c.id, clientData: c.clientData, strategyData: c.strategyData ?? null, savedAt: c.savedAt })
         for (const c of st.savedClients) byId.set(c.id, c)
         st.setSavedClients(Array.from(byId.values()))
+        // Restore selections per client, never a global default belonging to another client.
+        for (const c of server) {
+          const name = c.clientData?.clientName
+          if (!name) continue
+          if (!st.selectedMetaAccountByClient[name] && c.extraData?.selectedMetaAccountId) st.setSelectedMetaAccountId(name, c.extraData.selectedMetaAccountId)
+          if (!st.selectedGoogleAccountByClient[name] && c.extraData?.selectedGoogleAccountId) st.setSelectedGoogleAccountId(name, c.extraData.selectedGoogleAccountId)
+        }
         // Restaura o auditCache do servidor (local da sessão tem precedência).
         const auditRestored: Record<string, any[]> = {}
         for (const c of server) {
@@ -137,7 +145,7 @@ function ScopedShell({ children }: { children: React.ReactNode }) {
           if (name && c.auditData) auditRestored[name] = Array.isArray(c.auditData) ? c.auditData : [c.auditData]
         }
         if (Object.keys(auditRestored).length) {
-          useAppStore.setState(s => ({ auditCache: { ...auditRestored, ...s.auditCache } }))
+          useAppStore.setState(s => ({ auditCache: normalizeAuditCache({ ...auditRestored, ...s.auditCache }) }))
         }
       })
       .catch(() => {})

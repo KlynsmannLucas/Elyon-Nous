@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "test:security": "node --test tests/security.test.cjs",
-    "test:credits-db": "node --test tests/credits-db.test.cjs"
+    "test:credits-db": "node --test tests/credits-db.test.cjs",
+    "test:marketing": "node --test tests/marketing-data.test.cjs",
+    "test:reportei-db": "node --test tests/reportei-db.test.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",

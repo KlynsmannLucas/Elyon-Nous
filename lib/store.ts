@@ -1,6 +1,7 @@
 // lib/store.ts — Estado global com Zustand
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { normalizeAuditCache } from '@/lib/audit-data'
 
 // Safari Private Browsing e configurações de privacidade podem lançar SecurityError
 // ao acessar localStorage. Este wrapper garante que nunca quebre a hidratação.
@@ -897,6 +898,7 @@ export const useAppStore = create<AppStore>()(
     {
       name: 'elyon-store',
       storage: safeLocalStorage,
+      merge: (persisted, current) => ({ ...current, ...(persisted as Partial<typeof current>), auditCache: normalizeAuditCache((persisted as any)?.auditCache) }),
       partialize: (state) => ({
         clientData:          state.clientData,
         strategyData:        state.strategyData,

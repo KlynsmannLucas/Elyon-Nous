@@ -4,10 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
 import { errMsg } from '@/lib/errMsg'
 import { summarizeMetaResults } from '@/lib/metaResults'
-
-function dateStr(d: Date): string {
-  return d.toISOString().split('T')[0]
-}
+import { resolveReportingPeriod, previousReportingPeriod } from '@/lib/reporting-period'
 
 async function fetchAllInsights(accountId: string, accessToken: string, timeParam: string): Promise<any[]> {
   const insightFields = [
@@ -62,29 +59,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Ad Account ID não encontrado. Selecione uma conta.', code: 'NO_ACCOUNT_ID' }, { status: 400 })
     }
 
-    // Suporta datePreset (last_7d, last_30d, last_90d, this_month, last_month)
-    // ou startDate/endDate customizados. Padrão: last_30d.
-    const preset    = (body.datePreset as string | undefined) || 'last_30d'
-    const startDate = body.startDate as string | undefined
-    const endDate   = body.endDate   as string | undefined
+    accountId = String(accountId).replace(/^act_/i, '')
+    if (!/^\d+$/.test(accountId)) return NextResponse.json({ success: false, error: 'ID da conta Meta inválido.' }, { status: 400 })
 
-    const today = new Date()
-    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const sixtyDaysAgo  = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000)
-
-    let currentTimeParam: string
-    let prevTimeParam: string
-    if (startDate && endDate) {
-      currentTimeParam = `time_range=${encodeURIComponent(JSON.stringify({ since: startDate, until: endDate }))}`
-      // Período anterior: mesma duração antes do startDate
-      const duration = new Date(endDate).getTime() - new Date(startDate).getTime()
-      const prevEnd   = new Date(new Date(startDate).getTime() - 1).toISOString().split('T')[0]
-      const prevStart = new Date(new Date(startDate).getTime() - duration).toISOString().split('T')[0]
-      prevTimeParam = `time_range=${encodeURIComponent(JSON.stringify({ since: prevStart, until: prevEnd }))}`
-    } else {
-      currentTimeParam = `date_preset=${preset}`
-      prevTimeParam = `time_range=${encodeURIComponent(JSON.stringify({ since: dateStr(sixtyDaysAgo), until: dateStr(thirtyDaysAgo) }))}`
-    }
+    let period: ReturnType<typeof resolveReportingPeriod>
+    try { period = resolveReportingPeriod(body) }
+    catch (error) { return NextResponse.json({ success: false, error: errMsg(error, 'Período inválido.') }, { status: 400 }) }
+    const previous = previousReportingPeriod(period)
+    const timeParam = (p: typeof period) => `time_range=${encodeURIComponent(JSON.stringify({ since: p.startDate, until: p.endDate }))}`
+    const currentTimeParam = timeParam(period)
+    const prevTimeParam = timeParam(previous)
 
     const [rows, prevRows] = await Promise.all([
       fetchAllInsights(accountId, accessToken, currentTimeParam),
@@ -155,6 +139,7 @@ export async function POST(req: NextRequest) {
         messengerConversations: result.messengerConversations,
         instagramDirectConversations: result.instagramDirectConversations,
         messageConversations: result.messageConversations,
+        totalMessageConversations: result.totalMessages,
         phoneCalls: result.phoneCalls,
         purchases: result.purchases,
         landingPageViews: result.landingPageViews,
@@ -221,7 +206,7 @@ export async function POST(req: NextRequest) {
       ),
     }
 
-    return NextResponse.json({ success: true, campaigns, totals: extTotals, previousTotals, platform: 'meta' })
+    return NextResponse.json({ success: true, campaigns, totals: extTotals, previousTotals, platform: 'meta', accountId: String(accountId).replace(/^act_/, ''), period, previousPeriod: previous })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: errMsg(error, 'Falha ao buscar dados do Meta Ads.') }, { status: 500 })
   }

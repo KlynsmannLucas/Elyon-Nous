@@ -3,13 +3,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { resolveReportingPeriod } from '@/lib/reporting-period'
 
 export async function GET(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
-  if (!supabaseAdmin) return NextResponse.json({ days: [], delta: null })
+  if (!supabaseAdmin) return NextResponse.json({ error: 'Histórico diário indisponível.' }, { status: 503 })
 
   const accountId = req.nextUrl.searchParams.get('accountId')
+  if (!accountId) return NextResponse.json({ error: 'Selecione a conta deste cliente.' }, { status: 400 })
+  let period: ReturnType<typeof resolveReportingPeriod>
+  try { period = resolveReportingPeriod({ datePreset: req.nextUrl.searchParams.get('datePreset') || 'last_14d' }) }
+  catch { return NextResponse.json({ error: 'Período inválido.' }, { status: 400 }) }
 
   try {
     let q = supabaseAdmin
@@ -17,12 +22,14 @@ export async function GET(req: NextRequest) {
       .select('date, spend, leads, impressions, clicks, cpl, ctr, account_id')
       .eq('user_id', userId)
       .eq('platform', 'meta')
+      .eq('account_id', accountId)
+      .gte('date', period.startDate)
+      .lte('date', period.endDate)
       .order('date', { ascending: false })
-      .limit(14)
-    if (accountId) q = q.eq('account_id', accountId)
+      .limit(366)
 
     const { data, error } = await q
-    if (error) return NextResponse.json({ days: [], delta: null })
+    if (error) return NextResponse.json({ error: 'Não foi possível ler o histórico diário.' }, { status: 503 })
 
     const days = data || []
     const pct = (cur: number, prev: number) => (prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null)
@@ -41,8 +48,8 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ days, delta })
+    return NextResponse.json({ days, delta, period, platform: 'meta' }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch {
-    return NextResponse.json({ days: [], delta: null })
+    return NextResponse.json({ error: 'Histórico diário indisponível.' }, { status: 503 })
   }
 }

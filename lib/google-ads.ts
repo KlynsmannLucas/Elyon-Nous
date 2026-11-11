@@ -120,7 +120,7 @@ export async function gaqlSearch(
   let lastError = 'Google Ads API indisponível'
   let lastDetail: GoogleAdsErrorDetail | null = null
 
-  for (const version of API_VERSIONS) {
+  versions: for (const version of API_VERSIONS) {
     const headers: Record<string, string> = {
       Authorization:   `Bearer ${accessToken}`,
       'developer-token': developerToken,
@@ -130,46 +130,55 @@ export async function gaqlSearch(
       headers['login-customer-id'] = loginCid
     }
 
-    let res: Response
-    try {
-      res = await fetch(
-        `https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:search`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ query: query.trim() }),
-          signal: AbortSignal.timeout(20_000),
-        }
-      )
-    } catch (err: any) {
-      lastError = err?.message || 'Timeout ou erro de rede'
-      continue
-    }
-
-    const ct = res.headers.get('content-type') || ''
-    if (!ct.includes('application/json')) {
-      // Non-JSON (HTML 404 page) means the API version endpoint is gone — try next version
-      lastError = `HTTP ${res.status}`
-      continue
-    }
-
-    const data = await res.json()
-
-    if (!res.ok || data.error) {
-      const detail = parseGoogleAdsError(data, res.status)
-      lastDetail = detail
-      lastError = detail.rawMessage
-
-      if (isVersionError(detail.rawMessage)) {
-        // Version-specific error: safe to retry with older version
-        continue
+    const results: any[] = []
+    const seenTokens = new Set<string>()
+    let pageToken: string | undefined
+    do {
+      let res: Response
+      try {
+        res = await fetch(
+          `https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:search`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ query: query.trim(), ...(pageToken ? { pageToken } : {}) }),
+            signal: AbortSignal.timeout(20_000),
+          }
+        )
+      } catch (err: any) {
+        lastError = err?.message || 'Timeout ou erro de rede'
+        continue versions
       }
 
-      // Any other error (auth, permissions, not found, etc.): throw immediately
-      throw new Error(friendlyGoogleAdsError(detail, customerId))
-    }
+      const ct = res.headers.get('content-type') || ''
+      if (!ct.includes('application/json')) {
+        // Non-JSON (HTML 404 page) means the API version endpoint is gone — try next version
+        lastError = `HTTP ${res.status}`
+        continue versions
+      }
 
-    return data.results || []
+      const data = await res.json()
+
+      if (!res.ok || data.error) {
+        const detail = parseGoogleAdsError(data, res.status)
+        lastDetail = detail
+        lastError = detail.rawMessage
+
+        if (isVersionError(detail.rawMessage)) {
+          // Version-specific error: safe to retry with older version
+          continue versions
+        }
+
+        // Any other error (auth, permissions, not found, etc.): throw immediately
+        throw new Error(friendlyGoogleAdsError(detail, customerId))
+      }
+
+      results.push(...(data.results || []))
+      pageToken = data.nextPageToken || undefined
+      if (pageToken && seenTokens.has(pageToken)) throw new Error('Google Ads repetiu a página de resultados. A consulta foi interrompida para evitar duplicação.')
+      if (pageToken) seenTokens.add(pageToken)
+    } while (pageToken)
+    return results
   }
 
   // All versions exhausted

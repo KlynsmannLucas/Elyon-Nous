@@ -67,14 +67,15 @@ const nextConfig = {
   },
 }
 
-// Sentry RE-HABILITADO (sem Session Replay — ver instrumentation-client.ts, que
-// removeu o replayIntegration causador da tela preta). Source maps só sobem com
-// SENTRY_AUTH_TOKEN; sem o token, o upload é pulado e o build NÃO quebra.
+// Runtime monitoring remains enabled. Build validation never sends source maps,
+// release metadata or build telemetry to Sentry.
 export default withSentryConfig(nextConfig, {
   org: 'elyon-nous',
   project: 'javascript-nextjs',
   silent: !process.env.CI,
-  widenClientFileUpload: true,
+  telemetry: false,
+  sourcemaps: { disable: true },
+  release: { create: false, finalize: false },
   disableLogger: true,
-  automaticVercelMonitors: true,
+  automaticVercelMonitors: false,
 })

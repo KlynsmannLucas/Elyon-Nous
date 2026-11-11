@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Icon, Card, Badge, Button, SectionHead, SourceBadge, Delta, Sparkline, Donut, BarChart, Funnel, LineChart, LegendDot, HBar, ChannelMark, platformName, Modal, CHART_COLORS } from '@/components/dashboard/v2'
 import { useDailySeries } from '@/lib/useDailySeries'
+import ComplementaryResults from '@/components/dashboard/ComplementaryResults'
 
 const CHANNEL_META: Record<string, { label: string; color: string }> = {
   meta: { label: 'Meta Ads', color: CHART_COLORS.blue },
@@ -53,10 +54,10 @@ function exportCsv(rows: any[]) {
   if (typeof window !== 'undefined') window.toast?.({ tone: 'good', title: 'CSV exportado', body: `${rows.length} campanhas baixadas.` })
 }
 
-type SubTab = 'visao' | 'campanhas' | 'audiencias' | 'canais' | 'criativos' | 'funil' | 'alocador'
+type SubTab = 'visao' | 'contatos' | 'campanhas' | 'audiencias' | 'canais' | 'criativos' | 'funil' | 'alocador'
 const STATUS_TONE: Record<string, 'good' | 'warn' | 'bad'> = { vencedora: 'good', atencao: 'warn', critica: 'bad' }
 const STATUS_LABEL: Record<string, string> = { vencedora: 'Escalar', atencao: 'Otimizar', critica: 'Revisar' }
-const VALID_SUBTABS: SubTab[] = ['visao', 'campanhas', 'audiencias', 'canais', 'criativos', 'funil', 'alocador']
+const VALID_SUBTABS: SubTab[] = ['visao', 'contatos', 'campanhas', 'audiencias', 'canais', 'criativos', 'funil', 'alocador']
 
 // Status de ENTREGA real da campanha (Meta status / Google campaign.status) → rótulo + cor.
 const DELIVERY: Record<string, { label: string; color: string }> = {
@@ -469,7 +470,7 @@ export default function DesempenhoPage() {
       ].sort((a, b) => (b.spend || 0) - (a.spend || 0))
     : []
 
-  if (!rm && camps.length === 0 && ranking.length === 0) return <Empty />
+  if (!rm && camps.length === 0 && ranking.length === 0) return <div className="p-4 md:p-6"><h1 className="text-[23px] font-bold text-ink mb-4">Desempenho · {key}</h1>{audit?._metricsNeedRefresh && <Card className="mb-4"><p className="text-sm text-ink-2">A análise anterior precisa ser atualizada com o cálculo corrigido. Seu histórico foi preservado.</p><a className="text-sm text-blue underline mt-2 inline-block" href="/diagnostico">Atualizar a Análise Profunda</a></Card>}<ComplementaryResults clientName={key} clientId={savedClients.find(client => client.clientData.clientName === key)?.id} /></div>
 
   // Split por canal derivado das campanhas reais. Se a conta tem só UMA plataforma
   // conectada (dataSource), todo o investimento é dela — evita subcontar como "Outros".
@@ -496,13 +497,14 @@ export default function DesempenhoPage() {
     { label: 'Investimento', value: brl(rm.totalSpend), trend: prev?.spendDelta ?? null, inverse: false, series: spark(rm.totalSpend, prev?.spendDelta), up: (prev?.spendDelta ?? 0) >= 0 },
     { label: 'Receita', value: rm.totalRevenue > 0 ? brl(rm.totalRevenue) : '—', trend: prev?.revenueDelta ?? null, inverse: false, series: rm.totalRevenue > 0 ? spark(rm.totalRevenue, prev?.revenueDelta) : null, up: (prev?.revenueDelta ?? 0) >= 0 },
     { label: 'ROAS', value: rm.avgROAS ? `${rm.avgROAS}x` : '—', trend: null, inverse: false, series: null, up: true },
-    { label: 'Resultados', value: int(rm.totalResults ?? rm.totalLeads), trend: prev?.resultsDelta ?? prev?.leadsDelta ?? null, inverse: false, series: spark(rm.totalResults ?? rm.totalLeads, prev?.resultsDelta ?? prev?.leadsDelta), up: (prev?.resultsDelta ?? prev?.leadsDelta ?? 0) >= 0 },
-    { label: 'Custo médio', value: (rm.avgCostPerResult ?? rm.avgCPL) ? brl(rm.avgCostPerResult ?? rm.avgCPL) : '—', trend: prev?.costPerResultDelta ?? prev?.cplDelta ?? null, inverse: true, series: spark(rm.avgCostPerResult ?? rm.avgCPL, prev?.costPerResultDelta ?? prev?.cplDelta), up: (prev?.costPerResultDelta ?? prev?.cplDelta ?? 0) <= 0 },
+    { label: 'Resultados', value: rm.resultsComparable === false ? 'Por objetivo' : int(rm.totalResults ?? rm.totalLeads), trend: rm.resultsComparable === false ? null : prev?.resultsDelta ?? prev?.leadsDelta ?? null, inverse: false, series: rm.resultsComparable === false ? null : spark(rm.totalResults ?? rm.totalLeads, prev?.resultsDelta ?? prev?.leadsDelta), up: (prev?.resultsDelta ?? prev?.leadsDelta ?? 0) >= 0 },
+    { label: 'Custo por resultado', value: rm.resultsComparable === false ? 'Por objetivo' : (rm.avgCostPerResult ?? rm.avgCPL) ? brl(rm.avgCostPerResult ?? rm.avgCPL) : '—', trend: null, inverse: true, series: null, up: true },
     { label: 'CTR médio', value: rm.avgCTR ? `${rm.avgCTR}%` : '—', trend: null, inverse: false, series: null, up: true },
   ] : []
 
   const tabs: { key: SubTab; label: string; icon: string }[] = [
     { key: 'visao', label: 'Visão geral', icon: 'chart' }, { key: 'campanhas', label: 'Campanhas', icon: 'megaphone' },
+    { key: 'contatos', label: 'Contatos e vendas', icon: 'users' },
     { key: 'audiencias', label: 'Audiências', icon: 'users' }, { key: 'canais', label: 'Canais', icon: 'layers' },
     { key: 'criativos', label: 'Criativos', icon: 'spark' }, { key: 'funil', label: 'Funil', icon: 'funnel' },
     { key: 'alocador', label: 'Alocador IA', icon: 'scale' },
@@ -1120,7 +1122,10 @@ export default function DesempenhoPage() {
       <header className="mb-5 animate-fade-up">
         <h1 className="text-[23px] font-bold text-ink" style={{ letterSpacing: '-0.02em' }}>Desempenho</h1>
         <p className="text-sm text-ink-2 mt-0.5">{key}{rm ? ` · ${int(rm.campaignCount || camps.length)} campanhas` : ''}</p>
+        {audit?._period && <p className="text-xs text-ink-3 mt-1">Análise salva: {audit._period}. A aba Contatos e vendas consulta o período selecionado acima.</p>}
       </header>
+
+      {audit?._metricsNeedRefresh && <Card className="mb-4"><p className="text-sm text-ink-2">Atualize a Análise Profunda para usar os cálculos corrigidos. Seu histórico foi preservado.</p><a href="/diagnostico" className="text-sm text-blue underline mt-2 inline-block">Atualizar análise</a></Card>}
 
       <div className="mb-5 flex gap-1 border-b border-line overflow-x-auto no-sb">
         {tabs.map(t => (
@@ -1131,8 +1136,11 @@ export default function DesempenhoPage() {
         ))}
       </div>
 
+      {tab === 'contatos' && <ComplementaryResults clientName={key} clientId={savedClients.find(client => client.clientData.clientName === key)?.id} />}
+
       {tab === 'visao' && (
         <div className="space-y-4 animate-fade-up">
+          <Card padding="sm"><p className="text-sm text-ink-2">Veja conversas, novos contatos, cadastros e dados do CRM com a origem de cada número.</p><button className="text-sm text-blue font-medium mt-1" onClick={() => setTab('contatos')}>Abrir contatos e vendas →</button></Card>
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
             {kpis.map(k => (
               <Card key={k.label} padding="sm" hover>
