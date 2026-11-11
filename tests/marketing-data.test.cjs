@@ -190,7 +190,7 @@ test('Google HTTP route keeps every campaign, parses numeric strings and uses th
   } finally { if (previous === undefined) delete process.env.GOOGLE_ADS_DEVELOPER_TOKEN; else process.env.GOOGLE_ADS_DEVELOPER_TOKEN = previous }
 })
 
-test('Reportei connection metadata never exposes the credential to an authenticated browser', async () => {
+test('Reportei setup is internal and the retired customer route exposes no credential', async () => {
   const route = load('app/api/reportei/connection/route.ts', {
     '@clerk/nextjs/server': { auth: async () => ({ userId: 'user-A' }) }, 'next/server': { NextResponse: Response },
     '@/services/reportei/workspace': { reporteiConnection: async userId => { assert.equal(userId, 'user-A'); return { token_ciphertext: 'sensitive-example', company_name: 'A', connected_at: '2026-11-01' } } },
@@ -198,7 +198,7 @@ test('Reportei connection metadata never exposes the credential to an authentica
   })
   const response = await route.GET()
   const result = await response.text()
-  assert.ok(result.includes('companyName')); assert.ok(!result.includes('token')); assert.ok(!result.includes('sensitive-example'))
+  assert.equal(response.status, 410); assert.ok(!result.includes('token')); assert.ok(!result.includes('sensitive-example'))
   assert.equal(response.headers.get('cache-control'), 'private, no-store')
 })
 

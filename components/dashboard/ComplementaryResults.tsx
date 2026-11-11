@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useAppStore } from '@/lib/store'
 import { Card, Badge, Button } from '@/components/dashboard/v2'
 import { resolveReportingPeriod } from '@/lib/reporting-period'
@@ -84,11 +83,11 @@ function ResultsScope({ clientId, preset, metaId, googleId }: { clientId?: strin
         ].map(([title, text]) => <div key={title} className="rounded-sm bg-canvas-2 p-3"><h3 className="text-sm font-semibold text-ink">{title}</h3><p className="text-xs text-ink-2 mt-1">{text}</p></div>)}
       </div>
       {requestPeriod && <p className="text-xs text-ink-3 mt-3">Datas solicitadas: {requestPeriod.startDate.split('-').reverse().join('/')} a {requestPeriod.endDate.split('-').reverse().join('/')}{requestPeriod.includesToday ? ' · Hoje ainda está em andamento' : ' · Dias completos'}. As contas devem usar fusos e critérios de atribuição compatíveis para comparação.</p>}
-      {reportei?.fetchedAt && <p className="text-xs text-ink-3 mt-1">Reportei: atualizado em {new Date(reportei.fetchedAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })} (Brasília){reportei.cached ? ' · Consulta salva por até 15 minutos' : ''}.</p>}
+      {reportei?.fetchedAt && <p className="text-xs text-ink-3 mt-1">Reportei: atualizado em {new Date(reportei.fetchedAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })} (Brasília){(reportei.stale || reportei.syncUnavailable) ? ' · Cópia da última sincronização; atualização interna temporariamente indisponível' : reportei.cached ? ' · Sincronização interna salva' : ''}.</p>}
     </Card>
 
-    {error && <Card><p role="alert" className="text-sm text-red-700">Reportei: {error}</p><Link href="/integracoes" className="text-sm text-blue underline mt-2 inline-block">Conferir conexão</Link></Card>}
-    {!loading && !reportei?.connected && !error && <Card><p className="text-sm text-ink-2">Vincule este cliente a um projeto do Reportei para acrescentar os detalhes de contatos e do CRM.</p><Link href="/integracoes" className="text-sm text-blue underline mt-2 inline-block">Vincular Reportei</Link></Card>}
+    {error && <Card><p role="alert" className="text-sm text-red-700">Leitura complementar: {error}</p><p className="text-xs text-ink-3 mt-2">A equipe do Nous gerencia essa sincronização. Os dados diretos das suas contas continuam sendo consultados.</p></Card>}
+    {!loading && !reportei?.connected && !error && <Card><p className="text-sm text-ink-2">{reportei?.message || 'Dados complementares ainda não disponíveis para este cliente.'}</p><p className="text-xs text-ink-3 mt-2">A associação é feita internamente às contas autorizadas. Nenhuma credencial adicional é solicitada a você.</p></Card>}
     {loading && <p role="status" className="text-sm text-ink-3">Consultando cada fonte. Os resultados disponíveis são preservados se outra fonte falhar.</p>}
 
     {groups.map(group => {

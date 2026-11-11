@@ -28,7 +28,7 @@ interface StudioAction {
 }
 
 const TOOLS: Tool[] = [
-  { k: 'criar', n: 1, icon: 'rocket', title: 'Criar campanha', badge: 'IA',
+  { k: 'criar', n: 1, icon: 'rocket', title: 'Criar com IA', badge: 'IA',
     desc: 'Descreva a intenção e o NOUS monta público, verba e criativo para revisão.',
     stat: '~2 min para revisar', verb: 'Criar agora',
     c: 'var(--blue-600)', soft: 'var(--blue-soft)', line: 'var(--blue-line)', accent: 'var(--blue)' },
@@ -174,7 +174,6 @@ export default function EstudioPage() {
   const auditCache = useAppStore(s => s.auditCache)
   const pendingActionsCache = useAppStore(s => s.pendingActionsCache)
   const creativeTests = useAppStore(s => s.creativeTests)
-  const connectedAccounts = useAppStore(s => s.connectedAccounts)
   const selectedMetaAccountByClient = useAppStore(s => s.selectedMetaAccountByClient)
   const selectedGoogleAccountByClient = useAppStore(s => s.selectedGoogleAccountByClient)
 
@@ -187,8 +186,8 @@ export default function EstudioPage() {
   const winners = campaigns.filter((c: any) => c._s === 'vencedora')
   const pending = (key ? pendingActionsCache[key] || [] : []).filter((a: any) => a.status === 'pendente')
   const runningTests = creativeTests.filter(t => t.status === 'running').length
-  const hasMeta = !!(key && selectedMetaAccountByClient[key]) || connectedAccounts.some(a => a.platform === 'meta')
-  const hasGoogle = !!(key && selectedGoogleAccountByClient[key]) || connectedAccounts.some(a => a.platform === 'google')
+  const hasMeta = !!(key && selectedMetaAccountByClient[key])
+  const hasGoogle = !!(key && selectedGoogleAccountByClient[key])
   const lastAudit = createdAt ? new Date(createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : null
 
   const actions = useMemo<StudioAction[]>(() => {
@@ -201,7 +200,7 @@ export default function EstudioPage() {
       list.push({ id: 'connect', title: 'Conectar conta de anúncios', body: 'Sem Meta ou Google conectado, o Estúdio gera ideias, mas não consegue decidir com dados reais.', href: '/integracoes', cta: 'Conectar agora', icon: 'plug', tone: 'warn', meta: 'dados', priority: 2 })
     }
     if (!audit) {
-      list.push({ id: 'audit', title: 'Rodar análise profunda', body: 'Antes de criar ou escalar, rode a análise para descobrir criativos cansados, campanhas vencedoras e tracking.', href: '/diagnostico', cta: 'Analisar conta', icon: 'search', tone: 'blue', meta: 'primeiro passo', priority: 3 })
+      list.push({ id: 'audit', title: 'Rodar análise profunda', body: 'Uma análise pode complementar o briefing com campanhas vencedoras e sinais de fadiga. Você já pode preparar um rascunho.', href: '/diagnostico', cta: 'Analisar conta', icon: 'search', tone: 'blue', meta: 'primeiro passo', priority: 3 })
       return list.sort((a, b) => a.priority - b.priority)
     }
 

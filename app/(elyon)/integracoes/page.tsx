@@ -4,7 +4,6 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Card, Badge, Button, SectionHead, Modal, AdAccountPicker } from '@/components/dashboard/v2'
-import ReporteiIntegrationCard from '@/components/dashboard/ReporteiIntegrationCard'
 
 function setReturnCookie() {
   try { document.cookie = `oauth_return=/integracoes; path=/; max-age=600; samesite=lax` } catch {}
@@ -123,8 +122,8 @@ export default function IntegracoesPage() {
         })}
       </div>
 
-      <ReporteiIntegrationCard key={key} clientName={key} clientId={savedClients.find(client => client.clientData.clientName === key)?.id} />
-      <p className="text-xs text-ink-3 mt-4">As conexões são por usuário. Cada cliente usa apenas as contas e o projeto que você vinculou a ele.</p>
+      <Card className="mt-4"><h2 className="text-sm font-semibold text-ink">Leitura complementar automática</h2><p className="text-sm text-ink-2 mt-1">O Nous associa os dados complementares internamente às contas autorizadas deste cliente. Você acompanha tudo em Desempenho → Contatos e vendas.</p></Card>
+      <p className="text-xs text-ink-3 mt-4">As conexões de anúncio são por usuário. Cada cliente usa apenas suas contas selecionadas.</p>
     </div>
   )
 }
