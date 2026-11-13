@@ -9,7 +9,7 @@ import { clearUserScopeOnLogout } from '@/lib/userScope'
 
 export type TabKey =
   | 'overview' | 'strategy' | 'diagnostic' | 'inteligencia'
-  | 'analise' | 'anuncios' | 'audiencias' | 'cro' | 'budget' | 'channelmix'
+  | 'analise' | 'anuncios' | 'audiencias' | 'cro' | 'channelmix'
   | 'performance' | 'acoes' | 'cenarios' | 'mercado' | 'funil'
   | 'persona' | 'conteudo' | 'assets' | 'concorrentes' | 'campanha'
   | 'relatorios' | 'financeiro'
@@ -60,7 +60,6 @@ const TAB_ICONS: Record<TabKey, JSX.Element> = {
   cro:         I.trendUp,
   conteudo:    I.edit,
   assets:      I.image,
-  budget:      I.wallet,
   channelmix:  I.gitBranch,
   mercado:     I.globe,
   cenarios:    I.sliders,
@@ -90,7 +89,6 @@ export const SIDEBAR_SECTIONS: {
   { label: 'Campanhas', planLabel: 'Profissional', items: [
     { key: 'anuncios',    label: 'Meta & Google Ads',       icon: '📡' },
     { key: 'audiencias',  label: 'Audiências',              icon: '👥' },
-    { key: 'budget',      label: 'Alocador de Verba',       icon: '💰', badge: 'IA' },
     { key: 'channelmix',  label: 'Mix de Canais',           icon: '🌐', badge: 'IA' },
   ]},
   { label: 'Plano de Ação', items: [

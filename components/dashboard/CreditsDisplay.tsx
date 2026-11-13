@@ -13,7 +13,6 @@ const OPERATION_COSTS = [
   { op: 'Criar Conteúdo',             cost: 3  },
   { op: 'Persona do Cliente',         cost: 3  },
   { op: 'TrafficBrain IA',            cost: 4  },
-  { op: 'Alocador de Verba',          cost: 3  },
   { op: 'Mix de Canais',              cost: 3  },
   { op: 'Histórico de Aprendizado',   cost: 4  },
 ]

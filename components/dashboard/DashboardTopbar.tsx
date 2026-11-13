@@ -41,7 +41,6 @@ const TAB_SUBTITLES: Partial<Record<TabKey, string>> = {
   cro:         'Análise de conversão e oportunidades de melhoria',
   conteudo:    'Criação de conteúdo com IA para seus anúncios',
   assets:      'Arquivos e materiais da empresa',
-  budget:      'Distribuição inteligente do investimento',
   channelmix:  'Canal ideal por nicho e orçamento',
   mercado:     'Pesquisa de mercado e tendências do setor',
   cenarios:    'Projeções e simulações de crescimento',

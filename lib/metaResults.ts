@@ -1,4 +1,5 @@
 export type MetaResultKey =
+  | 'meta_lead'
   | 'form_lead'
   | 'website_lead'
   | 'whatsapp_conversation'
@@ -91,13 +92,14 @@ export const META_OBJECTIVE_LABELS: Record<string, string> = {
 }
 
 export const META_RESULT_LABELS: Record<MetaResultKey, string> = {
+  meta_lead: 'Leads atribuídos pelo Meta',
   form_lead: 'Formulários',
   website_lead: 'Leads do site',
   whatsapp_conversation: 'Conversas no WhatsApp',
   messenger_conversation: 'Conversas no Messenger',
   instagram_direct_conversation: 'Conversas no Instagram',
   message_conversation: 'Conversas por mensagem',
-  phone_call: 'Ligações',
+  phone_call: 'Ações de ligação',
   purchase: 'Compras',
   app_install: 'Instalações de app',
   store_visit: 'Visitas à loja',
@@ -110,15 +112,12 @@ export const META_RESULT_LABELS: Record<MetaResultKey, string> = {
   other: 'Resultados',
 }
 
-const FORM_LEAD_TYPES = ['lead', 'onsite_conversion.lead_grouped', 'onsite_conversion.leadgen_grouped']
-const WEBSITE_LEAD_TYPES = ['offsite_conversion.fb_pixel_lead', 'offsite_conversion.fb_pixel_complete_registration', 'complete_registration']
+const FORM_LEAD_TYPES = ['onsite_conversion.lead_grouped', 'onsite_conversion.leadgen_grouped']
+const WEBSITE_LEAD_TYPES = ['offsite_conversion.fb_pixel_lead']
 const MESSAGE_PRIORITY = [
   'onsite_conversion.messaging_conversation_started_7d',
   'onsite_conversion.messaging_conversation_started',
   'messaging_conversation_started',
-  'messaging_first_reply',
-  'onsite_conversion.messaging_first_reply',
-  'onsite_conversion.total_messaging_connection',
 ]
 const PURCHASE_TYPES = ['purchase', 'omni_purchase', 'offsite_conversion.fb_pixel_purchase']
 const APP_INSTALL_TYPES = ['mobile_app_install', 'app_install', 'omni_app_install']
@@ -134,12 +133,14 @@ const val = (v: unknown): number => {
 }
 
 const sumExact = (actions: MetaAction[] | undefined, types: string[]): number =>
-  (actions || []).filter(a => types.includes(String(a.action_type || ''))).reduce((s, a) => s + val(a.value), 0)
+  (actions || [])
+    .filter((a) => types.includes(String(a.action_type || '')))
+    .reduce((s, a) => s + val(a.value), 0)
 
 const firstAvailable = (actions: MetaAction[] | undefined, types: string[]): number => {
   for (const type of types) {
     const n = sumExact(actions, [type])
-    if (n > 0) return n
+    if ((actions || []).some((a) => a.action_type === type)) return n
   }
   return 0
 }
@@ -152,51 +153,105 @@ const actionDestination = (action: MetaAction): 'whatsapp' | 'messenger' | 'inst
   return 'unknown'
 }
 
-const messageByDestination = (actions: MetaAction[] | undefined, destination: ReturnType<typeof actionDestination>): number => {
-  const rows = (actions || []).filter(a => MESSAGE_PRIORITY.includes(String(a.action_type || '')) && actionDestination(a) === destination)
+const messageByDestination = (
+  actions: MetaAction[] | undefined,
+  destination: ReturnType<typeof actionDestination>,
+): number => {
+  const rows = (actions || []).filter(
+    (a) => MESSAGE_PRIORITY.includes(String(a.action_type || '')) && actionDestination(a) === destination,
+  )
   return firstAvailable(rows, MESSAGE_PRIORITY)
 }
 
 const hasMessageDestination = (actions: MetaAction[] | undefined): boolean =>
-  (actions || []).some(a => MESSAGE_PRIORITY.includes(String(a.action_type || '')) && actionDestination(a) !== 'unknown')
+  (actions || []).some(
+    (a) => MESSAGE_PRIORITY.includes(String(a.action_type || '')) && actionDestination(a) !== 'unknown',
+  )
 
-const phoneCalls = (actions: MetaAction[] | undefined): number =>
-  (actions || []).reduce((s, a) => {
-    const type = String(a.action_type || '').toLowerCase()
-    return /(^|[._])phone(_|$)|(^|[._])call(_|$)|click_to_call|contact_phone|phone_call/.test(type) ? s + val(a.value) : s
-  }, 0)
+const phoneCalls = (actions: MetaAction[] | undefined): number => {
+  const aliases = [
+    'phone_call',
+    'onsite_conversion.phone_call',
+    'contact_phone',
+    'onsite_conversion.click_to_call',
+    'click_to_call',
+  ]
+  const found =
+    aliases.find((type) => (actions || []).some((a) => a.action_type === type)) ||
+    (actions || []).find((a) =>
+      /(^|[._])phone(_|$)|(^|[._])call(_|$)|click_to_call|contact_phone|phone_call/.test(
+        String(a.action_type || ''),
+      ),
+    )?.action_type
+  return found ? sumExact(actions, [found]) : 0
+}
 
 const revenueFrom = (actionValues: MetaActionValue[] | undefined): number =>
-  (actionValues || []).filter(a => PURCHASE_TYPES.includes(String(a.action_type || ''))).reduce((s, a) => s + val(a.value), 0)
+  firstAvailable(actionValues, PURCHASE_TYPES)
 
-const cost = (spend: number, value: number): number | null => value > 0 ? +(spend / value).toFixed(2) : null
+const cost = (spend: number, value: number): number | null => (value > 0 ? +(spend / value).toFixed(2) : null)
 
 function row(key: MetaResultKey, value: number, spend: number): MetaResultBreakdownItem | null {
   if (value <= 0) return null
   return { key, label: META_RESULT_LABELS[key], value, cost: cost(spend, value) }
 }
 
-function choosePrimaryResult(objective: string, rows: MetaResultBreakdownItem[], fallback: MetaResultBreakdownItem): MetaResultBreakdownItem {
+function choosePrimaryResult(
+  objective: string,
+  rows: MetaResultBreakdownItem[],
+  fallback: MetaResultBreakdownItem,
+): MetaResultBreakdownItem {
   const obj = objective.toUpperCase()
-  const by = (keys: MetaResultKey[]) => rows.find(r => keys.includes(r.key))
+  const by = (keys: MetaResultKey[]) => keys.map((key) => rows.find((r) => r.key === key)).find(Boolean)
 
   if (['OUTCOME_LEADS', 'LEAD_GENERATION'].includes(obj)) {
-    return by(['phone_call', 'whatsapp_conversation', 'messenger_conversation', 'instagram_direct_conversation', 'message_conversation', 'form_lead', 'website_lead']) || fallback
+    return (
+      by([
+        'phone_call',
+        'whatsapp_conversation',
+        'messenger_conversation',
+        'instagram_direct_conversation',
+        'message_conversation',
+        'form_lead',
+        'website_lead',
+        'meta_lead',
+      ]) || fallback
+    )
   }
   if (['MESSAGES'].includes(obj)) {
-    return by(['whatsapp_conversation', 'messenger_conversation', 'instagram_direct_conversation', 'message_conversation']) || fallback
+    return (
+      by([
+        'whatsapp_conversation',
+        'messenger_conversation',
+        'instagram_direct_conversation',
+        'message_conversation',
+      ]) || fallback
+    )
   }
   if (['OUTCOME_SALES', 'CONVERSIONS', 'PRODUCT_CATALOG_SALES'].includes(obj)) {
-    return by(['purchase', 'website_lead', 'form_lead']) || fallback
+    return by(['purchase', 'website_lead', 'form_lead', 'meta_lead']) || fallback
   }
   if (['OUTCOME_APP_PROMOTION', 'APP_INSTALLS'].includes(obj)) return by(['app_install']) || fallback
   if (['STORE_VISITS'].includes(obj)) return by(['store_visit']) || fallback
-  if (['OUTCOME_TRAFFIC', 'TRAFFIC', 'LINK_CLICKS'].includes(obj)) return by(['landing_page_view', 'link_click']) || fallback
-  if (['OUTCOME_ENGAGEMENT', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'EVENT_RESPONSES', 'OFFER_CLAIMS'].includes(obj)) {
-    return by(['whatsapp_conversation', 'messenger_conversation', 'instagram_direct_conversation', 'message_conversation', 'post_engagement', 'video_view']) || fallback
+  if (['OUTCOME_TRAFFIC', 'TRAFFIC', 'LINK_CLICKS'].includes(obj))
+    return by(['landing_page_view', 'link_click']) || fallback
+  if (
+    ['OUTCOME_ENGAGEMENT', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'EVENT_RESPONSES', 'OFFER_CLAIMS'].includes(obj)
+  ) {
+    return (
+      by([
+        'whatsapp_conversation',
+        'messenger_conversation',
+        'instagram_direct_conversation',
+        'message_conversation',
+        'post_engagement',
+        'video_view',
+      ]) || fallback
+    )
   }
   if (['VIDEO_VIEWS'].includes(obj)) return by(['video_view']) || fallback
-  if (['OUTCOME_AWARENESS', 'BRAND_AWARENESS', 'REACH', 'LOCAL_AWARENESS'].includes(obj)) return by(['reach', 'impression']) || fallback
+  if (['OUTCOME_AWARENESS', 'BRAND_AWARENESS', 'REACH', 'LOCAL_AWARENESS'].includes(obj))
+    return by(['reach', 'impression']) || fallback
 
   return fallback
 }
@@ -216,13 +271,18 @@ export function summarizeMetaResults(params: {
   const actions = params.actions || []
 
   const formLeads = firstAvailable(actions, FORM_LEAD_TYPES)
-  const websiteLeads = sumExact(actions, WEBSITE_LEAD_TYPES)
+  const websiteLeads = firstAvailable(actions, WEBSITE_LEAD_TYPES)
+  const aggregateLeads = firstAvailable(actions, ['lead'])
   const phone = phoneCalls(actions)
   const hasDest = hasMessageDestination(actions)
   const whatsapp = hasDest ? messageByDestination(actions, 'whatsapp') : 0
   const messenger = hasDest ? messageByDestination(actions, 'messenger') : 0
   const instagram = hasDest ? messageByDestination(actions, 'instagram') : 0
-  const genericMessages = hasDest ? messageByDestination(actions, 'unknown') : firstAvailable(actions, MESSAGE_PRIORITY)
+  const aggregateMessages = hasDest
+    ? messageByDestination(actions, 'unknown')
+    : firstAvailable(actions, MESSAGE_PRIORITY)
+  const destinationMessages = whatsapp + messenger + instagram
+  const genericMessages = hasDest ? Math.max(0, aggregateMessages - destinationMessages) : aggregateMessages
   const purchases = firstAvailable(actions, PURCHASE_TYPES)
   const appInstalls = firstAvailable(actions, APP_INSTALL_TYPES)
   const storeVisits = firstAvailable(actions, STORE_VISIT_TYPES)
@@ -236,6 +296,7 @@ export function summarizeMetaResults(params: {
 
   const resultBreakdown = [
     row('phone_call', phone, spend),
+    row('meta_lead', aggregateLeads, spend),
     row('form_lead', formLeads, spend),
     row('website_lead', websiteLeads, spend),
     row('whatsapp_conversation', whatsapp, spend),
@@ -253,9 +314,27 @@ export function summarizeMetaResults(params: {
     row('impression', impressionResults, spend),
   ].filter(Boolean) as MetaResultBreakdownItem[]
 
-  const measurableRows = resultBreakdown.filter(r => !['reach', 'impression', 'link_click'].includes(r.key))
-  const fallback = measurableRows[0] || resultBreakdown[0] || { key: 'other' as const, label: META_RESULT_LABELS.other, value: 0, cost: null }
-  const primary = choosePrimaryResult(objective, resultBreakdown, fallback)
+  const measurableRows = resultBreakdown.filter((r) => !['reach', 'impression', 'link_click'].includes(r.key))
+  const fallback = measurableRows[0] ||
+    resultBreakdown[0] || { key: 'other' as const, label: META_RESULT_LABELS.other, value: 0, cost: null }
+  const expected: Record<string, MetaResultKey> = {
+    OUTCOME_LEADS: 'meta_lead',
+    LEAD_GENERATION: 'form_lead',
+    MESSAGES: 'message_conversation',
+    OUTCOME_ENGAGEMENT: 'post_engagement',
+    OUTCOME_SALES: 'purchase',
+    CONVERSIONS: 'purchase',
+    OUTCOME_TRAFFIC: 'link_click',
+    LINK_CLICKS: 'link_click',
+    VIDEO_VIEWS: 'video_view',
+  }
+  const empty = {
+    key: expected[objective] || ('other' as MetaResultKey),
+    label: META_RESULT_LABELS[expected[objective] || 'other'],
+    value: 0,
+    cost: null,
+  }
+  const primary = choosePrimaryResult(objective, resultBreakdown, expected[objective] ? empty : fallback)
 
   return {
     objective,
@@ -266,7 +345,7 @@ export function summarizeMetaResults(params: {
     costPerResult: primary.cost || 0,
     formLeads,
     websiteLeads,
-    leads: formLeads + websiteLeads,
+    leads: actions.some((a) => a.action_type === 'lead') ? aggregateLeads : formLeads + websiteLeads,
     whatsappConversations: whatsapp,
     messengerConversations: messenger,
     instagramDirectConversations: instagram,

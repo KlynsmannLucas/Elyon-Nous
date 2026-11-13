@@ -23,18 +23,19 @@ export async function POST(req: NextRequest) {
       await refundGate(gate, 'creative_detail')
       return NextResponse.json({ error: 'Criativo sem texto para analisar.' }, { status: 400 })
     }
-    const metrics = `formato ${c.format || 'imagem'} · CTR ${Number(c.ctr) || 0}% · CPL R$${Number(c.cpl) || 0} · frequência ${Number(c.frequency) || 0}× · ${Number(c.leads) || 0} leads · ${c.ageDays != null ? `${c.ageDays}d no ar` : 'ativo'}`
+    const measured=(value:any)=>value===null||value===undefined||value===''?'não informado':String(value)
+    const metrics = `formato ${c.format || 'não informado'} · CTR ${measured(c.ctr)}% · custo por ${sanitizeText(c.resultLabel,100)||'resultado'} R$${measured(c.costPerResult)} · frequência ${measured(c.frequency)}× · ${measured(c.results)} eventos. Plataforma: ${body.platform==='google'?'Google Ads':'Meta Ads'}. Período: ${sanitizeText(body.period?.startDate,10)||'não informado'} a ${sanitizeText(body.period?.endDate,10)||'não informado'}`
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) { await refundGate(gate, 'creative_detail'); return NextResponse.json({ error: 'IA não configurada.' }, { status: 500 }) }
 
     const memory = clientName ? await getClientMemoryContext(gate.userId!, clientName, niche).catch(() => '') : ''
 
-    const prompt = `Você é um diretor de criação de tráfego pago no Brasil${niche ? ` (nicho: ${niche})` : ''}. Analise ESTE criativo de Meta Ads de forma específica e curta (sem encher de texto):
+    const prompt = `Você é um diretor de criação de tráfego pago no Brasil${niche ? ` (nicho: ${niche})` : ''}. Analise ESTE criativo de anúncios de forma específica e curta (sem encher de texto):
 Criativo: "${copy || name}"
-Métricas (30d): ${metrics}
+Métricas do período solicitado: ${metrics}
 ${memory}
-Frequência ≥3.5× indica fadiga (público saturado). CPL menor e CTR maior = melhor.${memory ? ' Considere a memória do histórico deste cliente ao avaliar (ângulos que já vencem/falham).' : ''}
+Você recebeu apenas texto e métricas: não viu imagens e não assistiu ao vídeo. Frequência alta isolada não comprova fadiga; sem evolução temporal e volume suficientes, diga que a evidência é insuficiente. Menor custo não confirma qualidade comercial nem vendas. Não invente métricas ausentes nem trate ausência como zero. Não presuma que o criativo está ativo.${memory ? ' Considere a memória do histórico deste cliente ao avaliar (ângulos que já vencem/falham).' : ''}
 Diga: o ângulo, o gancho (a abertura/promessa), o tom (1-2 palavras), se está fatigado (e por quê, curtíssimo), o que funciona nele, e 1 dica acionável de melhoria. Use a ferramenta emit_detail.`
 
     const { default: Anthropic } = await import('@anthropic-ai/sdk')

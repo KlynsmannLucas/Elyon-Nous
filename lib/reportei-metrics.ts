@@ -84,7 +84,10 @@ export interface NativeSource {
   error?: string
 }
 
-export function nativeObservedMetrics(source: NativeSource): ObservedMetric[] {
+export function nativeObservedMetrics(source: NativeSource & {observedMetrics?:ObservedMetric[]}): ObservedMetric[] {
+  if(!source.success)return []
+  if(Array.isArray(source.observedMetrics))return source.observedMetrics
+
   const row = (key: string, label: string, description: string, value: unknown): ObservedMetric => {
     const number = value == null || value === '' ? NaN : Number(value)
     const available = Number.isFinite(number) && Math.abs(number) <= Number.MAX_SAFE_INTEGER
