@@ -15,6 +15,9 @@ function load(file, mocks = {}, globals = {}) {
   vm.runInNewContext(source, { module, exports: module.exports, require: id => {
     if (id in mocks) return mocks[id]
     if (id === 'crypto') return crypto
+    if (id === '@/lib/performance/observations') return load('lib/performance/observations.ts', {'@/lib/reportei-metrics': metrics, '@/lib/marketing-totals': totals}, globals)
+    if (id === '@/lib/reporting-period') return periods
+    if (id === '@/services/meta/graph-collection') return load('services/meta/graph-collection.ts', {}, globals)
     throw new Error(`Unexpected dependency: ${id}`)
   }, console, Response, Request, URL, URLSearchParams, AbortSignal, Buffer, Intl, process, ...globals }, { filename: file })
   return module.exports

@@ -243,6 +243,8 @@ export async function readInternalReporteiData(
       connected: false,
       internal: true,
       sources: [],
+      syncUnavailable: !token,
+      syncState: token ? 'unbound' : 'setup_pending',
       message: 'Dados complementares ainda não disponíveis para este cliente.',
     }
   let period
@@ -276,15 +278,57 @@ export async function readInternalReporteiData(
   const sameConfig = snapshot?.config_version === version
   const fresh = snapshot && Date.now() - Date.parse(snapshot.fetched_at) < 15 * 60_000
   if (sameConfig && ((!refresh && fresh) || !token))
-    return { ...snapshot.payload, internal: true, cached: true, stale: !fresh, syncUnavailable: !token }
-  if (!token)
     return {
-      connected: false,
+      ...snapshot.payload,
+      internal: true,
+      cached: true,
+      stale: !fresh,
+      syncUnavailable: !token,
+      syncState: !token ? 'cached_only' : fresh ? 'ready' : 'stale',
+    }
+  if (!token) {
+    const latest = await db
+      .from('reportei_service_snapshots')
+      .select('start_date,end_date,fetched_at')
+      .eq('user_id', userId)
+      .eq('client_id', clientId)
+      .eq('config_version', version)
+      .order('fetched_at', { ascending: false })
+      .limit(1)
+    return {
+      connected: true,
       internal: true,
       sources: [],
-      message: 'A sincronização complementar está temporariamente indisponível.',
+      period,
+      projectName: link.project_name,
+      syncUnavailable: true,
+      syncState: 'setup_pending',
+      lastAvailablePeriod: latest.data?.[0]
+        ? {
+            startDate: latest.data[0].start_date,
+            endDate: latest.data[0].end_date,
+            fetchedAt: latest.data[0].fetched_at,
+          }
+        : null,
+      message:
+        'Não há leitura complementar para o período selecionado. A sincronização interna ainda está pendente.',
     }
-  const integrations = await reporteiList(token, `/integrations?project_id=${link.project_id}`)
+  }
+  let integrations: any[]
+  try {
+    integrations = await reporteiList(token, `/integrations?project_id=${link.project_id}`)
+  } catch (error) {
+    if (sameConfig)
+      return {
+        ...snapshot.payload,
+        internal: true,
+        cached: true,
+        stale: true,
+        syncUnavailable: true,
+        syncState: 'refresh_failed',
+      }
+    throw error
+  }
   const sources = await Promise.all(
     (link.integration_ids as number[]).map((id) => {
       const integration = integrations.find(
@@ -300,7 +344,17 @@ export async function readInternalReporteiData(
           })
     }),
   )
+  if (sameConfig && sources.every((source) => source.status === 'unavailable'))
+    return {
+      ...snapshot.payload,
+      internal: true,
+      cached: true,
+      stale: true,
+      syncUnavailable: true,
+      syncState: 'refresh_failed',
+    }
   const payload = {
+    syncState: sources.some((source) => source.status !== 'available') ? 'partial' : 'ready',
     connected: true,
     internal: true,
     projectName: link.project_name,
@@ -310,20 +364,18 @@ export async function readInternalReporteiData(
     partial: sources.some((source) => source.status !== 'available'),
     cached: false,
   }
-  const saved = await db
-    .from('reportei_service_snapshots')
-    .upsert(
-      {
-        user_id: userId,
-        client_id: clientId,
-        start_date: period.startDate,
-        end_date: period.endDate,
-        config_version: version,
-        payload,
-        fetched_at: payload.fetchedAt,
-      },
-      { onConflict: 'user_id,client_id,start_date,end_date,config_version' },
-    )
+  const saved = await db.from('reportei_service_snapshots').upsert(
+    {
+      user_id: userId,
+      client_id: clientId,
+      start_date: period.startDate,
+      end_date: period.endDate,
+      config_version: version,
+      payload,
+      fetched_at: payload.fetchedAt,
+    },
+    { onConflict: 'user_id,client_id,start_date,end_date,config_version' },
+  )
   if (saved.error) throw new ReporteiError('Não foi possível salvar a leitura complementar.')
   return payload
 }

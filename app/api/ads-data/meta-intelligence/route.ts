@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getValidMetaToken, metaTokenErrorToResponse } from '@/services/meta/token-manager'
+import {classifyMetaCreative,creativeImage,type CreativeFormat} from '@/lib/performance/creative'
+import {resolveReportingPeriod,previousReportingPeriod} from '@/lib/reporting-period'
 import { summarizeMetaResults } from '@/lib/metaResults'
 
 // ~13 chamadas paralelas ao Meta (cada uma até 20s) + breakdowns. Sem maxDuration a
@@ -80,7 +82,7 @@ interface AdCreative {
   previewUrl: string
   destinationUrl: string
   objectStoryId: string
-  format: 'image' | 'video' | 'carousel'
+  format: CreativeFormat
   createdTime: string | null
   ageDays: number | null
   results: number; resultLabel: string; resultType: string; costPerResult: number
@@ -95,27 +97,7 @@ interface AdCreative {
 
 // Meta devolve image_url/thumbnail_url nulo p/ vídeo, carrossel e criativo dinâmico
 // (Advantage+). Resolve a MELHOR imagem disponível pra exibir o criativo de verdade.
-function resolveCreativeImage(creative: any): { url: string; format: AdCreative['format'] } {
-  const oss = creative?.object_story_spec || {}
-  const afs = creative?.asset_feed_spec || {}
-  // Carrossel
-  const cards = oss?.link_data?.child_attachments
-  if (Array.isArray(cards) && cards.length > 1) {
-    const pic = cards.find((c: any) => c?.picture || c?.image_url)
-    if (pic) return { url: pic.picture || pic.image_url, format: 'carousel' }
-  }
-  // Vídeo (object_story_spec ou asset_feed)
-  const vidThumb = oss?.video_data?.image_url || (Array.isArray(afs?.videos) && afs.videos.find((v: any) => v?.thumbnail_url)?.thumbnail_url)
-  if (vidThumb) return { url: vidThumb, format: 'video' }
-  // Imagem única
-  const img = oss?.link_data?.picture
-    || (Array.isArray(afs?.images) && afs.images.find((i: any) => i?.url)?.url)
-    || creative?.image_url
-    || creative?.thumbnail_url
-  if (img) return { url: img, format: 'image' }
-  // Sem imagem direta — usa thumbnail como último recurso
-  return { url: creative?.thumbnail_url || '', format: 'image' }
-}
+function resolveCreativeImage(creative:any){return {url:creativeImage(creative),format:classifyMetaCreative(creative)}}
 
 function cleanUrl(value: any): string {
   const url = typeof value === 'string' ? value.trim() : ''
@@ -239,20 +221,21 @@ export async function POST(req: NextRequest) {
 
     const freqLimit = freqThreshold(niche)
     const baseUrl   = `https://graph.facebook.com/v21.0`
-    const act       = `act_${accountId}`
+    const act       = `act_${String(accountId).replace(/^act_/, '')}`
     const token     = encodeURIComponent(accessToken)
 
-    const today     = new Date()
-    const thirtyAgo = new Date(today.getTime() - 30 * 86400000)
-    const sixtyAgo  = new Date(today.getTime() - 60 * 86400000)
-    const prevRange = encodeURIComponent(JSON.stringify({ since: dateStr(sixtyAgo), until: dateStr(thirtyAgo) }))
+    const period=resolveReportingPeriod(body),previous=previousReportingPeriod(period)
+    const currentRange=encodeURIComponent(JSON.stringify({since:period.startDate,until:period.endDate}))
+    const prevRange=encodeURIComponent(JSON.stringify({since:previous.startDate,until:previous.endDate}))
+    const weekStart=new Date(Date.parse(period.endDate+'T00:00:00Z')-6*86400000).toISOString().slice(0,10)
+    const weekRange=encodeURIComponent(JSON.stringify({since:weekStart<period.startDate?period.startDate:weekStart,until:period.endDate}))
 
     const insightFields = 'campaign_id,campaign_name,spend,impressions,clicks,inline_link_clicks,reach,frequency,actions,action_values,cost_per_action_type'
     const adsetInsightFields = 'adset_id,adset_name,campaign_id,spend,impressions,clicks,inline_link_clicks,reach,frequency,actions,action_values'
     const adInsightFields    = 'ad_id,ad_name,campaign_id,adset_id,spend,impressions,clicks,inline_link_clicks,reach,frequency,actions,action_values'
     const actionBreakdowns = '&action_breakdowns=action_type,action_destination'
-    const adFieldsBase       = 'id,name,status,effective_status,campaign_id,adset_id,created_time,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,object_story_spec{link_data{picture,child_attachments{picture}},video_data{image_url}},asset_feed_spec{images{url},videos{thumbnail_url}}}'
-    const adFieldsWithLinks  = 'id,name,status,effective_status,campaign_id,adset_id,created_time,preview_shareable_link,creative{id,title,body,call_to_action_type,image_url,thumbnail_url,effective_object_story_id,object_story_id,instagram_permalink_url,object_url,object_story_spec{link_data{link,picture,child_attachments{link,picture}},video_data{image_url,call_to_action{value{link}}}},asset_feed_spec{images{url},videos{thumbnail_url}}}'
+    const adFieldsBase       = 'id,name,status,effective_status,campaign_id,adset_id,created_time,creative{id,title,body,video_id,object_type,call_to_action_type,image_url,thumbnail_url,object_story_spec{link_data{picture,child_attachments{picture}},video_data{image_url}},asset_feed_spec{images{url},videos{thumbnail_url}}}'
+    const adFieldsWithLinks  = 'id,name,status,effective_status,campaign_id,adset_id,created_time,preview_shareable_link,creative{id,title,body,video_id,object_type,call_to_action_type,image_url,thumbnail_url,effective_object_story_id,object_story_id,instagram_permalink_url,object_url,object_story_spec{link_data{link,picture,child_attachments{link,picture}},video_data{image_url,call_to_action{value{link}}}},asset_feed_spec{images{url},videos{thumbnail_url}}}'
 
     // ── 9 chamadas paralelas ─────────────────────────────────────────────────
     const [
@@ -265,27 +248,27 @@ export async function POST(req: NextRequest) {
       // 1 - campanhas (meta)
       fetch(`${baseUrl}/${act}/campaigns?fields=id,name,objective,effective_status,created_time,daily_budget,lifetime_budget&limit=50&status=["ACTIVE","PAUSED"]&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 2 - insights 30d por campanha
-      fetch(`${baseUrl}/${act}/insights?fields=${insightFields}&date_preset=last_30d&level=campaign${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=${insightFields}&time_range=${currentRange}&level=campaign${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 3 - insights 7d por campanha
-      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,impressions,clicks,inline_link_clicks,reach,actions,action_values&date_preset=last_7d&level=campaign${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,impressions,clicks,inline_link_clicks,reach,actions,action_values&time_range=${weekRange}&level=campaign${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 4 - insights período anterior (30-60d)
       fetch(`${baseUrl}/${act}/insights?fields=campaign_id,spend,actions,action_values,impressions,clicks,inline_link_clicks,reach,frequency&time_range=${prevRange}&level=campaign${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 5 - ad sets (metadados)
       fetch(`${baseUrl}/${act}/adsets?fields=id,name,status,effective_status,optimization_goal,daily_budget,lifetime_budget,campaign_id,targeting&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 6 - insights de ad sets
-      fetch(`${baseUrl}/${act}/insights?fields=${adsetInsightFields}&date_preset=last_30d&level=adset${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=${adsetInsightFields}&time_range=${currentRange}&level=adset${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 7 - ads/criativos (metadados)
       fetch(`${baseUrl}/${act}/ads?fields=${adFieldsWithLinks}&limit=80&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
       // 8 - insights de ads
-      fetch(`${baseUrl}/${act}/insights?fields=${adInsightFields}&date_preset=last_30d&level=ad${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=${adInsightFields}&time_range=${currentRange}&level=ad${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(20000) }).then(r => r.json()),
       // 9 - pixels (endpoint correto: adspixels)
       fetch(`${baseUrl}/${act}/adspixels?fields=id,name,last_fired_time,is_unavailable&access_token=${token}`, { signal: AbortSignal.timeout(10000) }).then(r => r.json()),
       // 10 - breakdown geográfico
-      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,action_values,impressions,clicks,reach&breakdowns=region&date_preset=last_30d${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,action_values,impressions,clicks,reach&breakdowns=region&time_range=${currentRange}${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 11 - breakdown por plataforma
-      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,action_values,impressions,clicks,reach,ctr&breakdowns=publisher_platform,platform_position&date_preset=last_30d${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,action_values,impressions,clicks,reach,ctr&breakdowns=publisher_platform,platform_position&time_range=${currentRange}${actionBreakdowns}&limit=50&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
       // 12 - breakdown por idade/gênero
-      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,action_values,impressions,clicks,reach&breakdowns=age,gender&date_preset=last_30d${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
+      fetch(`${baseUrl}/${act}/insights?fields=spend,actions,action_values,impressions,clicks,reach&breakdowns=age,gender&time_range=${currentRange}${actionBreakdowns}&limit=100&access_token=${token}`, { signal: AbortSignal.timeout(15000) }).then(r => r.json()),
     ])
 
     // ── Valida resposta principal ─────────────────────────────────────────────
@@ -781,7 +764,7 @@ export async function POST(req: NextRequest) {
     const currRoas = totalSpend > 0 && totalRevenue > 0 ? +(totalRevenue / totalSpend).toFixed(2) : 0
 
     return NextResponse.json({
-      success: true, score, scoreGrade,
+      success: true, period, previousPeriod:previous, score, scoreGrade,
       campaigns, byObjective,
       adSets, ads, adsError,
       pixel,

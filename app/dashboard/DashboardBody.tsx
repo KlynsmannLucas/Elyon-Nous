@@ -42,7 +42,6 @@ import { TabCampanha }     from '@/components/dashboard/TabCampanha'
 import { TabRelatorios }   from '@/components/dashboard/TabRelatorios'
 import { TabFinanceiro }   from '@/components/dashboard/TabFinanceiro'
 import { TabCRO }              from '@/components/dashboard/TabCRO'
-import { TabBudgetAllocator } from '@/components/dashboard/TabBudgetAllocator'
 import { getBenchmark, BENCHMARKS } from '@/lib/niche_benchmarks'
 import { TabChannelMix }     from '@/components/dashboard/TabChannelMix'
 import { TabChecklist }      from '@/components/dashboard/TabChecklist'
@@ -127,13 +126,6 @@ const TAB_PREVIEWS: Record<string, {
     target: 'Empresas e gestores que querem entender com profundidade quem compra de você — e por quê.',
   },
   // Grupo Inteligência (Avançada)
-  budget: {
-    icon: '💰',
-    title: 'Alocador de Verba Inteligente',
-    desc: 'Distribua o orçamento de forma otimizada entre canais com base no CPL e ROAS histórico de cada plataforma.',
-    benefit: 'Pare de distribuir verba igualmente entre canais. O alocador concentra o investimento onde a conta historicamente converte mais.',
-    target: 'Gestores e agências com múltiplos canais ativos que precisam justificar e otimizar cada real investido.',
-  },
   channelmix: {
     icon: '🌐',
     title: 'Mix de Canais por Nicho',
@@ -237,7 +229,6 @@ const TAB_DESCRIPTIONS: Partial<Record<TabKey, { icon: string; title: string; de
   memory:       { icon: '🧠', title: 'Histórico de Aprendizado', desc: 'O ELYON aprende com cada análise e auditoria. Aqui ficam os insights acumulados sobre seu cliente — usados para personalizar as respostas do Assistente IA.' },
   workflow:     { icon: '⚙️', title: 'Regras de Alerta', desc: 'Crie fluxos automatizados para tarefas repetitivas — como atualizar relatórios, enviar resumos e disparar alertas conforme metas.' },
   cro:          { icon: '⚙️', title: 'Otimização de Conversão', desc: 'Identifique onde o funil perde conversões e receba sugestões da IA para melhorar landing pages, criativos e fluxos de vendas.' },
-  budget:       { icon: '💰', title: 'Alocador de Verba', desc: 'Distribua o orçamento de anúncios de forma inteligente entre canais — a IA calcula a alocação ideal com base no CPL e ROAS de cada plataforma.' },
   channelmix:   { icon: '🌐', title: 'Mix de Canais', desc: 'Compare o desempenho de Meta, Google, TikTok e outros canais lado a lado. Descubra qual canal traz mais ROI para o perfil do seu cliente.' },
 }
 
@@ -925,7 +916,6 @@ export default function DashboardBody() {
               clientName: clientData.clientName,
               niche: clientData.niche,
               niches: clientData.niches,
-              budget: clientData.budget,
               objective: clientData.objective,
               uploadedFiles,
             }),
@@ -1074,7 +1064,7 @@ export default function DashboardBody() {
       avancado: {
         icon: '🧠',
         title: 'Inteligência Avançada',
-        items: ['TrafficBrain IA com alertas proativos', 'Alocador de verba inteligente', 'Mix de canais por nicho', 'Projeções e cenários', 'Regras de alerta'],
+        items: ['TrafficBrain IA com alertas proativos', 'Mix de canais por nicho', 'Projeções e cenários', 'Regras de alerta'],
       },
     }
     const info = fallback[group]
@@ -1145,7 +1135,7 @@ export default function DashboardBody() {
     }
 
     // Avançado — requer Avançada
-    if (!planLimits.hasAvancadoGroup && (activeTab === 'budget' || activeTab === 'channelmix' || activeTab === 'mercado' || activeTab === 'cenarios' || activeTab === 'inteligencia' || activeTab === 'memory' || activeTab === 'workflow')) {
+    if (!planLimits.hasAvancadoGroup && (activeTab === 'channelmix' || activeTab === 'mercado' || activeTab === 'cenarios' || activeTab === 'inteligencia' || activeTab === 'memory' || activeTab === 'workflow')) {
       return <UpgradeWall group="avancado" />
     }
 
@@ -1191,7 +1181,6 @@ export default function DashboardBody() {
         return wrap('Gargalo do Funil', <TabFunil clientData={clientData} />)
       }
       case 'cro':           return wrap('Otimização de Conversão', <TabCRO />)
-      case 'budget':        return wrap('Alocador de Verba',      <TabBudgetAllocator />)
       case 'channelmix':    return wrap('Mix de Canais',           <TabChannelMix />)
       case 'persona':       return wrap('Persona do Cliente',      <TabPersona clientData={clientData} />)
       case 'conteudo':      return wrap('Criador de Conteúdo',     <TabConteudo clientData={clientData} />)

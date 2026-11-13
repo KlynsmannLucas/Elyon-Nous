@@ -26,10 +26,13 @@ mesma campanha com segurança. Não existe junção automática por nome.
 
 ## Conexão e isolamento
 
-A conexão MCP deste chat não transfere credenciais ao site. No Nous, cada usuário
-informa seu token da **API Reportei V2** em Integrações, escolhe o projeto e confirma
-as integrações para seu cliente. O servidor valida o token e todos os IDs com essa
-credencial. Nenhuma empresa, projeto ou conta real é fixada no código.
+A conexão MCP deste chat não transfere credenciais ao site. A operação configura
+uma credencial da **API Reportei V2** uma única vez em `/config/integracoes`,
+exclusivo para administradores Clerk (`privateMetadata.role=admin`). O usuário
+comum não informa token. O servidor valida a credencial e os vínculos; CRM exige
+concessão administrativa explícita. A associação automática de mídia exige IDs
+exatos e acesso confirmado pelas conexões nativas. Nenhuma conta é fixada no código.
+Veja também `internal-reportei-studio.md`.
 
 - Base oficial: https://app.reportei.com/api/v2
 - Documentação: https://developers.reportei.com/
@@ -39,10 +42,12 @@ credencial. Nenhuma empresa, projeto ou conta real é fixada no código.
 - Tabelas novas com RLS e sem acesso de `anon`/`authenticated`. As rotas verificam
   Clerk e filtram `user_id`; a chave estrangeira `(client_id, user_id)` também
   impede vínculos entre usuários diferentes no banco.
-- Um projeto Reportei é vinculado a um cliente do mesmo usuário.
+- O vínculo identifica o usuário, cliente, projeto e integrações autorizadas.
+- Uma conta ou nome de cliente, isoladamente, não concede acesso a outro usuário.
 - O cache inclui usuário, cliente, datas, projeto, integrações e versão da conexão.
-  Validade de 15 minutos; Atualizar dados consulta novamente. Desconectar remove
-  apenas vínculos e snapshots Reportei do usuário.
+  Validade de 15 minutos; Atualizar dados consulta novamente quando há credencial
+  de serviço. Sem credencial, só o snapshot do período exato pode ser servido.
+  O histórico informa suas próprias datas, sem substituir silenciosamente o período.
 - A atualização ocorre na consulta, sem agendamento automático novo.
 
 ## Correções de dados
@@ -68,7 +73,8 @@ investimento por ROAS de um período ou de outras contas.
 
 1. Aplicar `20261110185737_reportei_complementary_data.sql` antes de publicar.
 2. Configurar `REPORTEI_ENCRYPTION_KEY` nos projetos que compartilham o banco.
-3. Publicar, conectar o token pela tela e vincular projeto/integrações ao cliente.
+3. Publicar, configurar a credencial como administrador e conceder somente as
+   integrações de cada cliente. Usuários comuns não passam por essa configuração.
 4. Atualizar dados e gerar uma nova Análise Profunda para substituir os indicadores
    antigos. Consultas de dados não consomem créditos de IA; a análise segue seu custo.
 
@@ -81,5 +87,5 @@ layout móvel e resposta tardia após troca de cliente.
 O build desativa envio de sourcemaps, releases e telemetria ao Sentry. O SDK de
 monitoramento de erros em runtime permanece habilitado.
 
-A consulta real da API V2 dentro do Nous depende do token informado pelo usuário;
-a validação por MCP no chat e os testes isolados não substituem essa etapa.
+A consulta real da API V2 dentro do Nous depende da credencial de serviço da
+operação. MCP e testes isolados não substituem essa configuração interna.
